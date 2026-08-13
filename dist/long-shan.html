@@ -1,0 +1,3599 @@
+<!doctype html>
+<html lang="fr" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Long Shan — Monastère & école d’arts martiaux</title>
+  <meta name="description" content="Système d’interface mobile pour la gestion d’un monastère de Kung-Fu.">
+  <meta name="theme-color" content="#171717">
+  <style>
+/* ============================================================
+   LÓNG SHĀN — Design Tokens
+   "Traditional monastery meets modern digital product"
+   Toutes les valeurs ci-dessous sont la source de vérité
+   pour l'implémentation Flutter (voir README.md).
+   ============================================================ */
+
+/* Les jetons sont déclarés à la racine ET sur `[data-theme="light"]`,
+   afin qu'un conteneur puisse imposer le mode clair même si un hôte
+   extérieur a basculé la racine en sombre. */
+:root,
+[data-theme="light"] {
+  /* ---- Palette brute (ne jamais utiliser directement en UI) ---- */
+  --raw-ink: #171717;
+  --raw-paper: #f4efe6;
+  --raw-wood: #684936;
+  --raw-gold: #c6a15b;
+  --raw-vermilion: #a63d2f;
+  --raw-stone: #d8d0c3;
+  --raw-white: #ffffff;
+
+  /* ---- Rôles sémantiques — Mode clair (Jour) ---- */
+  --bg: #efe9de;                 /* fond hors-surface, papier plus sombre */
+  --surface: #f6f2ea;            /* surface principale (feuille de papier) */
+  --surface-raised: #fffdf8;     /* carte surélevée */
+  --surface-sunken: #e7e0d3;     /* creux, champs, pistes de progression */
+  --surface-ink: #1d1a17;        /* bloc inversé (sceau, hero) */
+
+  --text: #171717;               /* 16.1:1 sur papier */
+  --text-secondary: #5b5248;     /* 6.9:1 */
+  --text-tertiary: #6b6358;      /* 5.3:1 — jamais sous 4.5:1, même sur surface creusée */
+  --text-on-ink: #f2ece1;
+  --text-on-ink-dim: #a79c8b;
+
+  --line: #ddd4c5;               /* séparateur fin */
+  --line-strong: #c9bda9;        /* bordure de carte */
+
+  --accent: #a63d2f;             /* vermillon — action forte, alerte */
+  --accent-soft: #f0dcd6;
+  --accent-text: #8f3225;        /* vermillon lisible en texte — 6.6:1 */
+
+  /* Le doré se dédouble : une valeur pour les aplats et les tracés
+     (seuil non-textuel 3:1), une valeur assombrie pour le texte (4.5:1).
+     --gold-bright n'est jamais posé sur du papier, seulement sur l'encre. */
+  --gold: #a5813a;               /* aplats, anneaux, barres, bordures — 3.2:1 */
+  --gold-text: #7a5f26;          /* texte doré sur papier — 5.4:1 */
+  --gold-bright: #c6a15b;        /* sur fond d'encre uniquement — 7.1:1 */
+  --gold-soft: #f0e6d0;
+
+  --wood: #684936;
+  --wood-soft: #e6dccd;
+
+  --positive: #4a6b46;
+  --positive-soft: #e2ebdf;
+  --warning: #8a5e1b;
+  --warning-soft: #f4e8d3;
+  --danger: #a63d2f;
+  --danger-soft: #f0dcd6;
+
+  --scrim: rgba(23, 23, 23, 0.42);
+
+  /* ---- Élévation — ombres chaudes, jamais bleutées ---- */
+  --shadow-1: 0 1px 2px rgba(78, 60, 40, 0.06);
+  --shadow-2: 0 2px 10px -2px rgba(78, 60, 40, 0.12);
+  --shadow-3: 0 12px 32px -12px rgba(78, 60, 40, 0.28);
+  --shadow-seal: 0 18px 44px -20px rgba(60, 38, 24, 0.55);
+
+  /* ---- Typographie ---- */
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+                  "Songti SC", "Noto Serif", Georgia, serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, "Helvetica Neue",
+             Arial, sans-serif;
+  --font-num: var(--font-display);
+
+  --t-display: 34px;   --t-display-lh: 38px;
+  --t-title: 22px;     --t-title-lh: 28px;
+  --t-heading: 17px;   --t-heading-lh: 23px;
+  --t-body: 15px;      --t-body-lh: 22px;
+  --t-sub: 13px;       --t-sub-lh: 18px;
+  --t-caption: 11px;   --t-caption-lh: 15px;
+
+  --track: 0.14em;     /* interlettrage des sur-titres */
+
+  /* ---- Espacement (échelle 4) ---- */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px;
+  --s-5: 20px; --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-12: 48px;
+
+  --gutter: 20px;      /* marge latérale d'écran */
+
+  /* ---- Rayons ---- */
+  --r-xs: 6px; --r-sm: 10px; --r-md: 14px; --r-lg: 20px;
+  --r-xl: 28px; --r-pill: 999px;
+
+  /* ---- Mouvement — lent, maîtrisé ---- */
+  --e-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --e-inout: cubic-bezier(0.65, 0, 0.35, 1);
+  --d-fast: 180ms;
+  --d-base: 320ms;
+  --d-slow: 620ms;
+  --d-ceremony: 1100ms;  /* validation de grade, réussite d'examen */
+
+  /* ---- Cible tactile minimale ---- */
+  --tap: 44px;
+
+  color-scheme: light;
+}
+
+/* ============================================================
+   Mode sombre — "Temple de nuit"
+   Noir profond chaud, brun sombre, doré discret, gris chaud.
+   Aucun bleu.
+   ============================================================ */
+[data-theme="dark"] {
+  --bg: #0f0d0b;
+  --surface: #171310;
+  --surface-raised: #1f1a15;
+  --surface-sunken: #100e0c;
+  --surface-ink: #241d17;
+
+  --text: #ece4d6;
+  --text-secondary: #a2988a;
+  --text-tertiary: #8a8073;      /* 4.5:1 minimum sur les surfaces sombres */
+  --text-on-ink: #ece4d6;
+  --text-on-ink-dim: #a2988a;
+
+  --line: #2a231d;
+  --line-strong: #382f26;
+
+  --accent: #c4523f;
+  --accent-soft: #33201b;
+  --accent-text: #d9705c;
+
+  /* Sur fond sombre, le doré clair est déjà très lisible :
+     les trois rôles convergent. */
+  --gold: #cfab68;
+  --gold-text: #cfab68;          /* 8.5:1 sur la surface sombre */
+  --gold-bright: #e0c084;
+  --gold-soft: #2c2418;
+
+  --wood: #8a6349;
+  --wood-soft: #251d17;
+
+  --positive: #7fa478;
+  --positive-soft: #1e261c;
+  --warning: #c9974a;
+  --warning-soft: #2b2114;
+  --danger: #c4523f;
+  --danger-soft: #33201b;
+
+  --scrim: rgba(0, 0, 0, 0.6);
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 2px 12px -2px rgba(0, 0, 0, 0.55);
+  --shadow-3: 0 14px 34px -14px rgba(0, 0, 0, 0.8);
+  --shadow-seal: 0 20px 48px -22px rgba(0, 0, 0, 0.9);
+
+  color-scheme: dark;
+}
+
+  </style>
+  <style>
+/* ============================================================
+   Base, reset, coquille de présentation (device frame + index)
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: var(--t-body);
+  line-height: var(--t-body-lh);
+  color: var(--text);
+  background: #221a14;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button, input, select, textarea { font: inherit; color: inherit; }
+button { background: none; border: 0; cursor: pointer; padding: 0; }
+a { color: inherit; text-decoration: none; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+p, h1, h2, h3, h4, h5, h6 { margin: 0; font-weight: inherit; }
+
+::selection { background: var(--gold-soft); color: var(--text); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ------------------------------------------------------------
+   Atelier : fond, index des écrans, cadre téléphone
+   (uniquement l'échafaudage de présentation — pas l'app)
+   ------------------------------------------------------------ */
+
+.workbench {
+  display: grid;
+  grid-template-columns: 268px 1fr;
+  height: 100dvh;
+  background:
+    radial-gradient(120% 90% at 50% 0%, #3a2a1e 0%, #1a1410 70%);
+}
+
+/* --- Index latéral --- */
+.index {
+  overflow-y: auto;
+  padding: 22px 0 40px;
+  border-right: 1px solid rgba(198, 161, 91, 0.16);
+  background: rgba(0, 0, 0, 0.22);
+  color: #d9cdb8;
+  scrollbar-width: thin;
+}
+.index__brand {
+  padding: 0 22px 18px;
+  border-bottom: 1px solid rgba(198, 161, 91, 0.14);
+  margin-bottom: 14px;
+}
+.index__mark {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-display);
+  font-size: 19px; letter-spacing: 0.04em; color: #f0e6d2;
+}
+.index__mark span {
+  width: 26px; height: 26px; border-radius: 7px;
+  display: grid; place-items: center;
+  background: var(--raw-vermilion); color: #fff;
+  font-size: 14px; line-height: 1;
+  box-shadow: 0 3px 10px -3px rgba(166, 61, 47, 0.9);
+}
+.index__sub {
+  margin-top: 8px; font-size: 11px; letter-spacing: var(--track);
+  text-transform: uppercase; color: #9a8a70;
+}
+.index__group {
+  padding: 14px 22px 6px;
+  font-size: 10px; letter-spacing: var(--track);
+  text-transform: uppercase; color: #8a7a62;
+}
+.index__link {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 8px 22px;
+  font-size: 13px; color: #c3b69f; text-align: left;
+  border-left: 2px solid transparent;
+  transition: background var(--d-fast), color var(--d-fast);
+}
+.index__link:hover { background: rgba(198, 161, 91, 0.07); color: #f0e6d2; }
+.index__link[aria-current="true"] {
+  background: rgba(198, 161, 91, 0.12);
+  border-left-color: var(--raw-gold);
+  color: #f6ecd8;
+}
+.index__num {
+  font-family: var(--font-num); font-size: 11px;
+  color: #7d6f5a; min-width: 18px;
+}
+.index__link[aria-current="true"] .index__num { color: var(--raw-gold); }
+
+/* --- Scène --- */
+.stage {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 18px; padding: 24px; overflow: auto;
+}
+.stage__bar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  justify-content: center;
+}
+.chip {
+  padding: 7px 14px; border-radius: var(--r-pill);
+  font-size: 12px; letter-spacing: 0.02em;
+  color: #cbbfa8; border: 1px solid rgba(198, 161, 91, 0.25);
+  background: rgba(0, 0, 0, 0.2);
+  transition: all var(--d-fast) var(--e-out);
+}
+.chip:hover { border-color: rgba(198, 161, 91, 0.55); color: #f0e6d2; }
+.chip[aria-pressed="true"] {
+  background: var(--raw-gold); border-color: var(--raw-gold); color: #241a10;
+}
+.stage__caption {
+  font-family: var(--font-display); color: #b9a98d;
+  font-size: 14px; letter-spacing: 0.03em; text-align: center;
+}
+.stage__caption b { color: #f0e6d2; font-weight: 500; }
+
+/* --- Cadre téléphone --- */
+.device {
+  width: 390px; height: 844px; flex: none;
+  border-radius: 46px; padding: 10px;
+  background: linear-gradient(160deg, #2f2721, #14100d);
+  box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.9),
+              0 0 0 1px rgba(198, 161, 91, 0.18);
+  position: relative;
+}
+.device__screen {
+  position: relative; width: 100%; height: 100%;
+  border-radius: 38px; overflow: hidden;
+  /* Le thème vit sur `.workbench` : l'écran doit reposer explicitement
+     couleur et fond, sinon il hérite de `body`, resté hors du thème. */
+  background: var(--bg); color: var(--text);
+  display: flex; flex-direction: column;
+  isolation: isolate;
+}
+
+/* Papier : grain très léger + halo chaud. Purement décoratif. */
+.device__screen::before {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(110% 60% at 50% -8%, rgba(198, 161, 91, 0.10), transparent 62%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+}
+[data-theme="dark"] .device__screen::before {
+  background:
+    radial-gradient(110% 60% at 50% -8%, rgba(207, 171, 104, 0.07), transparent 62%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+}
+
+/* Barre d'état simulée */
+.statusbar {
+  position: relative; z-index: 2; flex: none;
+  height: 48px; padding: 0 26px 0 30px;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; font-weight: 600; letter-spacing: 0.02em;
+  color: var(--text);
+}
+.statusbar__glyphs { display: flex; align-items: center; gap: 5px; opacity: 0.8; }
+.statusbar__glyphs i {
+  display: block; width: 3px; border-radius: 1px; background: currentColor;
+}
+.statusbar__glyphs i:nth-child(1) { height: 5px; }
+.statusbar__glyphs i:nth-child(2) { height: 8px; }
+.statusbar__glyphs i:nth-child(3) { height: 11px; }
+.statusbar__batt {
+  width: 22px; height: 11px; border-radius: 3px;
+  border: 1.2px solid currentColor; opacity: 0.8; position: relative;
+}
+.statusbar__batt::after {
+  content: ""; position: absolute; inset: 1.6px; right: 6px;
+  border-radius: 1px; background: currentColor;
+}
+
+/* Viewport applicatif défilant */
+.viewport {
+  position: relative; z-index: 1;
+  flex: 1; min-height: 0; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.scroll {
+  flex: 1; min-height: 0; overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  padding-bottom: 18px;
+}
+.scroll::-webkit-scrollbar { width: 0; }
+
+/* Indicateur de geste maison */
+.homebar {
+  position: relative; z-index: 3; flex: none;
+  height: 20px; display: grid; place-items: center;
+}
+.homebar::after {
+  content: ""; width: 128px; height: 4px; border-radius: 2px;
+  background: var(--text); opacity: 0.22;
+}
+
+/* Responsive : sur écran étroit, l'atelier disparaît, l'app prend tout */
+@media (max-width: 900px) {
+  .workbench { grid-template-columns: 1fr; }
+  .index { display: none; }
+  .stage { padding: 0; gap: 0; justify-content: flex-start; }
+  .stage__bar, .stage__caption { display: none; }
+  .device {
+    width: 100%; height: 100dvh; border-radius: 0; padding: 0;
+    box-shadow: none;
+  }
+  .device__screen { border-radius: 0; }
+}
+
+  </style>
+  <style>
+/* ============================================================
+   Composants réutilisables
+   Chaque bloc = 1 widget Flutter (correspondance dans README.md)
+   ============================================================ */
+
+/* ---------------------------------------------- 1. Typographie */
+.display  { font-family: var(--font-display); font-size: var(--t-display); line-height: var(--t-display-lh); font-weight: 400; letter-spacing: -0.01em; margin: 0; }
+.title    { font-family: var(--font-display); font-size: var(--t-title);   line-height: var(--t-title-lh);   font-weight: 400; margin: 0; }
+.heading  { font-family: var(--font-display); font-size: var(--t-heading); line-height: var(--t-heading-lh); font-weight: 500; margin: 0; }
+.body     { font-size: var(--t-body); line-height: var(--t-body-lh); margin: 0; }
+.sub      { font-size: var(--t-sub);  line-height: var(--t-sub-lh);  color: var(--text-secondary); margin: 0; }
+.caption  { font-size: var(--t-caption); line-height: var(--t-caption-lh); color: var(--text-tertiary); margin: 0; }
+.num      { font-family: var(--font-num); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.muted    { color: var(--text-secondary); }
+.dim      { color: var(--text-tertiary); }
+
+/* Sur-titre : petite capitale espacée, signature de l'app */
+.overline {
+  font-size: 10px; line-height: 14px; font-weight: 600;
+  letter-spacing: var(--track); text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.overline--gold { color: var(--gold-text); }
+
+/* Filet décoratif : trait fin + losange, sépare les respirations */
+.rule {
+  display: flex; align-items: center; gap: 10px;
+  color: var(--line-strong);
+}
+.rule::before, .rule::after {
+  content: ""; height: 1px; flex: 1; background: currentColor;
+}
+.rule i {
+  width: 5px; height: 5px; transform: rotate(45deg);
+  background: var(--gold); opacity: 0.75;
+}
+
+/* ---------------------------------------------- 2. Mise en page */
+.screen { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.pad    { padding-left: var(--gutter); padding-right: var(--gutter); }
+.stack  { display: flex; flex-direction: column; }
+.row    { display: flex; align-items: center; }
+.between{ display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+.grow   { flex: 1; min-width: 0; }
+.wrap   { flex-wrap: wrap; }
+.gap-1{gap:4px}.gap-2{gap:8px}.gap-3{gap:12px}.gap-4{gap:16px}
+.gap-5{gap:20px}.gap-6{gap:24px}.gap-8{gap:32px}
+.mt-2{margin-top:8px}.mt-3{margin-top:12px}.mt-4{margin-top:16px}
+.mt-5{margin-top:20px}.mt-6{margin-top:24px}.mt-8{margin-top:32px}
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Titre de section — présent sur presque tous les écrans */
+.section { padding: 0 var(--gutter); margin-top: var(--s-8); }
+.section__head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--s-3); margin-bottom: var(--s-4);
+}
+.section__action {
+  font-size: 12px; color: var(--accent-text); font-weight: 600;
+  padding: 4px 2px;
+}
+
+/* ---------------------------------------------- 3. Barre d'application */
+.appbar {
+  position: relative; z-index: 4; flex: none;
+  display: flex; align-items: center; gap: var(--s-2);
+  padding: 4px var(--s-3) 10px;
+  background: var(--bg);
+}
+.appbar__title {
+  font-family: var(--font-display); font-size: 17px; font-weight: 500;
+  flex: 1; text-align: center; padding: 0 4px;
+}
+.appbar--flush { background: transparent; }
+
+.iconbtn {
+  width: var(--tap); height: var(--tap); flex: none;
+  display: grid; place-items: center; border-radius: var(--r-pill);
+  color: var(--text); position: relative;
+  transition: background var(--d-fast) var(--e-out), transform var(--d-fast) var(--e-out);
+}
+.iconbtn:hover { background: rgba(120, 100, 70, 0.10); }
+.iconbtn:active { transform: scale(0.92); }
+.iconbtn svg { width: 20px; height: 20px; }
+.iconbtn__dot {
+  position: absolute; top: 10px; right: 10px;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent); border: 1.5px solid var(--bg);
+}
+
+/* ---------------------------------------------- 4. Surfaces / cartes */
+.card {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: var(--s-4);
+  box-shadow: var(--shadow-1);
+}
+.card--flat { box-shadow: none; background: var(--surface); }
+.card--sunken { background: var(--surface-sunken); border-color: transparent; box-shadow: none; }
+.card--tap { transition: transform var(--d-fast) var(--e-out), box-shadow var(--d-fast); text-align: left; width: 100%; display: block; }
+.card--tap:active { transform: scale(0.985); box-shadow: var(--shadow-1); }
+
+/* Papier : bord supérieur doré très fin, évoque la tranche d'un parchemin */
+.card--paper { position: relative; overflow: hidden; }
+.card--paper::before {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold-bright), transparent);
+  opacity: 0.5;
+}
+
+/* Bloc encre : hero inversé */
+.ink {
+  background: var(--surface-ink); color: var(--text-on-ink);
+  border-radius: var(--r-xl); padding: var(--s-6);
+  box-shadow: var(--shadow-seal); position: relative; overflow: hidden;
+}
+.ink .sub, .ink .caption, .ink .muted, .ink .dim { color: var(--text-on-ink-dim); }
+.ink .overline { color: var(--gold-bright); }
+/* Tampon circulaire en filigrane, coin supérieur droit */
+.ink::after {
+  content: ""; position: absolute; top: -46px; right: -46px;
+  width: 168px; height: 168px; border-radius: 50%;
+  border: 1px solid rgba(198, 161, 91, 0.30);
+  box-shadow: inset 0 0 0 9px rgba(198, 161, 91, 0.08);
+  pointer-events: none;
+}
+
+/* ---------------------------------------------- 5. Sceau (élément signature) */
+/* Carré à coins très arrondis, bord vermillon, utilisé pour l'identité,
+   les avatars de grade et le bouton central de navigation. */
+.seal {
+  display: grid; place-items: center; flex: none;
+  border-radius: 30%;
+  background: var(--accent); color: #fff;
+  font-family: var(--font-display);
+  box-shadow: 0 8px 20px -8px rgba(166, 61, 47, 0.7);
+  position: relative;
+}
+.seal::after {
+  content: ""; position: absolute; inset: 4px;
+  border-radius: 26%; border: 1px solid rgba(255, 255, 255, 0.35);
+}
+.seal--gold { background: var(--gold); box-shadow: 0 8px 20px -8px rgba(176, 140, 66, 0.7); }
+.seal--ink  { background: var(--surface-ink); color: var(--gold-bright); }
+.seal--lg { width: 76px; height: 76px; font-size: 30px; }
+.seal--md { width: 52px; height: 52px; font-size: 20px; }
+.seal--sm { width: 36px; height: 36px; font-size: 14px; }
+
+/* ---------------------------------------------- 6. Avatar */
+.avatar {
+  flex: none; display: grid; place-items: center;
+  border-radius: 34%; overflow: hidden;
+  background: var(--wood-soft); color: var(--wood);
+  font-family: var(--font-display); font-weight: 500;
+  border: 1px solid var(--line);
+  position: relative;
+}
+.avatar--xs { width: 28px; height: 28px; font-size: 10px; letter-spacing: -0.03em; }
+.avatar--sm { width: 40px; height: 40px; font-size: 14px; }
+.avatar--md { width: 48px; height: 48px; font-size: 16px; }
+.avatar--lg { width: 84px; height: 84px; font-size: 28px; border-radius: 30%; }
+/* Liseré de grade autour de l'avatar : l'information n'est pas
+   portée que par la couleur, un badge textuel l'accompagne toujours. */
+.avatar--ringed { box-shadow: 0 0 0 2px var(--surface-raised), 0 0 0 4px var(--ring, var(--line-strong)); }
+
+/* Le liseré de séparation prend la couleur de la surface qui porte la pile :
+   papier par défaut, encre à l'intérieur d'un bloc `.ink`. */
+.avatarstack { display: flex; --stack-ring: var(--surface-raised); }
+.avatarstack .avatar { margin-left: -10px; box-shadow: 0 0 0 2px var(--stack-ring); }
+.avatarstack .avatar:first-child { margin-left: 0; }
+.ink .avatarstack { --stack-ring: var(--surface-ink); }
+.ink .avatar { border-color: transparent; }
+
+/* ---------------------------------------------- 7. Badges & pastilles */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: var(--r-pill);
+  font-size: 11px; line-height: 16px; font-weight: 600;
+  letter-spacing: 0.02em;
+  background: var(--surface-sunken); color: var(--text-secondary);
+  border: 1px solid transparent; white-space: nowrap;
+}
+.badge--gold     { background: var(--gold-soft);     color: var(--gold-text);     border-color: color-mix(in srgb, var(--gold) 28%, transparent); }
+.badge--accent   { background: var(--accent-soft);   color: var(--accent-text); }
+.badge--positive { background: var(--positive-soft); color: var(--positive); }
+.badge--warning  { background: var(--warning-soft);  color: var(--warning); }
+.badge--danger   { background: var(--danger-soft);   color: var(--danger); }
+.badge--outline  { background: transparent; border-color: var(--line-strong); color: var(--text-secondary); }
+
+/* Pastille de ceinture : disque + libellé (jamais la couleur seule) */
+.belt { display: inline-flex; align-items: center; gap: 7px; }
+.belt__disc {
+  width: 12px; height: 12px; border-radius: 50%; flex: none;
+  background: var(--belt, var(--line-strong));
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.22);
+}
+.belt__label { font-size: 12px; font-weight: 600; letter-spacing: 0.01em; }
+
+/* ---------------------------------------------- 8. Boutons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: var(--tap); padding: 0 var(--s-5);
+  border-radius: var(--r-pill);
+  font-size: 15px; font-weight: 600; letter-spacing: 0.01em;
+  transition: transform var(--d-fast) var(--e-out), background var(--d-fast), opacity var(--d-fast);
+  white-space: nowrap;
+}
+.btn:active { transform: scale(0.97); }
+.btn svg { width: 18px; height: 18px; }
+
+.btn--primary   { background: var(--surface-ink); color: var(--text-on-ink); box-shadow: var(--shadow-2); }
+.btn--gold      { background: var(--gold); color: #22190c; box-shadow: 0 6px 18px -8px rgba(176, 140, 66, 0.8); }
+.btn--accent    { background: var(--accent); color: #fff; box-shadow: 0 6px 18px -8px rgba(166, 61, 47, 0.75); }
+.btn--outline   { border: 1px solid var(--line-strong); color: var(--text); }
+.btn--ghost     { color: var(--text-secondary); }
+.btn--danger    { background: var(--danger-soft); color: var(--danger); }
+.btn--block     { width: 100%; }
+.btn--sm        { min-height: 34px; padding: 0 14px; font-size: 13px; }
+.btn[disabled], .btn[aria-disabled="true"] {
+  opacity: 0.42; pointer-events: none;
+}
+
+/* Action flottante — sceau, pas cercle Material */
+.fab {
+  position: absolute; right: var(--gutter); bottom: 96px; z-index: 6;
+  width: 56px; height: 56px; border-radius: 30%;
+  display: grid; place-items: center;
+  background: var(--accent); color: #fff;
+  box-shadow: 0 14px 30px -10px rgba(166, 61, 47, 0.75);
+  transition: transform var(--d-base) var(--e-out);
+}
+.fab:active { transform: scale(0.93); }
+.fab svg { width: 24px; height: 24px; }
+
+/* ---------------------------------------------- 9. Onglets & filtres */
+.tabs {
+  display: flex; gap: var(--s-5); padding: 0 var(--gutter);
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto; scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  position: relative; padding: 12px 0 11px;
+  font-size: 14px; color: var(--text-tertiary); white-space: nowrap;
+  transition: color var(--d-fast);
+}
+.tab[aria-selected="true"] { color: var(--text); font-weight: 600; }
+.tab[aria-selected="true"]::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px;
+  height: 2px; border-radius: 2px; background: var(--accent);
+  animation: tabIn var(--d-base) var(--e-out);
+}
+@keyframes tabIn { from { transform: scaleX(0.3); opacity: 0; } }
+
+.filters {
+  display: flex; gap: 8px; padding: var(--s-4) var(--gutter);
+  overflow-x: auto; scrollbar-width: none;
+}
+.filters::-webkit-scrollbar { display: none; }
+.filter {
+  flex: none; padding: 7px 14px; border-radius: var(--r-pill);
+  font-size: 13px; font-weight: 500;
+  border: 1px solid var(--line-strong); color: var(--text-secondary);
+  background: transparent; white-space: nowrap;
+  transition: all var(--d-fast) var(--e-out);
+}
+.filter[aria-pressed="true"] {
+  background: var(--surface-ink); border-color: var(--surface-ink);
+  color: var(--text-on-ink);
+}
+
+/* Segmenté (2–3 options exclusives) */
+.segmented {
+  display: flex; padding: 3px; gap: 3px;
+  background: var(--surface-sunken); border-radius: var(--r-pill);
+}
+.segmented button {
+  flex: 1; min-height: 34px; border-radius: var(--r-pill);
+  font-size: 13px; font-weight: 600; color: var(--text-tertiary);
+  transition: all var(--d-base) var(--e-out);
+}
+.segmented button[aria-pressed="true"] {
+  background: var(--surface-raised); color: var(--text); box-shadow: var(--shadow-1);
+}
+
+/* ---------------------------------------------- 10. Listes */
+.list { display: flex; flex-direction: column; }
+.list--card {
+  background: var(--surface-raised); border: 1px solid var(--line);
+  border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-1);
+}
+.item {
+  display: flex; align-items: center; gap: var(--s-3);
+  width: 100%; text-align: left;
+  min-height: 62px; padding: 11px var(--s-4);
+  border-bottom: 1px solid var(--line);
+  transition: background var(--d-fast);
+}
+.item:last-child { border-bottom: 0; }
+.item:active { background: var(--surface-sunken); }
+.item__title { font-size: 15px; font-weight: 500; }
+.item__sub   { font-size: 12px; color: var(--text-tertiary); margin-top: 1px; }
+.item__end   { display: flex; align-items: center; gap: 8px; flex: none; color: var(--text-tertiary); }
+.chevron { width: 16px; height: 16px; opacity: 0.5; flex: none; }
+
+/* ---------------------------------------------- 11. Champs de saisie */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field__label {
+  font-size: 10px; letter-spacing: var(--track); text-transform: uppercase;
+  font-weight: 600; color: var(--text-tertiary);
+}
+.input {
+  min-height: var(--tap); padding: 11px var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--surface-sunken);
+  border: 1px solid transparent;
+  color: var(--text); font-size: 15px; width: 100%;
+  transition: border-color var(--d-fast), background var(--d-fast);
+}
+.input::placeholder { color: var(--text-tertiary); }
+.input:focus {
+  outline: none; background: var(--surface-raised);
+  border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft);
+}
+.field--error .input { border-color: var(--danger); background: var(--danger-soft); }
+.field__error {
+  font-size: 12px; color: var(--danger); display: flex; align-items: center; gap: 5px;
+}
+.searchbar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 var(--s-4); min-height: 46px;
+  background: var(--surface-sunken); border-radius: var(--r-pill);
+  color: var(--text-tertiary);
+}
+.searchbar input {
+  flex: 1; background: none; border: 0; outline: none;
+  font-size: 15px; color: var(--text); min-width: 0;
+}
+.searchbar svg { width: 18px; height: 18px; flex: none; }
+
+/* Case à cocher — grande cible, coche animée */
+.check {
+  display: flex; align-items: center; gap: var(--s-3);
+  width: 100%; min-height: 56px; padding: 8px var(--s-4);
+  border-bottom: 1px solid var(--line); text-align: left;
+}
+.check:last-child { border-bottom: 0; }
+.check__box {
+  width: 26px; height: 26px; flex: none; border-radius: 9px;
+  border: 1.6px solid var(--line-strong);
+  display: grid; place-items: center;
+  transition: all var(--d-base) var(--e-out);
+}
+.check__box svg { width: 15px; height: 15px; stroke-dasharray: 24; stroke-dashoffset: 24; }
+.check[aria-checked="true"] .check__box {
+  background: var(--positive); border-color: var(--positive); color: #fff;
+}
+.check[aria-checked="true"] .check__box svg {
+  animation: draw var(--d-base) var(--e-out) forwards;
+}
+@keyframes draw { to { stroke-dashoffset: 0; } }
+.check[aria-checked="false"] .check__name { color: var(--text-secondary); }
+
+/* Interrupteur */
+.switch {
+  width: 46px; height: 28px; flex: none; border-radius: var(--r-pill);
+  background: var(--surface-sunken); border: 1px solid var(--line-strong);
+  position: relative; transition: all var(--d-base) var(--e-out);
+}
+.switch::after {
+  content: ""; position: absolute; top: 2px; left: 2px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--surface-raised); box-shadow: var(--shadow-1);
+  transition: transform var(--d-base) var(--e-out);
+}
+.switch[aria-checked="true"] { background: var(--gold); border-color: var(--gold); }
+.switch[aria-checked="true"]::after { transform: translateX(18px); background: #fff; }
+
+/* ---------------------------------------------- 12. Progression */
+.bar {
+  height: 6px; border-radius: 3px; overflow: hidden;
+  background: var(--surface-sunken);
+}
+.bar__fill {
+  height: 100%; border-radius: 3px;
+  background: var(--gold);
+  transform-origin: left;
+  animation: barIn var(--d-slow) var(--e-out) both;
+}
+.bar__fill--accent { background: var(--accent); }
+.bar__fill--wood   { background: var(--wood); }
+.bar__fill--positive { background: var(--positive); }
+@keyframes barIn { from { transform: scaleX(0); } }
+
+/* Anneau de progression (SVG) */
+.ring { display: block; transform: rotate(-90deg); }
+.ring__track { stroke: var(--surface-sunken); fill: none; }
+.ring__value {
+  stroke: var(--gold); fill: none; stroke-linecap: round;
+  animation: ringIn var(--d-ceremony) var(--e-inout) both;
+}
+@keyframes ringIn { from { stroke-dashoffset: var(--circ); } }
+.ring-wrap { position: relative; display: grid; place-items: center; }
+.ring-wrap__label {
+  position: absolute; display: grid; place-items: center; text-align: center;
+}
+
+/* ---------------------------------------------- 13. Timelines */
+/* Verticale, filet fin + nœud losange. Utilisée pour la journée
+   et pour le parcours martial. */
+.timeline { display: flex; flex-direction: column; }
+.tl {
+  display: grid;
+  grid-template-columns: 52px 22px 1fr;
+  column-gap: var(--s-3);
+  align-items: start;
+  min-height: 58px;
+}
+.tl__time {
+  font-family: var(--font-num); font-size: 13px; font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary); padding-top: 1px; text-align: right;
+}
+.tl__rail { position: relative; display: grid; justify-items: center; height: 100%; }
+.tl__rail::before {
+  content: ""; position: absolute; top: 0; bottom: 0; width: 1px;
+  background: var(--line-strong);
+}
+.tl:first-child .tl__rail::before { top: 8px; }
+.tl:last-child  .tl__rail::before { bottom: calc(100% - 8px); }
+.tl__node {
+  position: relative; margin-top: 3px;
+  width: 9px; height: 9px; transform: rotate(45deg);
+  background: var(--surface); border: 1.4px solid var(--line-strong);
+  border-radius: 2px;
+}
+.tl__body { padding-bottom: var(--s-5); }
+.tl__title { font-size: 15px; font-weight: 500; }
+.tl__meta  { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+
+/* États d'une étape */
+.tl--done .tl__node { background: var(--wood); border-color: var(--wood); }
+.tl--done .tl__title, .tl--done .tl__time { color: var(--text-tertiary); }
+.tl--now .tl__node {
+  background: var(--accent); border-color: var(--accent);
+  width: 11px; height: 11px; margin-top: 2px;
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+.tl--now .tl__title { font-weight: 600; }
+.tl--now .tl__time  { color: var(--accent-text); font-weight: 600; }
+.tl--locked .tl__node { background: var(--surface-sunken); border-style: dashed; }
+.tl--locked .tl__title, .tl--locked .tl__meta { color: var(--text-tertiary); }
+.tl--milestone .tl__node {
+  width: 13px; height: 13px; margin-top: 1px;
+  background: var(--gold); border-color: var(--gold);
+  box-shadow: 0 0 0 4px var(--gold-soft);
+}
+
+/* ---------------------------------------------- 14. Graphiques */
+/* Barres verticales sobres — pas de grille, pas de légende bruyante */
+.chart { display: flex; align-items: flex-end; gap: 8px; height: 116px; }
+.chart__col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 7px; height: 100%; justify-content: flex-end; }
+.chart__stack { width: 100%; display: flex; flex-direction: column; justify-content: flex-end; gap: 3px; flex: 1; }
+.chart__seg {
+  width: 100%; border-radius: 4px; min-height: 3px;
+  transform-origin: bottom;
+  animation: barIn var(--d-slow) var(--e-out) both;
+}
+.chart__seg--in  { background: var(--wood); }
+.chart__seg--out { background: var(--accent); opacity: 0.8; }
+.chart__label { font-size: 10px; color: var(--text-tertiary); }
+.legend { display: flex; gap: var(--s-4); flex-wrap: wrap; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+.legend i { width: 9px; height: 9px; border-radius: 3px; flex: none; }
+
+/* Jauge horizontale segmentée (stocks) */
+.gauge { display: flex; gap: 3px; height: 5px; }
+.gauge i { flex: 1; border-radius: 2px; background: var(--surface-sunken); }
+.gauge i.on { background: var(--wood); }
+.gauge--low i.on { background: var(--accent); }
+
+/* ---------------------------------------------- 15. Navigation inférieure */
+.tabbar {
+  position: relative; z-index: 5; flex: none;
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  align-items: end;
+  padding: 8px var(--s-2) 2px;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(18px) saturate(1.1);
+  border-top: 1px solid var(--line);
+}
+.tabbar__btn {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 6px 0 8px; min-height: var(--tap);
+  color: var(--text-tertiary);
+  transition: color var(--d-base) var(--e-out);
+}
+.tabbar__btn svg { width: 22px; height: 22px; }
+.tabbar__btn span { font-size: 10px; letter-spacing: 0.02em; }
+.tabbar__btn[aria-current="true"] { color: var(--text); }
+.tabbar__btn[aria-current="true"] svg { color: var(--accent); }
+/* Bouton central : sceau surélevé */
+.tabbar__seal {
+  display: grid; place-items: center; justify-self: center;
+  width: 50px; height: 50px; margin-bottom: 6px;
+  border-radius: 30%; background: var(--surface-ink); color: var(--gold-bright);
+  box-shadow: var(--shadow-3);
+  transition: transform var(--d-base) var(--e-out);
+}
+.tabbar__seal:active { transform: scale(0.92) rotate(-4deg); }
+.tabbar__seal svg { width: 22px; height: 22px; }
+
+/* ---------------------------------------------- 16. Feuille inférieure & dialogue */
+.scrim {
+  position: absolute; inset: 0; z-index: 20;
+  background: var(--scrim);
+  animation: fade var(--d-base) var(--e-out);
+  display: flex; flex-direction: column; justify-content: flex-end;
+}
+@keyframes fade { from { opacity: 0; } }
+.sheet {
+  background: var(--surface); border-radius: var(--r-xl) var(--r-xl) 0 0;
+  padding: 10px var(--gutter) calc(var(--gutter) + 8px);
+  box-shadow: 0 -20px 50px -20px rgba(0, 0, 0, 0.5);
+  animation: sheetUp var(--d-base) var(--e-out);
+  max-height: 76%; overflow-y: auto; scrollbar-width: none;
+}
+@keyframes sheetUp { from { transform: translateY(100%); } }
+.sheet__grip {
+  width: 38px; height: 4px; border-radius: 2px;
+  background: var(--line-strong); margin: 0 auto 14px;
+}
+.dialog-wrap { justify-content: center; align-items: center; padding: var(--gutter); }
+.dialog {
+  width: 100%; background: var(--surface); border-radius: var(--r-xl);
+  padding: var(--s-6); text-align: center;
+  box-shadow: var(--shadow-3);
+  animation: dialogIn var(--d-base) var(--e-out);
+}
+@keyframes dialogIn { from { transform: scale(0.9); opacity: 0; } }
+
+/* ---------------------------------------------- 17. Notifications */
+.notif {
+  display: flex; gap: var(--s-3); padding: var(--s-4) 0;
+  border-bottom: 1px solid var(--line); align-items: flex-start;
+  width: 100%; text-align: left;
+}
+.notif__icon {
+  width: 34px; height: 34px; flex: none; border-radius: 30%;
+  display: grid; place-items: center;
+  background: var(--surface-sunken); color: var(--text-secondary);
+}
+.notif__icon svg { width: 16px; height: 16px; }
+.notif--unread .notif__title::after {
+  content: ""; display: inline-block; vertical-align: middle;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); margin-left: 7px;
+}
+.notif__title { font-size: 14px; font-weight: 500; }
+.notif__time  { font-size: 11px; color: var(--text-tertiary); margin-top: 3px; }
+
+/* Toast discret */
+.toast {
+  position: absolute; left: var(--gutter); right: var(--gutter); bottom: 100px;
+  z-index: 30;
+  display: flex; align-items: center; gap: 10px;
+  padding: 13px var(--s-4); border-radius: var(--r-md);
+  background: var(--surface-ink); color: var(--text-on-ink);
+  box-shadow: var(--shadow-3); font-size: 14px;
+  animation: toastIn var(--d-base) var(--e-out);
+}
+.toast svg { width: 18px; height: 18px; color: var(--gold-bright); flex: none; }
+@keyframes toastIn { from { transform: translateY(14px); opacity: 0; } }
+
+/* ---------------------------------------------- 18. États vides / erreur / chargement */
+.empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: var(--s-12) var(--s-8); gap: var(--s-3); flex: 1;
+}
+.empty__art { opacity: 0.55; margin-bottom: var(--s-2); }
+.empty__art svg { width: 108px; height: 108px; color: var(--wood); }
+.empty__quote {
+  font-family: var(--font-display); font-size: 15px; font-style: italic;
+  color: var(--text-tertiary); max-width: 240px;
+}
+
+/* Squelette de chargement — pulsation lente, jamais de spinner agité */
+.skel {
+  border-radius: var(--r-sm); background: var(--surface-sunken);
+  animation: pulse 1.8s var(--e-inout) infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+/* ---------------------------------------------- 19. Micro-interactions */
+/* Entrée en cascade des blocs d'un écran */
+.rise { animation: rise var(--d-base) var(--e-out) both; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+
+/* Cérémonie : validation de grade / réussite d'examen */
+@keyframes stamp {
+  0%   { transform: scale(1.5) rotate(-10deg); opacity: 0; }
+  55%  { transform: scale(0.94) rotate(2deg);  opacity: 1; }
+  100% { transform: scale(1) rotate(0);        opacity: 1; }
+}
+.stamp { animation: stamp var(--d-ceremony) var(--e-out) both; }
+@keyframes halo {
+  from { box-shadow: 0 0 0 0 var(--gold-soft); }
+  to   { box-shadow: 0 0 0 26px transparent; }
+}
+.halo { animation: halo 1.6s var(--e-out) infinite; }
+
+/* Rotation lente : synchronisation des données */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 2.4s linear infinite; }
+
+/* Accessibilité : focus visible partout */
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+}
+
+  </style>
+</head>
+<body>
+  <div class="workbench" id="root" data-theme="light">
+    <!-- Index des écrans (échafaudage de présentation, hors application) -->
+    <aside class="index" id="index" aria-label="Index des écrans"></aside>
+
+    <!-- Scène : le téléphone -->
+    <div class="stage">
+      <div class="stage__bar">
+        <button class="chip" data-theme-btn="light" aria-pressed="true">Mode clair</button>
+        <button class="chip" data-theme-btn="dark" aria-pressed="false">Temple de nuit</button>
+      </div>
+
+      <div class="device">
+        <div class="device__screen" id="frame"></div>
+      </div>
+
+      <p class="stage__caption" id="caption"></p>
+    </div>
+  </div>
+
+  <script>
+/* ============================================================
+   data.js — Données fictives réalistes
+   Monastère de Long Shan — Antananarivo, Madagascar
+   Devise : Ariary (Ar)
+   ============================================================ */
+
+const BELTS = [
+  { id: 'blanc',  name: 'Débutant', color: '#EDE7DA', order: 0 },
+  { id: 'jaune',  name: 'Jaune',    color: '#D9AE3C', order: 1 },
+  { id: 'orange', name: 'Orange',   color: '#C97A32', order: 2 },
+  { id: 'vert',   name: 'Vert',     color: '#5E7F4E', order: 3 },
+  { id: 'bleu',   name: 'Bleu',     color: '#4A6580', order: 4 },
+  { id: 'marron', name: 'Marron',   color: '#6B4A33', order: 5 },
+  { id: 'noir',   name: 'Noir',     color: '#1E1B18', order: 6 }
+];
+const beltOf = (id) => BELTS.find((b) => b.id === id) || BELTS[0];
+
+/* ---------------------------------------------- Personnes */
+const PEOPLE = [
+  { id: 'p1',  name: 'Rakoto Andry',      role: 'Élève',   level: 'Intermédiaire', belt: 'jaune',  progress: 82, attendance: 87, sessions: 42, techniques: 7,  resident: true,  since: '2024-03-12', room: 'A101', phone: '034 12 345 67', dues: 'À jour' },
+  { id: 'p2',  name: 'Rasoa Hery',        role: 'Élève',   level: 'Intermédiaire', belt: 'jaune',  progress: 74, attendance: 92, sessions: 38, techniques: 6,  resident: true,  since: '2024-04-02', room: 'A101', phone: '033 45 118 20', dues: 'À jour' },
+  { id: 'p3',  name: 'Andrianina Toky',   role: 'Élève',   level: 'Avancé',        belt: 'vert',   progress: 91, attendance: 95, sessions: 96, techniques: 14, resident: false, since: '2022-09-18', room: null,   phone: '032 77 640 11', dues: 'À jour' },
+  { id: 'p4',  name: 'Rabe Jean',         role: 'Élève',   level: 'Débutant',      belt: 'blanc',  progress: 34, attendance: 61, sessions: 11, techniques: 2,  resident: false, since: '2026-01-20', room: null,   phone: '034 90 223 45', dues: 'Retard' },
+  { id: 'p5',  name: 'Randria Paul',      role: 'Élève',   level: 'Débutant',      belt: 'blanc',  progress: 28, attendance: 44, sessions: 9,  techniques: 1,  resident: false, since: '2026-02-11', room: null,   phone: '033 08 771 92', dues: 'Retard' },
+  { id: 'p6',  name: 'Naina Fenosoa',     role: 'Élève',   level: 'Intermédiaire', belt: 'orange', progress: 66, attendance: 88, sessions: 57, techniques: 9,  resident: true,  since: '2023-11-05', room: 'A102', phone: '034 55 129 03', dues: 'À jour' },
+  { id: 'p7',  name: 'Miora Tantely',     role: 'Élève',   level: 'Intermédiaire', belt: 'orange', progress: 79, attendance: 90, sessions: 61, techniques: 10, resident: true,  since: '2023-08-27', room: 'A102', phone: '032 41 660 78', dues: 'À jour' },
+  { id: 'p8',  name: 'Lova Mamy',         role: 'Élève',   level: 'Avancé',        belt: 'bleu',   progress: 88, attendance: 93, sessions: 132,techniques: 19, resident: true,  since: '2021-06-14', room: 'A103', phone: '034 20 887 51', dues: 'À jour' },
+  { id: 'p9',  name: 'Hasina Njaka',      role: 'Moine',   level: 'Résident',      belt: 'marron', progress: 95, attendance: 99, sessions: 210,techniques: 26, resident: true,  since: '2019-02-01', room: 'B201', phone: '—', dues: '—' },
+  { id: 'p10', name: 'Fanilo Sitraka',    role: 'Moine',   level: 'Résident',      belt: 'vert',   progress: 71, attendance: 97, sessions: 148,techniques: 16, resident: true,  since: '2021-10-09', room: 'B201', phone: '—', dues: '—' },
+  { id: 'p11', name: 'Maître Chen Wei',   role: 'Grand Maître', level: 'Enseignant', belt: 'noir', progress: 100, attendance: 100, sessions: 0, techniques: 48, resident: true, since: '2011-04-30', room: 'B101', phone: '034 00 001 01', dues: '—' },
+  { id: 'p12', name: 'Maître Ravaka',     role: 'Maître',  level: 'Enseignant',    belt: 'noir',   progress: 100, attendance: 98, sessions: 0, techniques: 34, resident: true,  since: '2016-07-22', room: 'B102', phone: '033 12 004 88', dues: '—' },
+  { id: 'p13', name: 'Solofo Rakotomalala',role:'Personnel',level: 'Cuisine',      belt: null,     progress: 0,  attendance: 96, sessions: 0,  techniques: 0,  resident: true,  since: '2020-01-15', room: 'B203', phone: '034 61 220 17', dues: '—' },
+  { id: 'p14', name: 'Vololona Ranaivo',  role: 'Personnel', level: 'Intendance',  belt: null,     progress: 0,  attendance: 94, sessions: 0,  techniques: 0,  resident: false, since: '2022-05-03', room: null,   phone: '032 30 551 44', dues: '—' },
+  { id: 'p15', name: 'Rakoto Jean',       role: 'Donateur', level: 'Bienfaiteur',  belt: null,     progress: 0,  attendance: 0,  sessions: 0,  techniques: 0,  resident: false, since: '2023-03-19', room: null,   phone: '034 77 900 12', dues: '—' },
+  { id: 'p16', name: 'Tsiory Rabemananjara', role: 'Ancien élève', level: 'Diplômé', belt: 'noir', progress: 100, attendance: 0, sessions: 386, techniques: 41, resident: false, since: '2014-09-01', room: null, phone: '033 90 112 66', dues: '—' },
+  { id: 'p17', name: 'Faniry Andriamana', role: 'Visiteur', level: 'Retraite 7 j', belt: null,     progress: 0,  attendance: 0,  sessions: 0,  techniques: 0,  resident: true,  since: '2026-08-09', room: 'A103', phone: '034 18 447 30', dues: 'Réglé' }
+];
+const person = (id) => PEOPLE.find((p) => p.id === id);
+/* Enrichit chaque personne avec la couleur de sa ceinture. */
+PEOPLE.forEach((p) => { if (p.belt) { p.beltColor = beltOf(p.belt).color; p.beltName = beltOf(p.belt).name; } });
+
+const STUDENTS = PEOPLE.filter((p) => p.role === 'Élève');
+
+/* ---------------------------------------------- Journée */
+const TODAY = [
+  { time: '05:30', title: 'Méditation',            meta: 'Salle du Silence · 34 présents',    state: 'done' },
+  { time: '08:00', title: 'Travaux du monastère',  meta: 'Jardin, cuisine, réfectoire',       state: 'done' },
+  { time: '10:00', title: 'Entraînement fondamental', meta: 'Groupe débutant · 16 élèves',    state: 'done' },
+  { time: '12:00', title: 'Déjeuner',              meta: 'Réfectoire · 62 couverts',          state: 'done' },
+  { time: '16:00', title: 'Kung-Fu intermédiaire', meta: 'Cour d’honneur · 24 élèves',        state: 'now', to: 'session' },
+  { time: '18:00', title: 'Méditation du soir',    meta: 'Salle du Silence',                  state: 'next' },
+  { time: '19:00', title: 'Dîner',                 meta: 'Réfectoire',                        state: 'next' },
+  { time: '21:00', title: 'Repos',                 meta: 'Extinction des lampes',             state: 'locked' }
+];
+
+/* ---------------------------------------------- Entraînements */
+const SESSIONS = [
+  { id: 's1', title: 'Kung-Fu intermédiaire', time: '16:00', dur: '90 min', group: 'Groupe intermédiaire', master: 'Maître Ravaka', count: 24, place: 'Cour d’honneur', state: 'now' },
+  { id: 's2', title: 'Kung-Fu avancé',        time: '18:00', dur: '90 min', group: 'Groupe avancé',        master: 'Maître Chen Wei', count: 12, place: 'Grande salle', state: 'next' },
+  { id: 's3', title: 'Fondamentaux',          time: '10:00', dur: '60 min', group: 'Groupe débutant',      master: 'Maître Ravaka', count: 16, place: 'Cour d’honneur', state: 'done' },
+  { id: 's4', title: 'Formes traditionnelles', time: '07:00', dur: '60 min', group: 'Tous niveaux',        master: 'Maître Chen Wei', count: 31, place: 'Terrasse nord', state: 'next', day: 'Demain' }
+];
+
+const GROUPS = [
+  { id: 'g1', name: 'Groupe débutant',      members: 16, master: 'Maître Ravaka',   slots: 'Lun · Mer · Ven — 10:00' },
+  { id: 'g2', name: 'Groupe intermédiaire', members: 24, master: 'Maître Ravaka',   slots: 'Lun · Mar · Jeu — 16:00' },
+  { id: 'g3', name: 'Groupe avancé',        members: 12, master: 'Maître Chen Wei', slots: 'Mar · Jeu · Sam — 18:00' },
+  { id: 'g4', name: 'Résidents',            members: 18, master: 'Maître Chen Wei', slots: 'Quotidien — 05:30' }
+];
+
+/* ---------------------------------------------- Technique & formes */
+const TECHNIQUES = [
+  { id: 't1', name: 'Ma Bu',        fr: 'Position du cavalier', belt: 'blanc',  cat: 'Position', mastered: true },
+  { id: 't2', name: 'Gong Bu',      fr: 'Position de l’arc',    belt: 'blanc',  cat: 'Position', mastered: true },
+  { id: 't3', name: 'Chong Quan',   fr: 'Poing direct',         belt: 'jaune',  cat: 'Frappe',   mastered: true },
+  { id: 't4', name: 'Pi Zhang',     fr: 'Paume tranchante',     belt: 'jaune',  cat: 'Frappe',   mastered: true },
+  { id: 't5', name: 'Dan Tui',      fr: 'Coup de pied direct',  belt: 'jaune',  cat: 'Jambe',    mastered: true },
+  { id: 't6', name: 'Xie Bu',       fr: 'Position croisée',     belt: 'orange', cat: 'Position', mastered: true },
+  { id: 't7', name: 'Tan Tui',      fr: 'Jambe jaillissante',   belt: 'orange', cat: 'Jambe',    mastered: true },
+  { id: 't8', name: 'Sao Tui',      fr: 'Balayage bas',         belt: 'orange', cat: 'Jambe',    mastered: false },
+  { id: 't9', name: 'Zhou Ji',      fr: 'Frappe du coude',      belt: 'orange', cat: 'Frappe',   mastered: false },
+  { id: 't10',name: 'Xu Bu',        fr: 'Position vide',        belt: 'vert',   cat: 'Position', mastered: false },
+  { id: 't11',name: 'Teng Kong Fei',fr: 'Coup de pied sauté',   belt: 'vert',   cat: 'Jambe',    mastered: false },
+  { id: 't12',name: 'Qin Na',       fr: 'Saisie et contrôle',   belt: 'bleu',   cat: 'Contrôle', mastered: false }
+];
+
+const FORMS = [
+  { id: 'f1', name: 'Wu Bu Quan',      fr: 'Forme des cinq positions', belt: 'jaune',  moves: 18, dur: '1 min 10' },
+  { id: 'f2', name: 'Lian Huan Quan',  fr: 'Poings enchaînés',         belt: 'orange', moves: 32, dur: '1 min 45' },
+  { id: 'f3', name: 'Gong Li Quan',    fr: 'Forme de la puissance',    belt: 'vert',   moves: 46, dur: '2 min 20' },
+  { id: 'f4', name: 'Chang Quan',      fr: 'Boxe longue',              belt: 'bleu',   moves: 62, dur: '3 min' }
+];
+
+/* ---------------------------------------------- Examens */
+const EXAM = {
+  id: 'e1', from: 'jaune', to: 'orange', date: '15 août 2026', time: '09:00',
+  place: 'Grande salle', jury: ['Maître Chen Wei', 'Maître Ravaka'], candidates: 14,
+  trials: [
+    { name: 'Positions',  weight: 15 },
+    { name: 'Techniques', weight: 25 },
+    { name: 'Forme',      weight: 25 },
+    { name: 'Combat',     weight: 15 },
+    { name: 'Discipline', weight: 10 },
+    { name: 'Théorie',    weight: 10 }
+  ]
+};
+const EXAM_SCORES = [
+  { name: 'Technique',  score: 18 },
+  { name: 'Forme',      score: 16 },
+  { name: 'Combat',     score: 17 },
+  { name: 'Discipline', score: 20 },
+  { name: 'Théorie',    score: 15 }
+];
+
+/* ---------------------------------------------- Bâtiments */
+const BUILDINGS = [
+  { name: 'Bâtiment A — Élèves', rooms: [
+    { id: 'A101', cap: 4, taken: 3, state: 'Occupée' },
+    { id: 'A102', cap: 4, taken: 4, state: 'Complète' },
+    { id: 'A103', cap: 4, taken: 2, state: 'Occupée' },
+    { id: 'A104', cap: 4, taken: 0, state: 'Libre' }
+  ]},
+  { name: 'Bâtiment B — Résidents', rooms: [
+    { id: 'B101', cap: 1, taken: 1, state: 'Occupée' },
+    { id: 'B102', cap: 1, taken: 1, state: 'Occupée' },
+    { id: 'B201', cap: 6, taken: 5, state: 'Occupée' },
+    { id: 'B203', cap: 2, taken: 1, state: 'Occupée' },
+    { id: 'B204', cap: 2, taken: 0, state: 'Entretien' }
+  ]}
+];
+
+/* ---------------------------------------------- Repas */
+const MEALS = [
+  { id: 'm1', name: 'Petit déjeuner', time: '06:30', people: 62, menu: 'Riz blanc · Thé vert · Fruits de saison',
+    items: [{ n: 'Riz', q: '8 kg' }, { n: 'Thé vert', q: '300 g' }, { n: 'Bananes', q: '9 kg' }] },
+  { id: 'm2', name: 'Déjeuner', time: '12:00', people: 62, menu: 'Riz · Légumes sautés · Légumineuses',
+    items: [{ n: 'Riz', q: '12 kg' }, { n: 'Légumes', q: '8 kg' }, { n: 'Légumineuses', q: '4 kg' }, { n: 'Huile', q: '0,8 L' }] },
+  { id: 'm3', name: 'Dîner', time: '19:00', people: 58, menu: 'Soupe de légumes · Riz · Thé',
+    items: [{ n: 'Riz', q: '9 kg' }, { n: 'Légumes', q: '6 kg' }, { n: 'Sel', q: '120 g' }] }
+];
+
+/* ---------------------------------------------- Stocks */
+const STOCK = [
+  { cat: 'Nourriture', items: [
+    { n: 'Riz',           q: 72,  u: 'kg', min: 40, },
+    { n: 'Légumineuses',  q: 18,  u: 'kg', min: 20 },
+    { n: 'Huile',         q: 4,   u: 'L',  min: 10 },
+    { n: 'Thé vert',      q: 6,   u: 'kg', min: 3 }
+  ]},
+  { cat: 'Équipements Kung-Fu', items: [
+    { n: 'Gants',         q: 12,  u: 'paires', min: 20 },
+    { n: 'Bâtons',        q: 31,  u: 'unités', min: 15 },
+    { n: 'Ceintures',     q: 44,  u: 'unités', min: 20 },
+    { n: 'Tapis',         q: 26,  u: 'unités', min: 20 }
+  ]},
+  { cat: 'Produits d’entretien', items: [
+    { n: 'Savon',         q: 22,  u: 'unités', min: 10 },
+    { n: 'Balais',        q: 9,   u: 'unités', min: 6 }
+  ]},
+  { cat: 'Livres', items: [
+    { n: 'Manuels de formes', q: 35, u: 'unités', min: 10 },
+    { n: 'Textes classiques', q: 12, u: 'unités', min: 5 }
+  ]},
+  { cat: 'Matériel technique', items: [
+    { n: 'Cibles de frappe', q: 14, u: 'unités', min: 8 },
+    { n: 'Chronomètres',     q: 3,  u: 'unités', min: 4 }
+  ]}
+];
+
+/* ---------------------------------------------- Finances */
+const FINANCE = {
+  income: 4850000, expense: 2740000,
+  incomeLines: [
+    { n: 'Cotisations',  v: 2450000 },
+    { n: 'Hébergement',  v: 980000 },
+    { n: 'Dons',         v: 720000 },
+    { n: 'Formations',   v: 460000 },
+    { n: 'Inscriptions', v: 180000 },
+    { n: 'Événements',   v: 60000 }
+  ],
+  expenseLines: [
+    { n: 'Nourriture',   v: 1240000 },
+    { n: 'Maintenance',  v: 520000 },
+    { n: 'Électricité',  v: 380000 },
+    { n: 'Matériel',     v: 290000 },
+    { n: 'Eau',          v: 180000 },
+    { n: 'Transport',    v: 130000 }
+  ],
+  months: [
+    { m: 'Mar', in: 3.9, out: 2.5 }, { m: 'Avr', in: 4.2, out: 2.6 },
+    { m: 'Mai', in: 4.0, out: 2.9 }, { m: 'Juin', in: 4.6, out: 2.7 },
+    { m: 'Juil', in: 4.4, out: 3.1 }, { m: 'Août', in: 4.85, out: 2.74 }
+  ]
+};
+
+const DONATIONS = {
+  total: 12850000, month: 2400000,
+  list: [
+    { who: 'Rakoto Jean',       amount: 800000, date: '10 août 2026', dest: 'Construction' },
+    { who: 'Famille Andriana',  amount: 500000, date: '07 août 2026', dest: 'Nourriture' },
+    { who: 'Anonyme',           amount: 450000, date: '04 août 2026', dest: 'Général' },
+    { who: 'Association Vonjy', amount: 350000, date: '02 août 2026', dest: 'Formation' },
+    { who: 'Ranaivo Hery',      amount: 300000, date: '01 août 2026', dest: 'Temple' }
+  ]
+};
+
+/* ---------------------------------------------- Événements */
+const EVENTS = [
+  { id: 'ev1', type: 'Démonstration', title: 'Démonstration publique', date: '23 août 2026', time: '15:00', place: 'Cour d’honneur', people: 40, budget: 350000, revenue: 900000, state: 'Confirmé' },
+  { id: 'ev2', type: 'Cérémonie',     title: 'Cérémonie des ceintures', date: '15 août 2026', time: '17:00', place: 'Grande salle', people: 62, budget: 180000, revenue: 0, state: 'Confirmé' },
+  { id: 'ev3', type: 'Retraite',      title: 'Retraite de sept jours',  date: '02 sept. 2026', time: '06:00', place: 'Monastère', people: 24, budget: 620000, revenue: 1800000, state: 'Inscriptions' },
+  { id: 'ev4', type: 'Compétition',   title: 'Tournoi régional',        date: '19 sept. 2026', time: '08:00', place: 'Antananarivo', people: 14, budget: 940000, revenue: 0, state: 'Préparation' },
+  { id: 'ev5', type: 'Portes ouvertes', title: 'Journée portes ouvertes', date: '04 oct. 2026', time: '09:00', place: 'Monastère', people: 0, budget: 240000, revenue: 0, state: 'Brouillon' }
+];
+
+/* ---------------------------------------------- Documents */
+const DOCS = [
+  { id: 'd1', name: 'Certificat — Ceinture jaune, R. Andry', type: 'Certificat', date: '12 mars 2026', size: '218 Ko' },
+  { id: 'd2', name: 'Rapport d’examen — Blanc → Jaune',      type: 'Rapport',    date: '12 mars 2026', size: '640 Ko' },
+  { id: 'd3', name: 'Reçu de don — Rakoto Jean',             type: 'Reçu',       date: '10 août 2026', size: '96 Ko' },
+  { id: 'd4', name: 'Rapport financier — Juillet 2026',      type: 'Finance',    date: '02 août 2026', size: '1,2 Mo' },
+  { id: 'd5', name: 'Attestation de résidence — L. Mamy',    type: 'Attestation',date: '18 juil. 2026', size: '142 Ko' },
+  { id: 'd6', name: 'Fiche élève — Miora Tantely',           type: 'Fiche',      date: '30 juin 2026', size: '310 Ko' }
+];
+
+/* ---------------------------------------------- Notifications */
+const NOTIFS = [
+  { id: 'n1', kind: 'alert',    title: 'Stock d’huile faible — 4 L restants', time: 'Il y a 20 min', unread: true,  to: 'stock' },
+  { id: 'n2', kind: 'martial',  title: 'Examen Jaune → Orange dans 2 jours',  time: 'Il y a 2 h',    unread: true,  to: 'exams' },
+  { id: 'n3', kind: 'users',    title: '2 élèves absents depuis 3 séances',   time: 'Il y a 5 h',    unread: true,  to: 'students' },
+  { id: 'n4', kind: 'calendar', title: 'Entraînement demain à 07:00 — Formes', time: 'Hier',         unread: false, to: 'trainings' },
+  { id: 'n5', kind: 'coin',     title: 'Cotisation reçue — Miora Tantely',    time: 'Hier',          unread: false, to: 'finance' },
+  { id: 'n6', kind: 'temple',   title: 'Chambre B204 remise en service',      time: 'Il y a 2 j',    unread: false, to: 'rooms' }
+];
+
+/* ---------------------------------------------- Rôles & permissions */
+const ROLES = [
+  { id: 'r1', name: 'Super Administrateur', people: 1,  scope: 'Accès total, gestion des rôles' },
+  { id: 'r2', name: 'Administrateur',       people: 2,  scope: 'Gestion complète sauf rôles' },
+  { id: 'r3', name: 'Grand Maître',         people: 1,  scope: 'Arts martiaux, grades, examens' },
+  { id: 'r4', name: 'Maître',               people: 3,  scope: 'Groupes, présences, évaluations' },
+  { id: 'r5', name: 'Gestionnaire',         people: 2,  scope: 'Finances, stocks, chambres' },
+  { id: 'r6', name: 'Personnel',            people: 6,  scope: 'Repas, travaux, entretien' },
+  { id: 'r7', name: 'Élève',                people: 48, scope: 'Profil, parcours, paiements' }
+];
+
+const PERMISSIONS = [
+  { group: 'Arts martiaux', items: [
+    { n: 'Consulter les élèves',      on: true },
+    { n: 'Prendre les présences',     on: true },
+    { n: 'Évaluer un examen',         on: true },
+    { n: 'Valider un grade',          on: false }
+  ]},
+  { group: 'Vie du monastère', items: [
+    { n: 'Modifier le planning',      on: true },
+    { n: 'Attribuer une chambre',     on: false },
+    { n: 'Gérer les repas',           on: false }
+  ]},
+  { group: 'Finances', items: [
+    { n: 'Consulter le solde',        on: false },
+    { n: 'Enregistrer un don',        on: false },
+    { n: 'Exporter un rapport',       on: false }
+  ]}
+];
+
+/* ---------------------------------------------- Parcours martial */
+const JOURNEY = [
+  { time: 'Mars 2024',  title: 'Entrée au monastère',        meta: 'Admis dans le groupe débutant', state: 'done' },
+  { time: 'Juin 2024',  title: 'Première forme apprise',     meta: 'Wu Bu Quan — 18 mouvements',    state: 'done' },
+  { time: 'Mars 2026',  title: 'Ceinture jaune obtenue',     meta: 'Moyenne 16,4/20',               state: 'milestone' },
+  { time: 'Juin 2026',  title: '42 entraînements suivis',    meta: '87 % de présence',              state: 'done' },
+  { time: 'Août 2026',  title: 'Examen Jaune → Orange',      meta: '15 août — dans 2 jours',        state: 'now' },
+  { time: '—',          title: 'Ceinture orange',            meta: '4 techniques restantes',        state: 'locked' }
+];
+
+/* ---------------------------------------------- Présences */
+const ROLL = [
+  { id: 'p1', present: true }, { id: 'p2', present: true },
+  { id: 'p4', present: false }, { id: 'p6', present: true },
+  { id: 'p7', present: true }, { id: 'p5', present: false },
+  { id: 'p3', present: true }, { id: 'p8', present: true }
+];
+
+/* ---------------------------------------------- Recherche */
+const SEARCH_INDEX = [
+  { label: 'Rakoto Andry',  kind: 'Élève',        to: 'student' },
+  { label: 'Rakoto Jean',   kind: 'Donateur',     to: 'member' },
+  { label: 'Ceinture jaune',kind: 'Grade',        to: 'gradeDetail' },
+  { label: 'Chambre A101',  kind: 'Chambre',      to: 'rooms' },
+  { label: 'Examen Jaune → Orange', kind: 'Examen', to: 'exams' },
+  { label: 'Reçu de don — Rakoto Jean', kind: 'Document', to: 'documents' }
+];
+
+/* ---------------------------------------------- Session courante */
+const MONASTERY = {
+  name: 'Long Shan',
+  subtitle: 'Monastère & école d’arts martiaux',
+  place: 'Antananarivo',
+  todayLabel: 'Jeudi 13 août 2026',
+  maxim: 'La maîtrise commence par la constance.',
+  stats: { present: 24, residents: 18, exams: 3, attendance: 91 }
+};
+
+  </script>
+  <script>
+/* ============================================================
+   ui.js — Icônes + fabriques de composants
+   Chaque fonction retourne une chaîne HTML. Elles constituent
+   la bibliothèque partagée par tous les écrans.
+   ============================================================ */
+
+/* ---------------------------------------------- Icônes
+   Trait de 1.6px, bouts arrondis, 24×24. Volontairement peu
+   nombreuses : l'app privilégie le mot sur le pictogramme.     */
+const I = (d, extra = '') =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${extra}${d}</svg>`;
+
+const icon = {
+  home:     I('<path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z"/>'),
+  /* Pratiquant en garde — marque du dojo. */
+  martial:  I('<circle cx="12" cy="4.8" r="2.2"/><path d="M12 7.4v5.2"/><path d="m5.5 10.6 6.5-1.4 6.5 1.4"/><path d="m12 12.6-3.6 7.4"/><path d="m12 12.6 3.6 7.4"/>'),
+  community:I('<circle cx="9" cy="8" r="3"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.5a3 3 0 0 1 0 5"/><path d="M17.5 14.2A5.5 5.5 0 0 1 20.5 19"/>'),
+  temple:   I('<path d="M3 9h18"/><path d="M12 3 4 8h16z"/><path d="M5.5 9v10"/><path d="M18.5 9v10"/><path d="M3 19h18"/><path d="M10 19v-4a2 2 0 0 1 4 0v4"/>'),
+  more:     I('<path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h10"/>'),
+  bell:     I('<path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 13 6 9"/><path d="M10 18a2 2 0 0 0 4 0"/>'),
+  search:   I('<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/>'),
+  back:     I('<path d="M15 5 8 12l7 7"/>'),
+  chev:     I('<path d="m9 5 7 7-7 7"/>'),
+  check:    I('<path d="m5 12.5 4.5 4.5L19 7"/>'),
+  plus:     I('<path d="M12 5v14"/><path d="M5 12h14"/>'),
+  seal:     I('<rect x="4" y="4" width="16" height="16" rx="5"/><path d="M9 12h6"/><path d="M12 9v6"/>'),
+  calendar: I('<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17"/><path d="M8 3v4"/><path d="M16 3v4"/>'),
+  clock:    I('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'),
+  users:    I('<circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/>'),
+  belt:     I('<path d="M3 10h18v4H3z"/><path d="M9 14v6l3-2 3 2v-6"/>'),
+  box:      I('<path d="M4 8.5 12 4l8 4.5v7L12 20l-8-4.5z"/><path d="M4 8.5 12 13l8-4.5"/><path d="M12 13v7"/>'),
+  coin:     I('<ellipse cx="12" cy="7" rx="7.5" ry="3.2"/><path d="M4.5 7v10c0 1.8 3.4 3.2 7.5 3.2s7.5-1.4 7.5-3.2V7"/><path d="M4.5 12c0 1.8 3.4 3.2 7.5 3.2s7.5-1.4 7.5-3.2"/>'),
+  doc:      I('<path d="M6 3h7l5 5v13H6z"/><path d="M13 3v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/>'),
+  gear:     I('<circle cx="12" cy="12" r="3"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8"/>'),
+  bed:      I('<path d="M3 18v-8"/><path d="M3 13h18v5"/><path d="M21 18v-4a3 3 0 0 0-3-3H8"/><circle cx="7" cy="10" r="2"/>'),
+  bowl:     I('<path d="M3.5 11h17a8.5 8.5 0 0 1-17 0z"/><path d="M12 11c0-2 2-2.5 2-4s-2-2-2-3.5"/><path d="M4 20h16"/>'),
+  lotus:    I('<path d="M12 4c2 2.2 3 4.6 3 7-2 .6-4 .6-6 0 0-2.4 1-4.8 3-7z"/><path d="M5 9c2.7-.4 5 .6 6.6 2.6C10 14 7.5 14.6 5 14 3.9 12.5 3.9 10.5 5 9z"/><path d="M19 9c1.1 1.5 1.1 3.5 0 5-2.5.6-5 0-6.6-2.4C14 9.6 16.3 8.6 19 9z"/><path d="M4 15c2.4 3 5 4.5 8 4.5s5.6-1.5 8-4.5"/>'),
+  flag:     I('<path d="M6 21V4"/><path d="M6 5h11l-2 3.5L17 12H6z"/>'),
+  alert:    I('<path d="M12 4.5 21 19H3z"/><path d="M12 10v4"/><path d="M12 16.6v.4"/>'),
+  qr:       I('<rect x="4" y="4" width="6" height="6" rx="1.4"/><rect x="14" y="4" width="6" height="6" rx="1.4"/><rect x="4" y="14" width="6" height="6" rx="1.4"/><path d="M14 14h2.5v2.5H14z"/><path d="M20 14v2M17.5 20H20v-2.5"/><path d="M14 20h1"/>'),
+  logout:   I('<path d="M14 4H6v16h8"/><path d="m17 8 4 4-4 4"/><path d="M21 12h-9"/>'),
+  eye:      I('<path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.6"/>'),
+  lock:     I('<rect x="4.5" y="10" width="15" height="10.5" rx="3"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/>'),
+  sync:     I('<path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v4h-4"/>'),
+  trend:    I('<path d="m4 16 5-5 3.5 3.5L20 7"/><path d="M15 7h5v5"/>'),
+  filter:   I('<path d="M4 6h16"/><path d="M7 12h10"/><path d="M10 18h4"/>'),
+  edit:     I('<path d="M4 20h4L19 9a2.5 2.5 0 0 0-3.5-3.5L4.5 16.5z"/>'),
+  megaphone:I('<path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/>'),
+  book:     I('<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H19v3H6.5"/>'),
+  x:        I('<path d="M6 6l12 12M18 6 6 18"/>'),
+  dots:     I('<circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none"/>'),
+  sun:      I('<circle cx="12" cy="12" r="4"/><path d="M12 2.5V5M12 19v2.5M2.5 12H5M19 12h2.5M5.2 5.2 7 7M17 17l1.8 1.8M18.8 5.2 17 7M7 17l-1.8 1.8"/>'),
+  moon:     I('<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>')
+};
+
+/* ---------------------------------------------- Utilitaires */
+const initials = (name) =>
+  name.split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+
+const money = (n) => n.toLocaleString('fr-FR').replace(/ |,/g, ' ') + ' Ar';
+
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/* ---------------------------------------------- Composants */
+
+/** Barre d'application. `back` = clé d'écran de retour, ou null. */
+function appbar({ title = '', back = null, actions = '', flush = false } = {}) {
+  return `<header class="appbar${flush ? ' appbar--flush' : ''}">
+    ${back
+      ? `<button class="iconbtn" data-nav="${back}" aria-label="Retour">${icon.back}</button>`
+      : '<span style="width:44px"></span>'}
+    <h1 class="appbar__title">${esc(title)}</h1>
+    <div class="row">${actions || '<span style="width:44px"></span>'}</div>
+  </header>`;
+}
+
+/** Sur-titre + titre de section, avec action optionnelle à droite. */
+function sectionHead(overline, action = null) {
+  return `<div class="section__head">
+    <p class="overline">${esc(overline)}</p>
+    ${action ? `<button class="section__action" data-nav="${action.to}">${esc(action.label)}</button>` : ''}
+  </div>`;
+}
+
+/** `one: true` n'affiche qu'une initiale — utilisé dans les piles
+    d'avatars, où le chevauchement masquerait la seconde lettre. */
+function avatar(person, size = 'sm', { one = false } = {}) {
+  const ring = person.beltColor ? ` style="--ring:${person.beltColor}"` : '';
+  const cls = person.beltColor ? ' avatar--ringed' : '';
+  const label = one ? initials(person.name)[0] : initials(person.name);
+  return `<span class="avatar avatar--${size}${cls}"${ring}>${label}</span>`;
+}
+
+function belt(person) {
+  if (!person.belt) return '';
+  return `<span class="belt"><i class="belt__disc" style="--belt:${person.beltColor}"></i>
+    <span class="belt__label">${esc(person.belt)}</span></span>`;
+}
+
+/** Anneau de progression. size en px, value 0–100. */
+function ring(value, { size = 92, stroke = 6, label = null, color = 'var(--gold)' } = {}) {
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const off = c * (1 - value / 100);
+  return `<div class="ring-wrap" style="width:${size}px;height:${size}px">
+    <svg class="ring" width="${size}" height="${size}" style="--circ:${c}">
+      <circle class="ring__track" cx="${size / 2}" cy="${size / 2}" r="${r}" stroke-width="${stroke}"/>
+      <circle class="ring__value" cx="${size / 2}" cy="${size / 2}" r="${r}" stroke-width="${stroke}"
+              stroke-dasharray="${c}" stroke-dashoffset="${off}" style="stroke:${color}"/>
+    </svg>
+    <div class="ring-wrap__label">${label ?? `<span class="num heading">${value}%</span>`}</div>
+  </div>`;
+}
+
+function bar(value, variant = '') {
+  return `<div class="bar"><div class="bar__fill ${variant}" style="width:${value}%"></div></div>`;
+}
+
+/** Ligne de liste générique. */
+function item({ lead = '', title, sub = '', end = '', to = null, extra = '' }) {
+  const tag = to ? 'button' : 'div';
+  return `<${tag} class="item" ${to ? `data-nav="${to}"` : ''} ${extra}>
+    ${lead}
+    <span class="grow">
+      <span class="item__title" style="display:block">${title}</span>
+      ${sub ? `<span class="item__sub" style="display:block">${sub}</span>` : ''}
+    </span>
+    <span class="item__end">${end}${to ? `<span class="chevron">${icon.chev}</span>` : ''}</span>
+  </${tag}>`;
+}
+
+/** Étape de timeline. state: done | now | next | locked | milestone */
+function tlRow({ time = '', title, meta = '', state = 'next', to = null }) {
+  const tag = to ? 'button' : 'div';
+  return `<${tag} class="tl tl--${state}" ${to ? `data-nav="${to}"` : ''}
+      style="${to ? 'text-align:left;width:100%' : ''}">
+    <span class="tl__time num">${esc(time)}</span>
+    <span class="tl__rail"><i class="tl__node"></i></span>
+    <span class="tl__body">
+      <span class="tl__title" style="display:block">${esc(title)}</span>
+      ${meta ? `<span class="tl__meta" style="display:block">${esc(meta)}</span>` : ''}
+    </span>
+  </${tag}>`;
+}
+
+function badge(text, variant = '') {
+  return `<span class="badge ${variant ? 'badge--' + variant : ''}">${esc(text)}</span>`;
+}
+
+/** État vide illustré : temple minimaliste au trait. */
+function empty(message, quote) {
+  return `<div class="empty">
+    <div class="empty__art">${I(`
+      <path d="M3 20h18" stroke-width="1.2"/>
+      <path d="M12 4 5 8.5h14z" stroke-width="1.2"/>
+      <path d="M6.5 8.5V20M17.5 8.5V20" stroke-width="1.2"/>
+      <path d="M4 11.5h16" stroke-width="1.2"/>
+      <path d="M10 20v-4.5a2 2 0 0 1 4 0V20" stroke-width="1.2"/>
+      <path d="M12 2v2" stroke-width="1.2"/>`)}</div>
+    <p class="body">${esc(message)}</p>
+    <p class="empty__quote">« ${esc(quote)} »</p>
+  </div>`;
+}
+
+/** Squelette de chargement générique pour une liste. */
+function loadingList(n = 4) {
+  return `<div class="stack gap-3 pad">${Array.from({ length: n }, () => `
+    <div class="card row gap-3">
+      <div class="skel" style="width:48px;height:48px;border-radius:34%"></div>
+      <div class="grow stack gap-2">
+        <div class="skel" style="height:12px;width:58%"></div>
+        <div class="skel" style="height:10px;width:36%"></div>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+/** Bloc d'erreur avec action de reprise. */
+function errorState(message, retryLabel = 'Réessayer') {
+  return `<div class="empty">
+    <div class="empty__art" style="color:var(--accent)">${icon.alert}</div>
+    <p class="heading">Connexion interrompue</p>
+    <p class="sub" style="max-width:250px">${esc(message)}</p>
+    <button class="btn btn--outline btn--sm mt-3" data-action="retry">${icon.sync}${esc(retryLabel)}</button>
+  </div>`;
+}
+
+  </script>
+  <script>
+/* ============================================================
+   screens-core.js — Écrans 01 à 16 + séance
+   Identité, accueils, module Arts martiaux
+   ============================================================ */
+
+const SCREENS = {};
+const screen = (key, def) => { SCREENS[key] = def; };
+
+/* ============================================================
+   01. Splash — identité du monastère
+   ============================================================ */
+screen('splash', {
+  label: '01 · Splash',
+  chrome: false,
+  render: () => `
+  <div class="screen" style="justify-content:center;align-items:center;gap:var(--s-6);
+       background:var(--surface-ink);color:var(--text-on-ink);text-align:center;padding:var(--gutter)">
+    <div class="seal seal--lg stamp" style="width:96px;height:96px;font-size:40px">龍</div>
+    <div class="stack gap-2" style="align-items:center">
+      <h1 class="display" style="color:var(--gold-bright);letter-spacing:0.04em">LONG SHAN</h1>
+      <p class="overline" style="color:var(--text-on-ink-dim)">${MONASTERY.subtitle}</p>
+    </div>
+    <div class="rule" style="width:160px;color:rgba(198,161,91,.35)"><i></i></div>
+    <p class="sub" style="color:var(--text-on-ink-dim);font-family:var(--font-display);font-style:italic">
+      « ${MONASTERY.maxim} »</p>
+    <div class="row gap-2 dim" style="position:absolute;bottom:56px;font-size:12px">
+      <span class="spin" style="width:14px;height:14px;display:block">${icon.sync}</span>
+      Préparation de l’espace…
+    </div>
+  </div>`
+});
+
+/* ============================================================
+   02. Connexion — inclut un état d'erreur de champ
+   ============================================================ */
+screen('login', {
+  label: '02 · Connexion',
+  chrome: false,
+  render: () => `
+  <div class="screen scroll" style="padding:var(--s-12) var(--gutter) var(--s-8)">
+    <div class="stack gap-3" style="align-items:center;text-align:center">
+      <div class="seal seal--md">龍</div>
+      <h1 class="title mt-2">Long Shan</h1>
+      <p class="sub">Entrez pour rejoindre le monastère.</p>
+    </div>
+
+    <div class="stack gap-4 mt-8">
+      <label class="field">
+        <span class="field__label">Identifiant</span>
+        <input class="input" value="maitre.chen" autocomplete="username">
+      </label>
+      <div class="field field--error">
+        <span class="field__label">Mot de passe</span>
+        <div class="row gap-2">
+          <input class="input" type="password" value="••••••••" autocomplete="current-password">
+          <button class="iconbtn" aria-label="Afficher">${icon.eye}</button>
+        </div>
+        <span class="field__error">${icon.alert} Mot de passe incorrect. 2 essais restants.</span>
+      </div>
+      <button class="btn btn--primary btn--block" data-nav="homeMaster">Entrer</button>
+      <button class="btn btn--ghost btn--block btn--sm">Mot de passe oublié</button>
+    </div>
+
+    <div class="rule mt-8"><i></i></div>
+    <p class="caption mt-4" style="text-align:center">Choisir un espace de démonstration</p>
+    <div class="stack gap-2 mt-3">
+      ${[['homeMaster', 'Espace Maître', 'Maître Ravaka'],
+         ['homeAdmin', 'Espace Administrateur', 'Intendance'],
+         ['homeStudent', 'Espace Élève', 'Rakoto Andry']].map(([to, t, s]) => `
+        <button class="card card--tap row gap-3" data-nav="${to}">
+          <span class="seal seal--sm seal--ink">${icon.seal}</span>
+          <span class="grow"><span class="item__title" style="display:block">${t}</span>
+          <span class="item__sub" style="display:block">${s}</span></span>
+          <span class="chevron">${icon.chev}</span>
+        </button>`).join('')}
+    </div>
+  </div>`
+});
+
+/* ---------------------------------------------- Fragments partagés */
+
+/** En-tête d'accueil : salutation, date, maxime. */
+function homeHeader(name, meta) {
+  return `<div class="pad" style="padding-top:var(--s-2)">
+    <div class="between">
+      <div class="grow">
+        <p class="overline">${esc(MONASTERY.todayLabel)}</p>
+        <h1 class="title mt-2">Bonjour, ${esc(name)}</h1>
+      </div>
+      <button class="iconbtn" data-nav="notifications" aria-label="Notifications">
+        ${icon.bell}<i class="iconbtn__dot"></i></button>
+      <button class="iconbtn" data-nav="search" aria-label="Rechercher">${icon.search}</button>
+    </div>
+    <p class="sub mt-3" style="font-family:var(--font-display);font-style:italic;color:var(--text-secondary)">
+      ${esc(meta)}</p>
+  </div>`;
+}
+
+/** Composition « Monastère aujourd'hui » — asymétrique, un seul bloc. */
+function monasteryPulse() {
+  const s = MONASTERY.stats;
+  return `<div class="section" style="margin-top:var(--s-6)">
+    <div class="ink rise">
+      <p class="overline">Monastère aujourd’hui</p>
+      <div class="between mt-4" style="align-items:flex-end">
+        <div>
+          <p class="num" style="font-size:52px;line-height:52px;font-family:var(--font-display)">${s.present}</p>
+          <p class="sub mt-2">Élèves présents</p>
+        </div>
+        ${ring(s.attendance, { size: 84, stroke: 5, color: 'var(--gold-bright)',
+          label: `<span class="num" style="font-size:19px;font-family:var(--font-display);color:var(--gold-bright)">${s.attendance}%</span>
+                  <span class="caption" style="color:var(--text-on-ink-dim)">semaine</span>` })}
+      </div>
+      <div class="rule mt-5" style="color:rgba(198,161,91,.25)"><i></i></div>
+      <div class="row mt-4" style="gap:var(--s-6)">
+        <div><span class="num heading" style="color:var(--text-on-ink)">${s.residents}</span>
+          <span class="sub"> Résidents</span></div>
+        <div style="width:1px;align-self:stretch;background:rgba(198,161,91,.22)"></div>
+        <div><span class="num heading" style="color:var(--gold-bright)">${s.exams}</span>
+          <span class="sub"> Examens à venir</span></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/** Bloc dominant « Prochaine activité » — surface papier + sceau. */
+function nextActivity(s) {
+  return `<div class="section">
+    ${sectionHead('Prochaine activité')}
+    <div class="card card--paper rise" style="padding:var(--s-5)">
+      <div class="row gap-4">
+        <span class="seal seal--md">${icon.martial}</span>
+        <div class="grow">
+          <p class="heading">${esc(s.title)}</p>
+          <p class="sub mt-1">${esc(s.group)}</p>
+        </div>
+      </div>
+      <div class="between mt-5" style="align-items:flex-end">
+        <div>
+          <p class="num display" style="font-size:44px;line-height:44px">${s.time}</p>
+          <p class="caption mt-2">${esc(s.dur)} · ${esc(s.place)}</p>
+        </div>
+        <div class="stack gap-2" style="align-items:flex-end">
+          <span class="avatarstack">
+            ${['p1', 'p2', 'p6', 'p7'].map((id) => avatar(person(id), 'xs', { one: true })).join('')}
+          </span>
+          <span class="caption">${s.count} participants</span>
+        </div>
+      </div>
+      <button class="btn btn--primary btn--block mt-5" data-nav="session">Ouvrir la séance</button>
+    </div>
+  </div>`;
+}
+
+/** Timeline de la journée. */
+function dayTimeline(limit = null) {
+  const rows = limit ? TODAY.slice(0, limit) : TODAY;
+  return `<div class="section">
+    ${sectionHead('Déroulé de la journée', limit ? { label: 'Tout voir', to: 'planning' } : null)}
+    <div class="timeline">${rows.map((t) => tlRow(t)).join('')}</div>
+  </div>`;
+}
+
+/* ============================================================
+   03. Accueil Maître
+   ============================================================ */
+screen('homeMaster', {
+  label: '03 · Accueil maître', tab: 'home',
+  render: () => `
+  <div class="screen scroll">
+    ${homeHeader('Maître Chen', MONASTERY.maxim)}
+    ${monasteryPulse()}
+    ${nextActivity(SESSIONS[0])}
+
+    <div class="section">
+      ${sectionHead('Vos séances', { label: 'Planning', to: 'trainings' })}
+      <div class="list list--card">
+        ${SESSIONS.slice(0, 2).map((s) => item({
+          lead: `<span class="stack" style="width:44px"><span class="num heading">${s.time}</span>
+                 <span class="caption">${s.dur}</span></span>`,
+          title: esc(s.title),
+          sub: `${s.count} élèves · ${esc(s.place)}`,
+          end: s.state === 'now' ? badge('En cours', 'accent') : '',
+          to: 'attendance'
+        })).join('')}
+      </div>
+    </div>
+
+    <div class="section">
+      ${sectionHead('Progression')}
+      <button class="card card--tap row gap-3" data-nav="exams">
+        <span class="seal seal--sm seal--gold">${icon.belt}</span>
+        <span class="grow">
+          <span class="item__title" style="display:block">3 élèves prêts pour l’examen</span>
+          <span class="item__sub" style="display:block">Jaune → Orange · 15 août</span>
+        </span>
+        <span class="chevron">${icon.chev}</span>
+      </button>
+    </div>
+
+    <div class="section">
+      ${sectionHead('Attention')}
+      <button class="card card--tap row gap-3" data-nav="students"
+              style="border-color:color-mix(in srgb, var(--accent) 34%, transparent)">
+        <span class="seal seal--sm">${icon.alert}</span>
+        <span class="grow">
+          <span class="item__title" style="display:block">2 élèves absents depuis 3 séances</span>
+          <span class="item__sub" style="display:block">Rabe Jean · Randria Paul</span>
+        </span>
+        <span class="chevron">${icon.chev}</span>
+      </button>
+    </div>
+
+    <div class="section" style="margin-bottom:var(--s-8)">
+      ${sectionHead('Actions rapides')}
+      <div class="row wrap gap-2">
+        ${[['Présence', 'attendance'], ['Évaluer', 'evaluate'],
+           ['Progression', 'journey'], ['Annonce', null]].map(([l, to]) => `
+          <button class="btn btn--outline btn--sm" ${to ? `data-nav="${to}"` : 'data-action="toast"'}>${l}</button>`).join('')}
+      </div>
+    </div>
+  </div>`
+});
+
+/* ============================================================
+   04. Accueil Administrateur
+   ============================================================ */
+screen('homeAdmin', {
+  label: '04 · Accueil admin', tab: 'home',
+  render: () => `
+  <div class="screen scroll">
+    ${homeHeader('Intendance', 'Ce qui est bien rangé se trouve sans chercher.')}
+
+    <div class="section" style="margin-top:var(--s-6)">
+      <div class="ink rise">
+        <p class="overline">Solde du mois</p>
+        <p class="num display mt-3" style="color:var(--gold-bright)">2 110 000 <span style="font-size:20px">Ar</span></p>
+        <div class="row gap-5 mt-5">
+          <div><p class="caption">Revenus</p><p class="num heading" style="color:var(--text-on-ink)">4 850 000</p></div>
+          <div style="width:1px;align-self:stretch;background:rgba(198,161,91,.22)"></div>
+          <div><p class="caption">Dépenses</p><p class="num heading" style="color:var(--text-on-ink)">2 740 000</p></div>
+        </div>
+        <button class="btn btn--gold btn--block mt-5" data-nav="finance">Voir les finances</button>
+      </div>
+    </div>
+
+    <div class="section">
+      ${sectionHead('À traiter aujourd’hui')}
+      <div class="list list--card">
+        ${item({ lead: `<span class="seal seal--sm">${icon.alert}</span>`,
+          title: '2 stocks sous le seuil', sub: 'Huile · Légumineuses', to: 'stock' })}
+        ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.bowl}</span>`,
+          title: 'Déjeuner à confirmer', sub: '62 personnes prévues', to: 'meals' })}
+        ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.bed}</span>`,
+          title: 'Chambre B204 en entretien', sub: 'Depuis 4 jours', to: 'rooms' })}
+        ${item({ lead: `<span class="seal seal--sm seal--gold">${icon.coin}</span>`,
+          title: '4 cotisations en retard', sub: '320 000 Ar attendus', to: 'finance' })}
+      </div>
+    </div>
+
+    <div class="section">
+      ${sectionHead('Occupation', { label: 'Chambres', to: 'rooms' })}
+      <div class="card">
+        <div class="between"><p class="body">Places occupées</p>
+          <p class="num heading">17 <span class="sub">/ 26</span></p></div>
+        ${bar(65, 'bar__fill--wood')}
+        <p class="caption mt-3">9 places disponibles · 1 chambre en entretien</p>
+      </div>
+    </div>
+
+    <div class="section" style="margin-bottom:var(--s-8)">
+      ${sectionHead('Prochain événement', { label: 'Tout voir', to: 'events' })}
+      <button class="card card--tap card--paper" data-nav="events">
+        <div class="between">
+          <div><p class="overline">Cérémonie</p>
+            <p class="heading mt-2">Cérémonie des ceintures</p>
+            <p class="sub mt-1">15 août · 17:00 · Grande salle</p></div>
+          <span class="seal seal--sm seal--gold">${icon.belt}</span>
+        </div>
+      </button>
+    </div>
+  </div>`
+});
+
+/* ============================================================
+   05. Accueil Élève — volontairement plus simple
+   ============================================================ */
+screen('homeStudent', {
+  label: '05 · Accueil élève', tab: 'home',
+  render: () => {
+    const p = person('p1');
+    return `
+    <div class="screen scroll">
+      ${homeHeader('Andry', 'Chaque séance vaut mieux qu’une promesse.')}
+
+      <div class="section" style="margin-top:var(--s-6)">
+        <div class="ink rise" style="text-align:center">
+          <div class="stack gap-4" style="align-items:center">
+            ${ring(p.progress, { size: 132, stroke: 7, color: 'var(--gold-bright)',
+              label: `<span class="stack" style="align-items:center;gap:2px">
+                <span class="num" style="font-size:34px;font-family:var(--font-display);color:var(--gold-bright)">${p.progress}%</span>
+                <span class="caption" style="color:var(--text-on-ink-dim)">progression</span></span>` })}
+            <div>
+              <p class="title" style="color:var(--text-on-ink)">${esc(p.name)}</p>
+              <div class="row gap-2 mt-2" style="justify-content:center">
+                <span class="belt"><i class="belt__disc" style="--belt:${p.beltColor}"></i>
+                  <span class="belt__label" style="color:var(--gold-bright)">Ceinture jaune</span></span>
+              </div>
+            </div>
+          </div>
+          <div class="rule mt-5" style="color:rgba(198,161,91,.25)"><i></i></div>
+          <div class="row mt-4" style="justify-content:space-around">
+            <div><p class="num heading" style="color:var(--text-on-ink)">${p.sessions}</p><p class="caption">séances</p></div>
+            <div><p class="num heading" style="color:var(--text-on-ink)">${p.attendance}%</p><p class="caption">présence</p></div>
+            <div><p class="num heading" style="color:var(--text-on-ink)">${p.techniques}</p><p class="caption">techniques</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        ${sectionHead('Prochain entraînement')}
+        <div class="card card--paper">
+          <div class="between">
+            <div><p class="heading">Kung-Fu intermédiaire</p>
+              <p class="sub mt-1">Aujourd’hui · Cour d’honneur</p></div>
+            <p class="num display" style="font-size:32px">16:00</p>
+          </div>
+          <button class="btn btn--accent btn--block mt-4" data-action="toast">Confirmer ma présence</button>
+        </div>
+      </div>
+
+      <div class="section">
+        ${sectionHead('Prochaine étape')}
+        <button class="card card--tap row gap-3" data-nav="journey">
+          <span class="seal seal--sm seal--gold">${icon.flag}</span>
+          <span class="grow"><span class="item__title" style="display:block">Examen Jaune → Orange</span>
+            <span class="item__sub" style="display:block">Dans 2 jours · 4 techniques à revoir</span></span>
+          <span class="chevron">${icon.chev}</span>
+        </button>
+      </div>
+
+      <div class="section" style="margin-bottom:var(--s-8)">
+        <div class="stack gap-2">
+          ${[['Mon programme', 'techniques'], ['Mon parcours', 'journey'],
+             ['Mes présences', 'attendance'], ['Mes paiements', 'finance']].map(([l, to]) => `
+            <button class="card card--tap card--flat between" data-nav="${to}">
+              <span class="item__title">${l}</span><span class="chevron">${icon.chev}</span>
+            </button>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  }
+});
+
+/* ============================================================
+   06. Planning quotidien
+   ============================================================ */
+screen('planning', {
+  label: '06 · Planning', tab: 'temple',
+  render: () => `
+  <div class="screen">
+    ${appbar({ title: 'Planning', back: 'homeMaster',
+      actions: `<button class="iconbtn" data-action="sheet" aria-label="Ajouter">${icon.plus}</button>` })}
+    <div class="pad">
+      <div class="segmented"><button aria-pressed="true">Jour</button>
+        <button aria-pressed="false">Semaine</button><button aria-pressed="false">Mois</button></div>
+    </div>
+    <div class="filters">
+      ${['Jeu 13', 'Ven 14', 'Sam 15', 'Dim 16', 'Lun 17'].map((d, i) =>
+        `<button class="filter" aria-pressed="${i === 0}">${d}</button>`).join('')}
+    </div>
+    <div class="scroll">
+      <div class="section" style="margin-top:0">
+        <div class="timeline">${TODAY.map((t) => tlRow({ ...t, to: t.to || null })).join('')}</div>
+      </div>
+      <div class="section" style="margin-bottom:var(--s-8)">
+        ${sectionHead('Demain')}
+        <div class="timeline">
+          ${tlRow({ time: '05:30', title: 'Méditation', meta: 'Salle du Silence', state: 'locked' })}
+          ${tlRow({ time: '07:00', title: 'Formes traditionnelles', meta: 'Tous niveaux · 31 élèves', state: 'locked' })}
+        </div>
+      </div>
+    </div>
+  </div>`
+});
+
+/* ============================================================
+   07. Liste des élèves
+   ============================================================ */
+screen('students', {
+  label: '07 · Élèves', tab: 'martial',
+  render: () => `
+  <div class="screen">
+    ${appbar({ title: 'Élèves', back: 'martial',
+      actions: `<button class="iconbtn" data-nav="search" aria-label="Rechercher">${icon.search}</button>` })}
+    <div class="filters">
+      ${['Tous', 'Débutant', 'Intermédiaire', 'Avancé', 'Absents'].map((f, i) =>
+        `<button class="filter" aria-pressed="${i === 0}">${f}</button>`).join('')}
+    </div>
+    <div class="scroll">
+      <p class="caption pad">${STUDENTS.length} élèves · triés par progression</p>
+      <div class="section" style="margin-top:var(--s-3);margin-bottom:var(--s-8)">
+        <div class="list list--card">
+          ${[...STUDENTS].sort((a, b) => b.progress - a.progress).map((p) => item({
+            lead: avatar(p, 'md'),
+            title: esc(p.name),
+            sub: `${p.beltName} · ${p.sessions} séances`,
+            end: `<span class="stack" style="align-items:flex-end;gap:4px">
+                    <span class="num sub">${p.progress}%</span>
+                    <span style="width:44px">${bar(p.progress)}</span></span>`,
+            to: 'student'
+          })).join('')}
+        </div>
+      </div>
+    </div>
+    <button class="fab" data-action="sheet" aria-label="Ajouter un élève">${icon.plus}</button>
+  </div>`
+});
+
+/* ============================================================
+   08. Profil élève
+   ============================================================ */
+screen('student', {
+  label: '08 · Profil élève',
+  render: () => {
+    const p = person('p1');
+    return `
+    <div class="screen">
+      ${appbar({ title: '', back: 'students', flush: true,
+        actions: `<button class="iconbtn" data-action="sheet" aria-label="Options">${icon.dots}</button>` })}
+      <div class="scroll">
+        <div class="pad stack gap-4" style="align-items:center;text-align:center">
+          <span class="avatar avatar--lg avatar--ringed" style="--ring:${p.beltColor}">${initials(p.name)}</span>
+          <div>
+            <h1 class="title">${esc(p.name)}</h1>
+            <div class="row gap-2 mt-2" style="justify-content:center">
+              ${badge(p.role)}${badge(p.level, 'outline')}
+            </div>
+          </div>
+        </div>
+
+        <div class="section" style="margin-top:var(--s-6)">
+          <div class="card card--paper">
+            <div class="between">
+              <div>
+                <p class="overline overline--gold">Grade actuel</p>
+                <p class="title mt-2">Ceinture jaune</p>
+                <p class="caption mt-1">Obtenue le 12 mars 2026</p>
+              </div>
+              ${ring(p.progress, { size: 72, stroke: 5,
+                label: `<span class="num" style="font-size:16px;font-family:var(--font-display)">${p.progress}%</span>` })}
+            </div>
+            <div class="rule mt-5"><i></i></div>
+            <p class="sub mt-4">Progression vers la <b>ceinture orange</b></p>
+            <div class="mt-2">${bar(p.progress)}</div>
+          </div>
+        </div>
+
+        <div class="section">
+          ${sectionHead('Assiduité')}
+          <div class="card">
+            <div class="between">
+              <div><p class="num display" style="font-size:34px">${p.attendance}%</p>
+                <p class="caption">présence sur 12 semaines</p></div>
+              <div class="chart" style="width:150px;height:64px">
+                ${[80, 92, 75, 100, 87, 90, 83].map((v) => `
+                  <div class="chart__col"><div class="chart__stack">
+                    <div class="chart__seg chart__seg--in" style="height:${v}%"></div></div></div>`).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="row gap-3">
+            <div class="card grow" style="text-align:center">
+              <p class="num title">${p.sessions}</p><p class="caption mt-1">entraînements</p></div>
+            <div class="card grow" style="text-align:center">
+              <p class="num title">${p.techniques}</p><p class="caption mt-1">techniques maîtrisées</p></div>
+          </div>
+        </div>
+
+        <div class="section" style="margin-bottom:var(--s-8)">
+          <div class="list list--card">
+            ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.flag}</span>`,
+              title: 'Parcours martial', sub: '6 étapes · prochaine dans 2 jours', to: 'journey' })}
+            ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.martial}</span>`,
+              title: 'Techniques', sub: '7 maîtrisées · 5 à travailler', to: 'techniques' })}
+            ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.calendar}</span>`,
+              title: 'Présences', sub: '42 séances suivies', to: 'attendance' })}
+            ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.coin}</span>`,
+              title: 'Cotisations', sub: 'À jour · 25 000 Ar / mois', to: 'finance' })}
+          </div>
+          <button class="btn btn--gold btn--block mt-4" data-nav="evaluate">Évaluer cet élève</button>
+        </div>
+      </div>
+    </div>`;
+  }
+});
+
+/* ============================================================
+   09. Parcours martial
+   ============================================================ */
+screen('journey', {
+  label: '09 · Parcours martial',
+  render: () => `
+  <div class="screen">
+    ${appbar({ title: 'Parcours martial', back: 'student' })}
+    <div class="scroll">
+      <div class="pad">
+        <div class="ink">
+          <p class="overline">Rakoto Andry</p>
+          <p class="title mt-3" style="color:var(--text-on-ink)">2 ans, 5 mois au monastère</p>
+          <p class="sub mt-2">42 entraînements · 1 grade obtenu · 1 examen à venir</p>
+        </div>
+      </div>
+      <div class="section">
+        <div class="timeline">
+          ${JOURNEY.map((s) => tlRow({ ...s, to: 'gradeDetail' })).join('')}
+        </div>
+      </div>
+      <div class="section" style="margin-bottom:var(--s-8)">
+        <div class="card card--sunken" style="text-align:center">
+          <p class="sub" style="font-family:var(--font-display);font-style:italic">
+            « Le chemin se mesure en pas, non en promesses. »</p>
+        </div>
+      </div>
+    </div>
+  </div>`
+});
+
+/* ============================================================
+   10. Grades
+   ============================================================ */
+screen('grades', {
+  label: '10 · Grades', tab: 'martial',
+  render: () => `
+  <div class="screen">
+    ${appbar({ title: 'Grades', back: 'martial',
+      actions: `<button class="iconbtn" data-action="sheet" aria-label="Personnaliser">${icon.gear}</button>` })}
+    <div class="scroll">
+      <p class="sub pad">Système de grades du monastère — 7 niveaux, personnalisable.</p>
+      <div class="section" style="margin-top:var(--s-5);margin-bottom:var(--s-8)">
+        <div class="timeline">
+          ${BELTS.map((b, i) => {
+            const state = i < 1 ? 'done' : i === 1 ? 'milestone' : i === 2 ? 'now' : 'locked';
+            const counts = [6, 18, 12, 7, 3, 1, 1][i];
+            return `<button class="tl tl--${state}" data-nav="gradeDetail" style="text-align:left;width:100%">
+              <span class="tl__time"><i class="belt__disc" style="--belt:${b.color};width:14px;height:14px;display:inline-block"></i></span>
+              <span class="tl__rail"><i class="tl__node"></i></span>
+              <span class="tl__body">
+                <span class="tl__title" style="display:block">${b.name}</span>
+                <span class="tl__meta" style="display:block">${counts} élèves · ${3 + i * 2} techniques requises</span>
+              </span></button>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+  </div>`
+});
+
+/* ============================================================
+   11. Détail d'un grade
+   ============================================================ */
+screen('gradeDetail', {
+  label: '11 · Détail grade',
+  render: () => `
+  <div class="screen">
+    ${appbar({ title: '', back: 'grades', flush: true })}
+    <div class="scroll">
+      <div class="pad stack gap-4" style="align-items:center;text-align:center">
+        <span class="seal seal--lg" style="background:${beltOf('orange').color}">${icon.belt}</span>
+        <div>
+          <p class="overline overline--gold">Grade 3 sur 7</p>
+          <h1 class="title mt-2">Ceinture orange</h1>
+          <p class="sub mt-1">Durée moyenne : 10 mois</p>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="card card--paper">
+          <div class="between"><p class="overline">Votre progression</p>
+            <span class="num heading">66%</span></div>
+          <div class="mt-3">${bar(66)}</div>
+          <p class="caption mt-3">4 techniques et 1 forme restantes avant le passage.</p>
+        </div>
+      </div>
+
+      <div class="section">
+        ${sectionHead('Conditions de passage')}
+        <div class="list list--card">
+          ${[['Techniques requises', '9 techniques', 66, 'techniques'],
+             ['Formes', 'Lian Huan Quan', 80, 'techniques'],
+             ['Niveau de combat', 'Assaut souple, 3 reprises', 50, null],
+             ['Discipline', 'Aucun manquement sur 6 mois', 100, null],
+             ['Théorie', '12 principes fondamentaux', 45, null],
+             ['Assiduité', 'Minimum 80 % sur 6 mois', 87, null]].map(([t, s, v, to]) => item({
+            title: esc(t), sub: esc(s), to,
+            end: `<span class="stack" style="align-items:flex-end;gap:4px">
+                    <span class="num sub">${v}%</span>
+                    <span style="width:44px">${bar(v, v === 100 ? 'bar__fill--positive' : '')}</span></span>`
+          })).join('')}
+        </div>
+      </div>
+
+      <div class="section" style="margin-bottom:var(--s-8)">
+        ${sectionHead('Élèves à ce grade')}
+        <div class="row gap-3">
+          <span class="avatarstack">${['p6', 'p7'].map((id) => avatar(person(id), 'sm')).join('')}</span>
+          <span class="sub">12 élèves portent ce grade</span>
+        </div>
+      </div>
+    </div>
+  </div>`
+});
+
+/* ============================================================
+   12. Techniques (et formes)
+   ============================================================ */
+screen('techniques', {
+  label: '12 · Techniques', tab: 'martial',
+  render: () => `
+  <div class="screen">
+    ${appbar({ title: 'Techniques', back: 'martial' })}
+    <div class="tabs">
+      <button class="tab" aria-selected="true">Techniques</button>
+      <button class="tab" aria-selected="false">Formes</button>
+      <button class="tab" aria-selected="false">Théorie</button>
+    </div>
+    <div class="filters">
+      ${['Toutes', 'Position', 'Frappe', 'Jambe', 'Contrôle'].map((f, i) =>
+        `<button class="filter" aria-pressed="${i === 0}">${f}</button>`).join('')}
+    </div>
+    <div class="scroll">
+      <div class="section" style="margin-top:0">
+        ${sectionHead('Maîtrisées — 7')}
+        <div class="list list--card">
+          ${TECHNIQUES.filter((t) => t.mastered).map((t) => item({
+            lead: `<span class="seal seal--sm seal--ink" style="font-size:12px">${t.name[0]}</span>`,
+            title: `${esc(t.name)} <span class="dim" style="font-weight:400">· ${esc(t.fr)}</span>`,
+            sub: `${esc(t.cat)} · ceinture ${beltOf(t.belt).name.toLowerCase()}`,
+            end: `<span style="color:var(--positive);width:18px;height:18px;display:block">${icon.check}</span>`
+          })).join('')}
+        </div>
+      </div>
+      <div class="section" style="margin-bottom:var(--s-8)">
+        ${sectionHead('À travailler — 5')}
+        <div class="list list--card">
+          ${TECHNIQUES.filter((t) => !t.mastered).map((t) => item({
+            lead: `<span class="avatar avatar--sm" style="font-size:12px">${t.name[0]}</span>`,
+            title: `${esc(t.name)} <span class="dim" style="font-weight:400">· ${esc(t.fr)}</span>`,
+            sub: `${esc(t.cat)} · ceinture ${beltOf(t.belt).name.toLowerCase()}`,
+            to: 'gradeDetail'
+          })).join('')}
+        </div>
+      </div>
+    </div>
+  </div>`
+});
+
+/* ============================================================
+   13. Entraînements
+   ============================================================ */
+screen('trainings', {
+  label: '13 · Entraînements', tab: 'martial',
+  render: () => `
+  <div class="screen">
+    ${appbar({ title: 'Entraînements', back: 'martial',
+      actions: `<button class="iconbtn" data-action="sheet" aria-label="Filtrer">${icon.filter}</button>` })}
+    <div class="scroll">
+      <div class="section" style="margin-top:var(--s-4)">
+        ${sectionHead('Aujourd’hui')}
+        <div class="stack gap-3">
+          ${SESSIONS.filter((s) => !s.day).map((s) => `
+            <button class="card card--tap" data-nav="session">
+              <div class="row gap-4">
+                <span class="stack" style="width:52px">
+                  <span class="num heading">${s.time}</span>
+                  <span class="caption">${s.dur}</span>
+                </span>
+                <span class="grow stack gap-1">
+                  <span class="row gap-2">
+                    <span class="item__title">${esc(s.title)}</span>
+                    ${s.state === 'now' ? badge('En cours', 'accent') : ''}
+                    ${s.state === 'done' ? badge('Terminé', 'positive') : ''}
+                  </span>
+                  <span class="item__sub">${esc(s.master)} · ${esc(s.place)}</span>
+                </span>
+                <span class="stack" style="align-items:flex-end">
+                  <span class="num heading">${s.count}</span>
+                  <span class="caption">élèves</span>
+                </span>
+              </div>
+            </button>`).join('')}
+        </div>
+      </div>
+      <div class="section">
+        ${sectionHead('Groupes')}
+        <div class="list list--card">
+          ${GROUPS.map((g) => item({
+            lead: `<span class="seal seal--sm seal--ink">${icon.users}</span>`,
+            title: esc(g.name), sub: esc(g.slots),
+            end: `<span class="num sub">${g.members}</span>`, to: 'students'
+          })).join('')}
+        </div>
+      </div>
+      <div class="section" style="margin-bottom:var(--s-8)">
+        ${sectionHead('Demain')}
+        <div class="list list--card">
+          ${item({ lead: `<span class="stack" style="width:44px"><span class="num heading">07:00</span></span>`,
+            title: 'Formes traditionnelles', sub: 'Tous niveaux · Terrasse nord',
+            end: `<span class="num sub">31</span>`, to: 'session' })}
+        </div>
+      </div>
+    </div>
+    <button class="fab" data-action="sheet" aria-label="Créer une séance">${icon.plus}</button>
+  </div>`
+});
+
+/* ============================================================
+   Séance (ouverte depuis l'accueil / la timeline)
+   ============================================================ */
+screen('session', {
+  label: '· Détail séance',
+  render: () => `
+  <div class="screen">
+    ${appbar({ title: 'Séance', back: 'trainings',
+      actions: `<button class="iconbtn" data-action="sheet" aria-label="Options">${icon.dots}</button>` })}
+    <div class="scroll">
+      <div class="pad">
+        <div class="ink">
+          <p class="overline">En cours</p>
+          <p class="title mt-3" style="color:var(--text-on-ink)">Kung-Fu intermédiaire</p>
+          <p class="sub mt-2">16:00 – 17:30 · Cour d’honneur · Maître Ravaka</p>
+          <div class="row mt-5 gap-5">
+            <div><p class="num heading" style="color:var(--gold-bright)">21</p><p class="caption">présents</p></div>
+            <div><p class="num heading" style="color:var(--text-on-ink)">3</p><p class="caption">absents</p></div>
+            <div><p class="num heading" style="color:var(--text-on-ink)">88%</p><p class="caption">taux</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        ${sectionHead('Programme de la séance')}
+        <div class="timeline">
+          ${tlRow({ time: '16:00', title: 'Échauffement', meta: '15 min', state: 'done' })}
+          ${tlRow({ time: '16:15', title: 'Positions fondamentales', meta: 'Ma Bu · Gong Bu · Xie Bu', state: 'done' })}
+          ${tlRow({ time: '16:35', title: 'Forme Wu Bu Quan', meta: '18 mouvements', state: 'now' })}
+          ${tlRow({ time: '17:05', title: 'Assauts souples', meta: '3 reprises', state: 'next' })}
+          ${tlRow({ time: '17:25', title: 'Retour au calme', meta: '5 min', state: 'locked' })}
+        </div>
+      </div>
+      <div class="section" style="margin-bottom:var(--s-8)">
+        <div class="row gap-3">
+          <button class="btn btn--primary grow" data-nav="attendance">Présences</button>
+          <button class="btn btn--outline grow" data-nav="evaluate">Évaluer</button>
+        </div>
+      </div>
+    </div>
+  </div>`
+});
+
+/* ============================================================
+   14. Présence — interface la plus rapide de l'app
+   ============================================================ */
+screen('attendance', {
+  label: '14 · Présence',
+  render: () => {
+    const present = ROLL.filter((r) => r.present).length;
+    const rate = Math.round((present / ROLL.length) * 100);
+    return `
+    <div class="screen">
+      ${appbar({ title: 'Présence', back: 'session',
+        actions: `<button class="iconbtn" data-action="sheet" aria-label="QR Code">${icon.qr}</button>` })}
+      <div class="pad">
+        <div class="card card--paper">
+          <div class="between">
+            <div><p class="overline">Kung-Fu intermédiaire · 16:00</p>
+              <p class="title mt-2"><span class="num" data-roll-count>${present}</span>
+                <span class="sub"> / ${ROLL.length} présents</span></p></div>
+            <p class="num display" style="font-size:30px;color:var(--gold-text)" data-roll-rate>${rate}%</p>
+          </div>
+          <div class="mt-4" data-roll-bar>${bar(rate, 'bar__fill--positive')}</div>
+        </div>
+      </div>
+      <div class="section" style="margin-top:var(--s-5)">
+        <div class="between mb-2" style="margin-bottom:var(--s-3)">
+          <p class="overline">Appel</p>
+          <button class="section__action" data-action="rollAll">Tout cocher</button>
+        </div>
+        <div class="list list--card" data-roll>
+          ${ROLL.map((r) => {
+            const p = person(r.id);
+            return `<button class="check" role="checkbox" aria-checked="${r.present}" data-roll-id="${r.id}">
+              <span class="check__box">${icon.check}</span>
+              ${avatar(p, 'sm')}
+              <span class="grow">
+                <span class="check__name item__title" style="display:block">${esc(p.name)}</span>
+                <span class="item__sub" style="display:block">${p.beltName} · ${p.attendance}% de présence</span>
+              </span>
+            </button>`;
+          }).join('')}
+        </div>
+      </div>
+      <div class="section mt-4" style="margin-bottom:var(--s-8)">
+        <div class="card card--sunken row gap-3">
+          <span class="seal seal--sm seal--ink">${icon.qr}</span>
+          <span class="grow"><span class="item__title" style="display:block">Code de séance</span>
+            <span class="item__sub" style="display:block">Les élèves peuvent scanner pour s’enregistrer</span></span>
+          <span class="num heading" style="letter-spacing:.12em">7 4 2 9</span>
+        </div>
+        <button class="btn btn--primary btn--block mt-4" data-action="toast">Valider l’appel</button>
+      </div>
+    </div>`;
+  }
+});
+
+/* ============================================================
+   15. Examens
+   ============================================================ */
+screen('exams', {
+  label: '15 · Examens', tab: 'martial',
+  render: () => `
+  <div class="screen">
+    ${appbar({ title: 'Examens', back: 'martial',
+      actions: `<button class="iconbtn" data-action="sheet" aria-label="Créer">${icon.plus}</button>` })}
+    <div class="scroll">
+      <div class="pad" style="padding-top:var(--s-2)">
+        <div class="ink">
+          <p class="overline">Prochain examen · dans 2 jours</p>
+          <div class="row gap-3 mt-4" style="align-items:center">
+            <span class="belt__disc" style="--belt:${beltOf('jaune').color};width:18px;height:18px"></span>
+            <span class="title" style="color:var(--text-on-ink)">Jaune</span>
+            <span class="dim">→</span>
+            <span class="belt__disc" style="--belt:${beltOf('orange').color};width:18px;height:18px"></span>
+            <span class="title" style="color:var(--gold-bright)">Orange</span>
+          </div>
+          <p class="sub mt-3">${EXAM.date} · ${EXAM.time} · ${EXAM.place}</p>
+          <div class="rule mt-5" style="color:rgba(198,161,91,.25)"><i></i></div>
+          <div class="between mt-4">
+            <div class="row gap-3">
+              <span class="avatarstack">${['p1', 'p2', 'p6'].map((id) => avatar(person(id), 'xs', { one: true })).join('')}</span>
+              <span class="sub">${EXAM.candidates} candidats</span>
+            </div>
+            <span class="sub">Jury : 2 maîtres</span>
+          </div>
+          <button class="btn btn--gold btn--block mt-5" data-nav="evaluate">Préparer l’évaluation</button>
+        </div>
+      </div>
+
+      <div class="section">
+        ${sectionHead('Épreuves')}
+        <div class="list list--card">
+          ${EXAM.trials.map((t) => item({
+            title: esc(t.name), sub: `Coefficient ${t.weight} %`,
+            end: `<span class="chevron">${icon.chev}</span>`
+          })).join('')}
+        </div>
+      </div>
+
+      <div class="section">
+        ${sectionHead('Candidats')}
+        <div class="list list--card">
+          ${['p1', 'p2', 'p6'].map((id) => {
+            const p = person(id);
+            const ready = p.progress >= 74;
+            return item({
+              lead: avatar(p, 'sm'), title: esc(p.name),
+              sub: `Progression ${p.progress}%`,
+              end: ready ? badge('Prêt', 'positive') : badge('À revoir', 'warning'),
+              to: 'evaluate'
+            });
+          }).join('')}
+        </div>
+      </div>
+
+      <div class="section" style="margin-bottom:var(--s-8)">
+        ${sectionHead('Historique')}
+        <div class="list list--card">
+          ${item({ title: 'Blanc → Jaune', sub: '12 mars 2026 · 11 candidats',
+            end: badge('9 reçus', 'positive') })}
+          ${item({ title: 'Orange → Vert', sub: '4 déc. 2025 · 6 candidats',
+            end: badge('5 reçus', 'positive') })}
+        </div>
+      </div>
+    </div>
+  </div>`
+});
+
+/* ============================================================
+   16. Évaluation d'un élève
+   ============================================================ */
+screen('evaluate', {
+  label: '16 · Évaluation',
+  render: () => {
+    const p = person('p1');
+    const avg = (EXAM_SCORES.reduce((a, b) => a + b.score, 0) / EXAM_SCORES.length).toFixed(1);
+    return `
+    <div class="screen">
+      ${appbar({ title: 'Évaluation', back: 'exams' })}
+      <div class="scroll">
+        <div class="pad row gap-3">
+          ${avatar(p, 'md')}
+          <div class="grow"><p class="heading">${esc(p.name)}</p>
+            <p class="sub">Jaune → Orange · Candidat 1 sur 14</p></div>
+        </div>
+
+        <div class="section" style="margin-top:var(--s-5)">
+          ${sectionHead('Notes par épreuve')}
+          <div class="card stack gap-5">
+            ${EXAM_SCORES.map((s) => `
+              <div>
+                <div class="between">
+                  <span class="body">${esc(s.name)}</span>
+                  <span class="num heading">${s.score}<span class="sub">/20</span></span>
+                </div>
+                <div class="mt-2">${bar(s.score * 5, s.score >= 18 ? 'bar__fill--positive' : '')}</div>
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="ink between">
+            <div><p class="overline">Moyenne générale</p>
+              <p class="caption mt-2" style="color:var(--text-on-ink-dim)">Seuil de réussite : 12/20</p></div>
+            <p class="num display" style="color:var(--gold-bright)">${avg}</p>
+          </div>
+        </div>
+
+        <div class="section">
+          <label class="field">
+            <span class="field__label">Observation du maître</span>
+            <textarea class="input" rows="3" style="resize:none">Discipline exemplaire. Doit affermir les appuis dans la forme.</textarea>
+          </label>
+        </div>
+
+        <div class="section" style="margin-bottom:var(--s-8)">
+          <button class="btn btn--gold btn--block" data-action="validateGrade">Valider le grade</button>
+          <button class="btn btn--ghost btn--block mt-2 btn--sm" data-action="toast">Ajourner le candidat</button>
+        </div>
+      </div>
+    </div>`;
+  }
+});
+
+  </script>
+  <script>
+/* ============================================================
+   screens-life.js — Hubs + écrans 17 à 30 + états d'interface
+   ============================================================ */
+
+/* ============================================================
+   Hub — Arts martiaux (« dojo numérique »)
+   ============================================================ */
+screen('martial', {
+  label: '· Arts martiaux', tab: 'martial',
+  render: () => `
+  <div class="screen scroll">
+    <div class="pad" style="padding-top:var(--s-2)">
+      <p class="overline">Le dojo</p>
+      <h1 class="display mt-2">Arts martiaux</h1>
+    </div>
+
+    <div class="section" style="margin-top:var(--s-5)">
+      <div class="ink">
+        <div class="between">
+          <div>
+            <p class="overline">Séance en cours</p>
+            <p class="heading mt-2" style="color:var(--text-on-ink)">Kung-Fu intermédiaire</p>
+            <p class="sub mt-1">16:00 · 21 présents sur 24</p>
+          </div>
+          <span class="seal seal--md halo">${icon.martial}</span>
+        </div>
+        <button class="btn btn--gold btn--block mt-5" data-nav="session">Reprendre</button>
+      </div>
+    </div>
+
+    <div class="section">
+      ${sectionHead('Pratique')}
+      <div class="list list--card">
+        ${[['Élèves', '48 inscrits · 3 groupes', 'students', icon.users],
+           ['Maîtres', '1 grand maître · 3 maîtres', 'community', icon.belt],
+           ['Groupes', 'Débutant · Intermédiaire · Avancé', 'trainings', icon.users],
+           ['Entraînements', '4 séances cette semaine', 'trainings', icon.calendar],
+           ['Présences', 'Appel de la séance en cours', 'attendance', icon.check]
+          ].map(([t, s, to, ic]) => item({
+            lead: `<span class="seal seal--sm seal--ink">${ic}</span>`,
+            title: esc(t), sub: esc(s), to
+          })).join('')}
+      </div>
+    </div>
+
+    <div class="section" style="margin-bottom:var(--s-8)">
+      ${sectionHead('Transmission')}
+      <div class="list list--card">
+        ${[['Grades', '7 niveaux · personnalisable', 'grades', icon.belt],
+           ['Techniques', '12 techniques référencées', 'techniques', icon.martial],
+           ['Formes', '4 formes traditionnelles', 'techniques', icon.book],
+           ['Examens', 'Jaune → Orange dans 2 jours', 'exams', icon.flag],
+           ['Progression', '3 élèves prêts', 'journey', icon.trend]
+          ].map(([t, s, to, ic]) => item({
+            lead: `<span class="seal seal--sm seal--ink">${ic}</span>`,
+            title: esc(t), sub: esc(s), to
+          })).join('')}
+      </div>
+    </div>
+  </div>`
+});
+
+/* ============================================================
+   17. Communauté
+   ============================================================ */
+screen('community', {
+  label: '17 · Communauté', tab: 'community',
+  render: () => {
+    const groups = [
+      ['Maîtres', PEOPLE.filter((p) => p.role.includes('Maître'))],
+      ['Moines', PEOPLE.filter((p) => p.role === 'Moine')],
+      ['Élèves', STUDENTS.slice(0, 4)],
+      ['Personnel', PEOPLE.filter((p) => p.role === 'Personnel')],
+      ['Visiteurs & anciens', PEOPLE.filter((p) => ['Visiteur', 'Ancien élève', 'Donateur'].includes(p.role))]
+    ];
+    return `
+    <div class="screen">
+      <div class="pad" style="padding-top:var(--s-2)">
+        <div class="between">
+          <div><p class="overline">${PEOPLE.length + 51} personnes</p>
+            <h1 class="display mt-2">Communauté</h1></div>
+          <button class="iconbtn" data-nav="search" aria-label="Rechercher">${icon.search}</button>
+        </div>
+      </div>
+      <div class="filters">
+        ${['Tous', 'Élèves', 'Moines', 'Maîtres', 'Personnel', 'Résidents'].map((f, i) =>
+          `<button class="filter" aria-pressed="${i === 0}">${f}</button>`).join('')}
+      </div>
+      <div class="scroll">
+        ${groups.map(([label, list]) => `
+          <div class="section" style="margin-top:var(--s-6)">
+            ${sectionHead(`${label} — ${list.length}`)}
+            <div class="list list--card">
+              ${list.map((p) => item({
+                lead: avatar(p, 'md'),
+                title: esc(p.name),
+                sub: `${esc(p.level)}${p.resident ? ' · Résident' : ''}`,
+                end: p.belt ? `<i class="belt__disc" style="--belt:${p.beltColor}"></i>` : '',
+                to: 'member'
+              })).join('')}
+            </div>
+          </div>`).join('')}
+        <div style="height:var(--s-8)"></div>
+      </div>
+      <button class="fab" data-action="sheet" aria-label="Ajouter un membre">${icon.plus}</button>
+    </div>`;
+  }
+});
+
+/* ============================================================
+   18. Profil membre
+   ============================================================ */
+screen('member', {
+  label: '18 · Profil membre',
+  render: () => {
+    const p = person('p9');
+    return `
+    <div class="screen">
+      ${appbar({ title: '', back: 'community', flush: true,
+        actions: `<button class="iconbtn" data-action="sheet" aria-label="Options">${icon.dots}</button>` })}
+      <div class="scroll">
+        <div class="pad stack gap-4" style="align-items:center;text-align:center">
+          <span class="avatar avatar--lg avatar--ringed" style="--ring:${p.beltColor}">${initials(p.name)}</span>
+          <div><h1 class="title">${esc(p.name)}</h1>
+            <div class="row gap-2 mt-2" style="justify-content:center">
+              ${badge(p.role, 'gold')}${badge('Résident', 'outline')}
+            </div></div>
+        </div>
+
+        <div class="section" style="margin-top:var(--s-6)">
+          <div class="card">
+            <div class="row" style="justify-content:space-around">
+              <div style="text-align:center"><p class="num heading">7 ans</p><p class="caption mt-1">au monastère</p></div>
+              <div style="width:1px;align-self:stretch;background:var(--line)"></div>
+              <div style="text-align:center"><p class="num heading">${p.sessions}</p><p class="caption mt-1">séances</p></div>
+              <div style="width:1px;align-self:stretch;background:var(--line)"></div>
+              <div style="text-align:center"><p class="num heading">${p.attendance}%</p><p class="caption mt-1">présence</p></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          ${sectionHead('Informations')}
+          <div class="list list--card">
+            ${item({ title: 'Grade', end: `<span class="sub">${p.beltName}</span>` })}
+            ${item({ title: 'Chambre', end: `<span class="sub">${p.room}</span>`, to: 'rooms' })}
+            ${item({ title: 'Entré le', end: `<span class="sub">1ᵉʳ février 2019</span>` })}
+            ${item({ title: 'Responsabilité', end: `<span class="sub">Jardin & réfectoire</span>` })}
+            ${item({ title: 'Téléphone', end: `<span class="sub">${esc(p.phone)}</span>` })}
+          </div>
+        </div>
+
+        <div class="section" style="margin-bottom:var(--s-8)">
+          ${sectionHead('Documents liés', { label: 'Tout voir', to: 'documents' })}
+          <div class="list list--card">
+            ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.doc}</span>`,
+              title: 'Attestation de résidence', sub: 'PDF · 142 Ko', to: 'documents' })}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+});
+
+/* ============================================================
+   Hub — Vie du monastère
+   ============================================================ */
+screen('temple', {
+  label: '· Vie du monastère', tab: 'temple',
+  render: () => `
+  <div class="screen scroll">
+    <div class="pad" style="padding-top:var(--s-2)">
+      <p class="overline">${esc(MONASTERY.todayLabel)}</p>
+      <h1 class="display mt-2">Vie du monastère</h1>
+    </div>
+
+    <div class="section" style="margin-top:var(--s-5)">
+      <div class="card card--paper">
+        <div class="between">
+          <div><p class="overline">Maintenant</p>
+            <p class="heading mt-2">Kung-Fu intermédiaire</p>
+            <p class="sub mt-1">Cour d’honneur · jusqu’à 17:30</p></div>
+          <p class="num display" style="font-size:30px">16:00</p>
+        </div>
+      </div>
+    </div>
+
+    ${dayTimeline(5)}
+
+    <div class="section">
+      ${sectionHead('Gérer')}
+      <div class="list list--card">
+        ${[['Planning quotidien', 'Rythme du monastère', 'planning', icon.calendar],
+           ['Chambres', '17 places occupées sur 26', 'rooms', icon.bed],
+           ['Repas', '62 couverts aujourd’hui', 'meals', icon.bowl],
+           ['Stocks', '2 alertes de seuil', 'stock', icon.box],
+           ['Événements', '5 à venir', 'events', icon.flag],
+           ['Travaux & tâches', '6 tâches du jour', 'planning', icon.temple]
+          ].map(([t, s, to, ic]) => item({
+            lead: `<span class="seal seal--sm seal--ink">${ic}</span>`,
+            title: esc(t), sub: esc(s), to
+          })).join('')}
+      </div>
+    </div>
+    <div style="height:var(--s-8)"></div>
+  </div>`
+});
+
+/* ============================================================
+   19. Chambres
+   ============================================================ */
+screen('rooms', {
+  label: '19 · Chambres',
+  render: () => `
+  <div class="screen">
+    ${appbar({ title: 'Chambres', back: 'temple',
+      actions: `<button class="iconbtn" data-action="sheet" aria-label="Attribuer">${icon.plus}</button>` })}
+    <div class="scroll">
+      <div class="pad">
+        <div class="ink between">
+          <div><p class="overline">Occupation</p>
+            <p class="title mt-2" style="color:var(--text-on-ink)">17 <span class="sub">/ 26 places</span></p></div>
+          ${ring(65, { size: 66, stroke: 5, color: 'var(--gold-bright)',
+            label: `<span class="num sub" style="color:var(--gold-bright)">65%</span>` })}
+        </div>
+      </div>
+      ${BUILDINGS.map((b) => `
+        <div class="section">
+          ${sectionHead(b.name)}
+          <div class="stack gap-3">
+            ${b.rooms.map((r) => {
+              const full = r.taken >= r.cap;
+              const free = r.taken === 0;
+              const variant = r.state === 'Entretien' ? 'warning' : full ? 'danger' : free ? 'positive' : '';
+              return `<button class="card card--tap" data-action="sheet">
+                <div class="between">
+                  <div class="row gap-3">
+                    <span class="seal seal--sm seal--ink" style="font-size:13px">${r.id}</span>
+                    <span class="stack gap-1">
+                      <span class="item__title">${r.taken} / ${r.cap} places</span>
+                      <span class="item__sub">${r.cap - r.taken} disponible${r.cap - r.taken > 1 ? 's' : ''}</span>
+                    </span>
+                  </div>
+                  ${badge(r.state, variant)}
+                </div>
+                <div class="gauge mt-4">
+                  ${Array.from({ length: r.cap }, (_, i) =>
+                    `<i class="${i < r.taken ? 'on' : ''}"></i>`).join('')}
+                </div>
+              </button>`;
+            }).join('')}
+          </div>
+        </div>`).join('')}
+      <div style="height:var(--s-8)"></div>
+    </div>
+  </div>`
+});
+
+/* ============================================================
+   20. Repas
+   ============================================================ */
+screen('meals', {
+  label: '20 · Repas',
+  render: () => `
+  <div class="screen">
+    ${appbar({ title: 'Repas', back: 'temple',
+      actions: `<button class="iconbtn" data-action="sheet" aria-label="Menu">${icon.edit}</button>` })}
+    <div class="filters">
+      ${['Aujourd’hui', 'Demain', 'Semaine'].map((f, i) =>
+        `<button class="filter" aria-pressed="${i === 0}">${f}</button>`).join('')}
+    </div>
+    <div class="scroll">
+      ${MEALS.map((m, i) => `
+        <div class="section" style="margin-top:${i === 0 ? '0' : 'var(--s-6)'}">
+          <div class="card ${i === 1 ? 'card--paper' : ''}">
+            <div class="between">
+              <div>
+                <p class="overline">${esc(m.time)}</p>
+                <p class="title mt-2">${esc(m.name)}</p>
+              </div>
+              <div style="text-align:right">
+                <p class="num heading">${m.people}</p>
+                <p class="caption">personnes</p>
+              </div>
+            </div>
+            <p class="sub mt-4">${esc(m.menu)}</p>
+            <div class="rule mt-4"><i></i></div>
+            <div class="row wrap gap-2 mt-4">
+              ${m.items.map((it) => `
+                <span class="badge badge--outline">${esc(it.n)} · <b class="num">${esc(it.q)}</b></span>`).join('')}
+            </div>
+            ${i === 1 ? `<button class="btn btn--primary btn--block mt-5" data-action="toast">Confirmer le service</button>` : ''}
+          </div>
+        </div>`).join('')}
+      <div class="section" style="margin-bottom:var(--s-8)">
+        <div class="card card--sunken row gap-3">
+          <span class="seal seal--sm">${icon.alert}</span>
+          <span class="grow sub">Le stock d’huile (4 L) ne couvre pas la semaine.</span>
+          <button class="btn btn--sm btn--outline" data-nav="stock">Stocks</button>
+        </div>
+      </div>
+    </div>
+  </div>`
+});
+
+/* ============================================================
+   21. Stocks
+   ============================================================ */
+screen('stock', {
+  label: '21 · Stocks',
+  render: () => `
+  <div class="screen">
+    ${appbar({ title: 'Ressources', back: 'temple',
+      actions: `<button class="iconbtn" data-action="sheet" aria-label="Entrée de stock">${icon.plus}</button>` })}
+    <div class="scroll">
+      <div class="pad">
+        <div class="card row gap-3" style="border-color:color-mix(in srgb, var(--accent) 34%, transparent)">
+          <span class="seal seal--sm">${icon.alert}</span>
+          <span class="grow"><span class="item__title" style="display:block">2 articles sous le seuil</span>
+            <span class="item__sub" style="display:block">Huile · Légumineuses · Gants</span></span>
+        </div>
+      </div>
+      ${STOCK.map((c) => `
+        <div class="section">
+          ${sectionHead(c.cat)}
+          <div class="list list--card">
+            ${c.items.map((it) => {
+              const pct = Math.min(100, Math.round((it.q / (it.min * 2)) * 100));
+              const low = it.q < it.min;
+              return item({
+                title: esc(it.n),
+                sub: low ? `Sous le seuil de ${it.min} ${it.u}` : `Seuil : ${it.min} ${it.u}`,
+                end: `<span class="stack" style="align-items:flex-end;gap:5px">
+                        <span class="num heading">${it.q} <span class="sub" style="font-size:12px">${it.u}</span></span>
+                        <span class="gauge ${low ? 'gauge--low' : ''}" style="width:52px">
+                          ${Array.from({ length: 6 }, (_, i) =>
+                            `<i class="${i < Math.round(pct / 100 * 6) ? 'on' : ''}"></i>`).join('')}
+                        </span></span>`,
+                extra: low ? 'style="background:var(--danger-soft)"' : ''
+              });
+            }).join('')}
+          </div>
+        </div>`).join('')}
+      <div style="height:var(--s-8)"></div>
+    </div>
+  </div>`
+});
+
+/* ============================================================
+   22. Finances
+   ============================================================ */
+screen('finance', {
+  label: '22 · Finances',
+  render: () => {
+    const max = Math.max(...FINANCE.months.map((m) => Math.max(m.in, m.out)));
+    return `
+    <div class="screen">
+      ${appbar({ title: 'Finances', back: 'temple',
+        actions: `<button class="iconbtn" data-action="sheet" aria-label="Exporter">${icon.doc}</button>` })}
+      <div class="scroll">
+        <div class="pad">
+          <div class="ink">
+            <p class="overline">Solde · août 2026</p>
+            <p class="num display mt-3" style="color:var(--gold-bright)">2 110 000 <span style="font-size:18px">Ar</span></p>
+            <div class="row gap-5 mt-5">
+              <div><p class="caption">Revenus</p>
+                <p class="num heading" style="color:var(--text-on-ink)">4 850 000</p></div>
+              <div style="width:1px;align-self:stretch;background:rgba(198,161,91,.22)"></div>
+              <div><p class="caption">Dépenses</p>
+                <p class="num heading" style="color:var(--text-on-ink)">2 740 000</p></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          ${sectionHead('Six derniers mois')}
+          <div class="card">
+            <div class="chart">
+              ${FINANCE.months.map((m) => `
+                <div class="chart__col">
+                  <div class="chart__stack" style="flex-direction:row;align-items:flex-end;gap:3px">
+                    <div class="chart__seg chart__seg--in"  style="height:${m.in / max * 100}%"></div>
+                    <div class="chart__seg chart__seg--out" style="height:${m.out / max * 100}%"></div>
+                  </div>
+                  <span class="chart__label">${m.m}</span>
+                </div>`).join('')}
+            </div>
+            <div class="legend mt-4">
+              <span><i style="background:var(--wood)"></i>Revenus</span>
+              <span><i style="background:var(--accent)"></i>Dépenses</span>
+              <span class="dim">en millions d’Ariary</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          ${sectionHead('Revenus')}
+          <div class="card stack gap-4">
+            ${FINANCE.incomeLines.map((l) => `
+              <div>
+                <div class="between"><span class="body">${esc(l.n)}</span>
+                  <span class="num sub">${money(l.v)}</span></div>
+                <div class="mt-2">${bar(l.v / FINANCE.income * 100, 'bar__fill--wood')}</div>
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <div class="section">
+          ${sectionHead('Dépenses')}
+          <div class="card stack gap-4">
+            ${FINANCE.expenseLines.map((l) => `
+              <div>
+                <div class="between"><span class="body">${esc(l.n)}</span>
+                  <span class="num sub">${money(l.v)}</span></div>
+                <div class="mt-2">${bar(l.v / FINANCE.expense * 100, 'bar__fill--accent')}</div>
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <div class="section" style="margin-bottom:var(--s-8)">
+          <div class="list list--card">
+            ${item({ lead: `<span class="seal seal--sm seal--gold">${icon.coin}</span>`,
+              title: 'Dons', sub: '12 850 000 Ar collectés', to: 'donations' })}
+            ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.doc}</span>`,
+              title: 'Rapports financiers', sub: 'Juillet 2026 disponible', to: 'documents' })}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+});
+
+/* ============================================================
+   23. Dons
+   ============================================================ */
+screen('donations', {
+  label: '23 · Dons',
+  render: () => `
+  <div class="screen">
+    ${appbar({ title: 'Dons', back: 'finance' })}
+    <div class="scroll">
+      <div class="pad">
+        <div class="ink" style="text-align:center">
+          <p class="overline">Total des dons</p>
+          <p class="num display mt-3" style="color:var(--gold-bright)">12 850 000 <span style="font-size:18px">Ar</span></p>
+          <div class="rule mt-5" style="color:rgba(198,161,91,.25)"><i></i></div>
+          <p class="sub mt-4">Ce mois · <span class="num" style="color:var(--text-on-ink)">2 400 000 Ar</span></p>
+        </div>
+      </div>
+
+      <div class="section">
+        ${sectionHead('Derniers dons')}
+        <div class="list list--card">
+          ${DONATIONS.list.map((d) => item({
+            lead: `<span class="avatar avatar--sm">${initials(d.who)}</span>`,
+            title: esc(d.who), sub: `${esc(d.date)} · ${esc(d.dest)}`,
+            end: `<span class="num heading" style="color:var(--gold-text)">${d.amount.toLocaleString('fr-FR').replace(/,/g, ' ')}</span>`
+          })).join('')}
+        </div>
+      </div>
+
+      <div class="section" style="margin-bottom:var(--s-8)">
+        ${sectionHead('Enregistrer un don')}
+        <div class="card stack gap-4">
+          <label class="field"><span class="field__label">Donateur</span>
+            <input class="input" placeholder="Nom du donateur"></label>
+          <label class="field"><span class="field__label">Montant (Ar)</span>
+            <input class="input" placeholder="0" inputmode="numeric"></label>
+          <label class="field"><span class="field__label">Date</span>
+            <input class="input" value="13 août 2026"></label>
+          <div class="field"><span class="field__label">Destination</span>
+            <div class="row wrap gap-2">
+              ${['Général', 'Nourriture', 'Construction', 'Formation', 'Temple'].map((d, i) =>
+                `<button class="filter" aria-pressed="${i === 0}">${d}</button>`).join('')}
+            </div>
+          </div>
+          <button class="btn btn--gold btn--block" data-action="toast">Enregistrer le don</button>
+        </div>
+      </div>
+    </div>
+  </div>`
+});
+
+/* ============================================================
+   24. Événements
+   ============================================================ */
+screen('events', {
+  label: '24 · Événements',
+  render: () => `
+  <div class="screen">
+    ${appbar({ title: 'Événements', back: 'temple' })}
+    <div class="filters">
+      ${['À venir', 'Cérémonies', 'Compétitions', 'Retraites', 'Passés'].map((f, i) =>
+        `<button class="filter" aria-pressed="${i === 0}">${f}</button>`).join('')}
+    </div>
+    <div class="scroll">
+      <div class="section" style="margin-top:0">
+        <div class="stack gap-3">
+          ${EVENTS.map((e, i) => `
+            <button class="card card--tap ${i === 0 ? 'card--paper' : ''}" data-action="sheet">
+              <div class="row gap-4">
+                <span class="stack" style="width:54px;text-align:center">
+                  <span class="num heading">${e.date.split(' ')[0]}</span>
+                  <span class="caption">${e.date.split(' ')[1]}</span>
+                </span>
+                <span class="grow stack gap-1">
+                  <span class="overline">${esc(e.type)}</span>
+                  <span class="item__title">${esc(e.title)}</span>
+                  <span class="item__sub">${esc(e.time)} · ${esc(e.place)}</span>
+                </span>
+                ${badge(e.state, e.state === 'Confirmé' ? 'positive'
+                  : e.state === 'Brouillon' ? '' : 'warning')}
+              </div>
+              ${e.people ? `<div class="row gap-3 mt-4" style="padding-left:70px">
+                <span class="avatarstack">${['p3', 'p8', 'p1'].map((id) => avatar(person(id), 'xs', { one: true })).join('')}</span>
+                <span class="caption">${e.people} participants · budget ${money(e.budget)}</span>
+              </div>` : ''}
+            </button>`).join('')}
+        </div>
+      </div>
+      <div style="height:var(--s-8)"></div>
+    </div>
+    <button class="fab" data-action="sheet" aria-label="Créer un événement">${icon.plus}</button>
+  </div>`
+});
+
+/* ============================================================
+   25. Documents
+   ============================================================ */
+screen('documents', {
+  label: '25 · Documents',
+  render: () => `
+  <div class="screen">
+    ${appbar({ title: 'Documents', back: 'temple' })}
+    <div class="pad">
+      <div class="searchbar">${icon.search}<input placeholder="Rechercher un document"></div>
+    </div>
+    <div class="filters">
+      ${['Tous', 'Certificats', 'Attestations', 'Reçus', 'Rapports', 'Fiches'].map((f, i) =>
+        `<button class="filter" aria-pressed="${i === 0}">${f}</button>`).join('')}
+    </div>
+    <div class="scroll">
+      <div class="section" style="margin-top:0;margin-bottom:var(--s-8)">
+        <div class="list list--card">
+          ${DOCS.map((d) => item({
+            lead: `<span class="seal seal--sm seal--ink">${icon.doc}</span>`,
+            title: esc(d.name), sub: `${esc(d.type)} · ${esc(d.date)} · ${esc(d.size)}`,
+            to: 'documents'
+          })).join('')}
+        </div>
+      </div>
+    </div>
+    <button class="fab" data-action="sheet" aria-label="Ajouter un document">${icon.plus}</button>
+  </div>`
+});
+
+/* ============================================================
+   26. Notifications
+   ============================================================ */
+screen('notifications', {
+  label: '26 · Notifications',
+  render: () => {
+    const kindIcon = { alert: icon.alert, martial: icon.martial, users: icon.users,
+                       calendar: icon.calendar, coin: icon.coin, temple: icon.temple };
+    return `
+    <div class="screen">
+      ${appbar({ title: 'Notifications', back: 'homeMaster',
+        actions: `<button class="iconbtn" data-action="toast" aria-label="Tout marquer comme lu">${icon.check}</button>` })}
+      <div class="scroll pad">
+        <p class="overline mt-2">Aujourd’hui</p>
+        <div class="stack">
+          ${NOTIFS.filter((n) => n.unread).map((n) => `
+            <button class="notif notif--unread" data-nav="${n.to}">
+              <span class="notif__icon" style="${n.kind === 'alert'
+                ? 'background:var(--danger-soft);color:var(--danger)' : ''}">${kindIcon[n.kind]}</span>
+              <span class="grow">
+                <span class="notif__title" style="display:block">${esc(n.title)}</span>
+                <span class="notif__time" style="display:block">${esc(n.time)}</span>
+              </span>
+            </button>`).join('')}
+        </div>
+        <p class="overline mt-6">Plus tôt</p>
+        <div class="stack">
+          ${NOTIFS.filter((n) => !n.unread).map((n) => `
+            <button class="notif" data-nav="${n.to}">
+              <span class="notif__icon">${kindIcon[n.kind]}</span>
+              <span class="grow">
+                <span class="notif__title muted" style="display:block">${esc(n.title)}</span>
+                <span class="notif__time" style="display:block">${esc(n.time)}</span>
+              </span>
+            </button>`).join('')}
+        </div>
+        <div style="height:var(--s-8)"></div>
+      </div>
+    </div>`;
+  }
+});
+
+/* ============================================================
+   27. Recherche globale
+   ============================================================ */
+screen('search', {
+  label: '27 · Recherche',
+  render: () => `
+  <div class="screen">
+    ${appbar({ title: 'Recherche', back: 'homeMaster' })}
+    <div class="pad">
+      <div class="searchbar">${icon.search}
+        <input value="Rakoto" autocomplete="off">
+        <button class="iconbtn" style="width:28px;height:28px" aria-label="Effacer">${icon.x}</button>
+      </div>
+    </div>
+    <div class="filters">
+      ${['Tout', 'Personnes', 'Grades', 'Séances', 'Documents', 'Finances'].map((f, i) =>
+        `<button class="filter" aria-pressed="${i === 0}">${f}</button>`).join('')}
+    </div>
+    <div class="scroll">
+      <div class="section" style="margin-top:0">
+        <p class="caption">6 résultats pour « Rakoto »</p>
+        <div class="list list--card mt-3">
+          ${SEARCH_INDEX.map((r) => item({
+            lead: `<span class="avatar avatar--sm">${initials(r.label)}</span>`,
+            title: esc(r.label), sub: esc(r.kind), to: r.to
+          })).join('')}
+        </div>
+      </div>
+      <div class="section" style="margin-bottom:var(--s-8)">
+        ${sectionHead('Recherches récentes')}
+        <div class="row wrap gap-2">
+          ${['Ceinture orange', 'Chambre A102', 'Examen août', 'Stock riz'].map((t) =>
+            `<span class="badge badge--outline">${t}</span>`).join('')}
+        </div>
+      </div>
+    </div>
+  </div>`
+});
+
+/* ============================================================
+   28. Paramètres
+   ============================================================ */
+screen('settings', {
+  label: '28 · Paramètres',
+  render: () => `
+  <div class="screen">
+    ${appbar({ title: 'Paramètres', back: 'homeMaster' })}
+    <div class="scroll">
+      <div class="pad">
+        <div class="card row gap-3">
+          ${avatar(person('p11'), 'md')}
+          <div class="grow"><p class="item__title">Maître Chen Wei</p>
+            <p class="item__sub">Grand Maître · accès complet</p></div>
+          <span class="chevron">${icon.chev}</span>
+        </div>
+      </div>
+
+      <div class="section">
+        ${sectionHead('Apparence')}
+        <div class="list list--card">
+          <div class="item">
+            <span class="seal seal--sm seal--ink">${icon.moon}</span>
+            <span class="grow"><span class="item__title" style="display:block">Temple de nuit</span>
+              <span class="item__sub" style="display:block">Mode sombre</span></span>
+            <button class="switch" role="switch" aria-checked="false" data-action="theme"></button>
+          </div>
+          ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.eye}</span>`,
+            title: 'Taille du texte', end: `<span class="sub">Standard</span>`, to: 'settings' })}
+        </div>
+      </div>
+
+      <div class="section">
+        ${sectionHead('Monastère')}
+        <div class="list list--card">
+          ${item({ title: 'Identité du monastère', sub: 'Nom, lieu, emblème', to: 'settings' })}
+          ${item({ title: 'Système de grades', sub: '7 niveaux configurés', to: 'grades' })}
+          ${item({ title: 'Rythme quotidien', sub: '8 moments définis', to: 'planning' })}
+          ${item({ title: 'Devise & format', end: `<span class="sub">Ariary (Ar)</span>` })}
+        </div>
+      </div>
+
+      <div class="section">
+        ${sectionHead('Administration')}
+        <div class="list list--card">
+          ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.users}</span>`,
+            title: 'Utilisateurs', sub: '63 comptes actifs', to: 'users' })}
+          ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.lock}</span>`,
+            title: 'Rôles & permissions', sub: '7 rôles définis', to: 'permissions' })}
+          ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.sync}</span>`,
+            title: 'Synchronisation', sub: 'Dernière : il y a 4 min', to: 'states' })}
+        </div>
+      </div>
+
+      <div class="section" style="margin-bottom:var(--s-8)">
+        <button class="btn btn--danger btn--block" data-nav="login">${icon.logout}Quitter la session</button>
+        <p class="caption mt-4" style="text-align:center">Long Shan · version 1.0.0</p>
+      </div>
+    </div>
+  </div>`
+});
+
+/* ============================================================
+   29. Gestion des utilisateurs
+   ============================================================ */
+screen('users', {
+  label: '29 · Utilisateurs',
+  render: () => `
+  <div class="screen">
+    ${appbar({ title: 'Utilisateurs', back: 'settings',
+      actions: `<button class="iconbtn" data-action="sheet" aria-label="Inviter">${icon.plus}</button>` })}
+    <div class="pad">
+      <div class="searchbar">${icon.search}<input placeholder="Rechercher un compte"></div>
+    </div>
+    <div class="scroll">
+      <div class="section" style="margin-top:var(--s-5)">
+        ${sectionHead('Comptes actifs — 63')}
+        <div class="list list--card">
+          ${[['p11', 'Grand Maître', 'gold'], ['p12', 'Maître', 'gold'],
+             ['p14', 'Gestionnaire', ''], ['p13', 'Personnel', ''],
+             ['p1', 'Élève', ''], ['p3', 'Élève', '']].map(([id, role, v]) => {
+            const p = person(id);
+            return item({ lead: avatar(p, 'md'), title: esc(p.name),
+              sub: `Dernière connexion : aujourd’hui`,
+              end: badge(role, v), to: 'permissions' });
+          }).join('')}
+        </div>
+      </div>
+      <div class="section" style="margin-bottom:var(--s-8)">
+        ${sectionHead('En attente')}
+        <div class="list list--card">
+          ${item({ lead: `<span class="avatar avatar--md">RN</span>`,
+            title: 'Rina Nomena', sub: 'Invitation envoyée le 11 août',
+            end: badge('En attente', 'warning') })}
+        </div>
+      </div>
+    </div>
+  </div>`
+});
+
+/* ============================================================
+   30. Gestion des permissions
+   ============================================================ */
+screen('permissions', {
+  label: '30 · Permissions',
+  render: () => `
+  <div class="screen">
+    ${appbar({ title: 'Permissions', back: 'settings' })}
+    <div class="scroll">
+      <div class="section" style="margin-top:var(--s-4)">
+        ${sectionHead('Rôles')}
+        <div class="list list--card">
+          ${ROLES.map((r) => item({
+            title: esc(r.name), sub: esc(r.scope),
+            end: `<span class="num sub">${r.people}</span>`, to: 'permissions'
+          })).join('')}
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="card card--paper between">
+          <div><p class="overline overline--gold">Rôle sélectionné</p>
+            <p class="heading mt-2">Maître</p>
+            <p class="caption mt-1">3 personnes · 11 permissions accordées</p></div>
+          <span class="seal seal--sm seal--gold">${icon.lock}</span>
+        </div>
+      </div>
+
+      ${PERMISSIONS.map((g) => `
+        <div class="section">
+          ${sectionHead(g.group)}
+          <div class="list list--card">
+            ${g.items.map((it) => `
+              <div class="item">
+                <span class="grow"><span class="item__title">${esc(it.n)}</span></span>
+                <button class="switch" role="switch" aria-checked="${it.on}" data-action="toggle"></button>
+              </div>`).join('')}
+          </div>
+        </div>`).join('')}
+
+      <div class="section" style="margin-bottom:var(--s-8)">
+        <button class="btn btn--primary btn--block" data-action="toast">Enregistrer les permissions</button>
+      </div>
+    </div>
+  </div>`
+});
+
+/* ============================================================
+   États de l'interface — chargement, vide, erreur
+   Référence pour l'implémentation Flutter.
+   ============================================================ */
+screen('states', {
+  label: '· États d’interface',
+  render: () => `
+  <div class="screen">
+    ${appbar({ title: 'États d’interface', back: 'settings' })}
+    <div class="scroll">
+      <div class="section" style="margin-top:0">
+        ${sectionHead('Chargement')}
+        <div style="margin:0 calc(-1 * var(--gutter))">${loadingList(3)}</div>
+      </div>
+
+      <div class="section">
+        ${sectionHead('Synchronisation en cours')}
+        <div class="card row gap-3">
+          <span class="spin" style="width:20px;height:20px;display:block;color:var(--gold-text)">${icon.sync}</span>
+          <span class="grow"><span class="item__title" style="display:block">Mise à jour des présences</span>
+            <span class="item__sub" style="display:block">3 séances en attente d’envoi</span></span>
+        </div>
+      </div>
+
+      <div class="section">
+        ${sectionHead('État vide')}
+        <div class="card" style="padding:0">
+          ${empty('Aucun entraînement aujourd’hui.', 'Le calme précède toujours le mouvement.')}
+        </div>
+      </div>
+
+      <div class="section" style="margin-bottom:var(--s-8)">
+        ${sectionHead('Erreur')}
+        <div class="card" style="padding:0">
+          ${errorState('Le monastère est hors ligne. Vos données seront envoyées au retour du réseau.')}
+        </div>
+      </div>
+    </div>
+  </div>`
+});
+
+  </script>
+  <script>
+/* ============================================================
+   app.js — Navigation, thème, overlays, micro-interactions
+   ============================================================ */
+
+const app = {
+  current: 'splash',
+  theme: 'light',
+  el: {}
+};
+
+/* ---------------------------------------------- Navigation inférieure */
+const TABS = [
+  { key: 'home',      to: 'homeMaster', label: 'Accueil',  icon: icon.home },
+  { key: 'martial',   to: 'martial',    label: 'Dojo',     icon: icon.martial },
+  { key: 'seal' },
+  { key: 'community', to: 'community',  label: 'Communauté', icon: icon.community },
+  { key: 'temple',    to: 'temple',     label: 'Monastère', icon: icon.temple }
+];
+
+function renderTabbar(activeTab) {
+  return `<nav class="tabbar" role="tablist">
+    ${TABS.map((t) => t.key === 'seal'
+      ? `<button class="tabbar__seal" data-action="sheet" aria-label="Actions rapides">${icon.seal}</button>`
+      : `<button class="tabbar__btn" data-nav="${t.to}" role="tab"
+              aria-current="${activeTab === t.key}">${t.icon}<span>${t.label}</span></button>`
+    ).join('')}
+  </nav>`;
+}
+
+/* ---------------------------------------------- Rendu d'un écran */
+function navigate(key, { animate = true } = {}) {
+  const def = SCREENS[key];
+  if (!def) return;
+  app.current = key;
+
+  const chrome = def.chrome !== false;
+  app.el.frame.innerHTML = `
+    ${chrome ? statusbar() : ''}
+    <main class="viewport">${def.render()}</main>
+    ${def.tab ? renderTabbar(def.tab) : ''}
+    ${chrome ? '<div class="homebar"></div>' : ''}`;
+
+  if (animate) {
+    const view = app.el.frame.querySelector('.viewport');
+    view.animate(
+      [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }],
+      { duration: 320, easing: 'cubic-bezier(.22,.61,.36,1)' }
+    );
+  }
+
+  app.el.frame.querySelector('.scroll')?.scrollTo(0, 0);
+  syncIndex();
+}
+
+function statusbar() {
+  return `<div class="statusbar">
+    <span class="num">16:04</span>
+    <div class="statusbar__glyphs"><i></i><i></i><i></i>
+      <span style="margin-left:4px">Ⅴ</span><span class="statusbar__batt"></span></div>
+  </div>`;
+}
+
+/* ---------------------------------------------- Index latéral */
+function buildIndex() {
+  const groups = [
+    ['Identité', ['splash', 'login']],
+    ['Accueils', ['homeMaster', 'homeAdmin', 'homeStudent']],
+    ['Arts martiaux', ['martial', 'students', 'student', 'journey', 'grades', 'gradeDetail',
+                       'techniques', 'trainings', 'session', 'attendance', 'exams', 'evaluate']],
+    ['Communauté', ['community', 'member']],
+    ['Vie du monastère', ['temple', 'planning', 'rooms', 'meals', 'stock', 'events']],
+    ['Gestion', ['finance', 'donations', 'documents']],
+    ['Système', ['notifications', 'search', 'settings', 'users', 'permissions', 'states']]
+  ];
+  app.el.index.innerHTML = `
+    <div class="index__brand">
+      <div class="index__mark"><span>龍</span> Long Shan</div>
+      <p class="index__sub">Système d’interface · 34 écrans</p>
+    </div>
+    ${groups.map(([g, keys]) => `
+      <p class="index__group">${g}</p>
+      ${keys.map((k) => `<button class="index__link" data-nav="${k}">
+          <span class="index__num">${(SCREENS[k].label.match(/^\d+/) || ['·'])[0]}</span>
+          <span class="grow truncate">${SCREENS[k].label.replace(/^[\d·]+\s·?\s?/, '')}</span>
+        </button>`).join('')}`).join('')}`;
+}
+
+function syncIndex() {
+  app.el.index.querySelectorAll('[data-nav]').forEach((b) => {
+    b.setAttribute('aria-current', b.dataset.nav === app.current);
+  });
+  const label = SCREENS[app.current].label.replace(/^[\d·]+\s·?\s?/, '');
+  app.el.caption.innerHTML = `<b>${label}</b> — mode ${app.theme === 'dark' ? 'sombre « Temple de nuit »' : 'clair'}`;
+}
+
+/* ---------------------------------------------- Thème */
+/* Le thème est porté par le conteneur `.workbench`, pas par la racine :
+   la page peut ainsi être intégrée dans un hôte qui impose son propre
+   `data-theme` sans que l'application en soit affectée. */
+function setTheme(next) {
+  app.theme = next;
+  (document.getElementById('root') || document.documentElement)
+    .setAttribute('data-theme', next);
+  document.querySelectorAll('[data-theme-btn]').forEach((b) =>
+    b.setAttribute('aria-pressed', b.dataset.themeBtn === next));
+  document.querySelectorAll('[data-action="theme"]').forEach((s) =>
+    s.setAttribute('aria-checked', next === 'dark'));
+  syncIndex();
+}
+
+/* ---------------------------------------------- Overlays */
+function closeOverlay() {
+  app.el.frame.querySelector('.scrim')?.remove();
+}
+
+function openSheet() {
+  closeOverlay();
+  const html = `<div class="scrim" data-close>
+    <div class="sheet" role="dialog" aria-label="Actions rapides">
+      <div class="sheet__grip"></div>
+      <p class="overline">Actions rapides</p>
+      <div class="row wrap gap-2 mt-4">
+        ${[['Prendre les présences', 'attendance'], ['Nouvelle séance', null],
+           ['Évaluer un élève', 'evaluate'], ['Annonce', null]].map(([l, to]) =>
+          `<button class="btn btn--outline btn--sm" ${to ? `data-nav="${to}"` : 'data-action="toast"'}>${l}</button>`).join('')}
+      </div>
+      <div class="rule mt-5"><i></i></div>
+      <p class="overline mt-5">Autres espaces</p>
+      <div class="list mt-3">
+        ${[['Ressources & stocks', 'stock', icon.box],
+           ['Finances', 'finance', icon.coin],
+           ['Documents', 'documents', icon.doc],
+           ['Notifications', 'notifications', icon.bell],
+           ['Recherche globale', 'search', icon.search],
+           ['Paramètres', 'settings', icon.gear]].map(([l, to, ic]) => `
+          <button class="item" data-nav="${to}">
+            <span class="seal seal--sm seal--ink">${ic}</span>
+            <span class="grow item__title">${l}</span>
+            <span class="chevron">${icon.chev}</span>
+          </button>`).join('')}
+      </div>
+    </div></div>`;
+  app.el.frame.insertAdjacentHTML('beforeend', html);
+}
+
+/** Cérémonie de validation d'un grade — animation lente, une seule fois. */
+function openGradeDialog() {
+  closeOverlay();
+  app.el.frame.insertAdjacentHTML('beforeend', `
+    <div class="scrim dialog-wrap" data-close>
+      <div class="dialog" role="alertdialog">
+        <div class="stamp" style="display:grid;place-items:center">
+          <span class="seal seal--lg seal--gold">${icon.belt}</span>
+        </div>
+        <p class="overline overline--gold mt-5">Grade validé</p>
+        <h2 class="title mt-2">Ceinture orange</h2>
+        <p class="sub mt-2">Rakoto Andry · moyenne 17,2/20</p>
+        <div class="rule mt-5"><i></i></div>
+        <p class="caption mt-4">Un certificat a été généré et ajouté aux documents.</p>
+        <button class="btn btn--primary btn--block mt-5" data-close-btn>Fermer</button>
+        <button class="btn btn--ghost btn--block btn--sm mt-2" data-nav="documents">Voir le certificat</button>
+      </div>
+    </div>`);
+}
+
+function toast(message = 'Enregistré.') {
+  app.el.frame.querySelector('.toast')?.remove();
+  app.el.frame.insertAdjacentHTML('beforeend',
+    `<div class="toast" role="status">${icon.check}<span>${message}</span></div>`);
+  setTimeout(() => app.el.frame.querySelector('.toast')?.remove(), 2600);
+}
+
+/* ---------------------------------------------- Présences : recalcul en direct */
+function updateRoll() {
+  const boxes = [...app.el.frame.querySelectorAll('[data-roll-id]')];
+  if (!boxes.length) return;
+  const present = boxes.filter((b) => b.getAttribute('aria-checked') === 'true').length;
+  const rate = Math.round((present / boxes.length) * 100);
+  app.el.frame.querySelector('[data-roll-count]').textContent = present;
+  app.el.frame.querySelector('[data-roll-rate]').textContent = rate + '%';
+  app.el.frame.querySelector('[data-roll-bar] .bar__fill').style.width = rate + '%';
+}
+
+/* ---------------------------------------------- Écoute globale */
+function onClick(e) {
+  const t = e.target;
+
+  /* Fermeture d'overlay */
+  if (t.matches('.scrim[data-close]') || t.closest('[data-close-btn]')) {
+    closeOverlay();
+    if (!t.closest('[data-nav]')) return;
+  }
+
+  const nav = t.closest('[data-nav]');
+  if (nav) { closeOverlay(); navigate(nav.dataset.nav); return; }
+
+  const act = t.closest('[data-action]');
+  if (!act) return;
+
+  switch (act.dataset.action) {
+    case 'sheet': openSheet(); break;
+    case 'toast': toast('Enregistré.'); break;
+    case 'validateGrade': openGradeDialog(); break;
+    case 'retry': toast('Reconnexion…'); break;
+
+    case 'theme':
+      setTheme(app.theme === 'dark' ? 'light' : 'dark');
+      break;
+
+    case 'toggle': {
+      const on = act.getAttribute('aria-checked') === 'true';
+      act.setAttribute('aria-checked', String(!on));
+      break;
+    }
+
+    case 'rollAll': {
+      app.el.frame.querySelectorAll('[data-roll-id]').forEach((b) =>
+        b.setAttribute('aria-checked', 'true'));
+      updateRoll();
+      toast('Tous les élèves marqués présents.');
+      break;
+    }
+  }
+}
+
+/* Interactions au sein d'un écran (cases, onglets, filtres, segments) */
+function onScreenClick(e) {
+  const check = e.target.closest('[data-roll-id]');
+  if (check) {
+    check.setAttribute('aria-checked',
+      String(check.getAttribute('aria-checked') !== 'true'));
+    updateRoll();
+    return;
+  }
+  const tab = e.target.closest('.tab');
+  if (tab) {
+    tab.parentElement.querySelectorAll('.tab').forEach((x) =>
+      x.setAttribute('aria-selected', String(x === tab)));
+    return;
+  }
+  const filter = e.target.closest('.filter');
+  if (filter) {
+    filter.parentElement.querySelectorAll('.filter').forEach((x) =>
+      x.setAttribute('aria-pressed', String(x === filter)));
+    return;
+  }
+  const seg = e.target.closest('.segmented button');
+  if (seg) {
+    seg.parentElement.querySelectorAll('button').forEach((x) =>
+      x.setAttribute('aria-pressed', String(x === seg)));
+  }
+}
+
+/* ---------------------------------------------- Démarrage */
+function boot() {
+  app.el.frame = document.getElementById('frame');
+  app.el.index = document.getElementById('index');
+  app.el.caption = document.getElementById('caption');
+
+  buildIndex();
+  setTheme('light');
+  navigate('splash', { animate: false });
+
+  document.addEventListener('click', onClick);
+  app.el.frame.addEventListener('click', onScreenClick);
+
+  document.querySelectorAll('[data-theme-btn]').forEach((b) =>
+    b.addEventListener('click', () => setTheme(b.dataset.themeBtn)));
+
+  /* Le splash cède la place à la connexion après un temps de respiration. */
+  setTimeout(() => { if (app.current === 'splash') navigate('login'); }, 2200);
+
+  /* Navigation au clavier entre les écrans de l'index. */
+  document.addEventListener('keydown', (e) => {
+    if (e.target.matches('input, textarea')) return;
+    const keys = [...app.el.index.querySelectorAll('[data-nav]')].map((b) => b.dataset.nav);
+    const i = keys.indexOf(app.current);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      e.preventDefault(); navigate(keys[(i + 1) % keys.length]);
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault(); navigate(keys[(i - 1 + keys.length) % keys.length]);
+    } else if (e.key === 'Escape') { closeOverlay(); }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', boot);
+
+  </script>
+</body>
+</html>

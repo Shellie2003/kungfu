@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Long Shan — Monastère & école d’arts martiaux</title>
+  <meta name="description" content="Système d’interface mobile pour la gestion d’un monastère de Kung-Fu.">
+  <meta name="theme-color" content="#171717">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+  <div class="workbench" id="root" data-theme="light">
+    <!-- Index des écrans (échafaudage de présentation, hors application) -->
+    <aside class="index" id="index" aria-label="Index des écrans"></aside>
+
+    <!-- Scène : le téléphone -->
+    <div class="stage">
+      <div class="stage__bar">
+        <button class="chip" data-theme-btn="light" aria-pressed="true">Mode clair</button>
+        <button class="chip" data-theme-btn="dark" aria-pressed="false">Temple de nuit</button>
+      </div>
+
+      <div class="device">
+        <div class="device__screen" id="frame"></div>
+      </div>
+
+      <p class="stage__caption" id="caption"></p>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/screens-core.js"></script>
+  <script src="js/screens-life.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
