@@ -291,6 +291,20 @@ const SEARCH_INDEX = [
   { label: 'Reçu de don — Rakoto Jean', kind: 'Document', to: 'documents' }
 ];
 
+/* ---------------------------------------------- Présents au monastère
+   Sert les rails de l'accueil. Les groupes se recoupent volontairement :
+   un maître présent apparaît sous « Présents » et sous « Maîtres ». */
+const PRESENT_TODAY = ['p11', 'p12', 'p1', 'p2', 'p3', 'p6', 'p7', 'p8', 'p9', 'p10', 'p13', 'p17'];
+
+const RAIL_FILTERS = [
+  { key: 'present', label: 'Présents', match: (p) => PRESENT_TODAY.includes(p.id) },
+  { key: 'eleves',  label: 'Élèves',   match: (p) => p.role === 'Élève' },
+  { key: 'maitres', label: 'Maîtres',  match: (p) => p.role.includes('Maître') },
+  { key: 'moines',  label: 'Moines',   match: (p) => p.role === 'Moine' },
+  { key: 'staff',   label: 'Personnel',match: (p) => p.role === 'Personnel' },
+  { key: 'visiteurs', label: 'Visiteurs', match: (p) => ['Visiteur', 'Ancien élève'].includes(p.role) }
+];
+
 /* ---------------------------------------------- Session courante */
 const MONASTERY = {
   name: 'Long Shan',

@@ -164,6 +164,85 @@ function empty(message, quote) {
   </div>`;
 }
 
+/* ---------------------------------------------- Rails (carousels) */
+
+/** Fiche membre d'un rail. Les enseignants passent sur carte d'encre. */
+function memberCard(p, { to = 'member' } = {}) {
+  const teacher = p.role.includes('Maître');
+  const foot = p.role === 'Élève'
+    ? `<span class="mcard__foot">${bar(p.progress)}</span>`
+    : `<span class="mcard__meta">${p.resident ? 'Résident' : 'Externe'}</span>`;
+  return `<button class="mcard ${teacher ? 'mcard--ink' : ''}" data-nav="${to}">
+    <span class="avatar avatar--md ${p.beltColor ? 'avatar--ringed' : ''}"
+          ${p.beltColor ? `style="--ring:${p.beltColor}"` : ''}>${initials(p.name)}</span>
+    <span class="mcard__name">${esc(p.name)}</span>
+    <span class="mcard__meta">${esc(p.beltName || p.level)}</span>
+    ${foot}
+  </button>`;
+}
+
+/** Carte « voir la liste complète », toujours en fin de rail. */
+function moreCard(label, to) {
+  return `<button class="mcard mcard--more" data-nav="${to}">
+    <span class="chevron">${icon.chev}</span>
+    <span class="mcard__meta">${esc(label)}</span>
+  </button>`;
+}
+
+/** Fiche séance d'un rail. */
+function sessionCard(s) {
+  const state = s.state === 'now' ? 'scard--now' : s.state === 'done' ? 'scard--done' : '';
+  return `<button class="scard ${state}" data-nav="session">
+    <span class="between">
+      <span class="scard__time num">${s.time}</span>
+      ${s.state === 'now' ? badge('En cours', 'accent')
+        : s.state === 'done' ? badge('Terminé', 'positive') : badge(s.dur, 'outline')}
+    </span>
+    <span>
+      <span class="item__title" style="display:block">${esc(s.title)}</span>
+      <span class="item__sub" style="display:block">${esc(s.master)} · ${esc(s.place)}</span>
+    </span>
+    <span class="between">
+      <span class="avatarstack">${['p1', 'p2', 'p6'].map((id) => avatar(person(id), 'xs', { one: true })).join('')}</span>
+      <span class="caption">${s.count} élèves</span>
+    </span>
+  </button>`;
+}
+
+/** Bloc rail complet : titre, filtres optionnels, piste défilante. */
+function railBlock({ overline, action = null, filters = null, cards, id = null }) {
+  return `<section class="railblock">
+    <div class="section__head">
+      <p class="overline">${esc(overline)}</p>
+      ${action ? `<button class="section__action" data-nav="${action.to}">${esc(action.label)}</button>` : ''}
+    </div>
+    ${filters ? `<div class="filters" data-rail-filters="${id}">
+      ${filters.map((f, i) => `<button class="filter" data-rail-key="${f.key}"
+          aria-pressed="${i === 0}">${esc(f.label)}</button>`).join('')}
+    </div>` : ''}
+    <div class="rail" ${id ? `data-rail="${id}"` : ''}>${cards}</div>
+  </section>`;
+}
+
+/* La communauté se lit dans son ordre propre : enseignants, moines,
+   élèves, puis le reste. C'est la hiérarchie du monastère, pas un tri
+   alphabétique. */
+const ROLE_RANK = { 'Grand Maître': 0, 'Maître': 1, 'Moine': 2, 'Élève': 3, 'Personnel': 4 };
+const byRank = (a, b) => (ROLE_RANK[a.role] ?? 9) - (ROLE_RANK[b.role] ?? 9);
+
+/** Contenu du rail des membres pour un filtre donné. */
+function memberRailCards(key) {
+  const f = RAIL_FILTERS.find((x) => x.key === key) || RAIL_FILTERS[0];
+  const list = PEOPLE.filter(f.match).sort(byRank);
+  if (!list.length) {
+    return `<div class="card card--sunken" style="width:100%;text-align:center">
+      <p class="sub">Personne dans ce groupe aujourd’hui.</p></div>`;
+  }
+  return list.map((p) => memberCard(p)).join('')
+    + moreCard(f.key === 'eleves' ? 'Tous les élèves' : 'Toute la communauté',
+               f.key === 'eleves' ? 'students' : 'community');
+}
+
 /** Squelette de chargement générique pour une liste. */
 function loadingList(n = 4) {
   return `<div class="stack gap-3 pad">${Array.from({ length: n }, () => `

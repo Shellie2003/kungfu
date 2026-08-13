@@ -242,6 +242,20 @@ function onScreenClick(e) {
   if (filter) {
     filter.parentElement.querySelectorAll('.filter').forEach((x) =>
       x.setAttribute('aria-pressed', String(x === filter)));
+
+    /* Filtre de rail : on redessine la piste et on la ramène au début,
+       sinon la position de défilement précédente survit au changement. */
+    const railId = filter.parentElement.dataset.railFilters;
+    if (railId && filter.dataset.railKey) {
+      const rail = app.el.frame.querySelector(`[data-rail="${railId}"]`);
+      if (rail) {
+        rail.innerHTML = memberRailCards(filter.dataset.railKey);
+        rail.scrollTo({ left: 0, behavior: 'smooth' });
+        rail.querySelectorAll('.mcard').forEach((c, i) => {
+          c.style.animation = `rise var(--d-base) var(--e-out) both ${i * 40}ms`;
+        });
+      }
+    }
     return;
   }
   const seg = e.target.closest('.segmented button');

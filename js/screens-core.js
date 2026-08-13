@@ -169,47 +169,50 @@ screen('homeMaster', {
   render: () => `
   <div class="screen scroll">
     ${homeHeader('Maître Chen', MONASTERY.maxim)}
+
+    <!-- Les chiffres et les visages forment un seul ensemble : le bloc
+         d'encre donne l'état du monastère, le rail donne qui le compose. -->
     ${monasteryPulse()}
+    ${railBlock({
+      overline: 'Qui est là aujourd’hui',
+      action: { label: 'Communauté', to: 'community' },
+      filters: RAIL_FILTERS,
+      id: 'members',
+      cards: memberRailCards('present')
+    })}
+
     ${nextActivity(SESSIONS[0])}
 
+    ${railBlock({
+      overline: 'Vos séances du jour',
+      action: { label: 'Planning', to: 'trainings' },
+      cards: [SESSIONS[0], SESSIONS[1], SESSIONS[2]].map(sessionCard).join('')
+    })}
+
     <div class="section">
-      ${sectionHead('Vos séances', { label: 'Planning', to: 'trainings' })}
-      <div class="list list--card">
-        ${SESSIONS.slice(0, 2).map((s) => item({
-          lead: `<span class="stack" style="width:44px"><span class="num heading">${s.time}</span>
-                 <span class="caption">${s.dur}</span></span>`,
-          title: esc(s.title),
-          sub: `${s.count} élèves · ${esc(s.place)}`,
-          end: s.state === 'now' ? badge('En cours', 'accent') : '',
-          to: 'attendance'
-        })).join('')}
+      ${sectionHead('À suivre')}
+      <div class="stack gap-3">
+        <button class="card card--tap row gap-3" data-nav="exams">
+          <span class="seal seal--sm seal--gold">${icon.belt}</span>
+          <span class="grow">
+            <span class="item__title" style="display:block">3 élèves prêts pour l’examen</span>
+            <span class="item__sub" style="display:block">Jaune → Orange · 15 août</span>
+          </span>
+          <span class="chevron">${icon.chev}</span>
+        </button>
+        <button class="card card--tap row gap-3" data-nav="students"
+                style="border-color:color-mix(in srgb, var(--accent) 34%, transparent)">
+          <span class="seal seal--sm">${icon.alert}</span>
+          <span class="grow">
+            <span class="item__title" style="display:block">2 élèves absents depuis 3 séances</span>
+            <span class="item__sub" style="display:block">Rabe Jean · Randria Paul</span>
+          </span>
+          <span class="chevron">${icon.chev}</span>
+        </button>
       </div>
     </div>
 
-    <div class="section">
-      ${sectionHead('Progression')}
-      <button class="card card--tap row gap-3" data-nav="exams">
-        <span class="seal seal--sm seal--gold">${icon.belt}</span>
-        <span class="grow">
-          <span class="item__title" style="display:block">3 élèves prêts pour l’examen</span>
-          <span class="item__sub" style="display:block">Jaune → Orange · 15 août</span>
-        </span>
-        <span class="chevron">${icon.chev}</span>
-      </button>
-    </div>
-
-    <div class="section">
-      ${sectionHead('Attention')}
-      <button class="card card--tap row gap-3" data-nav="students"
-              style="border-color:color-mix(in srgb, var(--accent) 34%, transparent)">
-        <span class="seal seal--sm">${icon.alert}</span>
-        <span class="grow">
-          <span class="item__title" style="display:block">2 élèves absents depuis 3 séances</span>
-          <span class="item__sub" style="display:block">Rabe Jean · Randria Paul</span>
-        </span>
-        <span class="chevron">${icon.chev}</span>
-      </button>
-    </div>
+    ${dayTimeline(5)}
 
     <div class="section" style="margin-bottom:var(--s-8)">
       ${sectionHead('Actions rapides')}
@@ -257,6 +260,13 @@ screen('homeAdmin', {
           title: '4 cotisations en retard', sub: '320 000 Ar attendus', to: 'finance' })}
       </div>
     </div>
+
+    ${railBlock({
+      overline: 'Résidents et personnel',
+      action: { label: 'Communauté', to: 'community' },
+      cards: PEOPLE.filter((p) => ['Moine', 'Personnel', 'Visiteur'].includes(p.role))
+        .map((p) => memberCard(p)).join('') + moreCard('Toute la communauté', 'community')
+    })}
 
     <div class="section">
       ${sectionHead('Occupation', { label: 'Chambres', to: 'rooms' })}
@@ -328,6 +338,14 @@ screen('homeStudent', {
           <button class="btn btn--accent btn--block mt-4" data-action="toast">Confirmer ma présence</button>
         </div>
       </div>
+
+      ${railBlock({
+        overline: 'Mon groupe',
+        action: { label: 'Voir tout', to: 'students' },
+        cards: [person('p12')].concat(
+          STUDENTS.filter((s) => s.level === 'Intermédiaire')
+        ).map((p) => memberCard(p)).join('')
+      })}
 
       <div class="section">
         ${sectionHead('Prochaine étape')}

@@ -147,6 +147,9 @@ Les nombres utilisent `font-variant-numeric: tabular-nums` → en Flutter,
 | `.filters` / `.filter` | Puces de filtre défilantes | `SingleChildScrollView(horizontal)` + `FilterChip` |
 | `.segmented` | Sélecteur 2–3 options | `SegmentedButton` restylé |
 | `.list--card` / `.item` | Liste encartée, séparateurs internes | `Column` dans `ClipRRect` + `ListTile` |
+| `.railblock` / `.rail` | Carousel horizontal à accroche, débordant des marges | `ListView.separated(scrollDirection: Axis.horizontal)`, accroche via `PageScrollPhysics` ou `CarouselView` |
+| `.mcard` / `.mcard--ink` / `.mcard--more` | Fiche membre portrait (132 px), variante encre pour les enseignants, carte d'accès à la liste | `SizedBox(width: 132)` + `Card` |
+| `.scard` | Fiche séance paysage (232 px), l'heure domine | `SizedBox(width: 232)` + `Card` |
 | `.input` / `.field` / `.field--error` | Champ creusé, focus doré, état d'erreur | `TextField` + `InputDecoration` |
 | `.check` | Ligne d'appel, cible 56 px, coche tracée | `InkWell` + `CustomPaint` (animation de tracé) |
 | `.switch` | Interrupteur doré | `Switch` avec `activeColor: gold` |
@@ -178,6 +181,27 @@ Le sceau n'est pas un simple bouton d'ajout : il ouvre une **feuille inférieure
 secondaires** — Ressources, Finances, Documents, Notifications, Recherche, Paramètres.
 C'est ce qui permet de couvrir les huit sections demandées sans jamais afficher plus de
 cinq éléments de navigation à la fois.
+
+### Composition de l'accueil
+
+L'accueil ne s'empile pas en cartes pleine largeur — c'est ce qui fait le dashboard
+générique. Il alterne deux rythmes : des blocs pleine largeur pour ce qui appelle une
+décision (l'état du monastère, la prochaine activité), et des **rails horizontaux** pour
+ce qui s'explore (les membres, les séances du jour).
+
+Le rail des membres est la pièce centrale, et il est **filtrable** — Présents · Élèves ·
+Maîtres · Moines · Personnel · Visiteurs. Il se lit avec le bloc d'encre juste au-dessus :
+les chiffres donnent l'état, les visages donnent qui le compose. Deux règles le régissent :
+
+- Les cartes sont ordonnées selon la **hiérarchie du monastère** (enseignants, moines,
+  élèves, puis le reste), jamais par ordre alphabétique.
+- Les enseignants reçoivent la **carte d'encre**, les autres la carte de papier. Le rang
+  se lit dans la matière de la carte, pas dans une étiquette de plus.
+
+Le rail déborde volontairement des marges : une carte tronquée au bord droit indique
+qu'il y a une suite, ce qui évite flèches et pastilles de pagination.
+Les deux autres accueils reprennent le principe avec le rail qui les concerne —
+« Résidents et personnel » pour l'intendance, « Mon groupe » pour l'élève.
 
 Les trois hubs (`martial`, `community`, `temple`) sont des pages d'entrée sobres :
 un bloc d'encre contextuel, puis deux listes encartées. Aucun hub n'affiche de statistiques

@@ -551,7 +551,17 @@ p, h1, h2, h3, h4, h5, h6 { margin: 0; font-weight: inherit; }
 .avatar--lg { width: 84px; height: 84px; font-size: 28px; border-radius: 30%; }
 /* Liseré de grade autour de l'avatar : l'information n'est pas
    portée que par la couleur, un badge textuel l'accompagne toujours. */
-.avatar--ringed { box-shadow: 0 0 0 2px var(--surface-raised), 0 0 0 4px var(--ring, var(--line-strong)); }
+.avatar--ringed {
+  box-shadow: 0 0 0 2px var(--ring-gap, var(--surface-raised)),
+              0 0 0 4px var(--ring, var(--line-strong));
+}
+/* Sur fond d'encre, le liseré de ceinture noire deviendrait invisible et
+   l'interstice clair ferait tache : on le remplace par un filet doré.
+   L'information de grade reste portée par le texte sous l'avatar. */
+.ink .avatar--ringed,
+.mcard--ink .avatar--ringed {
+  box-shadow: 0 0 0 1.5px rgba(198, 161, 91, 0.40);
+}
 
 /* Le liseré de séparation prend la couleur de la surface qui porte la pile :
    papier par défaut, encre à l'intérieur d'un bloc `.ink`. */
@@ -692,6 +702,82 @@ p, h1, h2, h3, h4, h5, h6 { margin: 0; font-weight: inherit; }
 .item__sub   { font-size: 12px; color: var(--text-tertiary); margin-top: 1px; }
 .item__end   { display: flex; align-items: center; gap: 8px; flex: none; color: var(--text-tertiary); }
 .chevron { width: 16px; height: 16px; opacity: 0.5; flex: none; }
+
+/* ---------------------------------------------- 10 bis. Rails (carousels)
+   Rythme horizontal. Le rail déborde volontairement des marges d'écran :
+   une carte tronquée au bord droit indique qu'il y a une suite, sans
+   avoir à ajouter de flèches ni de points. */
+.railblock { margin-top: var(--s-8); }
+.railblock .section__head, .railblock .rail__note { padding: 0 var(--gutter); }
+/* Quand des filtres suivent le titre, ils tiennent lieu de respiration :
+   le titre ne double pas la sienne. */
+.railblock .section__head:has(+ .filters) { margin-bottom: 0; }
+.railblock .filters { padding-top: var(--s-3); padding-bottom: var(--s-2); }
+
+.rail {
+  display: flex; gap: var(--s-3);
+  padding: 4px var(--gutter) 6px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding-left: var(--gutter);
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.rail::-webkit-scrollbar { display: none; }
+.rail > * { flex: none; scroll-snap-align: start; }
+
+/* Fiche membre — format portrait, lisible d'un coup d'œil */
+.mcard {
+  width: 132px; padding: var(--s-4) var(--s-3);
+  display: flex; flex-direction: column; align-items: center; gap: 9px;
+  text-align: center;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+  transition: transform var(--d-fast) var(--e-out), box-shadow var(--d-base);
+}
+.mcard:active { transform: scale(0.97); }
+.mcard__name {
+  font-size: 13px; line-height: 17px; font-weight: 500;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; min-height: 34px;
+}
+.mcard__meta { font-size: 11px; line-height: 15px; color: var(--text-tertiary); }
+.mcard__foot { width: 100%; margin-top: 2px; }
+
+/* Les enseignants reçoivent la carte d'encre : la hiérarchie du
+   monastère se lit dans la matière de la carte, pas dans un libellé. */
+.mcard--ink {
+  background: var(--surface-ink); border-color: transparent;
+  color: var(--text-on-ink); box-shadow: var(--shadow-2);
+}
+.mcard--ink .mcard__meta { color: var(--text-on-ink-dim); }
+.mcard--ink .avatar { background: rgba(198, 161, 91, 0.16); color: var(--gold-bright); border-color: transparent; }
+
+/* Dernière carte du rail : accès à la liste complète */
+.mcard--more {
+  justify-content: center; gap: var(--s-3);
+  background: transparent; border-style: dashed; box-shadow: none;
+  color: var(--text-secondary);
+}
+.mcard--more span.chevron { width: 22px; height: 22px; opacity: 1; }
+
+/* Fiche séance — format paysage, l'heure domine */
+.scard {
+  width: 232px; padding: var(--s-4);
+  display: flex; flex-direction: column; gap: var(--s-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+  text-align: left;
+  transition: transform var(--d-fast) var(--e-out);
+}
+.scard:active { transform: scale(0.98); }
+.scard--now { border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+.scard--done { opacity: 0.62; }
+.scard__time { font-family: var(--font-display); font-size: 30px; line-height: 32px; }
 
 /* ---------------------------------------------- 11. Champs de saisie */
 .field { display: flex; flex-direction: column; gap: 6px; }
@@ -1001,6 +1087,15 @@ p, h1, h2, h3, h4, h5, h6 { margin: 0; font-weight: inherit; }
 /* Rotation lente : synchronisation des données */
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { animation: spin 2.4s linear infinite; }
+
+/* ---------------------------------------------- 20. Utilitaires en dernier
+   Les utilitaires de disposition doivent l'emporter sur les composants qui
+   posent leur propre `display` — `.card--tap` est un bouton mis en bloc, et
+   sans cette reprise il annulerait le `flex` de `.row` sur
+   `<button class="card card--tap row">`, laissant les enfants retomber en
+   flux inline (un chevron inline ignore alors sa largeur et s'étale). */
+.row, .between, .stack { display: flex; }
+.chevron { display: block; }
 
 /* Accessibilité : focus visible partout */
 :focus-visible {
@@ -1324,6 +1419,20 @@ const SEARCH_INDEX = [
   { label: 'Reçu de don — Rakoto Jean', kind: 'Document', to: 'documents' }
 ];
 
+/* ---------------------------------------------- Présents au monastère
+   Sert les rails de l'accueil. Les groupes se recoupent volontairement :
+   un maître présent apparaît sous « Présents » et sous « Maîtres ». */
+const PRESENT_TODAY = ['p11', 'p12', 'p1', 'p2', 'p3', 'p6', 'p7', 'p8', 'p9', 'p10', 'p13', 'p17'];
+
+const RAIL_FILTERS = [
+  { key: 'present', label: 'Présents', match: (p) => PRESENT_TODAY.includes(p.id) },
+  { key: 'eleves',  label: 'Élèves',   match: (p) => p.role === 'Élève' },
+  { key: 'maitres', label: 'Maîtres',  match: (p) => p.role.includes('Maître') },
+  { key: 'moines',  label: 'Moines',   match: (p) => p.role === 'Moine' },
+  { key: 'staff',   label: 'Personnel',match: (p) => p.role === 'Personnel' },
+  { key: 'visiteurs', label: 'Visiteurs', match: (p) => ['Visiteur', 'Ancien élève'].includes(p.role) }
+];
+
 /* ---------------------------------------------- Session courante */
 const MONASTERY = {
   name: 'Long Shan',
@@ -1500,6 +1609,85 @@ function empty(message, quote) {
     <p class="body">${esc(message)}</p>
     <p class="empty__quote">« ${esc(quote)} »</p>
   </div>`;
+}
+
+/* ---------------------------------------------- Rails (carousels) */
+
+/** Fiche membre d'un rail. Les enseignants passent sur carte d'encre. */
+function memberCard(p, { to = 'member' } = {}) {
+  const teacher = p.role.includes('Maître');
+  const foot = p.role === 'Élève'
+    ? `<span class="mcard__foot">${bar(p.progress)}</span>`
+    : `<span class="mcard__meta">${p.resident ? 'Résident' : 'Externe'}</span>`;
+  return `<button class="mcard ${teacher ? 'mcard--ink' : ''}" data-nav="${to}">
+    <span class="avatar avatar--md ${p.beltColor ? 'avatar--ringed' : ''}"
+          ${p.beltColor ? `style="--ring:${p.beltColor}"` : ''}>${initials(p.name)}</span>
+    <span class="mcard__name">${esc(p.name)}</span>
+    <span class="mcard__meta">${esc(p.beltName || p.level)}</span>
+    ${foot}
+  </button>`;
+}
+
+/** Carte « voir la liste complète », toujours en fin de rail. */
+function moreCard(label, to) {
+  return `<button class="mcard mcard--more" data-nav="${to}">
+    <span class="chevron">${icon.chev}</span>
+    <span class="mcard__meta">${esc(label)}</span>
+  </button>`;
+}
+
+/** Fiche séance d'un rail. */
+function sessionCard(s) {
+  const state = s.state === 'now' ? 'scard--now' : s.state === 'done' ? 'scard--done' : '';
+  return `<button class="scard ${state}" data-nav="session">
+    <span class="between">
+      <span class="scard__time num">${s.time}</span>
+      ${s.state === 'now' ? badge('En cours', 'accent')
+        : s.state === 'done' ? badge('Terminé', 'positive') : badge(s.dur, 'outline')}
+    </span>
+    <span>
+      <span class="item__title" style="display:block">${esc(s.title)}</span>
+      <span class="item__sub" style="display:block">${esc(s.master)} · ${esc(s.place)}</span>
+    </span>
+    <span class="between">
+      <span class="avatarstack">${['p1', 'p2', 'p6'].map((id) => avatar(person(id), 'xs', { one: true })).join('')}</span>
+      <span class="caption">${s.count} élèves</span>
+    </span>
+  </button>`;
+}
+
+/** Bloc rail complet : titre, filtres optionnels, piste défilante. */
+function railBlock({ overline, action = null, filters = null, cards, id = null }) {
+  return `<section class="railblock">
+    <div class="section__head">
+      <p class="overline">${esc(overline)}</p>
+      ${action ? `<button class="section__action" data-nav="${action.to}">${esc(action.label)}</button>` : ''}
+    </div>
+    ${filters ? `<div class="filters" data-rail-filters="${id}">
+      ${filters.map((f, i) => `<button class="filter" data-rail-key="${f.key}"
+          aria-pressed="${i === 0}">${esc(f.label)}</button>`).join('')}
+    </div>` : ''}
+    <div class="rail" ${id ? `data-rail="${id}"` : ''}>${cards}</div>
+  </section>`;
+}
+
+/* La communauté se lit dans son ordre propre : enseignants, moines,
+   élèves, puis le reste. C'est la hiérarchie du monastère, pas un tri
+   alphabétique. */
+const ROLE_RANK = { 'Grand Maître': 0, 'Maître': 1, 'Moine': 2, 'Élève': 3, 'Personnel': 4 };
+const byRank = (a, b) => (ROLE_RANK[a.role] ?? 9) - (ROLE_RANK[b.role] ?? 9);
+
+/** Contenu du rail des membres pour un filtre donné. */
+function memberRailCards(key) {
+  const f = RAIL_FILTERS.find((x) => x.key === key) || RAIL_FILTERS[0];
+  const list = PEOPLE.filter(f.match).sort(byRank);
+  if (!list.length) {
+    return `<div class="card card--sunken" style="width:100%;text-align:center">
+      <p class="sub">Personne dans ce groupe aujourd’hui.</p></div>`;
+  }
+  return list.map((p) => memberCard(p)).join('')
+    + moreCard(f.key === 'eleves' ? 'Tous les élèves' : 'Toute la communauté',
+               f.key === 'eleves' ? 'students' : 'community');
 }
 
 /** Squelette de chargement générique pour une liste. */
@@ -1697,47 +1885,50 @@ screen('homeMaster', {
   render: () => `
   <div class="screen scroll">
     ${homeHeader('Maître Chen', MONASTERY.maxim)}
+
+    <!-- Les chiffres et les visages forment un seul ensemble : le bloc
+         d'encre donne l'état du monastère, le rail donne qui le compose. -->
     ${monasteryPulse()}
+    ${railBlock({
+      overline: 'Qui est là aujourd’hui',
+      action: { label: 'Communauté', to: 'community' },
+      filters: RAIL_FILTERS,
+      id: 'members',
+      cards: memberRailCards('present')
+    })}
+
     ${nextActivity(SESSIONS[0])}
 
+    ${railBlock({
+      overline: 'Vos séances du jour',
+      action: { label: 'Planning', to: 'trainings' },
+      cards: [SESSIONS[0], SESSIONS[1], SESSIONS[2]].map(sessionCard).join('')
+    })}
+
     <div class="section">
-      ${sectionHead('Vos séances', { label: 'Planning', to: 'trainings' })}
-      <div class="list list--card">
-        ${SESSIONS.slice(0, 2).map((s) => item({
-          lead: `<span class="stack" style="width:44px"><span class="num heading">${s.time}</span>
-                 <span class="caption">${s.dur}</span></span>`,
-          title: esc(s.title),
-          sub: `${s.count} élèves · ${esc(s.place)}`,
-          end: s.state === 'now' ? badge('En cours', 'accent') : '',
-          to: 'attendance'
-        })).join('')}
+      ${sectionHead('À suivre')}
+      <div class="stack gap-3">
+        <button class="card card--tap row gap-3" data-nav="exams">
+          <span class="seal seal--sm seal--gold">${icon.belt}</span>
+          <span class="grow">
+            <span class="item__title" style="display:block">3 élèves prêts pour l’examen</span>
+            <span class="item__sub" style="display:block">Jaune → Orange · 15 août</span>
+          </span>
+          <span class="chevron">${icon.chev}</span>
+        </button>
+        <button class="card card--tap row gap-3" data-nav="students"
+                style="border-color:color-mix(in srgb, var(--accent) 34%, transparent)">
+          <span class="seal seal--sm">${icon.alert}</span>
+          <span class="grow">
+            <span class="item__title" style="display:block">2 élèves absents depuis 3 séances</span>
+            <span class="item__sub" style="display:block">Rabe Jean · Randria Paul</span>
+          </span>
+          <span class="chevron">${icon.chev}</span>
+        </button>
       </div>
     </div>
 
-    <div class="section">
-      ${sectionHead('Progression')}
-      <button class="card card--tap row gap-3" data-nav="exams">
-        <span class="seal seal--sm seal--gold">${icon.belt}</span>
-        <span class="grow">
-          <span class="item__title" style="display:block">3 élèves prêts pour l’examen</span>
-          <span class="item__sub" style="display:block">Jaune → Orange · 15 août</span>
-        </span>
-        <span class="chevron">${icon.chev}</span>
-      </button>
-    </div>
-
-    <div class="section">
-      ${sectionHead('Attention')}
-      <button class="card card--tap row gap-3" data-nav="students"
-              style="border-color:color-mix(in srgb, var(--accent) 34%, transparent)">
-        <span class="seal seal--sm">${icon.alert}</span>
-        <span class="grow">
-          <span class="item__title" style="display:block">2 élèves absents depuis 3 séances</span>
-          <span class="item__sub" style="display:block">Rabe Jean · Randria Paul</span>
-        </span>
-        <span class="chevron">${icon.chev}</span>
-      </button>
-    </div>
+    ${dayTimeline(5)}
 
     <div class="section" style="margin-bottom:var(--s-8)">
       ${sectionHead('Actions rapides')}
@@ -1785,6 +1976,13 @@ screen('homeAdmin', {
           title: '4 cotisations en retard', sub: '320 000 Ar attendus', to: 'finance' })}
       </div>
     </div>
+
+    ${railBlock({
+      overline: 'Résidents et personnel',
+      action: { label: 'Communauté', to: 'community' },
+      cards: PEOPLE.filter((p) => ['Moine', 'Personnel', 'Visiteur'].includes(p.role))
+        .map((p) => memberCard(p)).join('') + moreCard('Toute la communauté', 'community')
+    })}
 
     <div class="section">
       ${sectionHead('Occupation', { label: 'Chambres', to: 'rooms' })}
@@ -1856,6 +2054,14 @@ screen('homeStudent', {
           <button class="btn btn--accent btn--block mt-4" data-action="toast">Confirmer ma présence</button>
         </div>
       </div>
+
+      ${railBlock({
+        overline: 'Mon groupe',
+        action: { label: 'Voir tout', to: 'students' },
+        cards: [person('p12')].concat(
+          STUDENTS.filter((s) => s.level === 'Intermédiaire')
+        ).map((p) => memberCard(p)).join('')
+      })}
 
       <div class="section">
         ${sectionHead('Prochaine étape')}
@@ -3543,6 +3749,20 @@ function onScreenClick(e) {
   if (filter) {
     filter.parentElement.querySelectorAll('.filter').forEach((x) =>
       x.setAttribute('aria-pressed', String(x === filter)));
+
+    /* Filtre de rail : on redessine la piste et on la ramène au début,
+       sinon la position de défilement précédente survit au changement. */
+    const railId = filter.parentElement.dataset.railFilters;
+    if (railId && filter.dataset.railKey) {
+      const rail = app.el.frame.querySelector(`[data-rail="${railId}"]`);
+      if (rail) {
+        rail.innerHTML = memberRailCards(filter.dataset.railKey);
+        rail.scrollTo({ left: 0, behavior: 'smooth' });
+        rail.querySelectorAll('.mcard').forEach((c, i) => {
+          c.style.animation = `rise var(--d-base) var(--e-out) both ${i * 40}ms`;
+        });
+      }
+    }
     return;
   }
   const seg = e.target.closest('.segmented button');
