@@ -77,6 +77,7 @@ function buildIndex() {
     ['Arts martiaux', ['martial', 'students', 'student', 'journey', 'grades', 'gradeDetail',
                        'techniques', 'trainings', 'session', 'attendance', 'exams', 'evaluate']],
     ['Communauté', ['community', 'member', 'messages', 'chat']],
+    ['Admission', ['newStudent', 'card']],
     ['Vie du monastère', ['temple', 'planning', 'rooms', 'meals', 'stock', 'events']],
     ['Gestion', ['finance', 'dues', 'donations', 'documents']],
     ['Système', ['notifications', 'search', 'settings', 'users', 'permissions', 'states']]
@@ -84,7 +85,7 @@ function buildIndex() {
   app.el.index.innerHTML = `
     <div class="index__brand">
       <div class="index__mark"><span>VM</span> Vato Masina</div>
-      <p class="index__sub">Système d’interface · 37 écrans</p>
+      <p class="index__sub">Système d’interface · 39 écrans</p>
     </div>
     ${groups.map(([g, keys]) => `
       <p class="index__group">${g}</p>
@@ -225,6 +226,82 @@ function sendMessage(convId) {
   thread.lastElementChild.classList.add('rise');
 }
 
+/* ---------------------------------------------- Admission d'un élève */
+
+/** Marque un champ en erreur et y accroche son message. */
+function setFieldError(form, name, message) {
+  const field = form.querySelector(`[data-field="${name}"]`);
+  if (!field) return;
+  field.classList.add('field--error');
+  field.querySelector('.field__error')?.remove();
+  field.insertAdjacentHTML('beforeend',
+    `<span class="field__error">${icon.alert} ${esc(message)}</span>`);
+}
+
+function clearFieldErrors(form) {
+  form.querySelectorAll('.field--error').forEach((f) => {
+    f.classList.remove('field--error');
+    f.querySelector('.field__error')?.remove();
+  });
+}
+
+/** Les choix par puces ne sont pas des <input> : on les lit à part. */
+function chosen(form, group) {
+  return form.querySelector(`[data-choice="${group}"] [aria-pressed="true"]`)?.dataset.value || null;
+}
+
+function admitStudent(form) {
+  clearFieldErrors(form);
+  const v = (n) => (form.querySelector(`[name="${n}"]`)?.value || '').trim();
+  const name = v('name');
+  const phone = v('phone');
+  const group = chosen(form, 'group');
+  const belt = chosen(form, 'belt') || 'blanc';
+  const resident = form.querySelector('[data-resident]')?.getAttribute('aria-checked') === 'true';
+
+  /* Validation : on signale tout d'un coup plutôt que champ par champ,
+     puis on remonte au premier problème. */
+  let first = null;
+  if (name.length < 3) { setFieldError(form, 'name', 'Indiquez le nom et les prénoms.'); first ??= 'name'; }
+  if (phone.replace(/\D/g, '').length < 9) {
+    setFieldError(form, 'phone', 'Numéro incomplet — 10 chiffres attendus.'); first ??= 'phone';
+  }
+  if (!group) { setFieldError(form, 'group', 'Choisissez un groupe de pratique.'); first ??= 'group'; }
+
+  if (first) {
+    const el = form.querySelector(`[data-field="${first}"]`);
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.querySelector('input')?.focus();
+    return;
+  }
+
+  /* Création. L'élève rejoint les mêmes tableaux que les autres : il
+     apparaît aussitôt dans les listes, les rails et la recherche. */
+  const num = Math.max(...PEOPLE.map((p) => parseInt(p.id.slice(1), 10))) + 1;
+  const b = beltOf(belt);
+  const p = {
+    id: `p${num}`, name, role: 'Élève',
+    level: group.replace('Groupe ', '').replace(/^./, (c) => c.toUpperCase()),
+    belt, beltColor: b.color, beltName: b.name,
+    progress: 0, attendance: 0, sessions: 0, techniques: 0,
+    resident, since: '2026-08-13', room: resident ? 'A104' : null,
+    phone, dues: 'À jour'
+  };
+  PEOPLE.push(p);
+  STUDENTS.push(p);
+  DUES.push({
+    id: p.id, fee: resident ? DUES_FEE.resident : DUES_FEE.externe,
+    late: 0, status: 'À jour', due: 0, last: '13 août 2026'
+  });
+  SEARCH_IX.push({
+    label: p.name, kind: 'Élève', group: 'Personnes', to: `card:${p.id}`,
+    terms: `${p.name} Élève ${p.level} ${p.beltName}`
+  });
+
+  navigate(`card:${p.id}`);
+  toast(`${name.split(' ')[0]} est admis${resident ? 'e' : ''} — carte générée.`);
+}
+
 /* ---------------------------------------------- Recherche globale */
 function refreshSearch() {
   const box = app.el.frame.querySelector('[data-search-results]');
@@ -290,6 +367,15 @@ function onClick(e) {
     case 'toggle': {
       const on = act.getAttribute('aria-checked') === 'true';
       act.setAttribute('aria-checked', String(!on));
+      /* Le tarif dépend du statut : il doit suivre l'interrupteur,
+         sinon le formulaire annonce un montant qu'il ne créera pas. */
+      if (act.hasAttribute('data-resident')) {
+        const fee = app.el.frame.querySelector('[data-fee]');
+        if (fee) {
+          const v = !on ? DUES_FEE.resident : DUES_FEE.externe;
+          fee.textContent = v.toLocaleString('fr-FR').replace(/,/g, ' ') + ' Ar';
+        }
+      }
       break;
     }
 
@@ -412,10 +498,10 @@ function boot() {
   });
 
   app.el.frame.addEventListener('submit', (e) => {
-    const form = e.target.closest('[data-send]');
-    if (!form) return;
-    e.preventDefault();
-    sendMessage(form.dataset.send);
+    const chat = e.target.closest('[data-send]');
+    if (chat) { e.preventDefault(); sendMessage(chat.dataset.send); return; }
+    const admission = e.target.closest('[data-newstudent]');
+    if (admission) { e.preventDefault(); admitStudent(admission); }
   });
 
   /* Entrée envoie, Maj+Entrée insère un retour à la ligne. */

@@ -945,6 +945,79 @@ p, h1, h2, h3, h4, h5, h6 { margin: 0; font-weight: inherit; }
   display: grid; place-items: center;
 }
 
+/* ---------------------------------------------- 10 quater. Carte de membre
+   Format badge vertical : le portrait et le code doivent tous deux
+   rester grands, ce qu'un format paysage de carte bancaire ne permet
+   pas sur un écran de téléphone. Composée en couches, comme les fiches
+   de rail. */
+.idcard {
+  width: 100%; max-width: 300px; margin: 0 auto;
+  border-radius: var(--r-xl); overflow: hidden;
+  background: var(--surface-ink); color: var(--text-on-ink);
+  box-shadow: var(--shadow-seal);
+  position: relative; isolation: isolate;
+}
+/* Tampon en filigrane, comme sur les blocs d'encre */
+.idcard::after {
+  content: ""; position: absolute; top: -60px; right: -60px;
+  width: 200px; height: 200px; border-radius: 50%;
+  border: 1px solid rgba(198, 161, 91, 0.28);
+  box-shadow: inset 0 0 0 10px rgba(198, 161, 91, 0.07);
+  pointer-events: none;
+}
+
+.idcard__head {
+  display: flex; align-items: center; gap: 10px;
+  padding: var(--s-4) var(--s-4) 0;
+}
+.idcard__mark {
+  width: 30px; height: 30px; flex: none; border-radius: 30%;
+  display: grid; place-items: center;
+  background: var(--accent); color: #fff;
+  font-family: var(--font-display); font-size: 13px;
+}
+.idcard__org {
+  font-family: var(--font-display); font-size: 15px; letter-spacing: 0.06em;
+  color: var(--gold-bright);
+}
+.idcard__kind { font-size: 9px; letter-spacing: var(--track); text-transform: uppercase; color: var(--text-on-ink-dim); }
+
+/* Le portrait est l'élément dominant de la carte. */
+.idcard__portrait {
+  width: 132px; aspect-ratio: 4 / 5; margin: var(--s-4) auto var(--s-3);
+  border-radius: var(--r-md); overflow: hidden;
+  border: 1px solid rgba(198, 161, 91, 0.35);
+}
+
+.idcard__id { text-align: center; padding: 0 var(--s-4); }
+.idcard__name {
+  font-family: var(--font-display); font-size: 20px; line-height: 25px;
+  color: #fff;
+}
+.idcard__role { font-size: 12px; color: var(--text-on-ink-dim); margin-top: 3px; }
+.idcard__num {
+  font-family: var(--font-num); font-variant-numeric: tabular-nums;
+  font-size: 13px; letter-spacing: 0.14em; color: var(--gold-bright);
+  margin-top: 8px;
+}
+
+/* Le code repose sur un carré blanc : la marge claire est requise par
+   la norme, et la plupart des lecteurs échouent sans elle. */
+.idcard__qr {
+  width: 132px; height: 132px; margin: var(--s-4) auto var(--s-3);
+  background: #fff; border-radius: var(--r-sm); padding: 6px;
+  display: grid; place-items: center;
+}
+.qr { display: block; width: 100%; height: 100%; }
+
+.idcard__foot {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-3); padding: 0 var(--s-4) var(--s-4);
+}
+.idcard__valid { font-size: 10px; color: var(--text-on-ink-dim); }
+/* Bande de grade en pied de carte — doublée du nom de la ceinture */
+.idcard__band { height: 6px; background: var(--belt, var(--line-strong)); }
+
 /* ---------------------------------------------- 11. Champs de saisie */
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field__label {
@@ -1333,6 +1406,327 @@ mark {
     </div>
   </div>
 
+  <script>
+/* ============================================================
+   qr.js — Encodeur QR autonome
+   Mode octet, correction niveau M, versions 1 à 6.
+
+   Écrit à la main plutôt qu'emprunté à une bibliothèque : l'application
+   ne charge aucune dépendance externe, et le code doit être réellement
+   scannable puisqu'il sert à la prise de présence. Un motif décoratif
+   qui « ressemble » à un QR ne servirait à rien devant une caméra.
+
+   La sortie est vérifiée par décodage (voir README, section Carte de
+   membre) : chaque motif produit ici est relu par un décodeur tiers.
+   ============================================================ */
+
+/* ---------------------------------------------- Corps de Galois GF(256)
+   Polynôme primitif 0x11D, celui que la norme QR impose. */
+const GF_EXP = new Uint8Array(512);
+const GF_LOG = new Uint8Array(256);
+(() => {
+  let x = 1;
+  for (let i = 0; i < 255; i++) {
+    GF_EXP[i] = x; GF_LOG[x] = i;
+    x <<= 1; if (x & 0x100) x ^= 0x11d;
+  }
+  for (let i = 255; i < 512; i++) GF_EXP[i] = GF_EXP[i - 255];
+})();
+const gfMul = (a, b) => (a === 0 || b === 0) ? 0 : GF_EXP[GF_LOG[a] + GF_LOG[b]];
+
+/* ---------------------------------------------- Capacités, niveau M
+   `data` : codewords de données · `ec` : codewords de correction par
+   bloc · `blocks` : [nombre de blocs, codewords de données par bloc]. */
+const QR_SPEC = {
+  1: { data: 16,  ec: 10, blocks: [[1, 16]] },
+  2: { data: 28,  ec: 16, blocks: [[1, 28]] },
+  3: { data: 44,  ec: 26, blocks: [[1, 44]] },
+  4: { data: 64,  ec: 18, blocks: [[2, 32]] },
+  5: { data: 86,  ec: 24, blocks: [[2, 43]] },
+  6: { data: 108, ec: 16, blocks: [[4, 27]] }
+};
+/* Centres des motifs d'alignement. La version 1 n'en porte aucun. */
+const QR_ALIGN = { 1: [], 2: [6, 18], 3: [6, 22], 4: [6, 26], 5: [6, 30], 6: [6, 34] };
+
+/* ---------------------------------------------- Reed-Solomon */
+function rsGenerator(degree) {
+  let g = [1];
+  for (let i = 0; i < degree; i++) {
+    const next = new Array(g.length + 1).fill(0);
+    for (let j = 0; j < g.length; j++) {
+      next[j] ^= g[j];
+      next[j + 1] ^= gfMul(g[j], GF_EXP[i]);
+    }
+    g = next;
+  }
+  return g;
+}
+
+function rsRemainder(data, ecLen) {
+  const g = rsGenerator(ecLen);
+  const buf = data.concat(new Array(ecLen).fill(0));
+  for (let i = 0; i < data.length; i++) {
+    const coef = buf[i];
+    if (coef === 0) continue;
+    for (let j = 0; j < g.length; j++) buf[i + j] ^= gfMul(g[j], coef);
+  }
+  return buf.slice(data.length);
+}
+
+/* ---------------------------------------------- Encodage
+   Retourne une matrice carrée de 0/1, ou lève si le texte dépasse la
+   capacité de la version 6. */
+function qrEncode(text) {
+  const bytes = [...new TextEncoder().encode(text)];
+
+  /* Deux octets d'en-tête : indicateur de mode + longueur. */
+  const version = [1, 2, 3, 4, 5, 6].find((v) => bytes.length + 2 <= QR_SPEC[v].data);
+  if (!version) throw new Error(`QR : ${bytes.length} octets dépassent la version 6`);
+  const spec = QR_SPEC[version];
+  const size = 17 + 4 * version;
+
+  /* --- Flux binaire : mode 0100, longueur sur 8 bits, données --- */
+  const bits = [];
+  const push = (val, len) => { for (let i = len - 1; i >= 0; i--) bits.push((val >>> i) & 1); };
+  push(0b0100, 4);
+  push(bytes.length, 8);
+  bytes.forEach((b) => push(b, 8));
+
+  /* Terminateur, alignement sur l'octet, puis remplissage alterné. */
+  const capacity = spec.data * 8;
+  for (let i = 0; i < 4 && bits.length < capacity; i++) bits.push(0);
+  while (bits.length % 8 !== 0) bits.push(0);
+  const dataCw = [];
+  for (let i = 0; i < bits.length; i += 8) {
+    dataCw.push(parseInt(bits.slice(i, i + 8).join(''), 2));
+  }
+  for (let i = 0; dataCw.length < spec.data; i++) dataCw.push(i % 2 ? 0x11 : 0xec);
+
+  /* --- Découpage en blocs, correction, entrelacement --- */
+  const blocks = [];
+  let offset = 0;
+  spec.blocks.forEach(([count, len]) => {
+    for (let i = 0; i < count; i++) {
+      const d = dataCw.slice(offset, offset + len);
+      offset += len;
+      blocks.push({ data: d, ec: rsRemainder(d, spec.ec) });
+    }
+  });
+
+  const finalCw = [];
+  const maxData = Math.max(...blocks.map((b) => b.data.length));
+  for (let i = 0; i < maxData; i++) {
+    blocks.forEach((b) => { if (i < b.data.length) finalCw.push(b.data[i]); });
+  }
+  for (let i = 0; i < spec.ec; i++) blocks.forEach((b) => finalCw.push(b.ec[i]));
+
+  const finalBits = [];
+  finalCw.forEach((c) => { for (let i = 7; i >= 0; i--) finalBits.push((c >>> i) & 1); });
+
+  /* --- Motifs fixes --- */
+  const modules = Array.from({ length: size }, () => new Array(size).fill(0));
+  const reserved = Array.from({ length: size }, () => new Array(size).fill(false));
+  const setFn = (col, row, dark) => {
+    modules[row][col] = dark ? 1 : 0;
+    reserved[row][col] = true;
+  };
+
+  const finder = (col0, row0) => {
+    for (let dr = -1; dr <= 7; dr++) {
+      for (let dc = -1; dc <= 7; dc++) {
+        const r = row0 + dr, c = col0 + dc;
+        if (r < 0 || r >= size || c < 0 || c >= size) continue;
+        const d = Math.max(Math.abs(dr - 3), Math.abs(dc - 3));
+        setFn(c, r, d !== 2 && d !== 4);   /* anneau clair aux distances 2 et 4 */
+      }
+    }
+  };
+  finder(0, 0); finder(size - 7, 0); finder(0, size - 7);
+
+  /* Lignes de synchronisation */
+  for (let i = 8; i < size - 8; i++) {
+    setFn(6, i, i % 2 === 0);
+    setFn(i, 6, i % 2 === 0);
+  }
+
+  /* Motifs d'alignement, sauf ceux qui empiètent sur les repères */
+  const al = QR_ALIGN[version];
+  al.forEach((r) => al.forEach((c) => {
+    if ((r === 6 && c === 6) || (r === 6 && c === al[al.length - 1])
+        || (c === 6 && r === al[al.length - 1])) return;
+    for (let dr = -2; dr <= 2; dr++) {
+      for (let dc = -2; dc <= 2; dc++) {
+        setFn(c + dc, r + dr, Math.max(Math.abs(dr), Math.abs(dc)) !== 1);
+      }
+    }
+  }));
+
+  /* Zones réservées au format, et module sombre obligatoire */
+  for (let i = 0; i <= 8; i++) {
+    if (i !== 6) { setFn(8, i, false); setFn(i, 8, false); }
+  }
+  for (let i = 0; i < 8; i++) {
+    setFn(size - 1 - i, 8, false);
+    setFn(8, size - 8 + i, false);
+  }
+  setFn(8, size - 8, true);
+
+  /* --- Placement des données en zigzag, depuis le coin bas-droit --- */
+  let bitIdx = 0;
+  for (let right = size - 1; right >= 1; right -= 2) {
+    if (right === 6) right = 5;            /* la colonne 6 est une synchro */
+    for (let vert = 0; vert < size; vert++) {
+      for (let j = 0; j < 2; j++) {
+        const col = right - j;
+        const upward = ((right + 1) & 2) === 0;
+        const row = upward ? size - 1 - vert : vert;
+        if (reserved[row][col]) continue;
+        modules[row][col] = bitIdx < finalBits.length ? finalBits[bitIdx++] : 0;
+      }
+    }
+  }
+
+  /* --- Masquage : les huit motifs sont évalués, le moins pénalisé gagne --- */
+  const maskFn = [
+    (r, c) => (r + c) % 2 === 0,
+    (r) => r % 2 === 0,
+    (r, c) => c % 3 === 0,
+    (r, c) => (r + c) % 3 === 0,
+    (r, c) => (Math.floor(r / 2) + Math.floor(c / 3)) % 2 === 0,
+    (r, c) => (r * c) % 2 + (r * c) % 3 === 0,
+    (r, c) => ((r * c) % 2 + (r * c) % 3) % 2 === 0,
+    (r, c) => ((r + c) % 2 + (r * c) % 3) % 2 === 0
+  ];
+
+  let best = null;
+  for (let mask = 0; mask < 8; mask++) {
+    const m = modules.map((row) => row.slice());
+    for (let r = 0; r < size; r++) {
+      for (let c = 0; c < size; c++) {
+        if (!reserved[r][c] && maskFn[mask](r, c)) m[r][c] ^= 1;
+      }
+    }
+    applyFormat(m, size, mask);
+    const score = penalty(m, size);
+    if (!best || score < best.score) best = { score, m };
+  }
+  return best.m;
+}
+
+/* Information de format : 2 bits de niveau (M = 00) + 3 bits de masque,
+   protégés par un BCH(15,5) puis masqués par 0x5412. */
+function applyFormat(m, size, mask) {
+  const data = (0b00 << 3) | mask;
+  let rem = data;
+  for (let i = 0; i < 10; i++) rem = (rem << 1) ^ ((rem >>> 9) * 0x537);
+  const bits = ((data << 10) | rem) ^ 0x5412;
+  const bit = (i) => (bits >>> i) & 1;
+
+  for (let i = 0; i <= 5; i++) m[i][8] = bit(i);
+  m[7][8] = bit(6);
+  m[8][8] = bit(7);
+  m[8][7] = bit(8);
+  for (let i = 9; i < 15; i++) m[8][14 - i] = bit(i);
+
+  for (let i = 0; i < 8; i++) m[8][size - 1 - i] = bit(i);
+  for (let i = 8; i < 15; i++) m[size - 15 + i][8] = bit(i);
+  m[size - 8][8] = 1;
+}
+
+/* Pénalités de la norme : séries, blocs 2×2, faux repères, déséquilibre. */
+function penalty(m, size) {
+  let score = 0;
+
+  const runScore = (line) => {
+    let s = 0, run = 1;
+    for (let i = 1; i < line.length; i++) {
+      if (line[i] === line[i - 1]) { run++; }
+      else { if (run >= 5) s += 3 + (run - 5); run = 1; }
+    }
+    if (run >= 5) s += 3 + (run - 5);
+    return s;
+  };
+  for (let i = 0; i < size; i++) {
+    score += runScore(m[i]);
+    score += runScore(m.map((row) => row[i]));
+  }
+
+  for (let r = 0; r < size - 1; r++) {
+    for (let c = 0; c < size - 1; c++) {
+      const v = m[r][c];
+      if (v === m[r][c + 1] && v === m[r + 1][c] && v === m[r + 1][c + 1]) score += 3;
+    }
+  }
+
+  const pat1 = [1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0];
+  const pat2 = [0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1];
+  const hasAt = (line, i, pat) => pat.every((p, k) => line[i + k] === p);
+  const scanLine = (line) => {
+    let s = 0;
+    for (let i = 0; i + 11 <= line.length; i++) {
+      if (hasAt(line, i, pat1) || hasAt(line, i, pat2)) s += 40;
+    }
+    return s;
+  };
+  for (let i = 0; i < size; i++) {
+    score += scanLine(m[i]);
+    score += scanLine(m.map((row) => row[i]));
+  }
+
+  let dark = 0;
+  m.forEach((row) => row.forEach((v) => { if (v) dark++; }));
+  const ratio = (dark * 100) / (size * size);
+  score += Math.floor(Math.abs(ratio - 50) / 5) * 10;
+
+  return score;
+}
+
+/* ---------------------------------------------- Rendu SVG
+   Les modules sombres d'une même ligne sont fusionnés en un seul
+   rectangle : une carte affiche ainsi une centaine de nœuds au lieu
+   de plusieurs centaines. La marge blanche de 4 modules est exigée par
+   la norme — sans elle, beaucoup de lecteurs échouent. */
+function qrSVG(text, { size = 120, quiet = 4, dark = '#171717', light = '#ffffff' } = {}) {
+  const m = qrEncode(text);
+  const n = m.length;
+  const total = n + quiet * 2;
+  const rects = [];
+  for (let r = 0; r < n; r++) {
+    let c = 0;
+    while (c < n) {
+      if (!m[r][c]) { c++; continue; }
+      let len = 1;
+      while (c + len < n && m[r][c + len]) len++;
+      rects.push(`<rect x="${c + quiet}" y="${r + quiet}" width="${len}" height="1"/>`);
+      c += len;
+    }
+  }
+  return `<svg class="qr" viewBox="0 0 ${total} ${total}" width="${size}" height="${size}"
+       shape-rendering="crispEdges" role="img" aria-label="Code de membre">
+    <rect width="${total}" height="${total}" fill="${light}"/>
+    <g fill="${dark}">${rects.join('')}</g>
+  </svg>`;
+}
+
+/* ---------------------------------------------- Jeton de membre
+   Format : VM|<identifiant>|<année>|<contrôle>. Le contrôle est une
+   somme non cryptographique : il repère une saisie erronée ou une carte
+   modifiée à la main, il n'empêche pas une contrefaçon délibérée.
+   Une signature côté serveur serait nécessaire pour cela. */
+function memberToken(p, year = 2026) {
+  const id = memberNumber(p);
+  const base = `VM|${id}|${year}`;
+  let h = 0;
+  for (const ch of base) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return `${base}|${h.toString(16).toUpperCase().padStart(8, '0').slice(-4)}`;
+}
+
+/** Numéro de membre lisible, dérivé de l'identifiant interne. */
+function memberNumber(p) {
+  return 'VM-' + String(parseInt(p.id.replace(/\D/g, ''), 10)).padStart(4, '0');
+}
+
+  </script>
   <script>
 /* ============================================================
    data.js — Données fictives réalistes
@@ -2730,7 +3124,7 @@ screen('students', {
         </div>
       </div>
     </div>
-    <button class="fab" data-action="sheet" aria-label="Ajouter un élève">${icon.plus}</button>
+    <button class="fab" data-nav="newStudent" aria-label="Admettre un élève">${icon.plus}</button>
   </div>`
 });
 
@@ -2809,6 +3203,8 @@ screen('student', {
               title: 'Cotisations', sub: 'À jour · 25 000 Ar / mois', to: 'finance' })}
             ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.megaphone}</span>`,
               title: 'Conversation', sub: 'Dernier échange il y a 30 min', to: 'chat:c4' })}
+            ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.qr}</span>`,
+              title: 'Carte de membre', sub: 'VM-0001 · code de présence', to: 'card:p1' })}
           </div>
           <button class="btn btn--gold btn--block mt-4" data-nav="evaluate">Évaluer cet élève</button>
         </div>
@@ -3407,7 +3803,7 @@ screen('community', {
           </div>`).join('')}
         <div style="height:var(--s-8)"></div>
       </div>
-      <button class="fab" data-action="sheet" aria-label="Ajouter un membre">${icon.plus}</button>
+      <button class="fab" data-nav="newStudent" aria-label="Admettre un membre">${icon.plus}</button>
     </div>`;
   }
 });
@@ -3569,6 +3965,8 @@ screen('member', {
           <div class="list list--card">
             ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.doc}</span>`,
               title: 'Attestation de résidence', sub: 'PDF · 142 Ko', to: 'documents' })}
+            ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.qr}</span>`,
+              title: 'Carte de membre', sub: 'VM-0009 · code de présence', to: 'card:p9' })}
           </div>
         </div>
       </div>
@@ -4048,6 +4446,183 @@ screen('search', {
 });
 
 /* ============================================================
+   Carte de membre — portrait, identité, code de présence
+   ============================================================ */
+screen('card', {
+  label: '· Carte de membre',
+  render: (id = 'p1') => {
+    const p = person(id) || person('p1');
+    const token = memberToken(p);
+    const belt = p.beltColor || 'var(--line-strong)';
+    return `
+    <div class="screen">
+      ${appbar({ title: 'Carte de membre', back: p.role === 'Élève' ? 'student' : 'member',
+        actions: `<button class="iconbtn" data-action="sheet" aria-label="Options">${icon.dots}</button>` })}
+      <div class="scroll">
+        <div class="pad">
+          <div class="idcard rise">
+            <div class="idcard__head">
+              <span class="idcard__mark">VM</span>
+              <span class="grow">
+                <span class="idcard__org" style="display:block">VATO MASINA</span>
+                <span class="idcard__kind" style="display:block">Carte de membre</span>
+              </span>
+            </div>
+
+            <div class="idcard__portrait">${portraitSVG(p)}</div>
+
+            <div class="idcard__id">
+              <p class="idcard__name">${esc(p.name)}</p>
+              <p class="idcard__role">${esc(p.role)} · ${esc(p.level)}${
+                p.beltName ? ` · ceinture ${p.beltName.toLowerCase()}` : ''}</p>
+              <p class="idcard__num">${memberNumber(p)}</p>
+            </div>
+
+            <div class="idcard__qr">${qrSVG(token, { size: 120 })}</div>
+
+            <div class="idcard__foot">
+              <span class="idcard__valid">Valide jusqu’au<br><b>31 décembre 2026</b></span>
+              <span class="idcard__valid" style="text-align:right">Émise le<br><b>13 août 2026</b></span>
+            </div>
+            <div class="idcard__band" style="--belt:${belt}"></div>
+          </div>
+        </div>
+
+        <div class="section">
+          ${sectionHead('Utiliser cette carte')}
+          <div class="list list--card">
+            ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.qr}</span>`,
+              title: 'Pointer une présence', sub: 'Le maître scanne le code en début de séance',
+              to: 'attendance' })}
+            ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.doc}</span>`,
+              title: 'Enregistrer en PDF', sub: 'Format badge, prêt à imprimer',
+              extra: 'data-action="toast"' })}
+            ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.sync}</span>`,
+              title: 'Régénérer le code', sub: 'En cas de perte ou de vol de la carte',
+              extra: 'data-action="toast"' })}
+          </div>
+        </div>
+
+        <div class="section" style="margin-bottom:var(--s-8)">
+          ${sectionHead('Contenu du code')}
+          <div class="card card--sunken">
+            <p class="num sub" style="word-break:break-all">${esc(token)}</p>
+            <div class="rule mt-4"><i></i></div>
+            <p class="caption mt-4">Organisation · numéro de membre · année · contrôle.
+              La somme de contrôle repère une carte modifiée à la main ; elle
+              n’empêche pas une contrefaçon délibérée, ce qui demanderait une
+              signature délivrée par le serveur.</p>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+});
+
+/* ============================================================
+   Nouvel élève — formulaire d'admission
+   ============================================================ */
+screen('newStudent', {
+  label: '· Nouvel élève',
+  render: () => `
+  <div class="screen">
+    ${appbar({ title: 'Nouvel élève', back: 'students' })}
+    <form class="scroll" data-newstudent novalidate>
+      <p class="caption pad">L’admission crée la fiche, la carte de membre et son
+        code de présence. Les champs marqués d’un point sont requis.</p>
+
+      <div class="section" style="margin-top:var(--s-5)">
+        ${sectionHead('Identité')}
+        <div class="card stack gap-4">
+          <label class="field" data-field="name">
+            <span class="field__label">Nom et prénoms ·</span>
+            <input class="input" name="name" autocomplete="name"
+                   placeholder="Rakotoarisoa Nirina">
+          </label>
+          <label class="field" data-field="phone">
+            <span class="field__label">Téléphone ·</span>
+            <input class="input" name="phone" inputmode="tel" placeholder="034 12 345 67">
+          </label>
+          <label class="field">
+            <span class="field__label">Date de naissance</span>
+            <input class="input" name="birth" placeholder="12 mars 2008">
+          </label>
+          <label class="field">
+            <span class="field__label">Quartier</span>
+            <input class="input" name="area" placeholder="Analakely, Antananarivo">
+          </label>
+        </div>
+      </div>
+
+      <div class="section">
+        ${sectionHead('Pratique')}
+        <div class="card stack gap-5">
+          <div class="field" data-field="group">
+            <span class="field__label">Groupe ·</span>
+            <div class="row wrap gap-2" data-choice="group">
+              ${GROUPS.slice(0, 3).map((g) => `<button type="button" class="filter"
+                 data-value="${esc(g.name)}" aria-pressed="false">${esc(g.name.replace('Groupe ', ''))}</button>`).join('')}
+            </div>
+          </div>
+          <div class="field">
+            <span class="field__label">Grade de départ</span>
+            <div class="row wrap gap-2" data-choice="belt">
+              ${BELTS.slice(0, 3).map((b, i) => `<button type="button" class="filter"
+                 data-value="${b.id}" aria-pressed="${i === 0}">
+                 <i class="belt__disc" style="--belt:${b.color};display:inline-block;vertical-align:-1px"></i>
+                 ${b.name}</button>`).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        ${sectionHead('Séjour')}
+        <div class="list list--card">
+          <div class="item">
+            <span class="seal seal--sm seal--ink">${icon.bed}</span>
+            <span class="grow">
+              <span class="item__title" style="display:block">Résident au monastère</span>
+              <span class="item__sub" style="display:block">Cotisation réduite, hébergement facturé à part</span>
+            </span>
+            <button type="button" class="switch" role="switch" aria-checked="false"
+                    aria-label="Résident au monastère" data-action="toggle" data-resident></button>
+          </div>
+          ${item({ title: 'Date d’entrée', end: '<span class="sub">13 août 2026</span>' })}
+          ${item({ title: 'Cotisation mensuelle',
+            end: '<span class="num sub" data-fee>25 000 Ar</span>' })}
+        </div>
+      </div>
+
+      <div class="section">
+        ${sectionHead('Contact d’urgence')}
+        <div class="card stack gap-4">
+          <label class="field">
+            <span class="field__label">Nom</span>
+            <input class="input" name="kin" placeholder="Parent ou tuteur">
+          </label>
+          <label class="field">
+            <span class="field__label">Téléphone</span>
+            <input class="input" name="kinPhone" inputmode="tel" placeholder="033 00 000 00">
+          </label>
+        </div>
+      </div>
+
+      <div class="section" style="margin-bottom:var(--s-8)">
+        <div class="card card--sunken row gap-3">
+          <span class="seal seal--sm seal--ink">${icon.qr}</span>
+          <span class="notice__text grow">Le portrait et le code de présence sont
+            générés à la validation. La carte pourra être imprimée ensuite.</span>
+        </div>
+        <button class="btn btn--gold btn--block mt-4" type="submit">Admettre l’élève</button>
+        <button class="btn btn--ghost btn--block btn--sm mt-2" type="button"
+                data-nav="students">Annuler</button>
+      </div>
+    </form>
+  </div>`
+});
+
+/* ============================================================
    Cotisations — suivi des paiements des élèves
    La spec prévoyait « Mes paiements » côté élève et le suivi des
    cotisations côté intendance sans qu'aucun écran ne le porte.
@@ -4388,6 +4963,7 @@ function buildIndex() {
     ['Arts martiaux', ['martial', 'students', 'student', 'journey', 'grades', 'gradeDetail',
                        'techniques', 'trainings', 'session', 'attendance', 'exams', 'evaluate']],
     ['Communauté', ['community', 'member', 'messages', 'chat']],
+    ['Admission', ['newStudent', 'card']],
     ['Vie du monastère', ['temple', 'planning', 'rooms', 'meals', 'stock', 'events']],
     ['Gestion', ['finance', 'dues', 'donations', 'documents']],
     ['Système', ['notifications', 'search', 'settings', 'users', 'permissions', 'states']]
@@ -4395,7 +4971,7 @@ function buildIndex() {
   app.el.index.innerHTML = `
     <div class="index__brand">
       <div class="index__mark"><span>VM</span> Vato Masina</div>
-      <p class="index__sub">Système d’interface · 37 écrans</p>
+      <p class="index__sub">Système d’interface · 39 écrans</p>
     </div>
     ${groups.map(([g, keys]) => `
       <p class="index__group">${g}</p>
@@ -4536,6 +5112,82 @@ function sendMessage(convId) {
   thread.lastElementChild.classList.add('rise');
 }
 
+/* ---------------------------------------------- Admission d'un élève */
+
+/** Marque un champ en erreur et y accroche son message. */
+function setFieldError(form, name, message) {
+  const field = form.querySelector(`[data-field="${name}"]`);
+  if (!field) return;
+  field.classList.add('field--error');
+  field.querySelector('.field__error')?.remove();
+  field.insertAdjacentHTML('beforeend',
+    `<span class="field__error">${icon.alert} ${esc(message)}</span>`);
+}
+
+function clearFieldErrors(form) {
+  form.querySelectorAll('.field--error').forEach((f) => {
+    f.classList.remove('field--error');
+    f.querySelector('.field__error')?.remove();
+  });
+}
+
+/** Les choix par puces ne sont pas des <input> : on les lit à part. */
+function chosen(form, group) {
+  return form.querySelector(`[data-choice="${group}"] [aria-pressed="true"]`)?.dataset.value || null;
+}
+
+function admitStudent(form) {
+  clearFieldErrors(form);
+  const v = (n) => (form.querySelector(`[name="${n}"]`)?.value || '').trim();
+  const name = v('name');
+  const phone = v('phone');
+  const group = chosen(form, 'group');
+  const belt = chosen(form, 'belt') || 'blanc';
+  const resident = form.querySelector('[data-resident]')?.getAttribute('aria-checked') === 'true';
+
+  /* Validation : on signale tout d'un coup plutôt que champ par champ,
+     puis on remonte au premier problème. */
+  let first = null;
+  if (name.length < 3) { setFieldError(form, 'name', 'Indiquez le nom et les prénoms.'); first ??= 'name'; }
+  if (phone.replace(/\D/g, '').length < 9) {
+    setFieldError(form, 'phone', 'Numéro incomplet — 10 chiffres attendus.'); first ??= 'phone';
+  }
+  if (!group) { setFieldError(form, 'group', 'Choisissez un groupe de pratique.'); first ??= 'group'; }
+
+  if (first) {
+    const el = form.querySelector(`[data-field="${first}"]`);
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.querySelector('input')?.focus();
+    return;
+  }
+
+  /* Création. L'élève rejoint les mêmes tableaux que les autres : il
+     apparaît aussitôt dans les listes, les rails et la recherche. */
+  const num = Math.max(...PEOPLE.map((p) => parseInt(p.id.slice(1), 10))) + 1;
+  const b = beltOf(belt);
+  const p = {
+    id: `p${num}`, name, role: 'Élève',
+    level: group.replace('Groupe ', '').replace(/^./, (c) => c.toUpperCase()),
+    belt, beltColor: b.color, beltName: b.name,
+    progress: 0, attendance: 0, sessions: 0, techniques: 0,
+    resident, since: '2026-08-13', room: resident ? 'A104' : null,
+    phone, dues: 'À jour'
+  };
+  PEOPLE.push(p);
+  STUDENTS.push(p);
+  DUES.push({
+    id: p.id, fee: resident ? DUES_FEE.resident : DUES_FEE.externe,
+    late: 0, status: 'À jour', due: 0, last: '13 août 2026'
+  });
+  SEARCH_IX.push({
+    label: p.name, kind: 'Élève', group: 'Personnes', to: `card:${p.id}`,
+    terms: `${p.name} Élève ${p.level} ${p.beltName}`
+  });
+
+  navigate(`card:${p.id}`);
+  toast(`${name.split(' ')[0]} est admis${resident ? 'e' : ''} — carte générée.`);
+}
+
 /* ---------------------------------------------- Recherche globale */
 function refreshSearch() {
   const box = app.el.frame.querySelector('[data-search-results]');
@@ -4601,6 +5253,15 @@ function onClick(e) {
     case 'toggle': {
       const on = act.getAttribute('aria-checked') === 'true';
       act.setAttribute('aria-checked', String(!on));
+      /* Le tarif dépend du statut : il doit suivre l'interrupteur,
+         sinon le formulaire annonce un montant qu'il ne créera pas. */
+      if (act.hasAttribute('data-resident')) {
+        const fee = app.el.frame.querySelector('[data-fee]');
+        if (fee) {
+          const v = !on ? DUES_FEE.resident : DUES_FEE.externe;
+          fee.textContent = v.toLocaleString('fr-FR').replace(/,/g, ' ') + ' Ar';
+        }
+      }
       break;
     }
 
@@ -4723,10 +5384,10 @@ function boot() {
   });
 
   app.el.frame.addEventListener('submit', (e) => {
-    const form = e.target.closest('[data-send]');
-    if (!form) return;
-    e.preventDefault();
-    sendMessage(form.dataset.send);
+    const chat = e.target.closest('[data-send]');
+    if (chat) { e.preventDefault(); sendMessage(chat.dataset.send); return; }
+    const admission = e.target.closest('[data-newstudent]');
+    if (admission) { e.preventDefault(); admitStudent(admission); }
   });
 
   /* Entrée envoie, Maj+Entrée insère un retour à la ligne. */

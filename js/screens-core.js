@@ -431,7 +431,7 @@ screen('students', {
         </div>
       </div>
     </div>
-    <button class="fab" data-action="sheet" aria-label="Ajouter un élève">${icon.plus}</button>
+    <button class="fab" data-nav="newStudent" aria-label="Admettre un élève">${icon.plus}</button>
   </div>`
 });
 
@@ -510,6 +510,8 @@ screen('student', {
               title: 'Cotisations', sub: 'À jour · 25 000 Ar / mois', to: 'finance' })}
             ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.megaphone}</span>`,
               title: 'Conversation', sub: 'Dernier échange il y a 30 min', to: 'chat:c4' })}
+            ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.qr}</span>`,
+              title: 'Carte de membre', sub: 'VM-0001 · code de présence', to: 'card:p1' })}
           </div>
           <button class="btn btn--gold btn--block mt-4" data-nav="evaluate">Évaluer cet élève</button>
         </div>

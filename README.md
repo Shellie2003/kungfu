@@ -2,7 +2,7 @@
 
 Monastère de Kung-Fu · école d'arts martiaux · gestion de la vie quotidienne.
 
-Prototype d'interface **mobile-first** complet et navigable : 37 écrans, deux thèmes,
+Prototype d'interface **mobile-first** complet et navigable : 39 écrans, deux thèmes,
 un design system cohérent. Il sert de **référence directe pour l'implémentation Flutter** —
 chaque composant CSS ci-dessous a son équivalent widget indiqué.
 
@@ -19,7 +19,7 @@ python3 -m http.server 8000     # puis ouvrir http://localhost:8000
 
 Aucune dépendance, aucun réseau, aucune police externe. Ouvrir `index.html` suffit.
 
-- **Colonne de gauche** : index des 37 écrans.
+- **Colonne de gauche** : index des 39 écrans.
 - **Flèches ↑ ↓** : parcourir les écrans. **Échap** : fermer un overlay.
 - **Mode clair / Temple de nuit** : bascule en haut de la scène.
 - Sous 900 px de large, l'échafaudage disparaît et l'application occupe tout l'écran.
@@ -57,6 +57,7 @@ Les explications appartiennent à ce fichier, pas à la configuration.
 | `css/tokens.css` | Source de vérité : couleurs, typographie, espacement, rayons, durées |
 | `css/base.css` | Reset + cadre de présentation (téléphone, index) — **non porté en Flutter** |
 | `css/components.css` | La bibliothèque de composants |
+| `js/qr.js` | Encodeur QR autonome (mode octet, niveau M, versions 1 à 6) + jeton de membre |
 | `js/data.js` | Données fictives (personnes, séances, grades, stocks, finances…) |
 | `js/ui.js` | Icônes + fabriques de composants |
 | `js/screens-core.js` | Écrans 01 → 16 (identité, accueils, arts martiaux) |
@@ -268,7 +269,8 @@ qu'on n'irait pas consulter.
 
 Écrans supplémentaires : `martial` (hub Arts martiaux), `temple` (hub Vie du monastère),
 `session` (détail d'une séance), `dues` (cotisations), `messages` (conversations),
-`chat` (une conversation), `states` (chargement / vide / erreur / synchronisation).
+`chat` (une conversation), `newStudent` (admission), `card` (carte de membre),
+`states` (chargement / vide / erreur / synchronisation).
 
 ### Fonctionnalités interactives
 
@@ -279,6 +281,8 @@ qu'on n'irait pas consulter.
 | `attendance` | Filtre par nom au-dessus de l'appel — avec 48 élèves inscrits, taper coûte moins cher que faire défiler. Taux et compteur recalculés en direct, « tout cocher », état vide si le filtre ne rend rien. |
 | `dues` | Suivi des cotisations : taux de recouvrement, montants en attente, retards classés par ancienneté, rappel groupé. Les montants dérivent d'un tarif unique (25 000 Ar, 12 000 Ar pour les résidents dont l'hébergement est facturé à part) — les totaux de l'écran sont donc cohérents entre eux, pas saisis à la main. |
 | `messages` / `chat` | Messagerie réelle : la saisie envoie, le message s'ajoute au fil, la liste des conversations se met à jour, Entrée envoie et Maj+Entrée passe à la ligne, la zone de saisie grandit avec le texte, la conversation s'ouvre sur son dernier message. |
+| `newStudent` | Admission réelle : validation de trois champs requis avec messages et remontée au premier problème, la cotisation suit l'interrupteur « résident », et la validation crée l'élève dans les mêmes tableaux que les autres — il apparaît aussitôt dans les listes, les rails, les cotisations et la recherche. |
+| `card` | Carte de membre avec un **vrai code QR**, encodé à la volée. |
 | Rails d'accueil | Filtrage par rôle avec redessin animé de la piste. |
 
 ---
@@ -307,7 +311,37 @@ deux thèmes sans qu'aucun composant ne connaisse le thème courant.
 
 ---
 
-## 11. Audit et optimisation
+## 11. Carte de membre et code QR
+
+La carte sert à pointer les présences : son code doit **réellement se scanner**. Un motif
+décoratif qui ressemble à un QR ne servirait à rien devant une caméra. `js/qr.js` est donc
+un encodeur complet écrit à la main — mode octet, correction de niveau M, versions 1 à 6 :
+corps de Galois GF(256), correction Reed-Solomon, entrelacement des blocs, placement en
+zigzag, évaluation des huit masques par pénalité, information de format protégée par
+BCH(15,5). Aucune dépendance : l'application ne charge rien de l'extérieur.
+
+**La vérification ne repose pas sur l'œil.** Chaque motif produit est relu par un décodeur
+tiers (`jsqr`), y compris — et c'est le test qui compte — le SVG **tel qu'il est rendu dans
+la carte**, rastérisé depuis la page puis décodé. Huit charges utiles couvrant les versions
+1 à 5 et les caractères accentués passent le test.
+
+**Le jeton.** Format `VM|<numéro de membre>|<année>|<contrôle>`. La somme de contrôle
+repère une carte modifiée à la main ; elle **n'empêche pas une contrefaçon délibérée**, ce
+qui demanderait une signature délivrée par le serveur. C'est écrit sur l'écran de la carte
+plutôt que laissé à supposer.
+
+**Le format.** Badge vertical plutôt que carte bancaire : sur un écran de téléphone, le
+format paysage ne permet pas de garder à la fois un portrait et un code assez grands. Le
+portrait généré est repris tel quel des fiches de rail, et la bande de grade en pied est
+doublée du nom de la ceinture dans la ligne de rôle — jamais la couleur seule.
+
+**Le coût.** Rendre la carte prend ~7 ms, encodage et évaluation des huit masques compris.
+La marge claire de 4 modules autour du code est imposée par la norme : sans elle, beaucoup
+de lecteurs échouent.
+
+---
+
+## 12. Audit et optimisation
 
 Le prototype a été mesuré plutôt qu'estimé. Ce que l'audit a donné :
 

@@ -104,7 +104,7 @@ screen('community', {
           </div>`).join('')}
         <div style="height:var(--s-8)"></div>
       </div>
-      <button class="fab" data-action="sheet" aria-label="Ajouter un membre">${icon.plus}</button>
+      <button class="fab" data-nav="newStudent" aria-label="Admettre un membre">${icon.plus}</button>
     </div>`;
   }
 });
@@ -266,6 +266,8 @@ screen('member', {
           <div class="list list--card">
             ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.doc}</span>`,
               title: 'Attestation de résidence', sub: 'PDF · 142 Ko', to: 'documents' })}
+            ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.qr}</span>`,
+              title: 'Carte de membre', sub: 'VM-0009 · code de présence', to: 'card:p9' })}
           </div>
         </div>
       </div>
@@ -741,6 +743,183 @@ screen('search', {
     <div class="scroll" data-search-results>
       ${searchResults(searchState.q, searchState.scope)}
     </div>
+  </div>`
+});
+
+/* ============================================================
+   Carte de membre — portrait, identité, code de présence
+   ============================================================ */
+screen('card', {
+  label: '· Carte de membre',
+  render: (id = 'p1') => {
+    const p = person(id) || person('p1');
+    const token = memberToken(p);
+    const belt = p.beltColor || 'var(--line-strong)';
+    return `
+    <div class="screen">
+      ${appbar({ title: 'Carte de membre', back: p.role === 'Élève' ? 'student' : 'member',
+        actions: `<button class="iconbtn" data-action="sheet" aria-label="Options">${icon.dots}</button>` })}
+      <div class="scroll">
+        <div class="pad">
+          <div class="idcard rise">
+            <div class="idcard__head">
+              <span class="idcard__mark">VM</span>
+              <span class="grow">
+                <span class="idcard__org" style="display:block">VATO MASINA</span>
+                <span class="idcard__kind" style="display:block">Carte de membre</span>
+              </span>
+            </div>
+
+            <div class="idcard__portrait">${portraitSVG(p)}</div>
+
+            <div class="idcard__id">
+              <p class="idcard__name">${esc(p.name)}</p>
+              <p class="idcard__role">${esc(p.role)} · ${esc(p.level)}${
+                p.beltName ? ` · ceinture ${p.beltName.toLowerCase()}` : ''}</p>
+              <p class="idcard__num">${memberNumber(p)}</p>
+            </div>
+
+            <div class="idcard__qr">${qrSVG(token, { size: 120 })}</div>
+
+            <div class="idcard__foot">
+              <span class="idcard__valid">Valide jusqu’au<br><b>31 décembre 2026</b></span>
+              <span class="idcard__valid" style="text-align:right">Émise le<br><b>13 août 2026</b></span>
+            </div>
+            <div class="idcard__band" style="--belt:${belt}"></div>
+          </div>
+        </div>
+
+        <div class="section">
+          ${sectionHead('Utiliser cette carte')}
+          <div class="list list--card">
+            ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.qr}</span>`,
+              title: 'Pointer une présence', sub: 'Le maître scanne le code en début de séance',
+              to: 'attendance' })}
+            ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.doc}</span>`,
+              title: 'Enregistrer en PDF', sub: 'Format badge, prêt à imprimer',
+              extra: 'data-action="toast"' })}
+            ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.sync}</span>`,
+              title: 'Régénérer le code', sub: 'En cas de perte ou de vol de la carte',
+              extra: 'data-action="toast"' })}
+          </div>
+        </div>
+
+        <div class="section" style="margin-bottom:var(--s-8)">
+          ${sectionHead('Contenu du code')}
+          <div class="card card--sunken">
+            <p class="num sub" style="word-break:break-all">${esc(token)}</p>
+            <div class="rule mt-4"><i></i></div>
+            <p class="caption mt-4">Organisation · numéro de membre · année · contrôle.
+              La somme de contrôle repère une carte modifiée à la main ; elle
+              n’empêche pas une contrefaçon délibérée, ce qui demanderait une
+              signature délivrée par le serveur.</p>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+});
+
+/* ============================================================
+   Nouvel élève — formulaire d'admission
+   ============================================================ */
+screen('newStudent', {
+  label: '· Nouvel élève',
+  render: () => `
+  <div class="screen">
+    ${appbar({ title: 'Nouvel élève', back: 'students' })}
+    <form class="scroll" data-newstudent novalidate>
+      <p class="caption pad">L’admission crée la fiche, la carte de membre et son
+        code de présence. Les champs marqués d’un point sont requis.</p>
+
+      <div class="section" style="margin-top:var(--s-5)">
+        ${sectionHead('Identité')}
+        <div class="card stack gap-4">
+          <label class="field" data-field="name">
+            <span class="field__label">Nom et prénoms ·</span>
+            <input class="input" name="name" autocomplete="name"
+                   placeholder="Rakotoarisoa Nirina">
+          </label>
+          <label class="field" data-field="phone">
+            <span class="field__label">Téléphone ·</span>
+            <input class="input" name="phone" inputmode="tel" placeholder="034 12 345 67">
+          </label>
+          <label class="field">
+            <span class="field__label">Date de naissance</span>
+            <input class="input" name="birth" placeholder="12 mars 2008">
+          </label>
+          <label class="field">
+            <span class="field__label">Quartier</span>
+            <input class="input" name="area" placeholder="Analakely, Antananarivo">
+          </label>
+        </div>
+      </div>
+
+      <div class="section">
+        ${sectionHead('Pratique')}
+        <div class="card stack gap-5">
+          <div class="field" data-field="group">
+            <span class="field__label">Groupe ·</span>
+            <div class="row wrap gap-2" data-choice="group">
+              ${GROUPS.slice(0, 3).map((g) => `<button type="button" class="filter"
+                 data-value="${esc(g.name)}" aria-pressed="false">${esc(g.name.replace('Groupe ', ''))}</button>`).join('')}
+            </div>
+          </div>
+          <div class="field">
+            <span class="field__label">Grade de départ</span>
+            <div class="row wrap gap-2" data-choice="belt">
+              ${BELTS.slice(0, 3).map((b, i) => `<button type="button" class="filter"
+                 data-value="${b.id}" aria-pressed="${i === 0}">
+                 <i class="belt__disc" style="--belt:${b.color};display:inline-block;vertical-align:-1px"></i>
+                 ${b.name}</button>`).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        ${sectionHead('Séjour')}
+        <div class="list list--card">
+          <div class="item">
+            <span class="seal seal--sm seal--ink">${icon.bed}</span>
+            <span class="grow">
+              <span class="item__title" style="display:block">Résident au monastère</span>
+              <span class="item__sub" style="display:block">Cotisation réduite, hébergement facturé à part</span>
+            </span>
+            <button type="button" class="switch" role="switch" aria-checked="false"
+                    aria-label="Résident au monastère" data-action="toggle" data-resident></button>
+          </div>
+          ${item({ title: 'Date d’entrée', end: '<span class="sub">13 août 2026</span>' })}
+          ${item({ title: 'Cotisation mensuelle',
+            end: '<span class="num sub" data-fee>25 000 Ar</span>' })}
+        </div>
+      </div>
+
+      <div class="section">
+        ${sectionHead('Contact d’urgence')}
+        <div class="card stack gap-4">
+          <label class="field">
+            <span class="field__label">Nom</span>
+            <input class="input" name="kin" placeholder="Parent ou tuteur">
+          </label>
+          <label class="field">
+            <span class="field__label">Téléphone</span>
+            <input class="input" name="kinPhone" inputmode="tel" placeholder="033 00 000 00">
+          </label>
+        </div>
+      </div>
+
+      <div class="section" style="margin-bottom:var(--s-8)">
+        <div class="card card--sunken row gap-3">
+          <span class="seal seal--sm seal--ink">${icon.qr}</span>
+          <span class="notice__text grow">Le portrait et le code de présence sont
+            générés à la validation. La carte pourra être imprimée ensuite.</span>
+        </div>
+        <button class="btn btn--gold btn--block mt-4" type="submit">Admettre l’élève</button>
+        <button class="btn btn--ghost btn--block btn--sm mt-2" type="button"
+                data-nav="students">Annuler</button>
+      </div>
+    </form>
   </div>`
 });
 
