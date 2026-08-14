@@ -291,6 +291,31 @@ const SEARCH_INDEX = [
   { label: 'Reçu de don — Rakoto Jean', kind: 'Document', to: 'documents' }
 ];
 
+/* ---------------------------------------------- Cotisations
+   La spec prévoit un accès « Mes paiements » côté élève et un suivi
+   côté intendance, mais aucun écran ne le portait. Montants en Ariary,
+   cotisation mensuelle de base 25 000 Ar (12 000 pour les résidents,
+   l'hébergement étant facturé à part). */
+const DUES_FEE = { externe: 25000, resident: 12000 };
+
+const DUES = STUDENTS.map((p) => {
+  const fee = p.resident ? DUES_FEE.resident : DUES_FEE.externe;
+  const late = p.dues === 'Retard' ? (p.id === 'p5' ? 3 : 1) : 0;
+  return {
+    id: p.id, fee, late,
+    status: late === 0 ? 'À jour' : late === 1 ? 'En retard' : 'Critique',
+    due: fee * late,
+    last: late === 0 ? '2 août 2026' : late === 1 ? '4 juil. 2026' : '12 mai 2026'
+  };
+});
+
+const DUES_SUMMARY = {
+  collected: DUES.filter((d) => !d.late).reduce((a, d) => a + d.fee, 0),
+  pending: DUES.reduce((a, d) => a + d.due, 0),
+  get expected() { return this.collected + this.pending; },
+  get rate() { return Math.round((this.collected / this.expected) * 100); }
+};
+
 /* ---------------------------------------------- Présents au monastère
    Sert les rails de l'accueil. Les groupes se recoupent volontairement :
    un maître présent apparaît sous « Présents » et sous « Maîtres ». */

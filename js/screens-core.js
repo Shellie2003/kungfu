@@ -257,7 +257,7 @@ screen('homeAdmin', {
         ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.bed}</span>`,
           title: 'Chambre B204 en entretien', sub: 'Depuis 4 jours', to: 'rooms' })}
         ${item({ lead: `<span class="seal seal--sm seal--gold">${icon.coin}</span>`,
-          title: '4 cotisations en retard', sub: '320 000 Ar attendus', to: 'finance' })}
+          title: '4 cotisations en retard', sub: `${DUES_SUMMARY.pending.toLocaleString('fr-FR').replace(/,/g, ' ')} Ar attendus`, to: 'dues' })}
       </div>
     </div>
 
@@ -360,7 +360,7 @@ screen('homeStudent', {
       <div class="section" style="margin-bottom:var(--s-8)">
         <div class="stack gap-2">
           ${[['Mon programme', 'techniques'], ['Mon parcours', 'journey'],
-             ['Mes présences', 'attendance'], ['Mes paiements', 'finance']].map(([l, to]) => `
+             ['Mes présences', 'attendance'], ['Mes paiements', 'dues']].map(([l, to]) => `
             <button class="card card--tap card--flat between" data-nav="${to}">
               <span class="item__title">${l}</span><span class="chevron">${icon.chev}</span>
             </button>`).join('')}
@@ -800,6 +800,15 @@ screen('attendance', {
           <div class="mt-4" data-roll-bar>${bar(rate, 'bar__fill--positive')}</div>
         </div>
       </div>
+      <!-- Avec 48 élèves inscrits, faire défiler pour trouver un nom
+           coûte plus cher que de le taper : l'appel se filtre. -->
+      <div class="pad mt-4">
+        <div class="searchbar">${icon.search}
+          <input data-roll-search autocomplete="off" placeholder="Filtrer par nom"
+                 aria-label="Filtrer la liste d’appel">
+        </div>
+      </div>
+
       <div class="section" style="margin-top:var(--s-5)">
         <div class="between mb-2" style="margin-bottom:var(--s-3)">
           <p class="overline">Appel</p>
@@ -818,6 +827,8 @@ screen('attendance', {
             </button>`;
           }).join('')}
         </div>
+        <p class="caption mt-4" style="text-align:center" data-roll-empty hidden>
+          Aucun élève ne correspond à ce nom.</p>
       </div>
       <div class="section mt-4" style="margin-bottom:var(--s-8)">
         <div class="card card--sunken row gap-3">
@@ -907,14 +918,54 @@ screen('exams', {
 /* ============================================================
    16. Évaluation d'un élève
    ============================================================ */
+/* L'évaluation était figée : les notes s'affichaient sans pouvoir être
+   saisies. Chaque épreuve porte désormais un pas-à-pas, et la moyenne
+   comme le verdict se recalculent à chaque appui. */
+const examState = { scores: EXAM_SCORES.map((s) => ({ ...s })) };
+
+function examAverage() {
+  const t = examState.scores.reduce((a, b) => a + b.score, 0);
+  return t / examState.scores.length;
+}
+
+/** Bloc note + pas-à-pas, redessiné seul lors d'un changement. */
+function scoreRow(s, i) {
+  return `<div class="score" data-score-row="${i}">
+    <div class="between">
+      <span class="body">${esc(s.name)}</span>
+      <span class="row gap-2">
+        <button class="stepper" data-score="${i}" data-delta="-1"
+                aria-label="Diminuer la note de ${esc(s.name)}">−</button>
+        <span class="num heading" style="min-width:52px;text-align:center"
+              data-score-value="${i}">${s.score}<span class="sub">/20</span></span>
+        <button class="stepper" data-score="${i}" data-delta="1"
+                aria-label="Augmenter la note de ${esc(s.name)}">+</button>
+      </span>
+    </div>
+    <div class="mt-2" data-score-bar="${i}">${bar(s.score * 5, s.score >= 16 ? 'bar__fill--positive' : s.score < 10 ? 'bar__fill--accent' : '')}</div>
+  </div>`;
+}
+
+/** Bandeau de moyenne : verdict porté par le texte, pas par la seule couleur. */
+function examVerdict() {
+  const avg = examAverage();
+  const pass = avg >= 12;
+  return `<div class="ink between" data-exam-verdict>
+    <div><p class="overline">Moyenne générale</p>
+      <p class="caption mt-2" style="color:var(--text-on-ink-dim)">Seuil de réussite : 12/20</p>
+      <p class="mt-3">${badge(pass ? 'Grade acquis' : 'Sous le seuil', pass ? 'positive' : 'danger')}</p></div>
+    <p class="num display" style="color:${pass ? 'var(--gold-bright)' : 'var(--accent-text)'}">${avg.toFixed(1).replace(".", ",")}</p>
+  </div>`;
+}
+
 screen('evaluate', {
   label: '16 · Évaluation',
   render: () => {
     const p = person('p1');
-    const avg = (EXAM_SCORES.reduce((a, b) => a + b.score, 0) / EXAM_SCORES.length).toFixed(1);
     return `
     <div class="screen">
-      ${appbar({ title: 'Évaluation', back: 'exams' })}
+      ${appbar({ title: 'Évaluation', back: 'exams',
+        actions: `<button class="iconbtn" data-action="scoreReset" aria-label="Réinitialiser les notes">${icon.sync}</button>` })}
       <div class="scroll">
         <div class="pad row gap-3">
           ${avatar(p, 'md')}
@@ -925,24 +976,11 @@ screen('evaluate', {
         <div class="section" style="margin-top:var(--s-5)">
           ${sectionHead('Notes par épreuve')}
           <div class="card stack gap-5">
-            ${EXAM_SCORES.map((s) => `
-              <div>
-                <div class="between">
-                  <span class="body">${esc(s.name)}</span>
-                  <span class="num heading">${s.score}<span class="sub">/20</span></span>
-                </div>
-                <div class="mt-2">${bar(s.score * 5, s.score >= 18 ? 'bar__fill--positive' : '')}</div>
-              </div>`).join('')}
+            ${examState.scores.map(scoreRow).join('')}
           </div>
         </div>
 
-        <div class="section">
-          <div class="ink between">
-            <div><p class="overline">Moyenne générale</p>
-              <p class="caption mt-2" style="color:var(--text-on-ink-dim)">Seuil de réussite : 12/20</p></div>
-            <p class="num display" style="color:var(--gold-bright)">${avg}</p>
-          </div>
-        </div>
+        <div class="section">${examVerdict()}</div>
 
         <div class="section">
           <label class="field">

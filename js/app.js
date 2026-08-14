@@ -69,13 +69,13 @@ function buildIndex() {
                        'techniques', 'trainings', 'session', 'attendance', 'exams', 'evaluate']],
     ['Communauté', ['community', 'member']],
     ['Vie du monastère', ['temple', 'planning', 'rooms', 'meals', 'stock', 'events']],
-    ['Gestion', ['finance', 'donations', 'documents']],
+    ['Gestion', ['finance', 'dues', 'donations', 'documents']],
     ['Système', ['notifications', 'search', 'settings', 'users', 'permissions', 'states']]
   ];
   app.el.index.innerHTML = `
     <div class="index__brand">
       <div class="index__mark"><span>龍</span> Long Shan</div>
-      <p class="index__sub">Système d’interface · 34 écrans</p>
+      <p class="index__sub">Système d’interface · 35 écrans</p>
     </div>
     ${groups.map(([g, keys]) => `
       <p class="index__group">${g}</p>
@@ -129,6 +129,7 @@ function openSheet() {
       <div class="list mt-3">
         ${[['Ressources & stocks', 'stock', icon.box],
            ['Finances', 'finance', icon.coin],
+           ['Cotisations', 'dues', icon.users],
            ['Documents', 'documents', icon.doc],
            ['Notifications', 'notifications', icon.bell],
            ['Recherche globale', 'search', icon.search],
@@ -154,7 +155,7 @@ function openGradeDialog() {
         </div>
         <p class="overline overline--gold mt-5">Grade validé</p>
         <h2 class="title mt-2">Ceinture orange</h2>
-        <p class="sub mt-2">Rakoto Andry · moyenne 17,2/20</p>
+        <p class="sub mt-2">Rakoto Andry · moyenne ${examAverage().toFixed(1).replace('.', ',')}/20</p>
         <div class="rule mt-5"><i></i></div>
         <p class="caption mt-4">Un certificat a été généré et ajouté aux documents.</p>
         <button class="btn btn--primary btn--block mt-5" data-close-btn>Fermer</button>
@@ -179,6 +180,42 @@ function updateRoll() {
   app.el.frame.querySelector('[data-roll-count]').textContent = present;
   app.el.frame.querySelector('[data-roll-rate]').textContent = rate + '%';
   app.el.frame.querySelector('[data-roll-bar] .bar__fill').style.width = rate + '%';
+}
+
+/* ---------------------------------------------- Recherche globale */
+function refreshSearch() {
+  const box = app.el.frame.querySelector('[data-search-results]');
+  if (!box) return;
+  box.innerHTML = searchResults(searchState.q, searchState.scope);
+  box.scrollTop = 0;
+}
+
+/* ---------------------------------------------- Évaluation : pas-à-pas */
+function bumpScore(i, delta) {
+  const s = examState.scores[i];
+  const next = Math.max(0, Math.min(20, s.score + delta));
+  if (next === s.score) return;
+  s.score = next;
+
+  /* Seule la ligne touchée et le bandeau de moyenne sont redessinés :
+     redessiner l'écran entier ferait perdre le focus et la position. */
+  app.el.frame.querySelector(`[data-score-value="${i}"]`).innerHTML =
+    `${s.score}<span class="sub">/20</span>`;
+  app.el.frame.querySelector(`[data-score-bar="${i}"]`).innerHTML =
+    bar(s.score * 5, s.score >= 16 ? 'bar__fill--positive' : s.score < 10 ? 'bar__fill--accent' : '');
+  app.el.frame.querySelector('[data-exam-verdict]').outerHTML = examVerdict();
+}
+
+/* ---------------------------------------------- Appel : filtre par nom */
+function filterRoll(q) {
+  const n = norm(q).trim();
+  app.el.frame.querySelectorAll('[data-roll-id]').forEach((row) => {
+    const name = row.querySelector('.check__name').textContent;
+    row.hidden = n ? !norm(name).includes(n) : false;
+  });
+  const visible = [...app.el.frame.querySelectorAll('[data-roll-id]')].filter((r) => !r.hidden);
+  const note = app.el.frame.querySelector('[data-roll-empty]');
+  if (note) note.hidden = visible.length > 0;
 }
 
 /* ---------------------------------------------- Écoute globale */
@@ -213,6 +250,20 @@ function onClick(e) {
       break;
     }
 
+    case 'searchClear': {
+      searchState.q = '';
+      const input = app.el.frame.querySelector('[data-search-input]');
+      if (input) { input.value = ''; input.focus(); }
+      refreshSearch();
+      break;
+    }
+
+    case 'scoreReset':
+      examState.scores = EXAM_SCORES.map((s) => ({ ...s }));
+      navigate('evaluate', { animate: false });
+      toast('Notes réinitialisées.');
+      break;
+
     case 'rollAll': {
       app.el.frame.querySelectorAll('[data-roll-id]').forEach((b) =>
         b.setAttribute('aria-checked', 'true'));
@@ -225,6 +276,27 @@ function onClick(e) {
 
 /* Interactions au sein d'un écran (cases, onglets, filtres, segments) */
 function onScreenClick(e) {
+  const step = e.target.closest('[data-score]');
+  if (step) { bumpScore(+step.dataset.score, +step.dataset.delta); return; }
+
+  const chip = e.target.closest('[data-search]');
+  if (chip) {
+    searchState.q = chip.dataset.search;
+    const input = app.el.frame.querySelector('[data-search-input]');
+    if (input) input.value = searchState.q;
+    refreshSearch();
+    return;
+  }
+
+  const scope = e.target.closest('[data-scope]');
+  if (scope) {
+    searchState.scope = scope.dataset.scope;
+    scope.parentElement.querySelectorAll('.filter').forEach((x) =>
+      x.setAttribute('aria-pressed', String(x === scope)));
+    refreshSearch();
+    return;
+  }
+
   const check = e.target.closest('[data-roll-id]');
   if (check) {
     check.setAttribute('aria-checked',
@@ -271,12 +343,26 @@ function boot() {
   app.el.index = document.getElementById('index');
   app.el.caption = document.getElementById('caption');
 
+  /* Le sprite vit hors du cadre : `navigate()` remplace tout le contenu
+     de #frame, il serait détruit à la première navigation. */
+  document.body.insertAdjacentHTML('afterbegin', ICON_SPRITE);
+
   buildIndex();
   setTheme('light');
   navigate('splash', { animate: false });
 
   document.addEventListener('click', onClick);
   app.el.frame.addEventListener('click', onScreenClick);
+
+  /* Saisie : recherche globale et filtre d'appel réagissent à la frappe. */
+  app.el.frame.addEventListener('input', (e) => {
+    if (e.target.matches('[data-search-input]')) {
+      searchState.q = e.target.value;
+      refreshSearch();
+    } else if (e.target.matches('[data-roll-search]')) {
+      filterRoll(e.target.value);
+    }
+  });
 
   document.querySelectorAll('[data-theme-btn]').forEach((b) =>
     b.addEventListener('click', () => setTheme(b.dataset.themeBtn)));

@@ -421,6 +421,8 @@ screen('finance', {
           <div class="list list--card">
             ${item({ lead: `<span class="seal seal--sm seal--gold">${icon.coin}</span>`,
               title: 'Dons', sub: '12 850 000 Ar collectés', to: 'donations' })}
+            ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.users}</span>`,
+              title: 'Cotisations', sub: `${DUES_SUMMARY.rate}% recouvrés · 4 en retard`, to: 'dues' })}
             ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.doc}</span>`,
               title: 'Rapports financiers', sub: 'Juillet 2026 disponible', to: 'documents' })}
           </div>
@@ -599,6 +601,12 @@ screen('notifications', {
 /* ============================================================
    27. Recherche globale
    ============================================================ */
+/* La recherche est réellement fonctionnelle : elle interroge un index
+   construit sur les données de l'application (personnes, grades,
+   techniques, séances, événements, documents, chambres, ressources,
+   dons) et se met à jour à chaque frappe. */
+const searchState = { q: '', scope: 'Tout' };
+
 screen('search', {
   label: '27 · Recherche',
   render: () => `
@@ -606,33 +614,95 @@ screen('search', {
     ${appbar({ title: 'Recherche', back: 'homeMaster' })}
     <div class="pad">
       <div class="searchbar">${icon.search}
-        <input value="Rakoto" autocomplete="off">
-        <button class="iconbtn" style="width:28px;height:28px" aria-label="Effacer">${icon.x}</button>
+        <input value="${esc(searchState.q)}" autocomplete="off" autocapitalize="off"
+               spellcheck="false" data-search-input
+               placeholder="Une personne, un grade, une chambre…"
+               aria-label="Rechercher dans le monastère">
+        <button class="iconbtn" data-action="searchClear" aria-label="Effacer la recherche">${icon.x}</button>
       </div>
     </div>
-    <div class="filters">
-      ${['Tout', 'Personnes', 'Grades', 'Séances', 'Documents', 'Finances'].map((f, i) =>
-        `<button class="filter" aria-pressed="${i === 0}">${f}</button>`).join('')}
+    <div class="filters" data-search-scope>
+      ${['Tout', 'Personnes', 'Grades', 'Technique', 'Séances', 'Chambres',
+         'Ressources', 'Documents', 'Événements', 'Finances'].map((f) =>
+        `<button class="filter" data-scope="${f}"
+           aria-pressed="${searchState.scope === f}">${f}</button>`).join('')}
     </div>
-    <div class="scroll">
-      <div class="section" style="margin-top:0">
-        <p class="caption">6 résultats pour « Rakoto »</p>
-        <div class="list list--card mt-3">
-          ${SEARCH_INDEX.map((r) => item({
-            lead: `<span class="avatar avatar--sm">${initials(r.label)}</span>`,
-            title: esc(r.label), sub: esc(r.kind), to: r.to
-          })).join('')}
-        </div>
-      </div>
-      <div class="section" style="margin-bottom:var(--s-8)">
-        ${sectionHead('Recherches récentes')}
-        <div class="row wrap gap-2">
-          ${['Ceinture orange', 'Chambre A102', 'Examen août', 'Stock riz'].map((t) =>
-            `<span class="badge badge--outline">${t}</span>`).join('')}
-        </div>
-      </div>
+    <div class="scroll" data-search-results>
+      ${searchResults(searchState.q, searchState.scope)}
     </div>
   </div>`
+});
+
+/* ============================================================
+   Cotisations — suivi des paiements des élèves
+   La spec prévoyait « Mes paiements » côté élève et le suivi des
+   cotisations côté intendance sans qu'aucun écran ne le porte.
+   ============================================================ */
+screen('dues', {
+  label: '· Cotisations',
+  render: () => {
+    const late = DUES.filter((d) => d.late).sort((a, b) => b.late - a.late);
+    const ok = DUES.filter((d) => !d.late);
+    return `
+    <div class="screen">
+      ${appbar({ title: 'Cotisations', back: 'finance',
+        actions: `<button class="iconbtn" data-action="sheet" aria-label="Encaisser">${icon.plus}</button>` })}
+      <div class="scroll">
+        <div class="pad">
+          <div class="ink">
+            <p class="overline">Août 2026</p>
+            <p class="num display mt-3" style="color:var(--gold-bright)">
+              ${DUES_SUMMARY.collected.toLocaleString('fr-FR').replace(/,/g, ' ')}
+              <span style="font-size:18px">Ar</span></p>
+            <p class="sub mt-2">encaissés sur ${DUES_SUMMARY.expected.toLocaleString('fr-FR').replace(/,/g, ' ')} Ar attendus</p>
+            <div class="mt-4">${bar(DUES_SUMMARY.rate, 'bar__fill--positive')}</div>
+            <div class="row gap-5 mt-5">
+              <div><p class="caption">Taux de recouvrement</p>
+                <p class="num heading" style="color:var(--text-on-ink)">${DUES_SUMMARY.rate}%</p></div>
+              <div style="width:1px;align-self:stretch;background:rgba(198,161,91,.22)"></div>
+              <div><p class="caption">En attente</p>
+                <p class="num heading" style="color:var(--text-on-ink)">${DUES_SUMMARY.pending.toLocaleString('fr-FR').replace(/,/g, ' ')}</p></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          ${sectionHead(`En retard — ${late.length}`)}
+          <div class="list list--card">
+            ${late.map((d) => {
+              const p = person(d.id);
+              return item({
+                lead: avatar(p, 'md'),
+                title: esc(p.name),
+                sub: `${d.late} mois · depuis le ${d.last}`,
+                end: `<span class="stack" style="align-items:flex-end;gap:4px">
+                        <span class="num sub" style="color:var(--danger)">${d.due.toLocaleString('fr-FR').replace(/,/g, ' ')} Ar</span>
+                        ${badge(d.status, d.status === 'Critique' ? 'danger' : 'warning')}
+                      </span>`,
+                to: 'student'
+              });
+            }).join('')}
+          </div>
+          <button class="btn btn--outline btn--block mt-4" data-action="toast">
+            ${icon.megaphone}Envoyer un rappel groupé</button>
+        </div>
+
+        <div class="section" style="margin-bottom:var(--s-8)">
+          ${sectionHead(`À jour — ${ok.length}`)}
+          <div class="list list--card">
+            ${ok.map((d) => {
+              const p = person(d.id);
+              return item({
+                lead: avatar(p, 'md'), title: esc(p.name),
+                sub: `${d.fee.toLocaleString('fr-FR').replace(/,/g, ' ')} Ar / mois · réglé ${d.last}`,
+                end: badge('À jour', 'positive'), to: 'student'
+              });
+            }).join('')}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
 });
 
 /* ============================================================
@@ -660,7 +730,7 @@ screen('settings', {
             <span class="seal seal--sm seal--ink">${icon.moon}</span>
             <span class="grow"><span class="item__title" style="display:block">Temple de nuit</span>
               <span class="item__sub" style="display:block">Mode sombre</span></span>
-            <button class="switch" role="switch" aria-checked="false" data-action="theme"></button>
+            <button class="switch" role="switch" aria-checked="false" aria-label="Mode sombre « Temple de nuit »" data-action="theme"></button>
           </div>
           ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.eye}</span>`,
             title: 'Taille du texte', end: `<span class="sub">Standard</span>`, to: 'settings' })}
@@ -770,7 +840,7 @@ screen('permissions', {
             ${g.items.map((it) => `
               <div class="item">
                 <span class="grow"><span class="item__title">${esc(it.n)}</span></span>
-                <button class="switch" role="switch" aria-checked="${it.on}" data-action="toggle"></button>
+                <button class="switch" role="switch" aria-checked="${it.on}" aria-label="${esc(it.n)}" data-action="toggle"></button>
               </div>`).join('')}
           </div>
         </div>`).join('')}

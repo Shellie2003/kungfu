@@ -2,9 +2,13 @@
 
 Monastère de Kung-Fu · école d'arts martiaux · gestion de la vie quotidienne.
 
-Prototype d'interface **mobile-first** complet et navigable : 34 écrans, deux thèmes,
+Prototype d'interface **mobile-first** complet et navigable : 35 écrans, deux thèmes,
 un design system cohérent. Il sert de **référence directe pour l'implémentation Flutter** —
 chaque composant CSS ci-dessous a son équivalent widget indiqué.
+
+Trois écrans ne sont pas des maquettes : la **recherche globale** interroge réellement les
+données, l'**évaluation d'examen** se saisit au pas-à-pas avec moyenne et verdict recalculés,
+et l'**appel de présence** se filtre au nom.
 
 ## Lancer
 
@@ -148,7 +152,9 @@ Les nombres utilisent `font-variant-numeric: tabular-nums` → en Flutter,
 | `.segmented` | Sélecteur 2–3 options | `SegmentedButton` restylé |
 | `.list--card` / `.item` | Liste encartée, séparateurs internes | `Column` dans `ClipRRect` + `ListTile` |
 | `.railblock` / `.rail` | Carousel horizontal à accroche, débordant des marges | `ListView.separated(scrollDirection: Axis.horizontal)`, accroche via `PageScrollPhysics` ou `CarouselView` |
-| `.mcard` / `.mcard--ink` / `.mcard--more` | Fiche membre portrait (132 px), variante encre pour les enseignants, carte d'accès à la liste | `SizedBox(width: 132)` + `Card` |
+| `.mcard` | **Fiche membre en couches** (156 × 208) : portrait, voile dégradé, grade flottant, nom ancré en bas. Toutes les couches partagent la cellule `1 / 1` d'une grille | `Stack` + `Positioned` — c'est le cas d'usage direct de `Stack` |
+| `portraitSVG()` | Portrait déterministe généré : dégradé teinté par le grade, sceau en filigrane, initiales gravées | `CustomPaint` ou `SvgPicture.string` |
+| `.stepper` | Pas-à-pas de notation, cible 38 px | `IconButton` + `InkWell` |
 | `.scard` | Fiche séance paysage (232 px), l'heure domine | `SizedBox(width: 232)` + `Card` |
 | `.input` / `.field` / `.field--error` | Champ creusé, focus doré, état d'erreur | `TextField` + `InputDecoration` |
 | `.check` | Ligne d'appel, cible 56 px, coche tracée | `InkWell` + `CustomPaint` (animation de tracé) |
@@ -230,7 +236,70 @@ qu'on n'irait pas consulter.
 | 15 | `exams` | Examens | 30 | `permissions` | Rôles & permissions |
 
 Écrans supplémentaires : `martial` (hub Arts martiaux), `temple` (hub Vie du monastère),
-`session` (détail d'une séance), `states` (chargement / vide / erreur / synchronisation).
+`session` (détail d'une séance), `dues` (cotisations), `states` (chargement / vide /
+erreur / synchronisation).
+
+### Fonctionnalités interactives
+
+| Écran | Ce qui fonctionne réellement |
+|---|---|
+| `search` | Index construit sur les données de l'app — personnes, grades, techniques, formes, séances, événements, documents, chambres, ressources, dons. Recherche insensible aux accents (« maitre » trouve « Maître »), multi-mots, résultats groupés, portion trouvée surlignée, tri plaçant les débuts de libellé en tête, filtres par catégorie, état vide. |
+| `evaluate` | Chaque épreuve porte un pas-à-pas −/+ borné à 0–20. La moyenne et le verdict (« Grade acquis » / « Sous le seuil », seuil 12) se recalculent à chaque appui, et la cérémonie de validation reprend la moyenne réellement saisie. Seule la ligne touchée est redessinée. |
+| `attendance` | Filtre par nom au-dessus de l'appel — avec 48 élèves inscrits, taper coûte moins cher que faire défiler. Taux et compteur recalculés en direct, « tout cocher », état vide si le filtre ne rend rien. |
+| `dues` | Suivi des cotisations : taux de recouvrement, montants en attente, retards classés par ancienneté, rappel groupé. Les montants dérivent d'un tarif unique (25 000 Ar, 12 000 Ar pour les résidents dont l'hébergement est facturé à part) — les totaux de l'écran sont donc cohérents entre eux, pas saisis à la main. |
+| Rails d'accueil | Filtrage par rôle avec redessin animé de la piste. |
+
+---
+
+## 10. Audit et optimisation
+
+Le prototype a été mesuré plutôt qu'estimé. Ce que l'audit a donné :
+
+**Ce qui allait déjà.** Rendu d'un écran entre 2 et 6 ms (médiane 2,2 ms), défilement à
+60 images/s sur l'écran le plus lourd, aucun bouton imbriqué dans un autre. Il n'y avait
+donc rien à gagner à optimiser le JavaScript, et ça n'a pas été fait.
+
+**Deux bugs visuels que seule la mesure révélait.** Un `<svg>` sans `width`/`height`
+s'étire à 100 % de son conteneur. Conséquence : les icônes remplissaient le sceau entier
+(36, 52 et 76 px au lieu de 17, 24 et 36), et l'icône d'erreur de l'écran de connexion
+s'affichait à **194 px**. Chaque conteneur pose désormais sa taille.
+
+**Un défaut de cascade.** `.card--tap` déclarait `display: block` et, plus bas dans la
+feuille, écrasait le `flex` de `.row` : les enfants retombaient en flux inline et le
+chevron, devenu inline, ignorait sa largeur. Cinq cartes de trois écrans étaient touchées.
+Les utilitaires de disposition sont maintenant repris en fin de feuille.
+
+**Sprite d'icônes.** L'écran Communauté portait 15 balises `<svg>` pour 3 dessins
+distincts. Les tracés sont déclarés une fois dans un sprite `<symbol>`, chaque usage
+n'émettant plus qu'un `<use>` : **4 008 → 3 814 nœuds DOM** sur l'ensemble des écrans
+(−4,8 %), sans aucune régression de taille d'icône (vérifié écran par écran).
+
+**Un sélecteur `:has()` qui coûtait cher.** `.section__head:has(+ .filters)` élargit
+l'invalidation de style bien au-delà de son effet : il pesait sur le rendu d'écrans qui ne
+contiennent aucun rail. En le remplaçant par une classe posée à la construction,
+l'écran Communauté est passé de **11,5 à 4,6 ms** et le total de tous les écrans de
+**168 à 127 ms**. Leçon retenue dans la feuille : ce qui peut être décidé au moment de
+construire le balisage ne doit pas être déduit par le sélecteur.
+
+**Plafond de rail.** Un rail chargeait toutes les personnes du filtre. Avec les 48 élèves
+réels du monastère, cela ferait 48 portraits rendus pour trois visibles. Le rail plafonne
+à 10 cartes, la carte de fin annonçant « + N autres ». C'était la réserve signalée au
+tour précédent : elle est levée.
+
+**Accessibilité.** Les interrupteurs de `settings` et `permissions` n'avaient pas de nom
+accessible — un lecteur d'écran annonçait « bouton » sans dire lequel. Les actions de
+section (« Tout voir », « Planning ») offraient une cible de 30 px ; elles font désormais
+44 px, les marges négatives préservant la hauteur visuelle de la ligne de titre. Les
+interrupteurs gardent leur rail de 28 px mais portent une cible de 44 px via un
+pseudo-élément — vérifié par un clic 6 px au-dessus du rail, qui bascule bien l'état.
+
+**Le coût assumé.** Les portraits pleine carte sont plus chers que les pastilles
+d'initiales qu'ils remplacent : l'accueil rend en ~12 ms contre ~6 ms auparavant. C'est un
+choix, pas une dérive — le budget d'une image à 60 images/s est de 16 ms, le défilement
+reste à 60 images/s, et le rendu n'a lieu qu'à la navigation.
+
+**Robustesse de liste.** Un sous-titre long poussait la colonne de droite et cassait
+l'alignement de toute la liste ; `.item__sub` tient maintenant sur une ligne avec ellipse.
 
 ---
 

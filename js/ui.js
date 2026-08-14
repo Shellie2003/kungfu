@@ -6,53 +6,123 @@
 
 /* ---------------------------------------------- Icônes
    Trait de 1.6px, bouts arrondis, 24×24. Volontairement peu
-   nombreuses : l'app privilégie le mot sur le pictogramme.     */
+   nombreuses : l'app privilégie le mot sur le pictogramme.
+
+   Les tracés sont déclarés une seule fois dans un sprite <symbol>
+   injecté au démarrage ; chaque usage n'émet plus qu'un <use>.
+   Un écran comme Communauté portait 15 <svg> pour 3 dessins distincts.
+
+   `I()` reste disponible pour les illustrations ponctuelles (états
+   vides), qui ne sont pas des icônes réutilisables.               */
 const I = (d, extra = '') =>
   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${extra}${d}</svg>`;
 
+/* Marqueur : `P()` déclare un tracé de sprite au lieu d'un SVG complet. */
+const P = (d) => ({ __path: d });
+
 const icon = {
-  home:     I('<path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z"/>'),
+  home:     P('<path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z"/>'),
   /* Pratiquant en garde — marque du dojo. */
-  martial:  I('<circle cx="12" cy="4.8" r="2.2"/><path d="M12 7.4v5.2"/><path d="m5.5 10.6 6.5-1.4 6.5 1.4"/><path d="m12 12.6-3.6 7.4"/><path d="m12 12.6 3.6 7.4"/>'),
-  community:I('<circle cx="9" cy="8" r="3"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.5a3 3 0 0 1 0 5"/><path d="M17.5 14.2A5.5 5.5 0 0 1 20.5 19"/>'),
-  temple:   I('<path d="M3 9h18"/><path d="M12 3 4 8h16z"/><path d="M5.5 9v10"/><path d="M18.5 9v10"/><path d="M3 19h18"/><path d="M10 19v-4a2 2 0 0 1 4 0v4"/>'),
-  more:     I('<path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h10"/>'),
-  bell:     I('<path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 13 6 9"/><path d="M10 18a2 2 0 0 0 4 0"/>'),
-  search:   I('<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/>'),
-  back:     I('<path d="M15 5 8 12l7 7"/>'),
-  chev:     I('<path d="m9 5 7 7-7 7"/>'),
-  check:    I('<path d="m5 12.5 4.5 4.5L19 7"/>'),
-  plus:     I('<path d="M12 5v14"/><path d="M5 12h14"/>'),
-  seal:     I('<rect x="4" y="4" width="16" height="16" rx="5"/><path d="M9 12h6"/><path d="M12 9v6"/>'),
-  calendar: I('<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17"/><path d="M8 3v4"/><path d="M16 3v4"/>'),
-  clock:    I('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'),
-  users:    I('<circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/>'),
-  belt:     I('<path d="M3 10h18v4H3z"/><path d="M9 14v6l3-2 3 2v-6"/>'),
-  box:      I('<path d="M4 8.5 12 4l8 4.5v7L12 20l-8-4.5z"/><path d="M4 8.5 12 13l8-4.5"/><path d="M12 13v7"/>'),
-  coin:     I('<ellipse cx="12" cy="7" rx="7.5" ry="3.2"/><path d="M4.5 7v10c0 1.8 3.4 3.2 7.5 3.2s7.5-1.4 7.5-3.2V7"/><path d="M4.5 12c0 1.8 3.4 3.2 7.5 3.2s7.5-1.4 7.5-3.2"/>'),
-  doc:      I('<path d="M6 3h7l5 5v13H6z"/><path d="M13 3v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/>'),
-  gear:     I('<circle cx="12" cy="12" r="3"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8"/>'),
-  bed:      I('<path d="M3 18v-8"/><path d="M3 13h18v5"/><path d="M21 18v-4a3 3 0 0 0-3-3H8"/><circle cx="7" cy="10" r="2"/>'),
-  bowl:     I('<path d="M3.5 11h17a8.5 8.5 0 0 1-17 0z"/><path d="M12 11c0-2 2-2.5 2-4s-2-2-2-3.5"/><path d="M4 20h16"/>'),
-  lotus:    I('<path d="M12 4c2 2.2 3 4.6 3 7-2 .6-4 .6-6 0 0-2.4 1-4.8 3-7z"/><path d="M5 9c2.7-.4 5 .6 6.6 2.6C10 14 7.5 14.6 5 14 3.9 12.5 3.9 10.5 5 9z"/><path d="M19 9c1.1 1.5 1.1 3.5 0 5-2.5.6-5 0-6.6-2.4C14 9.6 16.3 8.6 19 9z"/><path d="M4 15c2.4 3 5 4.5 8 4.5s5.6-1.5 8-4.5"/>'),
-  flag:     I('<path d="M6 21V4"/><path d="M6 5h11l-2 3.5L17 12H6z"/>'),
-  alert:    I('<path d="M12 4.5 21 19H3z"/><path d="M12 10v4"/><path d="M12 16.6v.4"/>'),
-  qr:       I('<rect x="4" y="4" width="6" height="6" rx="1.4"/><rect x="14" y="4" width="6" height="6" rx="1.4"/><rect x="4" y="14" width="6" height="6" rx="1.4"/><path d="M14 14h2.5v2.5H14z"/><path d="M20 14v2M17.5 20H20v-2.5"/><path d="M14 20h1"/>'),
-  logout:   I('<path d="M14 4H6v16h8"/><path d="m17 8 4 4-4 4"/><path d="M21 12h-9"/>'),
-  eye:      I('<path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.6"/>'),
-  lock:     I('<rect x="4.5" y="10" width="15" height="10.5" rx="3"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/>'),
-  sync:     I('<path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v4h-4"/>'),
-  trend:    I('<path d="m4 16 5-5 3.5 3.5L20 7"/><path d="M15 7h5v5"/>'),
-  filter:   I('<path d="M4 6h16"/><path d="M7 12h10"/><path d="M10 18h4"/>'),
-  edit:     I('<path d="M4 20h4L19 9a2.5 2.5 0 0 0-3.5-3.5L4.5 16.5z"/>'),
-  megaphone:I('<path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/>'),
-  book:     I('<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H19v3H6.5"/>'),
-  x:        I('<path d="M6 6l12 12M18 6 6 18"/>'),
-  dots:     I('<circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none"/>'),
-  sun:      I('<circle cx="12" cy="12" r="4"/><path d="M12 2.5V5M12 19v2.5M2.5 12H5M19 12h2.5M5.2 5.2 7 7M17 17l1.8 1.8M18.8 5.2 17 7M7 17l-1.8 1.8"/>'),
-  moon:     I('<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>')
+  martial:  P('<circle cx="12" cy="4.8" r="2.2"/><path d="M12 7.4v5.2"/><path d="m5.5 10.6 6.5-1.4 6.5 1.4"/><path d="m12 12.6-3.6 7.4"/><path d="m12 12.6 3.6 7.4"/>'),
+  community:P('<circle cx="9" cy="8" r="3"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.5a3 3 0 0 1 0 5"/><path d="M17.5 14.2A5.5 5.5 0 0 1 20.5 19"/>'),
+  temple:   P('<path d="M3 9h18"/><path d="M12 3 4 8h16z"/><path d="M5.5 9v10"/><path d="M18.5 9v10"/><path d="M3 19h18"/><path d="M10 19v-4a2 2 0 0 1 4 0v4"/>'),
+  more:     P('<path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h10"/>'),
+  bell:     P('<path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 13 6 9"/><path d="M10 18a2 2 0 0 0 4 0"/>'),
+  search:   P('<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/>'),
+  back:     P('<path d="M15 5 8 12l7 7"/>'),
+  chev:     P('<path d="m9 5 7 7-7 7"/>'),
+  check:    P('<path d="m5 12.5 4.5 4.5L19 7"/>'),
+  plus:     P('<path d="M12 5v14"/><path d="M5 12h14"/>'),
+  seal:     P('<rect x="4" y="4" width="16" height="16" rx="5"/><path d="M9 12h6"/><path d="M12 9v6"/>'),
+  calendar: P('<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17"/><path d="M8 3v4"/><path d="M16 3v4"/>'),
+  clock:    P('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'),
+  users:    P('<circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/>'),
+  belt:     P('<path d="M3 10h18v4H3z"/><path d="M9 14v6l3-2 3 2v-6"/>'),
+  box:      P('<path d="M4 8.5 12 4l8 4.5v7L12 20l-8-4.5z"/><path d="M4 8.5 12 13l8-4.5"/><path d="M12 13v7"/>'),
+  coin:     P('<ellipse cx="12" cy="7" rx="7.5" ry="3.2"/><path d="M4.5 7v10c0 1.8 3.4 3.2 7.5 3.2s7.5-1.4 7.5-3.2V7"/><path d="M4.5 12c0 1.8 3.4 3.2 7.5 3.2s7.5-1.4 7.5-3.2"/>'),
+  doc:      P('<path d="M6 3h7l5 5v13H6z"/><path d="M13 3v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/>'),
+  gear:     P('<circle cx="12" cy="12" r="3"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8"/>'),
+  bed:      P('<path d="M3 18v-8"/><path d="M3 13h18v5"/><path d="M21 18v-4a3 3 0 0 0-3-3H8"/><circle cx="7" cy="10" r="2"/>'),
+  bowl:     P('<path d="M3.5 11h17a8.5 8.5 0 0 1-17 0z"/><path d="M12 11c0-2 2-2.5 2-4s-2-2-2-3.5"/><path d="M4 20h16"/>'),
+  lotus:    P('<path d="M12 4c2 2.2 3 4.6 3 7-2 .6-4 .6-6 0 0-2.4 1-4.8 3-7z"/><path d="M5 9c2.7-.4 5 .6 6.6 2.6C10 14 7.5 14.6 5 14 3.9 12.5 3.9 10.5 5 9z"/><path d="M19 9c1.1 1.5 1.1 3.5 0 5-2.5.6-5 0-6.6-2.4C14 9.6 16.3 8.6 19 9z"/><path d="M4 15c2.4 3 5 4.5 8 4.5s5.6-1.5 8-4.5"/>'),
+  flag:     P('<path d="M6 21V4"/><path d="M6 5h11l-2 3.5L17 12H6z"/>'),
+  alert:    P('<path d="M12 4.5 21 19H3z"/><path d="M12 10v4"/><path d="M12 16.6v.4"/>'),
+  qr:       P('<rect x="4" y="4" width="6" height="6" rx="1.4"/><rect x="14" y="4" width="6" height="6" rx="1.4"/><rect x="4" y="14" width="6" height="6" rx="1.4"/><path d="M14 14h2.5v2.5H14z"/><path d="M20 14v2M17.5 20H20v-2.5"/><path d="M14 20h1"/>'),
+  logout:   P('<path d="M14 4H6v16h8"/><path d="m17 8 4 4-4 4"/><path d="M21 12h-9"/>'),
+  eye:      P('<path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.6"/>'),
+  lock:     P('<rect x="4.5" y="10" width="15" height="10.5" rx="3"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/>'),
+  sync:     P('<path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v4h-4"/>'),
+  trend:    P('<path d="m4 16 5-5 3.5 3.5L20 7"/><path d="M15 7h5v5"/>'),
+  filter:   P('<path d="M4 6h16"/><path d="M7 12h10"/><path d="M10 18h4"/>'),
+  edit:     P('<path d="M4 20h4L19 9a2.5 2.5 0 0 0-3.5-3.5L4.5 16.5z"/>'),
+  megaphone:P('<path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/>'),
+  book:     P('<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H19v3H6.5"/>'),
+  x:        P('<path d="M6 6l12 12M18 6 6 18"/>'),
+  dots:     P('<circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none"/>'),
+  sun:      P('<circle cx="12" cy="12" r="4"/><path d="M12 2.5V5M12 19v2.5M2.5 12H5M19 12h2.5M5.2 5.2 7 7M17 17l1.8 1.8M18.8 5.2 17 7M7 17l-1.8 1.8"/>'),
+  moon:     P('<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>')
 };
+
+/* Le sprite est figé AVANT que `icon` ne soit réécrit : une fois les
+   entrées remplacées par leurs références, les tracés ont disparu. */
+const ICON_SPRITE = `<svg class="sprite" aria-hidden="true" focusable="false">
+  ${Object.entries(icon).map(([k, v]) => `<symbol id="i-${k}" viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" stroke-width="1.6"
+      stroke-linecap="round" stroke-linejoin="round">${v.__path}</symbol>`).join('')}
+</svg>`;
+
+/* Chaque entrée de `icon` devient sa référence <use>. Les écrans
+   continuent d'écrire `${icon.bell}` sans rien savoir du sprite. */
+Object.keys(icon).forEach((k) => {
+  icon[k] = `<svg class="ic" aria-hidden="true" focusable="false"><use href="#i-${k}"/></svg>`;
+});
+
+/* ---------------------------------------------- Portraits générés
+   Le monastère n'a pas de photothèque : chaque personne reçoit un
+   portrait déterministe — fond dégradé teinté par son grade, sceau
+   circulaire en filigrane, initiales gravées. Deux personnes n'ont
+   jamais le même cadrage, mais une même personne a toujours le sien. */
+/* Mélange deux couleurs hexadécimales. Sert à garantir un minimum de
+   chaleur au fond : une ceinture noire teinterait le portrait en aplat
+   noir, indistinguable d'un autre. */
+function mixHex(a, b, t) {
+  const v = (h, i) => parseInt(h.slice(1 + i * 2, 3 + i * 2), 16);
+  return '#' + [0, 1, 2]
+    .map((i) => Math.round(v(a, i) * (1 - t) + v(b, i) * t).toString(16).padStart(2, '0'))
+    .join('');
+}
+
+function portraitSVG(p, { seed = null } = {}) {
+  const key = seed ?? [...p.id + p.name].reduce((a, c) => a + c.charCodeAt(0), 0);
+  const tint = mixHex(p.beltColor || '#8a6349', '#c6a15b', 0.38);
+  const cx = 30 + (key % 7) * 6;          // décalage du sceau
+  const cy = 26 + (key % 5) * 5;
+  const rot = -12 + (key % 9) * 3;        // inclinaison des traits
+  const id = `pg${p.id}`;
+  return `<svg class="portrait__svg" viewBox="0 0 120 150" preserveAspectRatio="xMidYMid slice"
+       aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="${id}" x1="0" y1="0" x2="0.4" y2="1">
+        <stop offset="0" stop-color="${tint}" stop-opacity="0.55"/>
+        <stop offset="1" stop-color="#1d1a17" stop-opacity="0.95"/>
+      </linearGradient>
+    </defs>
+    <rect width="120" height="150" fill="#2a231d"/>
+    <rect width="120" height="150" fill="url(#${id})"/>
+    <g stroke="#c6a15b" fill="none" opacity="0.28">
+      <circle cx="${cx}" cy="${cy}" r="26"/>
+      <circle cx="${cx}" cy="${cy}" r="20" opacity="0.5"/>
+    </g>
+    <g stroke="#f2ece1" opacity="0.10" stroke-width="1"
+       transform="rotate(${rot} 60 75)">
+      <path d="M-20 40h160M-20 62h160M-20 84h160M-20 106h160"/>
+    </g>
+    <text x="60" y="96" text-anchor="middle"
+          font-family="Iowan Old Style, Palatino, Georgia, serif"
+          font-size="52" fill="#f2ece1" opacity="0.92">${initials(p.name)}</text>
+  </svg>`;
+}
 
 /* ---------------------------------------------- Utilitaires */
 const initials = (name) =>
@@ -166,18 +236,24 @@ function empty(message, quote) {
 
 /* ---------------------------------------------- Rails (carousels) */
 
-/** Fiche membre d'un rail. Les enseignants passent sur carte d'encre. */
+/** Fiche membre d'un rail : portrait plein cadre en couches empilées. */
 function memberCard(p, { to = 'member' } = {}) {
   const teacher = p.role.includes('Maître');
   const foot = p.role === 'Élève'
     ? `<span class="mcard__foot">${bar(p.progress)}</span>`
-    : `<span class="mcard__meta">${p.resident ? 'Résident' : 'Externe'}</span>`;
+    : '';
   return `<button class="mcard ${teacher ? 'mcard--ink' : ''}" data-nav="${to}">
-    <span class="avatar avatar--md ${p.beltColor ? 'avatar--ringed' : ''}"
-          ${p.beltColor ? `style="--ring:${p.beltColor}"` : ''}>${initials(p.name)}</span>
-    <span class="mcard__name">${esc(p.name)}</span>
-    <span class="mcard__meta">${esc(p.beltName || p.level)}</span>
-    ${foot}
+    <span class="mcard__media">${portraitSVG(p)}</span>
+    <span class="mcard__scrim"></span>
+    <span class="mcard__rank">
+      ${p.beltColor ? `<i class="belt__disc" style="--belt:${p.beltColor};width:8px;height:8px"></i>` : ''}
+      ${esc(p.beltName || p.role)}
+    </span>
+    <span class="mcard__info">
+      <span class="mcard__name">${esc(p.name)}</span>
+      <span class="mcard__meta">${esc(p.level)}${p.resident ? ' · Résident' : ''}</span>
+      ${foot}
+    </span>
   </button>`;
 }
 
@@ -211,7 +287,7 @@ function sessionCard(s) {
 
 /** Bloc rail complet : titre, filtres optionnels, piste défilante. */
 function railBlock({ overline, action = null, filters = null, cards, id = null }) {
-  return `<section class="railblock">
+  return `<section class="railblock${filters ? ' railblock--filtered' : ''}">
     <div class="section__head">
       <p class="overline">${esc(overline)}</p>
       ${action ? `<button class="section__action" data-nav="${action.to}">${esc(action.label)}</button>` : ''}
@@ -230,6 +306,12 @@ function railBlock({ overline, action = null, filters = null, cards, id = null }
 const ROLE_RANK = { 'Grand Maître': 0, 'Maître': 1, 'Moine': 2, 'Élève': 3, 'Personnel': 4 };
 const byRank = (a, b) => (ROLE_RANK[a.role] ?? 9) - (ROLE_RANK[b.role] ?? 9);
 
+/* Un rail n'est pas une liste : au-delà d'une dizaine de cartes, plus
+   personne ne fait défiler jusqu'au bout, et chaque portrait coûte un
+   rendu. On plafonne, la carte de fin annonçant le reste — c'est aussi
+   ce qui permet au rail de tenir avec les 48 élèves réels du monastère. */
+const RAIL_MAX = 10;
+
 /** Contenu du rail des membres pour un filtre donné. */
 function memberRailCards(key) {
   const f = RAIL_FILTERS.find((x) => x.key === key) || RAIL_FILTERS[0];
@@ -238,9 +320,134 @@ function memberRailCards(key) {
     return `<div class="card card--sunken" style="width:100%;text-align:center">
       <p class="sub">Personne dans ce groupe aujourd’hui.</p></div>`;
   }
-  return list.map((p) => memberCard(p)).join('')
-    + moreCard(f.key === 'eleves' ? 'Tous les élèves' : 'Toute la communauté',
-               f.key === 'eleves' ? 'students' : 'community');
+  const shown = list.slice(0, RAIL_MAX);
+  const rest = list.length - shown.length;
+  const students = f.key === 'eleves';
+  return shown.map((p) => memberCard(p)).join('')
+    + moreCard(rest > 0 ? `+ ${rest} autre${rest > 1 ? 's' : ''}`
+                        : students ? 'Tous les élèves' : 'Toute la communauté',
+               students ? 'students' : 'community');
+}
+
+/* ---------------------------------------------- Recherche globale
+   L'écran de recherche affichait des résultats écrits en dur. L'index
+   est désormais construit à partir des mêmes données que le reste de
+   l'application : ce qui est trouvable correspond à ce qui existe. */
+function buildSearchIndex() {
+  const ix = [];
+  PEOPLE.forEach((p) => ix.push({
+    label: p.name, kind: p.role, group: 'Personnes', to: p.role === 'Élève' ? 'student' : 'member',
+    terms: `${p.name} ${p.role} ${p.level} ${p.beltName || ''} ${p.room || ''}`
+  }));
+  BELTS.forEach((b) => ix.push({
+    label: `Ceinture ${b.name.toLowerCase()}`, kind: 'Grade', group: 'Grades',
+    to: 'gradeDetail', terms: `ceinture ${b.name} grade`
+  }));
+  TECHNIQUES.forEach((t) => ix.push({
+    label: t.name, kind: `Technique · ${t.fr}`, group: 'Technique',
+    to: 'techniques', terms: `${t.name} ${t.fr} ${t.cat}`
+  }));
+  FORMS.forEach((f) => ix.push({
+    label: f.name, kind: `Forme · ${f.fr}`, group: 'Technique',
+    to: 'techniques', terms: `${f.name} ${f.fr} forme`
+  }));
+  SESSIONS.forEach((s) => ix.push({
+    label: s.title, kind: `Séance · ${s.time}`, group: 'Séances',
+    to: 'session', terms: `${s.title} ${s.group} ${s.master} ${s.place} entrainement`
+  }));
+  EVENTS.forEach((e) => ix.push({
+    label: e.title, kind: `${e.type} · ${e.date}`, group: 'Événements',
+    to: 'events', terms: `${e.title} ${e.type} ${e.place} evenement`
+  }));
+  DOCS.forEach((d) => ix.push({
+    label: d.name, kind: `${d.type} · ${d.date}`, group: 'Documents',
+    to: 'documents', terms: `${d.name} ${d.type} document`
+  }));
+  BUILDINGS.forEach((b) => b.rooms.forEach((r) => ix.push({
+    label: `Chambre ${r.id}`, kind: `${b.name} · ${r.taken}/${r.cap}`, group: 'Chambres',
+    to: 'rooms', terms: `chambre ${r.id} ${b.name} ${r.state}`
+  })));
+  STOCK.forEach((c) => c.items.forEach((it) => ix.push({
+    label: it.n, kind: `${c.cat} · ${it.q} ${it.u}`, group: 'Ressources',
+    to: 'stock', terms: `${it.n} ${c.cat} stock`
+  })));
+  DONATIONS.list.forEach((d) => ix.push({
+    label: d.who, kind: `Don · ${money(d.amount)}`, group: 'Finances',
+    to: 'donations', terms: `${d.who} don ${d.dest}`
+  }));
+  return ix;
+}
+
+const SEARCH_IX = buildSearchIndex();
+
+/* Accents ignorés : « maitre » doit trouver « Maître ».
+   Le pliage se fait caractère par caractère afin de préserver la
+   longueur de la chaîne : `mark()` découpe le libellé d'origine aux
+   indices trouvés dans sa version pliée, et un NFD sur la chaîne
+   entière décalerait ces indices (é devenant e + accent). */
+const norm = (s) => [...String(s)].map((c) => {
+  const base = c.normalize('NFD').replace(/[̀-ͯ]/g, '');
+  return (base || c).toLowerCase();
+}).join('');
+
+function searchQuery(q, scope = 'Tout') {
+  const n = norm(q).trim();
+  if (!n) return [];
+  const words = n.split(/\s+/);
+  return SEARCH_IX
+    .filter((e) => scope === 'Tout' || e.group === scope)
+    .map((e) => {
+      const hay = norm(e.terms);
+      if (!words.every((w) => hay.includes(w))) return null;
+      /* Un début de libellé prime sur une occurrence en milieu de mot. */
+      return { e, score: norm(e.label).startsWith(words[0]) ? 0 : 1 };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 40)
+    .map((r) => r.e);
+}
+
+/** Met en évidence la portion trouvée, sans casser l'échappement. */
+function mark(label, q) {
+  const n = norm(q).trim().split(/\s+/)[0];
+  if (!n) return esc(label);
+  const i = norm(label).indexOf(n);
+  if (i < 0) return esc(label);
+  return esc(label.slice(0, i)) + '<mark>' + esc(label.slice(i, i + n.length))
+    + '</mark>' + esc(label.slice(i + n.length));
+}
+
+function searchResults(q, scope = 'Tout') {
+  if (!q.trim()) {
+    return `<div class="section" style="margin-top:var(--s-6)">
+      ${sectionHead('Recherches fréquentes')}
+      <div class="row wrap gap-2">
+        ${['Rakoto', 'Ceinture orange', 'A101', 'Riz', 'Ma Bu', 'Examen'].map((t) =>
+          `<button class="badge badge--outline suggest" data-search="${esc(t)}">${t}</button>`).join('')}
+      </div>
+    </div>`;
+  }
+  const res = searchQuery(q, scope);
+  if (!res.length) {
+    return `<div class="section">${empty(
+      `Rien ne correspond à « ${q} ».`,
+      'Cherche d’abord, le nom viendra ensuite.')}</div>`;
+  }
+  const groups = {};
+  res.forEach((r) => (groups[r.group] ??= []).push(r));
+  return `<p class="caption pad mt-4">${res.length} résultat${res.length > 1 ? 's' : ''} pour « ${esc(q)} »</p>
+    ${Object.entries(groups).map(([g, list]) => `
+      <div class="section" style="margin-top:var(--s-5)">
+        ${sectionHead(`${g} — ${list.length}`)}
+        <div class="list list--card">
+          ${list.map((r) => item({
+            lead: `<span class="avatar avatar--sm">${initials(r.label)}</span>`,
+            title: mark(r.label, q), sub: esc(r.kind), to: r.to
+          })).join('')}
+        </div>
+      </div>`).join('')}
+    <div style="height:var(--s-8)"></div>`;
 }
 
 /** Squelette de chargement générique pour une liste. */

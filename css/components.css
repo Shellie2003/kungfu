@@ -55,9 +55,12 @@
   display: flex; align-items: baseline; justify-content: space-between;
   gap: var(--s-3); margin-bottom: var(--s-4);
 }
+/* La cible tactile fait 44 px de haut ; les marges négatives annulent
+   ce débord pour que la ligne de titre garde sa hauteur visuelle. */
 .section__action {
   font-size: 12px; color: var(--accent-text); font-weight: 600;
-  padding: 4px 2px;
+  padding: 13px 6px; margin: -13px -6px;
+  align-self: center;
 }
 
 /* ---------------------------------------------- 3. Barre d'application */
@@ -310,7 +313,12 @@
 .item:last-child { border-bottom: 0; }
 .item:active { background: var(--surface-sunken); }
 .item__title { font-size: 15px; font-weight: 500; }
-.item__sub   { font-size: 12px; color: var(--text-tertiary); margin-top: 1px; }
+/* Une ligne de liste tient sur une ligne : sans cela, un sous-titre long
+   pousse la colonne de droite et casse l'alignement de toute la liste. */
+.item__sub   {
+  font-size: 12px; color: var(--text-tertiary); margin-top: 1px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .item__end   { display: flex; align-items: center; gap: 8px; flex: none; color: var(--text-tertiary); }
 .chevron { width: 16px; height: 16px; opacity: 0.5; flex: none; }
 
@@ -321,8 +329,10 @@
 .railblock { margin-top: var(--s-8); }
 .railblock .section__head, .railblock .rail__note { padding: 0 var(--gutter); }
 /* Quand des filtres suivent le titre, ils tiennent lieu de respiration :
-   le titre ne double pas la sienne. */
-.railblock .section__head:has(+ .filters) { margin-bottom: 0; }
+   le titre ne double pas la sienne. La classe est posée par `railBlock()`
+   plutôt que déduite par `:has(+ .filters)` — ce sélecteur élargit
+   l'invalidation de style et pesait mesurablement sur chaque rendu. */
+.railblock--filtered .section__head { margin-bottom: 0; }
 .railblock .filters { padding-top: var(--s-3); padding-bottom: var(--s-2); }
 
 .rail {
@@ -337,42 +347,81 @@
 .rail::-webkit-scrollbar { display: none; }
 .rail > * { flex: none; scroll-snap-align: start; }
 
-/* Fiche membre — format portrait, lisible d'un coup d'œil */
+/* Fiche membre — portrait plein cadre, composée en couches superposées.
+   Toutes les couches partagent la même cellule de grille (1 / 1) : c'est
+   l'équivalent CSS d'un Stack Flutter. De bas en haut :
+     1. le portrait          (image)
+     2. le voile dégradé     (rend le texte lisible sur l'image)
+     3. le grade             (flottant, haut-droit)
+     4. le nom et la mesure  (ancrés en bas)
+   Le portrait étant toujours sombre, le texte reste clair dans les deux
+   thèmes : aucune couche ne change de couleur d'un thème à l'autre. */
 .mcard {
-  width: 132px; padding: var(--s-4) var(--s-3);
-  display: flex; flex-direction: column; align-items: center; gap: 9px;
-  text-align: center;
-  background: var(--surface-raised);
+  width: 156px; aspect-ratio: 3 / 4;
+  display: grid; grid-template: 1fr / 1fr;
+  border-radius: var(--r-lg); overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  box-shadow: var(--shadow-1);
+  box-shadow: var(--shadow-2);
+  text-align: left; isolation: isolate;
   transition: transform var(--d-fast) var(--e-out), box-shadow var(--d-base);
 }
+.mcard > * { grid-area: 1 / 1; min-width: 0; }
 .mcard:active { transform: scale(0.97); }
-.mcard__name {
-  font-size: 13px; line-height: 17px; font-weight: 500;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  overflow: hidden; min-height: 34px;
-}
-.mcard__meta { font-size: 11px; line-height: 15px; color: var(--text-tertiary); }
-.mcard__foot { width: 100%; margin-top: 2px; }
 
-/* Les enseignants reçoivent la carte d'encre : la hiérarchie du
-   monastère se lit dans la matière de la carte, pas dans un libellé. */
-.mcard--ink {
-  background: var(--surface-ink); border-color: transparent;
-  color: var(--text-on-ink); box-shadow: var(--shadow-2);
+.mcard__media { overflow: hidden; }
+.portrait__svg { display: block; width: 100%; height: 100%; }
+
+.mcard__scrim {
+  background: linear-gradient(to top,
+    rgba(16, 13, 11, 0.94) 0%,
+    rgba(16, 13, 11, 0.72) 26%,
+    rgba(16, 13, 11, 0.12) 58%,
+    rgba(16, 13, 11, 0.30) 100%);
 }
-.mcard--ink .mcard__meta { color: var(--text-on-ink-dim); }
-.mcard--ink .avatar { background: rgba(198, 161, 91, 0.16); color: var(--gold-bright); border-color: transparent; }
+
+.mcard__rank {
+  align-self: start; justify-self: end;
+  margin: 9px; padding: 4px 9px; border-radius: var(--r-pill);
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.02em;
+  color: #f2ece1;
+  background: rgba(16, 13, 11, 0.55);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(242, 236, 225, 0.22);
+}
+
+.mcard__info {
+  align-self: end;
+  display: flex; flex-direction: column; gap: 5px;
+  padding: var(--s-3);
+}
+.mcard__name {
+  font-family: var(--font-display);
+  font-size: 15px; line-height: 18px; color: #fff;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.mcard__meta { font-size: 11px; line-height: 14px; color: rgba(242, 236, 225, 0.72); }
+.mcard__foot { margin-top: 3px; }
+/* Sur le portrait, la piste de progression doit rester visible :
+   les jetons de surface du thème clair y disparaîtraient. */
+.mcard__foot .bar { background: rgba(242, 236, 225, 0.22); }
+
+/* Les enseignants reçoivent un liseré doré plutôt qu'une carte à part :
+   à cette taille, le portrait occupe déjà tout le cadre. */
+.mcard--ink { border-color: rgba(198, 161, 91, 0.55); }
+.mcard--ink .mcard__rank { background: rgba(166, 129, 58, 0.55); border-color: rgba(224, 192, 132, 0.5); }
 
 /* Dernière carte du rail : accès à la liste complète */
 .mcard--more {
-  justify-content: center; gap: var(--s-3);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: var(--s-3);
+  aspect-ratio: 3 / 4; width: 120px;
   background: transparent; border-style: dashed; box-shadow: none;
-  color: var(--text-secondary);
+  color: var(--text-secondary); text-align: center; padding: var(--s-3);
 }
-.mcard--more span.chevron { width: 22px; height: 22px; opacity: 1; }
+.mcard--more .chevron { width: 22px; height: 22px; opacity: 1; }
+.mcard--more .mcard__meta { color: var(--text-secondary); }
 
 /* Fiche séance — format paysage, l'heure domine */
 .scard {
@@ -448,7 +497,34 @@
 @keyframes draw { to { stroke-dashoffset: 0; } }
 .check[aria-checked="false"] .check__name { color: var(--text-secondary); }
 
+/* Pas-à-pas de notation — cible tactile pleine, chiffre au centre */
+.stepper {
+  width: 38px; height: 38px; flex: none;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-sunken);
+  color: var(--text); font-size: 19px; line-height: 1;
+  display: grid; place-items: center;
+  transition: transform var(--d-fast) var(--e-out), background var(--d-fast);
+}
+.stepper:active { transform: scale(0.9); background: var(--gold-soft); }
+
+/* Suggestion de recherche : un badge cliquable doit rester une cible. */
+.suggest { min-height: 40px; padding: 8px 14px; font-size: 12px; }
+
+/* Portion trouvée par la recherche */
+mark {
+  background: var(--gold-soft); color: var(--gold-text);
+  border-radius: 3px; padding: 0 2px;
+}
+
 /* Interrupteur */
+/* Le rail visuel fait 28 px ; un pseudo-élément porte la cible tactile
+   à 44 px sans épaissir le composant. */
+.switch::before {
+  content: ""; position: absolute; left: 0; right: 0;
+  top: -8px; bottom: -8px;
+}
 .switch {
   width: 46px; height: 28px; flex: none; border-radius: var(--r-pill);
   background: var(--surface-sunken); border: 1px solid var(--line-strong);
@@ -707,6 +783,21 @@
    flux inline (un chevron inline ignore alors sa largeur et s'étale). */
 .row, .between, .stack { display: flex; }
 .chevron { display: block; }
+
+/* ---------------------------------------------- 21. Dimensionnement des icônes
+   Un <svg> sans width/height s'étire à 100 % de son conteneur. C'est ce
+   qui faisait remplir le sceau entier par son icône, et gonflait l'icône
+   d'erreur de connexion à 194 px. Chaque conteneur pose donc sa taille ;
+   `.ic` ne fait que suivre. */
+.sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+.ic { display: block; width: 100%; height: 100%; }
+
+/* Dans un sceau, l'icône occupe un peu moins de la moitié : le sceau doit
+   rester un sceau, pas un cadre autour d'un pictogramme. */
+.seal > .ic { width: 1.2em; height: 1.2em; }
+.chevron > .ic { width: 100%; height: 100%; }
+.field__error > .ic { width: 14px; height: 14px; flex: none; }
+.legend .ic, .badge .ic { width: 12px; height: 12px; }
 
 /* Accessibilité : focus visible partout */
 :focus-visible {
