@@ -1,7 +1,7 @@
-<title>Monastère de Vato Masina</title>
+<title>Monastère Kung Fu</title>
 <style>
 /* ============================================================
-   VATO MASINA — Design Tokens
+   KUNG FU — Design Tokens
    "Traditional monastery meets modern digital product"
    Toutes les valeurs ci-dessous sont la source de vérité
    pour l'implémentation Flutter (voir README.md).
@@ -1709,13 +1709,13 @@ function qrSVG(text, { size = 120, quiet = 4, dark = '#171717', light = '#ffffff
 }
 
 /* ---------------------------------------------- Jeton de membre
-   Format : VM|<identifiant>|<année>|<contrôle>. Le contrôle est une
+   Format : KF|<identifiant>|<année>|<contrôle>. Le contrôle est une
    somme non cryptographique : il repère une saisie erronée ou une carte
    modifiée à la main, il n'empêche pas une contrefaçon délibérée.
    Une signature côté serveur serait nécessaire pour cela. */
 function memberToken(p, year = 2026) {
   const id = memberNumber(p);
-  const base = `VM|${id}|${year}`;
+  const base = `KF|${id}|${year}`;
   let h = 0;
   for (const ch of base) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return `${base}|${h.toString(16).toUpperCase().padStart(8, '0').slice(-4)}`;
@@ -1723,14 +1723,14 @@ function memberToken(p, year = 2026) {
 
 /** Numéro de membre lisible, dérivé de l'identifiant interne. */
 function memberNumber(p) {
-  return 'VM-' + String(parseInt(p.id.replace(/\D/g, ''), 10)).padStart(4, '0');
+  return 'KF-' + String(parseInt(p.id.replace(/\D/g, ''), 10)).padStart(4, '0');
 }
 
   </script>
   <script>
 /* ============================================================
    data.js — Données fictives réalistes
-   Monastère de Vato Masina — Antananarivo, Madagascar
+   Monastère Kung Fu — Antananarivo, Madagascar
    Devise : Ariary (Ar)
    ============================================================ */
 
@@ -2163,7 +2163,7 @@ const MESSAGES = {
 
 /* ---------------------------------------------- Session courante */
 const MONASTERY = {
-  name: 'Vato Masina',
+  name: 'Kung Fu',
   subtitle: 'Monastère & école d’arts martiaux',
   place: 'Antananarivo',
   todayLabel: 'Jeudi 13 août 2026',
@@ -2708,9 +2708,9 @@ screen('splash', {
   render: () => `
   <div class="screen" style="justify-content:center;align-items:center;gap:var(--s-6);
        background:var(--surface-ink);color:var(--text-on-ink);text-align:center;padding:var(--gutter)">
-    <div class="seal seal--lg stamp" style="width:96px;height:96px;font-size:40px">VM</div>
+    <div class="seal seal--lg stamp" style="width:96px;height:96px;font-size:34px">KF</div>
     <div class="stack gap-2" style="align-items:center">
-      <h1 class="display" style="color:var(--gold-bright);letter-spacing:0.04em">VATO MASINA</h1>
+      <h1 class="display" style="color:var(--gold-bright);letter-spacing:0.04em">KUNG FU</h1>
       <p class="overline" style="color:var(--text-on-ink-dim)">${MONASTERY.subtitle}</p>
     </div>
     <div class="rule" style="width:160px;color:rgba(198,161,91,.35)"><i></i></div>
@@ -2732,8 +2732,8 @@ screen('login', {
   render: () => `
   <div class="screen scroll" style="padding:var(--s-12) var(--gutter) var(--s-8)">
     <div class="stack gap-3" style="align-items:center;text-align:center">
-      <div class="seal seal--md">VM</div>
-      <h1 class="title mt-2">Vato Masina</h1>
+      <div class="seal seal--md">KF</div>
+      <h1 class="title mt-2">Kung Fu</h1>
       <p class="sub">Entrez pour rejoindre le monastère.</p>
     </div>
 
@@ -4462,9 +4462,9 @@ screen('card', {
         <div class="pad">
           <div class="idcard rise">
             <div class="idcard__head">
-              <span class="idcard__mark">VM</span>
+              <span class="idcard__mark">KF</span>
               <span class="grow">
-                <span class="idcard__org" style="display:block">VATO MASINA</span>
+                <span class="idcard__org" style="display:block">KUNG FU</span>
                 <span class="idcard__kind" style="display:block">Carte de membre</span>
               </span>
             </div>
@@ -4750,7 +4750,7 @@ screen('settings', {
 
       <div class="section" style="margin-bottom:var(--s-8)">
         <button class="btn btn--danger btn--block" data-nav="login">${icon.logout}Quitter la session</button>
-        <p class="caption mt-4" style="text-align:center">Vato Masina · version 1.0.0</p>
+        <p class="caption mt-4" style="text-align:center">Kung Fu · version 1.0.0</p>
       </div>
     </div>
   </div>`
@@ -4970,7 +4970,7 @@ function buildIndex() {
   ];
   app.el.index.innerHTML = `
     <div class="index__brand">
-      <div class="index__mark"><span>VM</span> Vato Masina</div>
+      <div class="index__mark"><span>KF</span> Kung Fu</div>
       <p class="index__sub">Système d’interface · 39 écrans</p>
     </div>
     ${groups.map(([g, keys]) => `

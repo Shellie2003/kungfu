@@ -1,4 +1,4 @@
-# Vato Masina — Système d'interface mobile
+# Kung Fu — Système d'interface mobile
 
 Monastère de Kung-Fu · école d'arts martiaux · gestion de la vie quotidienne.
 
@@ -325,7 +325,7 @@ tiers (`jsqr`), y compris — et c'est le test qui compte — le SVG **tel qu'il
 la carte**, rastérisé depuis la page puis décodé. Huit charges utiles couvrant les versions
 1 à 5 et les caractères accentués passent le test.
 
-**Le jeton.** Format `VM|<numéro de membre>|<année>|<contrôle>`. La somme de contrôle
+**Le jeton.** Format `KF|<numéro de membre>|<année>|<contrôle>`. La somme de contrôle
 repère une carte modifiée à la main ; elle **n'empêche pas une contrefaçon délibérée**, ce
 qui demanderait une signature délivrée par le serveur. C'est écrit sur l'écran de la carte
 plutôt que laissé à supposer.
@@ -448,7 +448,7 @@ Lentes, peu nombreuses, jamais décoratives.
 
 ## 9. Données fictives
 
-Monastère de **Vato Masina**, Antananarivo. 17 personnes détaillées (élèves, moines, maîtres,
+Monastère **Kung Fu**, Antananarivo. 17 personnes détaillées (élèves, moines, maîtres,
 personnel, visiteur, ancien élève, donateur), 7 grades, 12 techniques, 4 formes, 4 groupes,
 9 chambres sur 2 bâtiments, 3 repas, 5 catégories de stock, 6 mois de finances,
 5 dons, 5 événements, 6 documents, 6 notifications, 7 rôles.

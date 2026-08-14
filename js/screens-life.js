@@ -763,9 +763,9 @@ screen('card', {
         <div class="pad">
           <div class="idcard rise">
             <div class="idcard__head">
-              <span class="idcard__mark">VM</span>
+              <span class="idcard__mark">KF</span>
               <span class="grow">
-                <span class="idcard__org" style="display:block">VATO MASINA</span>
+                <span class="idcard__org" style="display:block">KUNG FU</span>
                 <span class="idcard__kind" style="display:block">Carte de membre</span>
               </span>
             </div>
@@ -1051,7 +1051,7 @@ screen('settings', {
 
       <div class="section" style="margin-bottom:var(--s-8)">
         <button class="btn btn--danger btn--block" data-nav="login">${icon.logout}Quitter la session</button>
-        <p class="caption mt-4" style="text-align:center">Vato Masina · version 1.0.0</p>
+        <p class="caption mt-4" style="text-align:center">Kung Fu · version 1.0.0</p>
       </div>
     </div>
   </div>`

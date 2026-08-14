@@ -300,13 +300,13 @@ function qrSVG(text, { size = 120, quiet = 4, dark = '#171717', light = '#ffffff
 }
 
 /* ---------------------------------------------- Jeton de membre
-   Format : VM|<identifiant>|<année>|<contrôle>. Le contrôle est une
+   Format : KF|<identifiant>|<année>|<contrôle>. Le contrôle est une
    somme non cryptographique : il repère une saisie erronée ou une carte
    modifiée à la main, il n'empêche pas une contrefaçon délibérée.
    Une signature côté serveur serait nécessaire pour cela. */
 function memberToken(p, year = 2026) {
   const id = memberNumber(p);
-  const base = `VM|${id}|${year}`;
+  const base = `KF|${id}|${year}`;
   let h = 0;
   for (const ch of base) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return `${base}|${h.toString(16).toUpperCase().padStart(8, '0').slice(-4)}`;
@@ -314,5 +314,5 @@ function memberToken(p, year = 2026) {
 
 /** Numéro de membre lisible, dérivé de l'identifiant interne. */
 function memberNumber(p) {
-  return 'VM-' + String(parseInt(p.id.replace(/\D/g, ''), 10)).padStart(4, '0');
+  return 'KF-' + String(parseInt(p.id.replace(/\D/g, ''), 10)).padStart(4, '0');
 }

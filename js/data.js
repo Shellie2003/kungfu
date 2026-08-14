@@ -1,6 +1,6 @@
 /* ============================================================
    data.js — Données fictives réalistes
-   Monastère de Vato Masina — Antananarivo, Madagascar
+   Monastère Kung Fu — Antananarivo, Madagascar
    Devise : Ariary (Ar)
    ============================================================ */
 
@@ -433,7 +433,7 @@ const MESSAGES = {
 
 /* ---------------------------------------------- Session courante */
 const MONASTERY = {
-  name: 'Vato Masina',
+  name: 'Kung Fu',
   subtitle: 'Monastère & école d’arts martiaux',
   place: 'Antananarivo',
   todayLabel: 'Jeudi 13 août 2026',

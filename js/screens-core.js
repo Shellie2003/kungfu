@@ -15,9 +15,9 @@ screen('splash', {
   render: () => `
   <div class="screen" style="justify-content:center;align-items:center;gap:var(--s-6);
        background:var(--surface-ink);color:var(--text-on-ink);text-align:center;padding:var(--gutter)">
-    <div class="seal seal--lg stamp" style="width:96px;height:96px;font-size:40px">VM</div>
+    <div class="seal seal--lg stamp" style="width:96px;height:96px;font-size:34px">KF</div>
     <div class="stack gap-2" style="align-items:center">
-      <h1 class="display" style="color:var(--gold-bright);letter-spacing:0.04em">VATO MASINA</h1>
+      <h1 class="display" style="color:var(--gold-bright);letter-spacing:0.04em">KUNG FU</h1>
       <p class="overline" style="color:var(--text-on-ink-dim)">${MONASTERY.subtitle}</p>
     </div>
     <div class="rule" style="width:160px;color:rgba(198,161,91,.35)"><i></i></div>
@@ -39,8 +39,8 @@ screen('login', {
   render: () => `
   <div class="screen scroll" style="padding:var(--s-12) var(--gutter) var(--s-8)">
     <div class="stack gap-3" style="align-items:center;text-align:center">
-      <div class="seal seal--md">VM</div>
-      <h1 class="title mt-2">Vato Masina</h1>
+      <div class="seal seal--md">KF</div>
+      <h1 class="title mt-2">Kung Fu</h1>
       <p class="sub">Entrez pour rejoindre le monastère.</p>
     </div>
 

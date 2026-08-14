@@ -1,6 +1,6 @@
 /* ============================================================
    build.js — Assemble index.html et ses ressources en un seul
-   fichier autonome (dist/vato-masina.html), partageable tel quel.
+   fichier autonome (dist/kung-fu.html), partageable tel quel.
 
        node build.js
    ============================================================ */
@@ -22,7 +22,7 @@ html = html.replace(/[ \t]*<script src="([^"]+)"><\/script>\n?/g,
   (_, src) => `  <script>\n${read(src)}\n  </script>\n`);
 
 fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
-const out = path.join(root, 'dist', 'vato-masina.html');
+const out = path.join(root, 'dist', 'kung-fu.html');
 fs.writeFileSync(out, html);
 
-console.log(`dist/vato-masina.html — ${(Buffer.byteLength(html) / 1024).toFixed(0)} Ko`);
+console.log(`dist/kung-fu.html — ${(Buffer.byteLength(html) / 1024).toFixed(0)} Ko`);
