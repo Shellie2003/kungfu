@@ -828,7 +828,7 @@ screen('settings', {
       <div class="pad">
         <div class="card row gap-3">
           ${avatar(person('p11'), 'md')}
-          <div class="grow"><p class="item__title">Maître Chen Wei</p>
+          <div class="grow"><p class="item__title">Maître Fidy</p>
             <p class="item__sub">Grand Maître · accès complet</p></div>
           <span class="chevron">${icon.chev}</span>
         </div>
@@ -872,7 +872,7 @@ screen('settings', {
 
       <div class="section" style="margin-bottom:var(--s-8)">
         <button class="btn btn--danger btn--block" data-nav="login">${icon.logout}Quitter la session</button>
-        <p class="caption mt-4" style="text-align:center">Long Shan · version 1.0.0</p>
+        <p class="caption mt-4" style="text-align:center">Vato Masina · version 1.0.0</p>
       </div>
     </div>
   </div>`

@@ -83,7 +83,7 @@ function buildIndex() {
   ];
   app.el.index.innerHTML = `
     <div class="index__brand">
-      <div class="index__mark"><span>龍</span> Long Shan</div>
+      <div class="index__mark"><span>VM</span> Vato Masina</div>
       <p class="index__sub">Système d’interface · 37 écrans</p>
     </div>
     ${groups.map(([g, keys]) => `

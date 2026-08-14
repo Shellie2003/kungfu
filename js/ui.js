@@ -465,7 +465,7 @@ function searchResults(q, scope = 'Tout') {
     return `<div class="section" style="margin-top:var(--s-6)">
       ${sectionHead('Recherches fréquentes')}
       <div class="row wrap gap-2">
-        ${['Rakoto', 'Ceinture orange', 'A101', 'Riz', 'Ma Bu', 'Examen'].map((t) =>
+        ${['Rakoto', 'Ceinture orange', 'A101', 'Riz', 'Daka', 'Examen'].map((t) =>
           `<button class="badge badge--outline suggest" data-search="${esc(t)}">${t}</button>`).join('')}
       </div>
     </div>`;

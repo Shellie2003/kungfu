@@ -1,7 +1,7 @@
-<title>Monastère de Long Shan</title>
+<title>Monastère de Vato Masina</title>
 <style>
 /* ============================================================
-   LÓNG SHĀN — Design Tokens
+   VATO MASINA — Design Tokens
    "Traditional monastery meets modern digital product"
    Toutes les valeurs ci-dessous sont la source de vérité
    pour l'implémentation Flutter (voir README.md).
@@ -77,7 +77,7 @@
 
   /* ---- Typographie ---- */
   --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
-                  "Songti SC", "Noto Serif", Georgia, serif;
+                  "Noto Serif", Georgia, serif;
   --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, "Helvetica Neue",
              Arial, sans-serif;
   --font-num: var(--font-display);
@@ -1336,7 +1336,7 @@ mark {
   <script>
 /* ============================================================
    data.js — Données fictives réalistes
-   Monastère de Long Shan — Antananarivo, Madagascar
+   Monastère de Vato Masina — Antananarivo, Madagascar
    Devise : Ariary (Ar)
    ============================================================ */
 
@@ -1363,7 +1363,7 @@ const PEOPLE = [
   { id: 'p8',  name: 'Lova Mamy',         role: 'Élève',   level: 'Avancé',        belt: 'bleu',   progress: 88, attendance: 93, sessions: 132,techniques: 19, resident: true,  since: '2021-06-14', room: 'A103', phone: '034 20 887 51', dues: 'À jour' },
   { id: 'p9',  name: 'Hasina Njaka',      role: 'Moine',   level: 'Résident',      belt: 'marron', progress: 95, attendance: 99, sessions: 210,techniques: 26, resident: true,  since: '2019-02-01', room: 'B201', phone: '—', dues: '—' },
   { id: 'p10', name: 'Fanilo Sitraka',    role: 'Moine',   level: 'Résident',      belt: 'vert',   progress: 71, attendance: 97, sessions: 148,techniques: 16, resident: true,  since: '2021-10-09', room: 'B201', phone: '—', dues: '—' },
-  { id: 'p11', name: 'Maître Chen Wei',   role: 'Grand Maître', level: 'Enseignant', belt: 'noir', progress: 100, attendance: 100, sessions: 0, techniques: 48, resident: true, since: '2011-04-30', room: 'B101', phone: '034 00 001 01', dues: '—' },
+  { id: 'p11', name: 'Maître Fidy',       role: 'Grand Maître', level: 'Enseignant',    belt: 'noir', progress: 100, attendance: 100, sessions: 0, techniques: 48, resident: true, since: '2011-04-30', room: 'B101', phone: '034 00 001 01', dues: '—' },
   { id: 'p12', name: 'Maître Ravaka',     role: 'Maître',  level: 'Enseignant',    belt: 'noir',   progress: 100, attendance: 98, sessions: 0, techniques: 34, resident: true,  since: '2016-07-22', room: 'B102', phone: '033 12 004 88', dues: '—' },
   { id: 'p13', name: 'Solofo Rakotomalala',role:'Personnel',level: 'Cuisine',      belt: null,     progress: 0,  attendance: 96, sessions: 0,  techniques: 0,  resident: true,  since: '2020-01-15', room: 'B203', phone: '034 61 220 17', dues: '—' },
   { id: 'p14', name: 'Vololona Ranaivo',  role: 'Personnel', level: 'Intendance',  belt: null,     progress: 0,  attendance: 94, sessions: 0,  techniques: 0,  resident: false, since: '2022-05-03', room: null,   phone: '032 30 551 44', dues: '—' },
@@ -1392,45 +1392,45 @@ const TODAY = [
 /* ---------------------------------------------- Entraînements */
 const SESSIONS = [
   { id: 's1', title: 'Kung-Fu intermédiaire', time: '16:00', dur: '90 min', group: 'Groupe intermédiaire', master: 'Maître Ravaka', count: 24, place: 'Cour d’honneur', state: 'now' },
-  { id: 's2', title: 'Kung-Fu avancé',        time: '18:00', dur: '90 min', group: 'Groupe avancé',        master: 'Maître Chen Wei', count: 12, place: 'Grande salle', state: 'next' },
+  { id: 's2', title: 'Kung-Fu avancé',        time: '18:00', dur: '90 min', group: 'Groupe avancé',        master: 'Maître Fidy', count: 12, place: 'Grande salle', state: 'next' },
   { id: 's3', title: 'Fondamentaux',          time: '10:00', dur: '60 min', group: 'Groupe débutant',      master: 'Maître Ravaka', count: 16, place: 'Cour d’honneur', state: 'done' },
-  { id: 's4', title: 'Formes traditionnelles', time: '07:00', dur: '60 min', group: 'Tous niveaux',        master: 'Maître Chen Wei', count: 31, place: 'Terrasse nord', state: 'next', day: 'Demain' }
+  { id: 's4', title: 'Formes traditionnelles', time: '07:00', dur: '60 min', group: 'Tous niveaux',        master: 'Maître Fidy', count: 31, place: 'Terrasse nord', state: 'next', day: 'Demain' }
 ];
 
 const GROUPS = [
   { id: 'g1', name: 'Groupe débutant',      members: 16, master: 'Maître Ravaka',   slots: 'Lun · Mer · Ven — 10:00' },
   { id: 'g2', name: 'Groupe intermédiaire', members: 24, master: 'Maître Ravaka',   slots: 'Lun · Mar · Jeu — 16:00' },
-  { id: 'g3', name: 'Groupe avancé',        members: 12, master: 'Maître Chen Wei', slots: 'Mar · Jeu · Sam — 18:00' },
-  { id: 'g4', name: 'Résidents',            members: 18, master: 'Maître Chen Wei', slots: 'Quotidien — 05:30' }
+  { id: 'g3', name: 'Groupe avancé',        members: 12, master: 'Maître Fidy', slots: 'Mar · Jeu · Sam — 18:00' },
+  { id: 'g4', name: 'Résidents',            members: 18, master: 'Maître Fidy', slots: 'Quotidien — 05:30' }
 ];
 
 /* ---------------------------------------------- Technique & formes */
 const TECHNIQUES = [
-  { id: 't1', name: 'Ma Bu',        fr: 'Position du cavalier', belt: 'blanc',  cat: 'Position', mastered: true },
-  { id: 't2', name: 'Gong Bu',      fr: 'Position de l’arc',    belt: 'blanc',  cat: 'Position', mastered: true },
-  { id: 't3', name: 'Chong Quan',   fr: 'Poing direct',         belt: 'jaune',  cat: 'Frappe',   mastered: true },
-  { id: 't4', name: 'Pi Zhang',     fr: 'Paume tranchante',     belt: 'jaune',  cat: 'Frappe',   mastered: true },
-  { id: 't5', name: 'Dan Tui',      fr: 'Coup de pied direct',  belt: 'jaune',  cat: 'Jambe',    mastered: true },
-  { id: 't6', name: 'Xie Bu',       fr: 'Position croisée',     belt: 'orange', cat: 'Position', mastered: true },
-  { id: 't7', name: 'Tan Tui',      fr: 'Jambe jaillissante',   belt: 'orange', cat: 'Jambe',    mastered: true },
-  { id: 't8', name: 'Sao Tui',      fr: 'Balayage bas',         belt: 'orange', cat: 'Jambe',    mastered: false },
-  { id: 't9', name: 'Zhou Ji',      fr: 'Frappe du coude',      belt: 'orange', cat: 'Frappe',   mastered: false },
-  { id: 't10',name: 'Xu Bu',        fr: 'Position vide',        belt: 'vert',   cat: 'Position', mastered: false },
-  { id: 't11',name: 'Teng Kong Fei',fr: 'Coup de pied sauté',   belt: 'vert',   cat: 'Jambe',    mastered: false },
-  { id: 't12',name: 'Qin Na',       fr: 'Saisie et contrôle',   belt: 'bleu',   cat: 'Contrôle', mastered: false }
+  { id: 't1', name: 'Fijoroana soavaly',  fr: 'Position du cavalier', belt: 'blanc',  cat: 'Position', mastered: true },
+  { id: 't2', name: 'Fijoroana mandroso', fr: 'Position avancée',     belt: 'blanc',  cat: 'Position', mastered: true },
+  { id: 't3', name: 'Totohondry mahitsy', fr: 'Poing direct',         belt: 'jaune',  cat: 'Frappe',   mastered: true },
+  { id: 't4', name: 'Felatanana mandidy', fr: 'Paume tranchante',     belt: 'jaune',  cat: 'Frappe',   mastered: true },
+  { id: 't5', name: 'Daka mahitsy',       fr: 'Coup de pied direct',  belt: 'jaune',  cat: 'Jambe',    mastered: true },
+  { id: 't6', name: 'Fijoroana ambany',   fr: 'Position basse',       belt: 'orange', cat: 'Position', mastered: true },
+  { id: 't7', name: 'Daka mipoaka',       fr: 'Jambe jaillissante',   belt: 'orange', cat: 'Jambe',    mastered: true },
+  { id: 't8', name: 'Fafan-tongotra',     fr: 'Balayage bas',         belt: 'orange', cat: 'Jambe',    mastered: false },
+  { id: 't9', name: 'Dona kiho',          fr: 'Frappe du coude',      belt: 'orange', cat: 'Frappe',   mastered: false },
+  { id: 't10',name: 'Fijoroana miandry',  fr: 'Position d’attente',   belt: 'vert',   cat: 'Position', mastered: false },
+  { id: 't11',name: 'Daka mitsambikina',  fr: 'Coup de pied sauté',   belt: 'vert',   cat: 'Jambe',    mastered: false },
+  { id: 't12',name: 'Fisamborana',        fr: 'Saisie et contrôle',   belt: 'bleu',   cat: 'Contrôle', mastered: false }
 ];
 
 const FORMS = [
-  { id: 'f1', name: 'Wu Bu Quan',      fr: 'Forme des cinq positions', belt: 'jaune',  moves: 18, dur: '1 min 10' },
-  { id: 'f2', name: 'Lian Huan Quan',  fr: 'Poings enchaînés',         belt: 'orange', moves: 32, dur: '1 min 45' },
-  { id: 'f3', name: 'Gong Li Quan',    fr: 'Forme de la puissance',    belt: 'vert',   moves: 46, dur: '2 min 20' },
-  { id: 'f4', name: 'Chang Quan',      fr: 'Boxe longue',              belt: 'bleu',   moves: 62, dur: '3 min' }
+  { id: 'f1', name: 'Dian’ny voromahery', fr: 'La marche de l’aigle',    belt: 'jaune',  moves: 18, dur: '1 min 10' },
+  { id: 'f2', name: 'Rivotra mandalo',    fr: 'Le vent qui passe',       belt: 'orange', moves: 32, dur: '1 min 45' },
+  { id: 'f3', name: 'Vato miorina',       fr: 'La pierre dressée',       belt: 'vert',   moves: 46, dur: '2 min 20' },
+  { id: 'f4', name: 'Mamba matory',       fr: 'Le crocodile endormi',    belt: 'bleu',   moves: 62, dur: '3 min' }
 ];
 
 /* ---------------------------------------------- Examens */
 const EXAM = {
   id: 'e1', from: 'jaune', to: 'orange', date: '15 août 2026', time: '09:00',
-  place: 'Grande salle', jury: ['Maître Chen Wei', 'Maître Ravaka'], candidates: 14,
+  place: 'Grande salle', jury: ['Maître Fidy', 'Maître Ravaka'], candidates: 14,
   trials: [
     { name: 'Positions',  weight: 15 },
     { name: 'Techniques', weight: 25 },
@@ -1602,7 +1602,7 @@ const PERMISSIONS = [
 /* ---------------------------------------------- Parcours martial */
 const JOURNEY = [
   { time: 'Mars 2024',  title: 'Entrée au monastère',        meta: 'Admis dans le groupe débutant', state: 'done' },
-  { time: 'Juin 2024',  title: 'Première forme apprise',     meta: 'Wu Bu Quan — 18 mouvements',    state: 'done' },
+  { time: 'Juin 2024',  title: 'Première forme apprise',     meta: 'Dian’ny voromahery — 18 mouvements',    state: 'done' },
   { time: 'Mars 2026',  title: 'Ceinture jaune obtenue',     meta: 'Moyenne 16,4/20',               state: 'milestone' },
   { time: 'Juin 2026',  title: '42 entraînements suivis',    meta: '87 % de présence',              state: 'done' },
   { time: 'Août 2026',  title: 'Examen Jaune → Orange',      meta: '15 août — dans 2 jours',        state: 'now' },
@@ -1675,7 +1675,7 @@ const RAIL_FILTERS = [
    Et une contrainte de temps : pendant les méditations et après
    l'extinction des lampes, le monastère observe le silence. */
 
-const ME = 'p11';                       /* Maître Chen Wei */
+const ME = 'p11';                       /* Maître Fidy, grand maître */
 const NOW_MIN = 16 * 60 + 4;            /* 16:04, l'heure de la maquette */
 
 /* Plages de silence, en minutes depuis minuit. */
@@ -1730,7 +1730,7 @@ const MESSAGES = {
     { day: 'Hier' },
     { from: 'p1', text: 'Maître, puis-je vous demander un conseil avant l’examen ?', time: '19:42' },
     { from: ME, text: 'Bien sûr. Que t’inquiète-t-il ?', time: '20:03' },
-    { from: 'p1', text: 'La forme Wu Bu Quan. Je perds l’équilibre au troisième enchaînement.', time: '20:05' },
+    { from: 'p1', text: 'La forme Dian’ny voromahery. Je perds l’équilibre au troisième enchaînement.', time: '20:05' },
     { day: 'Aujourd’hui' },
     { from: ME, text: 'Ce n’est pas l’équilibre qui manque, c’est la patience. Tu enchaînes avant que le poids soit posé.', time: '15:20' },
     { from: ME, text: 'Reprends la séquence à moitié vitesse, vingt fois. Sans miroir.', time: '15:21' },
@@ -1769,7 +1769,7 @@ const MESSAGES = {
 
 /* ---------------------------------------------- Session courante */
 const MONASTERY = {
-  name: 'Long Shan',
+  name: 'Vato Masina',
   subtitle: 'Monastère & école d’arts martiaux',
   place: 'Antananarivo',
   todayLabel: 'Jeudi 13 août 2026',
@@ -2246,7 +2246,7 @@ function searchResults(q, scope = 'Tout') {
     return `<div class="section" style="margin-top:var(--s-6)">
       ${sectionHead('Recherches fréquentes')}
       <div class="row wrap gap-2">
-        ${['Rakoto', 'Ceinture orange', 'A101', 'Riz', 'Ma Bu', 'Examen'].map((t) =>
+        ${['Rakoto', 'Ceinture orange', 'A101', 'Riz', 'Daka', 'Examen'].map((t) =>
           `<button class="badge badge--outline suggest" data-search="${esc(t)}">${t}</button>`).join('')}
       </div>
     </div>`;
@@ -2314,9 +2314,9 @@ screen('splash', {
   render: () => `
   <div class="screen" style="justify-content:center;align-items:center;gap:var(--s-6);
        background:var(--surface-ink);color:var(--text-on-ink);text-align:center;padding:var(--gutter)">
-    <div class="seal seal--lg stamp" style="width:96px;height:96px;font-size:40px">龍</div>
+    <div class="seal seal--lg stamp" style="width:96px;height:96px;font-size:40px">VM</div>
     <div class="stack gap-2" style="align-items:center">
-      <h1 class="display" style="color:var(--gold-bright);letter-spacing:0.04em">LONG SHAN</h1>
+      <h1 class="display" style="color:var(--gold-bright);letter-spacing:0.04em">VATO MASINA</h1>
       <p class="overline" style="color:var(--text-on-ink-dim)">${MONASTERY.subtitle}</p>
     </div>
     <div class="rule" style="width:160px;color:rgba(198,161,91,.35)"><i></i></div>
@@ -2338,8 +2338,8 @@ screen('login', {
   render: () => `
   <div class="screen scroll" style="padding:var(--s-12) var(--gutter) var(--s-8)">
     <div class="stack gap-3" style="align-items:center;text-align:center">
-      <div class="seal seal--md">龍</div>
-      <h1 class="title mt-2">Long Shan</h1>
+      <div class="seal seal--md">VM</div>
+      <h1 class="title mt-2">Vato Masina</h1>
       <p class="sub">Entrez pour rejoindre le monastère.</p>
     </div>
 
@@ -2467,7 +2467,7 @@ screen('homeMaster', {
   label: '03 · Accueil maître', tab: 'home',
   render: () => `
   <div class="screen scroll">
-    ${homeHeader('Maître Chen', MONASTERY.maxim)}
+    ${homeHeader('Maître Fidy', MONASTERY.maxim)}
 
     <!-- Les chiffres et les visages forment un seul ensemble : le bloc
          d'encre donne l'état du monastère, le rail donne qui le compose. -->
@@ -2909,7 +2909,7 @@ screen('gradeDetail', {
         ${sectionHead('Conditions de passage')}
         <div class="list list--card">
           ${[['Techniques requises', '9 techniques', 66, 'techniques'],
-             ['Formes', 'Lian Huan Quan', 80, 'techniques'],
+             ['Formes', 'Rivotra mandalo', 80, 'techniques'],
              ['Niveau de combat', 'Assaut souple, 3 reprises', 50, null],
              ['Discipline', 'Aucun manquement sur 6 mois', 100, null],
              ['Théorie', '12 principes fondamentaux', 45, null],
@@ -3062,8 +3062,8 @@ screen('session', {
         ${sectionHead('Programme de la séance')}
         <div class="timeline">
           ${tlRow({ time: '16:00', title: 'Échauffement', meta: '15 min', state: 'done' })}
-          ${tlRow({ time: '16:15', title: 'Positions fondamentales', meta: 'Ma Bu · Gong Bu · Xie Bu', state: 'done' })}
-          ${tlRow({ time: '16:35', title: 'Forme Wu Bu Quan', meta: '18 mouvements', state: 'now' })}
+          ${tlRow({ time: '16:15', title: 'Positions fondamentales', meta: 'Fijoroana soavaly · mandroso · ambany', state: 'done' })}
+          ${tlRow({ time: '16:35', title: 'Forme Dian’ny voromahery', meta: '18 mouvements', state: 'now' })}
           ${tlRow({ time: '17:05', title: 'Assauts souples', meta: '3 reprises', state: 'next' })}
           ${tlRow({ time: '17:25', title: 'Retour au calme', meta: '5 min', state: 'locked' })}
         </div>
@@ -4131,7 +4131,7 @@ screen('settings', {
       <div class="pad">
         <div class="card row gap-3">
           ${avatar(person('p11'), 'md')}
-          <div class="grow"><p class="item__title">Maître Chen Wei</p>
+          <div class="grow"><p class="item__title">Maître Fidy</p>
             <p class="item__sub">Grand Maître · accès complet</p></div>
           <span class="chevron">${icon.chev}</span>
         </div>
@@ -4175,7 +4175,7 @@ screen('settings', {
 
       <div class="section" style="margin-bottom:var(--s-8)">
         <button class="btn btn--danger btn--block" data-nav="login">${icon.logout}Quitter la session</button>
-        <p class="caption mt-4" style="text-align:center">Long Shan · version 1.0.0</p>
+        <p class="caption mt-4" style="text-align:center">Vato Masina · version 1.0.0</p>
       </div>
     </div>
   </div>`
@@ -4394,7 +4394,7 @@ function buildIndex() {
   ];
   app.el.index.innerHTML = `
     <div class="index__brand">
-      <div class="index__mark"><span>龍</span> Long Shan</div>
+      <div class="index__mark"><span>VM</span> Vato Masina</div>
       <p class="index__sub">Système d’interface · 37 écrans</p>
     </div>
     ${groups.map(([g, keys]) => `

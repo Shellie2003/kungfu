@@ -1,4 +1,4 @@
-# Long Shan — Système d'interface mobile
+# Vato Masina — Système d'interface mobile
 
 Monastère de Kung-Fu · école d'arts martiaux · gestion de la vie quotidienne.
 
@@ -130,10 +130,10 @@ Deux familles seulement.
 
 | Rôle | Famille | Emploi |
 |---|---|---|
-| `--font-display` | Serif (Iowan Old Style / Songti SC / Noto Serif / Georgia) | Titres, **tous les nombres**, citations |
+| `--font-display` | Serif (Iowan Old Style / Noto Serif / Georgia) | Titres, **tous les nombres**, citations |
 | `--font-ui` | Sans-serif système | Corps, libellés, boutons |
 
-En Flutter : `Noto Serif` + `Noto Sans` (les deux couvrent le français et le chinois).
+En Flutter : `Noto Serif` + `Noto Sans` (les deux couvrent le français et le malgache).
 
 | Échelle | Taille / interligne | Classe |
 |---|---|---|
@@ -406,14 +406,15 @@ Lentes, peu nombreuses, jamais décoratives.
 - États actifs exprimés par `aria-current`, `aria-selected`, `aria-pressed`, `aria-checked`
   → `Semantics(selected:, checked:)` en Flutter.
 - Focus visible doré de 2 px sur tout élément interactif.
-- Toute la terminologie est en français ; les termes techniques chinois sont
-  systématiquement accompagnés de leur traduction (« Ma Bu · Position du cavalier »).
+- Toute la terminologie est en français ; les termes techniques malgaches sont
+  systématiquement accompagnés de leur traduction française
+  (« Fijoroana soavaly · Position du cavalier »).
 
 ---
 
 ## 9. Données fictives
 
-Monastère de **Long Shan**, Antananarivo. 17 personnes détaillées (élèves, moines, maîtres,
+Monastère de **Vato Masina**, Antananarivo. 17 personnes détaillées (élèves, moines, maîtres,
 personnel, visiteur, ancien élève, donateur), 7 grades, 12 techniques, 4 formes, 4 groupes,
 9 chambres sur 2 bâtiments, 3 repas, 5 catégories de stock, 6 mois de finances,
 5 dons, 5 événements, 6 documents, 6 notifications, 7 rôles.

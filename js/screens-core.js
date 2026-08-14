@@ -15,9 +15,9 @@ screen('splash', {
   render: () => `
   <div class="screen" style="justify-content:center;align-items:center;gap:var(--s-6);
        background:var(--surface-ink);color:var(--text-on-ink);text-align:center;padding:var(--gutter)">
-    <div class="seal seal--lg stamp" style="width:96px;height:96px;font-size:40px">龍</div>
+    <div class="seal seal--lg stamp" style="width:96px;height:96px;font-size:40px">VM</div>
     <div class="stack gap-2" style="align-items:center">
-      <h1 class="display" style="color:var(--gold-bright);letter-spacing:0.04em">LONG SHAN</h1>
+      <h1 class="display" style="color:var(--gold-bright);letter-spacing:0.04em">VATO MASINA</h1>
       <p class="overline" style="color:var(--text-on-ink-dim)">${MONASTERY.subtitle}</p>
     </div>
     <div class="rule" style="width:160px;color:rgba(198,161,91,.35)"><i></i></div>
@@ -39,8 +39,8 @@ screen('login', {
   render: () => `
   <div class="screen scroll" style="padding:var(--s-12) var(--gutter) var(--s-8)">
     <div class="stack gap-3" style="align-items:center;text-align:center">
-      <div class="seal seal--md">龍</div>
-      <h1 class="title mt-2">Long Shan</h1>
+      <div class="seal seal--md">VM</div>
+      <h1 class="title mt-2">Vato Masina</h1>
       <p class="sub">Entrez pour rejoindre le monastère.</p>
     </div>
 
@@ -168,7 +168,7 @@ screen('homeMaster', {
   label: '03 · Accueil maître', tab: 'home',
   render: () => `
   <div class="screen scroll">
-    ${homeHeader('Maître Chen', MONASTERY.maxim)}
+    ${homeHeader('Maître Fidy', MONASTERY.maxim)}
 
     <!-- Les chiffres et les visages forment un seul ensemble : le bloc
          d'encre donne l'état du monastère, le rail donne qui le compose. -->
@@ -610,7 +610,7 @@ screen('gradeDetail', {
         ${sectionHead('Conditions de passage')}
         <div class="list list--card">
           ${[['Techniques requises', '9 techniques', 66, 'techniques'],
-             ['Formes', 'Lian Huan Quan', 80, 'techniques'],
+             ['Formes', 'Rivotra mandalo', 80, 'techniques'],
              ['Niveau de combat', 'Assaut souple, 3 reprises', 50, null],
              ['Discipline', 'Aucun manquement sur 6 mois', 100, null],
              ['Théorie', '12 principes fondamentaux', 45, null],
@@ -763,8 +763,8 @@ screen('session', {
         ${sectionHead('Programme de la séance')}
         <div class="timeline">
           ${tlRow({ time: '16:00', title: 'Échauffement', meta: '15 min', state: 'done' })}
-          ${tlRow({ time: '16:15', title: 'Positions fondamentales', meta: 'Ma Bu · Gong Bu · Xie Bu', state: 'done' })}
-          ${tlRow({ time: '16:35', title: 'Forme Wu Bu Quan', meta: '18 mouvements', state: 'now' })}
+          ${tlRow({ time: '16:15', title: 'Positions fondamentales', meta: 'Fijoroana soavaly · mandroso · ambany', state: 'done' })}
+          ${tlRow({ time: '16:35', title: 'Forme Dian’ny voromahery', meta: '18 mouvements', state: 'now' })}
           ${tlRow({ time: '17:05', title: 'Assauts souples', meta: '3 reprises', state: 'next' })}
           ${tlRow({ time: '17:25', title: 'Retour au calme', meta: '5 min', state: 'locked' })}
         </div>
