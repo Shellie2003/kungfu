@@ -23,6 +23,32 @@ Aucune dépendance, aucun réseau, aucune police externe. Ouvrir `index.html` su
 - **Mode clair / Temple de nuit** : bascule en haut de la scène.
 - Sous 900 px de large, l'échafaudage disparaît et l'application occupe tout l'écran.
 
+## Déploiement
+
+Site statique sans étape de build : `vercel.json` fixe `framework`, `buildCommand` et
+`installCommand` à `null`, et `outputDirectory` à la racine. Vercel sert les fichiers tels
+quels.
+
+À l'import depuis l'interface Vercel — `vercel.json` étant lu au build et non à l'import,
+l'écran demande quand même ces valeurs :
+
+| Champ | Valeur |
+|---|---|
+| Framework Preset | **Other** |
+| Root Directory | `./` |
+| Build / Output / Install Command | laisser vide, sans *Override* |
+
+**Sur la politique de cache.** Les fichiers CSS et JS ne portent pas d'empreinte de version
+dans leur nom. Tant que le prototype est en relecture, tout est donc revalidé à chaque
+requête : le risque n'est pas la bande passante mais qu'un relecteur recharge et obtienne
+une feuille de style en cache associée à un script neuf. Le jour où les ressources seront
+versionnées (`app.a1b2c3.js`), il faudra passer les assets en `max-age=31536000, immutable`
+et ne garder la revalidation que sur le HTML.
+
+**Attention aux commentaires.** Vercel valide `vercel.json` strictement et rejette toute
+propriété hors schéma — y compris la clé `"//"` couramment utilisée pour commenter du JSON.
+Les explications appartiennent à ce fichier, pas à la configuration.
+
 ## Fichiers
 
 | Fichier | Rôle |
