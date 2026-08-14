@@ -330,6 +330,107 @@ const RAIL_FILTERS = [
   { key: 'visiteurs', label: 'Visiteurs', match: (p) => ['Visiteur', 'Ancien élève'].includes(p.role) }
 ];
 
+/* ---------------------------------------------- Messagerie
+   Les échanges du monastère ne sont pas un fil de discussion neutre :
+   ils suivent les règles du lieu. Trois natures de canal —
+     · `annonce` : lecture pour tous, écriture réservée aux maîtres ;
+     · `group`   : un groupe de pratique ou un corps de la communauté ;
+     · `direct`  : de personne à personne.
+   Et une contrainte de temps : pendant les méditations et après
+   l'extinction des lampes, le monastère observe le silence. */
+
+const ME = 'p11';                       /* Maître Chen Wei */
+const NOW_MIN = 16 * 60 + 4;            /* 16:04, l'heure de la maquette */
+
+/* Plages de silence, en minutes depuis minuit. */
+const SILENCE = [
+  { from: 21 * 60, to: 24 * 60 + 5 * 60 + 30, label: 'Extinction des lampes', until: '05:30' },
+  { from: 5 * 60 + 30, to: 6 * 60 + 30, label: 'Méditation du matin', until: '06:30' },
+  { from: 18 * 60, to: 18 * 60 + 45, label: 'Méditation du soir', until: '18:45' }
+];
+
+/** Plage de silence en cours, ou null. */
+function silenceNow(m = NOW_MIN) {
+  return SILENCE.find((s) => (s.to > 24 * 60)
+    ? (m >= s.from || m < s.to - 24 * 60)   /* plage qui franchit minuit */
+    : (m >= s.from && m < s.to)) || null;
+}
+
+/** Prochaine plage de silence à venir aujourd'hui. */
+function silenceNext(m = NOW_MIN) {
+  const up = SILENCE.filter((s) => s.from > m).sort((a, b) => a.from - b.from)[0];
+  if (!up) return null;
+  const h = String(Math.floor(up.from / 60)).padStart(2, '0');
+  return { at: `${h}:${String(up.from % 60).padStart(2, '0')}`, label: up.label };
+}
+
+const CONVERSATIONS = [
+  { id: 'c1', kind: 'annonce', title: 'Annonces du monastère', people: 62,
+    last: 'La cérémonie des ceintures est avancée à 17:00.', from: 'p11',
+    time: '14:20', unread: 0, pinned: true },
+  { id: 'c2', kind: 'group', title: 'Groupe intermédiaire', people: 24,
+    last: 'Pensez à vos ceintures pour la séance de 16:00.', from: 'p12',
+    time: '15:12', unread: 2 },
+  { id: 'c3', kind: 'group', title: 'Maîtres et moines', people: 6,
+    last: 'Trois candidats me semblent prêts pour l’examen.', from: 'p12',
+    time: '13:48', unread: 0 },
+  { id: 'c4', kind: 'direct', title: 'Rakoto Andry', with: 'p1',
+    last: 'Merci Maître. Je travaillerai les appuis.', from: 'p1',
+    time: '15:31', unread: 1 },
+  { id: 'c5', kind: 'direct', title: 'Miora Tantely', with: 'p7',
+    last: 'Je serai absente jeudi, une obligation familiale.', from: 'p7',
+    time: '11:05', unread: 0 },
+  { id: 'c6', kind: 'direct', title: 'Vololona Ranaivo', with: 'p14',
+    last: 'Le stock d’huile ne tiendra pas la semaine.', from: 'p14',
+    time: 'Hier', unread: 0 },
+  { id: 'c7', kind: 'direct', title: 'Hasina Njaka', with: 'p9',
+    last: 'Le jardin est prêt pour la démonstration.', from: 'p9',
+    time: 'Hier', unread: 0 }
+];
+
+/* `day` ouvre un séparateur de journée. `from: ME` = message émis. */
+const MESSAGES = {
+  c4: [
+    { day: 'Hier' },
+    { from: 'p1', text: 'Maître, puis-je vous demander un conseil avant l’examen ?', time: '19:42' },
+    { from: ME, text: 'Bien sûr. Que t’inquiète-t-il ?', time: '20:03' },
+    { from: 'p1', text: 'La forme Wu Bu Quan. Je perds l’équilibre au troisième enchaînement.', time: '20:05' },
+    { day: 'Aujourd’hui' },
+    { from: ME, text: 'Ce n’est pas l’équilibre qui manque, c’est la patience. Tu enchaînes avant que le poids soit posé.', time: '15:20' },
+    { from: ME, text: 'Reprends la séquence à moitié vitesse, vingt fois. Sans miroir.', time: '15:21' },
+    { from: 'p1', text: 'Merci Maître. Je travaillerai les appuis.', time: '15:31', read: true }
+  ],
+  c2: [
+    { day: 'Aujourd’hui' },
+    { from: 'p12', text: 'Séance de 16:00 maintenue dans la cour d’honneur.', time: '09:14' },
+    { from: 'p12', text: 'Pensez à vos ceintures pour la séance de 16:00.', time: '15:12' },
+    { from: 'p6', text: 'Bien reçu, Maître.', time: '15:15' },
+    { from: 'p7', text: 'Je serai là.', time: '15:18' }
+  ],
+  c1: [
+    { day: 'Aujourd’hui' },
+    { from: ME, text: 'La cérémonie des ceintures est avancée à 17:00. Les familles sont attendues à partir de 16:30.', time: '14:20' }
+  ],
+  c3: [
+    { day: 'Aujourd’hui' },
+    { from: 'p12', text: 'Trois candidats me semblent prêts pour l’examen.', time: '13:48' },
+    { from: ME, text: 'Nous les verrons ensemble demain après la méditation.', time: '13:55' }
+  ],
+  c5: [
+    { day: 'Aujourd’hui' },
+    { from: 'p7', text: 'Je serai absente jeudi, une obligation familiale.', time: '11:05' },
+    { from: ME, text: 'C’est noté. Rattrape la forme avec Naina à ton retour.', time: '11:20' }
+  ],
+  c6: [
+    { day: 'Hier' },
+    { from: 'p14', text: 'Le stock d’huile ne tiendra pas la semaine.', time: '17:40' }
+  ],
+  c7: [
+    { day: 'Hier' },
+    { from: 'p9', text: 'Le jardin est prêt pour la démonstration.', time: '16:02' }
+  ]
+};
+
 /* ---------------------------------------------- Session courante */
 const MONASTERY = {
   name: 'Long Shan',

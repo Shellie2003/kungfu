@@ -57,6 +57,14 @@
   --danger: #a63d2f;
   --danger-soft: #f0dcd6;
 
+  /* Bulle de message émise. En mode clair, l'encre sur le papier suffit
+     à distinguer les deux voix (17:1). Deux surfaces sombres ne peuvent
+     pas atteindre un tel écart, d'où le jeu de jetons : le mode sombre
+     confie la distinction à un filet doré plutôt qu'au fond. */
+  --bubble-mine-bg: var(--surface-ink);
+  --bubble-mine-fg: var(--text-on-ink);
+  --bubble-mine-border: transparent;
+
   --scrim: rgba(23, 23, 23, 0.42);
 
   /* ---- Élévation — ombres chaudes, jamais bleutées ---- */
@@ -146,6 +154,10 @@
   --warning-soft: #2b2114;
   --danger: #c4523f;
   --danger-soft: #33201b;
+
+  --bubble-mine-bg: #2e241a;
+  --bubble-mine-fg: #f2e8d8;        /* 10,9:1 sur ce fond */
+  --bubble-mine-border: rgba(198, 161, 91, 0.45);
 
   --scrim: rgba(0, 0, 0, 0.6);
 

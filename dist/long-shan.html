@@ -66,6 +66,14 @@
   --danger: #a63d2f;
   --danger-soft: #f0dcd6;
 
+  /* Bulle de message émise. En mode clair, l'encre sur le papier suffit
+     à distinguer les deux voix (17:1). Deux surfaces sombres ne peuvent
+     pas atteindre un tel écart, d'où le jeu de jetons : le mode sombre
+     confie la distinction à un filet doré plutôt qu'au fond. */
+  --bubble-mine-bg: var(--surface-ink);
+  --bubble-mine-fg: var(--text-on-ink);
+  --bubble-mine-border: transparent;
+
   --scrim: rgba(23, 23, 23, 0.42);
 
   /* ---- Élévation — ombres chaudes, jamais bleutées ---- */
@@ -155,6 +163,10 @@
   --warning-soft: #2b2114;
   --danger: #c4523f;
   --danger-soft: #33201b;
+
+  --bubble-mine-bg: #2e241a;
+  --bubble-mine-fg: #f2e8d8;        /* 10,9:1 sur ce fond */
+  --bubble-mine-border: rgba(198, 161, 91, 0.45);
 
   --scrim: rgba(0, 0, 0, 0.6);
 
@@ -834,6 +846,111 @@ p, h1, h2, h3, h4, h5, h6 { margin: 0; font-weight: inherit; }
 .scard--now { border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
 .scard--done { opacity: 0.62; }
 .scard__time { font-family: var(--font-display); font-size: 30px; line-height: 32px; }
+
+/* ---------------------------------------------- 10 ter. Messagerie
+   Pas de bulles criardes ni d'accusés de lecture clignotants : un
+   échange se lit comme une page, l'émetteur se distingue par la
+   matière (encre contre papier) et non par une couleur vive. */
+.thread {
+  display: flex; flex-direction: column; gap: var(--s-2);
+  padding: var(--s-4) var(--gutter) var(--s-6);
+}
+
+.msg { max-width: 80%; align-self: flex-start; display: flex; flex-direction: column; }
+.msg--mine { align-self: flex-end; align-items: flex-end; }
+/* Deux messages successifs du même auteur se resserrent. */
+.msg + .msg { margin-top: 0; }
+.msg--start { margin-top: var(--s-3); }
+
+.msg__author {
+  font-size: 11px; font-weight: 600; color: var(--text-secondary);
+  margin: 0 0 4px 12px;
+}
+.msg__bubble {
+  padding: 10px 14px;
+  border-radius: var(--r-lg) var(--r-lg) var(--r-lg) 6px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  font-size: 15px; line-height: 21px;
+  box-shadow: var(--shadow-1);
+  overflow-wrap: anywhere;
+}
+.msg--mine .msg__bubble {
+  border-radius: var(--r-lg) var(--r-lg) 6px var(--r-lg);
+  background: var(--bubble-mine-bg);
+  color: var(--bubble-mine-fg);
+  border-color: var(--bubble-mine-border);
+}
+.msg__meta {
+  font-size: 10px; color: var(--text-tertiary);
+  margin: 4px 12px 0; display: flex; align-items: center; gap: 5px;
+}
+.msg__meta .ic { width: 12px; height: 12px; }
+
+/* Séparateur de journée — même filet que le reste de l'application */
+.daysep {
+  display: flex; align-items: center; gap: 10px;
+  margin: var(--s-5) 0 var(--s-2); color: var(--line-strong);
+}
+.daysep::before, .daysep::after { content: ""; flex: 1; height: 1px; background: currentColor; }
+.daysep span {
+  font-size: 10px; letter-spacing: var(--track); text-transform: uppercase;
+  font-weight: 600; color: var(--text-tertiary);
+}
+
+/* Zone de saisie */
+.composer {
+  flex: none; display: flex; align-items: flex-end; gap: 10px;
+  padding: 10px var(--gutter) 12px;
+  border-top: 1px solid var(--line);
+  background: var(--bg);
+}
+.composer__input {
+  flex: 1; min-height: 44px; max-height: 120px;
+  padding: 11px var(--s-4); border-radius: 22px;
+  background: var(--surface-sunken); border: 1px solid transparent;
+  color: var(--text); font-size: 15px; line-height: 21px;
+  resize: none; overflow-y: auto;
+}
+.composer__input:focus {
+  outline: none; background: var(--surface-raised);
+  border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft);
+}
+.composer__send {
+  width: 44px; height: 44px; flex: none; border-radius: 30%;
+  display: grid; place-items: center;
+  background: var(--surface-ink); color: var(--gold-bright);
+  transition: transform var(--d-fast) var(--e-out), opacity var(--d-fast);
+}
+.composer__send:active { transform: scale(0.92); }
+.composer__send[disabled] { opacity: 0.35; }
+.composer__send .ic { width: 20px; height: 20px; }
+
+/* Bandeau d'état : silence du monastère, ou canal en lecture seule.
+   Il remplace la zone de saisie plutôt que de la griser en silence. */
+.notice {
+  flex: none; display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-4) var(--gutter);
+  border-top: 1px solid var(--line);
+  background: var(--surface-sunken);
+}
+.notice__icon {
+  width: 34px; height: 34px; flex: none; border-radius: 30%;
+  display: grid; place-items: center;
+  background: var(--surface-ink); color: var(--gold-bright);
+}
+.notice__icon .ic { width: 16px; height: 16px; }
+.notice__text { font-size: 13px; line-height: 18px; color: var(--text-secondary); }
+.notice__text b { color: var(--text); font-weight: 600; }
+
+/* Pastille de messages non lus */
+.unread {
+  min-width: 20px; height: 20px; padding: 0 6px;
+  border-radius: var(--r-pill);
+  background: var(--accent); color: #fff;
+  font-size: 11px; font-weight: 700;
+  display: grid; place-items: center;
+}
 
 /* ---------------------------------------------- 11. Champs de saisie */
 .field { display: flex; flex-direction: column; gap: 6px; }
@@ -1557,6 +1674,107 @@ const RAIL_FILTERS = [
   { key: 'visiteurs', label: 'Visiteurs', match: (p) => ['Visiteur', 'Ancien élève'].includes(p.role) }
 ];
 
+/* ---------------------------------------------- Messagerie
+   Les échanges du monastère ne sont pas un fil de discussion neutre :
+   ils suivent les règles du lieu. Trois natures de canal —
+     · `annonce` : lecture pour tous, écriture réservée aux maîtres ;
+     · `group`   : un groupe de pratique ou un corps de la communauté ;
+     · `direct`  : de personne à personne.
+   Et une contrainte de temps : pendant les méditations et après
+   l'extinction des lampes, le monastère observe le silence. */
+
+const ME = 'p11';                       /* Maître Chen Wei */
+const NOW_MIN = 16 * 60 + 4;            /* 16:04, l'heure de la maquette */
+
+/* Plages de silence, en minutes depuis minuit. */
+const SILENCE = [
+  { from: 21 * 60, to: 24 * 60 + 5 * 60 + 30, label: 'Extinction des lampes', until: '05:30' },
+  { from: 5 * 60 + 30, to: 6 * 60 + 30, label: 'Méditation du matin', until: '06:30' },
+  { from: 18 * 60, to: 18 * 60 + 45, label: 'Méditation du soir', until: '18:45' }
+];
+
+/** Plage de silence en cours, ou null. */
+function silenceNow(m = NOW_MIN) {
+  return SILENCE.find((s) => (s.to > 24 * 60)
+    ? (m >= s.from || m < s.to - 24 * 60)   /* plage qui franchit minuit */
+    : (m >= s.from && m < s.to)) || null;
+}
+
+/** Prochaine plage de silence à venir aujourd'hui. */
+function silenceNext(m = NOW_MIN) {
+  const up = SILENCE.filter((s) => s.from > m).sort((a, b) => a.from - b.from)[0];
+  if (!up) return null;
+  const h = String(Math.floor(up.from / 60)).padStart(2, '0');
+  return { at: `${h}:${String(up.from % 60).padStart(2, '0')}`, label: up.label };
+}
+
+const CONVERSATIONS = [
+  { id: 'c1', kind: 'annonce', title: 'Annonces du monastère', people: 62,
+    last: 'La cérémonie des ceintures est avancée à 17:00.', from: 'p11',
+    time: '14:20', unread: 0, pinned: true },
+  { id: 'c2', kind: 'group', title: 'Groupe intermédiaire', people: 24,
+    last: 'Pensez à vos ceintures pour la séance de 16:00.', from: 'p12',
+    time: '15:12', unread: 2 },
+  { id: 'c3', kind: 'group', title: 'Maîtres et moines', people: 6,
+    last: 'Trois candidats me semblent prêts pour l’examen.', from: 'p12',
+    time: '13:48', unread: 0 },
+  { id: 'c4', kind: 'direct', title: 'Rakoto Andry', with: 'p1',
+    last: 'Merci Maître. Je travaillerai les appuis.', from: 'p1',
+    time: '15:31', unread: 1 },
+  { id: 'c5', kind: 'direct', title: 'Miora Tantely', with: 'p7',
+    last: 'Je serai absente jeudi, une obligation familiale.', from: 'p7',
+    time: '11:05', unread: 0 },
+  { id: 'c6', kind: 'direct', title: 'Vololona Ranaivo', with: 'p14',
+    last: 'Le stock d’huile ne tiendra pas la semaine.', from: 'p14',
+    time: 'Hier', unread: 0 },
+  { id: 'c7', kind: 'direct', title: 'Hasina Njaka', with: 'p9',
+    last: 'Le jardin est prêt pour la démonstration.', from: 'p9',
+    time: 'Hier', unread: 0 }
+];
+
+/* `day` ouvre un séparateur de journée. `from: ME` = message émis. */
+const MESSAGES = {
+  c4: [
+    { day: 'Hier' },
+    { from: 'p1', text: 'Maître, puis-je vous demander un conseil avant l’examen ?', time: '19:42' },
+    { from: ME, text: 'Bien sûr. Que t’inquiète-t-il ?', time: '20:03' },
+    { from: 'p1', text: 'La forme Wu Bu Quan. Je perds l’équilibre au troisième enchaînement.', time: '20:05' },
+    { day: 'Aujourd’hui' },
+    { from: ME, text: 'Ce n’est pas l’équilibre qui manque, c’est la patience. Tu enchaînes avant que le poids soit posé.', time: '15:20' },
+    { from: ME, text: 'Reprends la séquence à moitié vitesse, vingt fois. Sans miroir.', time: '15:21' },
+    { from: 'p1', text: 'Merci Maître. Je travaillerai les appuis.', time: '15:31', read: true }
+  ],
+  c2: [
+    { day: 'Aujourd’hui' },
+    { from: 'p12', text: 'Séance de 16:00 maintenue dans la cour d’honneur.', time: '09:14' },
+    { from: 'p12', text: 'Pensez à vos ceintures pour la séance de 16:00.', time: '15:12' },
+    { from: 'p6', text: 'Bien reçu, Maître.', time: '15:15' },
+    { from: 'p7', text: 'Je serai là.', time: '15:18' }
+  ],
+  c1: [
+    { day: 'Aujourd’hui' },
+    { from: ME, text: 'La cérémonie des ceintures est avancée à 17:00. Les familles sont attendues à partir de 16:30.', time: '14:20' }
+  ],
+  c3: [
+    { day: 'Aujourd’hui' },
+    { from: 'p12', text: 'Trois candidats me semblent prêts pour l’examen.', time: '13:48' },
+    { from: ME, text: 'Nous les verrons ensemble demain après la méditation.', time: '13:55' }
+  ],
+  c5: [
+    { day: 'Aujourd’hui' },
+    { from: 'p7', text: 'Je serai absente jeudi, une obligation familiale.', time: '11:05' },
+    { from: ME, text: 'C’est noté. Rattrape la forme avec Naina à ton retour.', time: '11:20' }
+  ],
+  c6: [
+    { day: 'Hier' },
+    { from: 'p14', text: 'Le stock d’huile ne tiendra pas la semaine.', time: '17:40' }
+  ],
+  c7: [
+    { day: 'Hier' },
+    { from: 'p9', text: 'Le jardin est prêt pour la démonstration.', time: '16:02' }
+  ]
+};
+
 /* ---------------------------------------------- Session courante */
 const MONASTERY = {
   name: 'Long Shan',
@@ -1630,6 +1848,7 @@ const icon = {
   megaphone:P('<path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/>'),
   book:     P('<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H19v3H6.5"/>'),
   x:        P('<path d="M6 6l12 12M18 6 6 18"/>'),
+  send:     P('<path d="M12 20V5"/><path d="m5.5 11.5 6.5-6.5 6.5 6.5"/>'),
   dots:     P('<circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none"/>'),
   sun:      P('<circle cx="12" cy="12" r="4"/><path d="M12 2.5V5M12 19v2.5M2.5 12H5M19 12h2.5M5.2 5.2 7 7M17 17l1.8 1.8M18.8 5.2 17 7M7 17l-1.8 1.8"/>'),
   moon:     P('<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>')
@@ -1898,6 +2117,47 @@ function memberRailCards(key) {
     + moreCard(rest > 0 ? `+ ${rest} autre${rest > 1 ? 's' : ''}`
                         : students ? 'Tous les élèves' : 'Toute la communauté',
                students ? 'students' : 'community');
+}
+
+/* ---------------------------------------------- Messagerie */
+
+/** Emblème d'une conversation : sceau pour un canal, portrait sinon. */
+function convEmblem(c, size = 'md') {
+  /* Le sceau garde sa taille : c'est un emblème, pas un portrait.
+     Seuls les avatars suivent la taille demandée. */
+  if (c.kind === 'annonce') return `<span class="seal seal--sm">${icon.megaphone}</span>`;
+  if (c.kind === 'group') return `<span class="seal seal--sm seal--ink">${icon.users}</span>`;
+  return avatar(person(c.with), size);
+}
+
+/** Ligne de la liste des conversations. */
+function convRow(c) {
+  const author = c.kind === 'direct' ? '' : `${person(c.from).name.split(' ')[0]} : `;
+  return item({
+    lead: convEmblem(c),
+    title: `${esc(c.title)}${c.pinned ? ' <span class="dim" style="font-weight:400">· épinglé</span>' : ''}`,
+    sub: esc(author + c.last),
+    end: `<span class="stack" style="align-items:flex-end;gap:5px">
+            <span class="caption">${esc(c.time)}</span>
+            ${c.unread ? `<span class="unread">${c.unread}</span>` : ''}
+          </span>`,
+    to: `chat:${c.id}`
+  });
+}
+
+/** Bulle de message. `prev` sert à regrouper les envois consécutifs. */
+function messageBubble(m, conv, prev) {
+  if (m.day) return `<div class="daysep"><span>${esc(m.day)}</span></div>`;
+  const mine = m.from === ME;
+  const start = !prev || prev.day || prev.from !== m.from;
+  /* L'auteur n'est nommé que dans les canaux collectifs : en tête-à-tête
+     il est déjà dans le titre de l'écran. */
+  const showAuthor = start && !mine && conv.kind !== 'direct';
+  return `<div class="msg ${mine ? 'msg--mine' : ''} ${start ? 'msg--start' : ''}">
+    ${showAuthor ? `<span class="msg__author">${esc(person(m.from).name)}</span>` : ''}
+    <div class="msg__bubble">${esc(m.text)}</div>
+    <span class="msg__meta">${esc(m.time)}${mine && m.read ? ` ${icon.check} lu` : ''}</span>
+  </div>`;
 }
 
 /* ---------------------------------------------- Recherche globale
@@ -2555,6 +2815,8 @@ screen('student', {
               title: 'Présences', sub: '42 séances suivies', to: 'attendance' })}
             ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.coin}</span>`,
               title: 'Cotisations', sub: 'À jour · 25 000 Ar / mois', to: 'finance' })}
+            ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.megaphone}</span>`,
+              title: 'Conversation', sub: 'Dernier échange il y a 30 min', to: 'chat:c4' })}
           </div>
           <button class="btn btn--gold btn--block mt-4" data-nav="evaluate">Évaluer cet élève</button>
         </div>
@@ -3128,6 +3390,8 @@ screen('community', {
         <div class="between">
           <div><p class="overline">${PEOPLE.length + 51} personnes</p>
             <h1 class="display mt-2">Communauté</h1></div>
+          <button class="iconbtn" data-nav="messages" aria-label="Messages">
+            ${icon.megaphone}<i class="iconbtn__dot"></i></button>
           <button class="iconbtn" data-nav="search" aria-label="Rechercher">${icon.search}</button>
         </div>
       </div>
@@ -3157,6 +3421,110 @@ screen('community', {
 });
 
 /* ============================================================
+   Messages — liste des conversations
+   ============================================================ */
+screen('messages', {
+  label: '· Messages', tab: 'community',
+  render: () => {
+    const unread = CONVERSATIONS.reduce((a, c) => a + c.unread, 0);
+    const next = silenceNext();
+    return `
+    <div class="screen">
+      ${appbar({ title: 'Messages', back: 'community',
+        actions: `<button class="iconbtn" data-action="sheet" aria-label="Nouvelle conversation">${icon.plus}</button>` })}
+      <div class="filters">
+        ${['Tous', 'Non lus', 'Canaux', 'Directs'].map((f, i) =>
+          `<button class="filter" aria-pressed="${i === 0}">${f}</button>`).join('')}
+      </div>
+      <div class="scroll">
+        <p class="caption pad">${CONVERSATIONS.length} conversations · ${unread} message${unread > 1 ? 's' : ''} non lu${unread > 1 ? 's' : ''}</p>
+
+        <div class="section" style="margin-top:var(--s-4)">
+          <div class="list list--card">
+            ${CONVERSATIONS.filter((c) => c.kind !== 'direct').map(convRow).join('')}
+          </div>
+        </div>
+
+        <div class="section" style="margin-bottom:var(--s-6)">
+          ${sectionHead('Échanges directs')}
+          <div class="list list--card">
+            ${CONVERSATIONS.filter((c) => c.kind === 'direct').map(convRow).join('')}
+          </div>
+        </div>
+
+        ${next ? `<div class="section" style="margin-bottom:var(--s-8)">
+          <div class="card card--sunken row gap-3">
+            <span class="notice__icon">${icon.lotus}</span>
+            <span class="notice__text grow">Le monastère observe le silence à partir de
+              <b>${next.at}</b> — ${esc(next.label.toLowerCase())}.</span>
+          </div>
+        </div>` : ''}
+      </div>
+    </div>`;
+  }
+});
+
+/* ============================================================
+   Conversation
+   ============================================================ */
+screen('chat', {
+  label: '· Conversation',
+  render: (convId = 'c4') => {
+    const c = CONVERSATIONS.find((x) => x.id === convId) || CONVERSATIONS[0];
+    const msgs = MESSAGES[c.id] || [];
+    const silent = silenceNow();
+    const next = silenceNext();
+    const sub = c.kind === 'direct'
+      ? `${person(c.with).level}${person(c.with).beltName ? ' · ceinture ' + person(c.with).beltName.toLowerCase() : ''}`
+      : `${c.people} membres`;
+
+    return `
+    <div class="screen">
+      <header class="appbar">
+        <button class="iconbtn" data-nav="messages" aria-label="Retour">${icon.back}</button>
+        <button class="grow row gap-3" data-nav="${c.kind === 'direct' ? 'member' : 'community'}"
+                style="text-align:left;min-width:0">
+          ${convEmblem(c, 'sm')}
+          <span class="grow" style="min-width:0">
+            <span class="item__title truncate" style="display:block">${esc(c.title)}</span>
+            <span class="item__sub" style="display:block">${esc(sub)}</span>
+          </span>
+        </button>
+        <button class="iconbtn" data-action="sheet" aria-label="Options">${icon.dots}</button>
+      </header>
+
+      <div class="scroll" data-thread-scroll>
+        <div class="thread" data-thread="${c.id}">
+          ${msgs.map((m, i) => messageBubble(m, c, msgs[i - 1])).join('')}
+        </div>
+      </div>
+
+      ${c.kind === 'annonce' ? `<div class="notice">
+        <span class="notice__icon">${icon.megaphone}</span>
+        <span class="notice__text grow">Canal d’annonces — lu par <b>${c.people} membres</b>.
+          Seuls les maîtres peuvent y écrire.</span>
+      </div>` : ''}
+
+      ${silent
+        ? `<div class="notice">
+             <span class="notice__icon">${icon.lotus}</span>
+             <span class="notice__text grow"><b>${esc(silent.label)}</b> — le monastère
+               observe le silence jusqu’à ${esc(silent.until)}. Votre message pourra être
+               envoyé à la reprise.</span>
+           </div>`
+        : `<form class="composer" data-send="${c.id}">
+             <textarea class="composer__input" rows="1" data-composer
+                       placeholder="Écrire à ${esc(c.kind === 'direct' ? c.title.split(' ')[0] : c.title)}…"
+                       aria-label="Votre message"></textarea>
+             <button class="composer__send" type="submit" aria-label="Envoyer">${icon.send}</button>
+           </form>
+           ${next ? `<p class="caption pad" style="padding-bottom:8px;text-align:center">
+             Silence à ${next.at} · ${esc(next.label.toLowerCase())}</p>` : ''}`}
+    </div>`;
+  }
+});
+
+/* ============================================================
    18. Profil membre
    ============================================================ */
 screen('member', {
@@ -3177,6 +3545,11 @@ screen('member', {
         </div>
 
         <div class="section" style="margin-top:var(--s-6)">
+          <button class="btn btn--primary btn--block" data-nav="chat:c7">
+            ${icon.megaphone}Envoyer un message</button>
+        </div>
+
+        <div class="section">
           <div class="card">
             <div class="row" style="justify-content:space-around">
               <div style="text-align:center"><p class="num heading">7 ans</p><p class="caption mt-1">au monastère</p></div>
@@ -3974,15 +4347,20 @@ function renderTabbar(activeTab) {
 }
 
 /* ---------------------------------------------- Rendu d'un écran */
+/* Une clé peut porter un paramètre après « : » — `chat:c4` ouvre la
+   conversation c4. L'index latéral continue de raisonner sur le nom
+   seul, sans quoi aucune ligne ne serait mise en évidence. */
 function navigate(key, { animate = true } = {}) {
-  const def = SCREENS[key];
+  const [name, param] = String(key).split(':');
+  const def = SCREENS[name];
   if (!def) return;
-  app.current = key;
+  app.current = name;
+  app.param = param;
 
   const chrome = def.chrome !== false;
   app.el.frame.innerHTML = `
     ${chrome ? statusbar() : ''}
-    <main class="viewport">${def.render()}</main>
+    <main class="viewport">${def.render(param)}</main>
     ${def.tab ? renderTabbar(def.tab) : ''}
     ${chrome ? '<div class="homebar"></div>' : ''}`;
 
@@ -3994,7 +4372,11 @@ function navigate(key, { animate = true } = {}) {
     );
   }
 
-  app.el.frame.querySelector('.scroll')?.scrollTo(0, 0);
+  /* Une conversation s'ouvre sur son dernier message, pas sur le premier. */
+  const thread = app.el.frame.querySelector('[data-thread-scroll]');
+  if (thread) thread.scrollTop = thread.scrollHeight;
+  else app.el.frame.querySelector('.scroll')?.scrollTo(0, 0);
+
   syncIndex();
 }
 
@@ -4013,7 +4395,7 @@ function buildIndex() {
     ['Accueils', ['homeMaster', 'homeAdmin', 'homeStudent']],
     ['Arts martiaux', ['martial', 'students', 'student', 'journey', 'grades', 'gradeDetail',
                        'techniques', 'trainings', 'session', 'attendance', 'exams', 'evaluate']],
-    ['Communauté', ['community', 'member']],
+    ['Communauté', ['community', 'member', 'messages', 'chat']],
     ['Vie du monastère', ['temple', 'planning', 'rooms', 'meals', 'stock', 'events']],
     ['Gestion', ['finance', 'dues', 'donations', 'documents']],
     ['Système', ['notifications', 'search', 'settings', 'users', 'permissions', 'states']]
@@ -4021,7 +4403,7 @@ function buildIndex() {
   app.el.index.innerHTML = `
     <div class="index__brand">
       <div class="index__mark"><span>龍</span> Long Shan</div>
-      <p class="index__sub">Système d’interface · 35 écrans</p>
+      <p class="index__sub">Système d’interface · 37 écrans</p>
     </div>
     ${groups.map(([g, keys]) => `
       <p class="index__group">${g}</p>
@@ -4073,7 +4455,8 @@ function openSheet() {
       <div class="rule mt-5"><i></i></div>
       <p class="overline mt-5">Autres espaces</p>
       <div class="list mt-3">
-        ${[['Ressources & stocks', 'stock', icon.box],
+        ${[['Messages', 'messages', icon.megaphone],
+           ['Ressources & stocks', 'stock', icon.box],
            ['Finances', 'finance', icon.coin],
            ['Cotisations', 'dues', icon.users],
            ['Documents', 'documents', icon.doc],
@@ -4126,6 +4509,39 @@ function updateRoll() {
   app.el.frame.querySelector('[data-roll-count]').textContent = present;
   app.el.frame.querySelector('[data-roll-rate]').textContent = rate + '%';
   app.el.frame.querySelector('[data-roll-bar] .bar__fill').style.width = rate + '%';
+}
+
+/* ---------------------------------------------- Messagerie */
+/** Heure courante de la maquette, au format de la conversation. */
+function nowLabel() {
+  return `${String(Math.floor(NOW_MIN / 60)).padStart(2, '0')}:${String(NOW_MIN % 60).padStart(2, '0')}`;
+}
+
+function sendMessage(convId) {
+  const box = app.el.frame.querySelector('[data-composer]');
+  const text = box.value.trim();
+  if (!text) return;
+
+  const conv = CONVERSATIONS.find((c) => c.id === convId);
+  const msgs = (MESSAGES[convId] ??= []);
+  const prev = msgs[msgs.length - 1];
+  const msg = { from: ME, text, time: nowLabel() };
+  msgs.push(msg);
+
+  /* La liste des conversations doit refléter l'envoi, sinon revenir en
+     arrière donnerait l'impression que le message s'est perdu. */
+  conv.last = text;
+  conv.time = msg.time;
+  conv.unread = 0;
+
+  const thread = app.el.frame.querySelector('[data-thread]');
+  thread.insertAdjacentHTML('beforeend', messageBubble(msg, conv, prev));
+  box.value = '';
+  box.style.height = 'auto';
+
+  const scroller = app.el.frame.querySelector('[data-thread-scroll]');
+  scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
+  thread.lastElementChild.classList.add('rise');
 }
 
 /* ---------------------------------------------- Recherche globale */
@@ -4300,13 +4716,32 @@ function boot() {
   document.addEventListener('click', onClick);
   app.el.frame.addEventListener('click', onScreenClick);
 
-  /* Saisie : recherche globale et filtre d'appel réagissent à la frappe. */
+  /* Saisie : recherche globale, filtre d'appel, zone de message. */
   app.el.frame.addEventListener('input', (e) => {
     if (e.target.matches('[data-search-input]')) {
       searchState.q = e.target.value;
       refreshSearch();
     } else if (e.target.matches('[data-roll-search]')) {
       filterRoll(e.target.value);
+    } else if (e.target.matches('[data-composer]')) {
+      /* La zone grandit avec le texte, jusqu'au plafond posé en CSS. */
+      e.target.style.height = 'auto';
+      e.target.style.height = e.target.scrollHeight + 'px';
+    }
+  });
+
+  app.el.frame.addEventListener('submit', (e) => {
+    const form = e.target.closest('[data-send]');
+    if (!form) return;
+    e.preventDefault();
+    sendMessage(form.dataset.send);
+  });
+
+  /* Entrée envoie, Maj+Entrée insère un retour à la ligne. */
+  app.el.frame.addEventListener('keydown', (e) => {
+    if (e.target.matches('[data-composer]') && e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage(e.target.closest('[data-send]').dataset.send);
     }
   });
 

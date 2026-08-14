@@ -508,6 +508,8 @@ screen('student', {
               title: 'Présences', sub: '42 séances suivies', to: 'attendance' })}
             ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.coin}</span>`,
               title: 'Cotisations', sub: 'À jour · 25 000 Ar / mois', to: 'finance' })}
+            ${item({ lead: `<span class="seal seal--sm seal--ink">${icon.megaphone}</span>`,
+              title: 'Conversation', sub: 'Dernier échange il y a 30 min', to: 'chat:c4' })}
           </div>
           <button class="btn btn--gold btn--block mt-4" data-nav="evaluate">Évaluer cet élève</button>
         </div>

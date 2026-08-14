@@ -28,15 +28,20 @@ function renderTabbar(activeTab) {
 }
 
 /* ---------------------------------------------- Rendu d'un écran */
+/* Une clé peut porter un paramètre après « : » — `chat:c4` ouvre la
+   conversation c4. L'index latéral continue de raisonner sur le nom
+   seul, sans quoi aucune ligne ne serait mise en évidence. */
 function navigate(key, { animate = true } = {}) {
-  const def = SCREENS[key];
+  const [name, param] = String(key).split(':');
+  const def = SCREENS[name];
   if (!def) return;
-  app.current = key;
+  app.current = name;
+  app.param = param;
 
   const chrome = def.chrome !== false;
   app.el.frame.innerHTML = `
     ${chrome ? statusbar() : ''}
-    <main class="viewport">${def.render()}</main>
+    <main class="viewport">${def.render(param)}</main>
     ${def.tab ? renderTabbar(def.tab) : ''}
     ${chrome ? '<div class="homebar"></div>' : ''}`;
 
@@ -48,7 +53,11 @@ function navigate(key, { animate = true } = {}) {
     );
   }
 
-  app.el.frame.querySelector('.scroll')?.scrollTo(0, 0);
+  /* Une conversation s'ouvre sur son dernier message, pas sur le premier. */
+  const thread = app.el.frame.querySelector('[data-thread-scroll]');
+  if (thread) thread.scrollTop = thread.scrollHeight;
+  else app.el.frame.querySelector('.scroll')?.scrollTo(0, 0);
+
   syncIndex();
 }
 
@@ -67,7 +76,7 @@ function buildIndex() {
     ['Accueils', ['homeMaster', 'homeAdmin', 'homeStudent']],
     ['Arts martiaux', ['martial', 'students', 'student', 'journey', 'grades', 'gradeDetail',
                        'techniques', 'trainings', 'session', 'attendance', 'exams', 'evaluate']],
-    ['Communauté', ['community', 'member']],
+    ['Communauté', ['community', 'member', 'messages', 'chat']],
     ['Vie du monastère', ['temple', 'planning', 'rooms', 'meals', 'stock', 'events']],
     ['Gestion', ['finance', 'dues', 'donations', 'documents']],
     ['Système', ['notifications', 'search', 'settings', 'users', 'permissions', 'states']]
@@ -75,7 +84,7 @@ function buildIndex() {
   app.el.index.innerHTML = `
     <div class="index__brand">
       <div class="index__mark"><span>龍</span> Long Shan</div>
-      <p class="index__sub">Système d’interface · 35 écrans</p>
+      <p class="index__sub">Système d’interface · 37 écrans</p>
     </div>
     ${groups.map(([g, keys]) => `
       <p class="index__group">${g}</p>
@@ -127,7 +136,8 @@ function openSheet() {
       <div class="rule mt-5"><i></i></div>
       <p class="overline mt-5">Autres espaces</p>
       <div class="list mt-3">
-        ${[['Ressources & stocks', 'stock', icon.box],
+        ${[['Messages', 'messages', icon.megaphone],
+           ['Ressources & stocks', 'stock', icon.box],
            ['Finances', 'finance', icon.coin],
            ['Cotisations', 'dues', icon.users],
            ['Documents', 'documents', icon.doc],
@@ -180,6 +190,39 @@ function updateRoll() {
   app.el.frame.querySelector('[data-roll-count]').textContent = present;
   app.el.frame.querySelector('[data-roll-rate]').textContent = rate + '%';
   app.el.frame.querySelector('[data-roll-bar] .bar__fill').style.width = rate + '%';
+}
+
+/* ---------------------------------------------- Messagerie */
+/** Heure courante de la maquette, au format de la conversation. */
+function nowLabel() {
+  return `${String(Math.floor(NOW_MIN / 60)).padStart(2, '0')}:${String(NOW_MIN % 60).padStart(2, '0')}`;
+}
+
+function sendMessage(convId) {
+  const box = app.el.frame.querySelector('[data-composer]');
+  const text = box.value.trim();
+  if (!text) return;
+
+  const conv = CONVERSATIONS.find((c) => c.id === convId);
+  const msgs = (MESSAGES[convId] ??= []);
+  const prev = msgs[msgs.length - 1];
+  const msg = { from: ME, text, time: nowLabel() };
+  msgs.push(msg);
+
+  /* La liste des conversations doit refléter l'envoi, sinon revenir en
+     arrière donnerait l'impression que le message s'est perdu. */
+  conv.last = text;
+  conv.time = msg.time;
+  conv.unread = 0;
+
+  const thread = app.el.frame.querySelector('[data-thread]');
+  thread.insertAdjacentHTML('beforeend', messageBubble(msg, conv, prev));
+  box.value = '';
+  box.style.height = 'auto';
+
+  const scroller = app.el.frame.querySelector('[data-thread-scroll]');
+  scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
+  thread.lastElementChild.classList.add('rise');
 }
 
 /* ---------------------------------------------- Recherche globale */
@@ -354,13 +397,32 @@ function boot() {
   document.addEventListener('click', onClick);
   app.el.frame.addEventListener('click', onScreenClick);
 
-  /* Saisie : recherche globale et filtre d'appel réagissent à la frappe. */
+  /* Saisie : recherche globale, filtre d'appel, zone de message. */
   app.el.frame.addEventListener('input', (e) => {
     if (e.target.matches('[data-search-input]')) {
       searchState.q = e.target.value;
       refreshSearch();
     } else if (e.target.matches('[data-roll-search]')) {
       filterRoll(e.target.value);
+    } else if (e.target.matches('[data-composer]')) {
+      /* La zone grandit avec le texte, jusqu'au plafond posé en CSS. */
+      e.target.style.height = 'auto';
+      e.target.style.height = e.target.scrollHeight + 'px';
+    }
+  });
+
+  app.el.frame.addEventListener('submit', (e) => {
+    const form = e.target.closest('[data-send]');
+    if (!form) return;
+    e.preventDefault();
+    sendMessage(form.dataset.send);
+  });
+
+  /* Entrée envoie, Maj+Entrée insère un retour à la ligne. */
+  app.el.frame.addEventListener('keydown', (e) => {
+    if (e.target.matches('[data-composer]') && e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage(e.target.closest('[data-send]').dataset.send);
     }
   });
 

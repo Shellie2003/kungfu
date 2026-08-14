@@ -2,13 +2,14 @@
 
 Monastère de Kung-Fu · école d'arts martiaux · gestion de la vie quotidienne.
 
-Prototype d'interface **mobile-first** complet et navigable : 35 écrans, deux thèmes,
+Prototype d'interface **mobile-first** complet et navigable : 37 écrans, deux thèmes,
 un design system cohérent. Il sert de **référence directe pour l'implémentation Flutter** —
 chaque composant CSS ci-dessous a son équivalent widget indiqué.
 
-Trois écrans ne sont pas des maquettes : la **recherche globale** interroge réellement les
-données, l'**évaluation d'examen** se saisit au pas-à-pas avec moyenne et verdict recalculés,
-et l'**appel de présence** se filtre au nom.
+Plusieurs écrans ne sont pas des maquettes : la **recherche globale** interroge réellement
+les données, l'**évaluation d'examen** se saisit au pas-à-pas avec moyenne et verdict
+recalculés, l'**appel de présence** se filtre au nom, et la **messagerie** envoie de vrais
+messages qui remontent dans la liste des conversations.
 
 ## Lancer
 
@@ -18,7 +19,7 @@ python3 -m http.server 8000     # puis ouvrir http://localhost:8000
 
 Aucune dépendance, aucun réseau, aucune police externe. Ouvrir `index.html` suffit.
 
-- **Colonne de gauche** : index des 34 écrans.
+- **Colonne de gauche** : index des 37 écrans.
 - **Flèches ↑ ↓** : parcourir les écrans. **Échap** : fermer un overlay.
 - **Mode clair / Temple de nuit** : bascule en haut de la scène.
 - Sous 900 px de large, l'échafaudage disparaît et l'application occupe tout l'écran.
@@ -181,6 +182,10 @@ Les nombres utilisent `font-variant-numeric: tabular-nums` → en Flutter,
 | `.mcard` | **Fiche membre en couches** (156 × 208) : portrait, voile dégradé, grade flottant, nom ancré en bas. Toutes les couches partagent la cellule `1 / 1` d'une grille | `Stack` + `Positioned` — c'est le cas d'usage direct de `Stack` |
 | `portraitSVG()` | Portrait déterministe généré : dégradé teinté par le grade, sceau en filigrane, initiales gravées | `CustomPaint` ou `SvgPicture.string` |
 | `.stepper` | Pas-à-pas de notation, cible 38 px | `IconButton` + `InkWell` |
+| `.thread` / `.msg` | Fil de conversation, bulles asymétriques, envois consécutifs regroupés | `ListView` + `Align` + `Container` |
+| `.daysep` | Séparateur de journée, même filet que le reste de l'app | `Row` + `Divider` |
+| `.composer` | Zone de saisie auto-extensible + bouton sceau | `TextField(maxLines: null)` |
+| `.notice` | Bandeau qui **remplace** la saisie (silence, canal en lecture seule) | `Container` en pied de `Scaffold` |
 | `.scard` | Fiche séance paysage (232 px), l'heure domine | `SizedBox(width: 232)` + `Card` |
 | `.input` / `.field` / `.field--error` | Champ creusé, focus doré, état d'erreur | `TextField` + `InputDecoration` |
 | `.check` | Ligne d'appel, cible 56 px, coche tracée | `InkWell` + `CustomPaint` (animation de tracé) |
@@ -262,8 +267,8 @@ qu'on n'irait pas consulter.
 | 15 | `exams` | Examens | 30 | `permissions` | Rôles & permissions |
 
 Écrans supplémentaires : `martial` (hub Arts martiaux), `temple` (hub Vie du monastère),
-`session` (détail d'une séance), `dues` (cotisations), `states` (chargement / vide /
-erreur / synchronisation).
+`session` (détail d'une séance), `dues` (cotisations), `messages` (conversations),
+`chat` (une conversation), `states` (chargement / vide / erreur / synchronisation).
 
 ### Fonctionnalités interactives
 
@@ -273,11 +278,36 @@ erreur / synchronisation).
 | `evaluate` | Chaque épreuve porte un pas-à-pas −/+ borné à 0–20. La moyenne et le verdict (« Grade acquis » / « Sous le seuil », seuil 12) se recalculent à chaque appui, et la cérémonie de validation reprend la moyenne réellement saisie. Seule la ligne touchée est redessinée. |
 | `attendance` | Filtre par nom au-dessus de l'appel — avec 48 élèves inscrits, taper coûte moins cher que faire défiler. Taux et compteur recalculés en direct, « tout cocher », état vide si le filtre ne rend rien. |
 | `dues` | Suivi des cotisations : taux de recouvrement, montants en attente, retards classés par ancienneté, rappel groupé. Les montants dérivent d'un tarif unique (25 000 Ar, 12 000 Ar pour les résidents dont l'hébergement est facturé à part) — les totaux de l'écran sont donc cohérents entre eux, pas saisis à la main. |
+| `messages` / `chat` | Messagerie réelle : la saisie envoie, le message s'ajoute au fil, la liste des conversations se met à jour, Entrée envoie et Maj+Entrée passe à la ligne, la zone de saisie grandit avec le texte, la conversation s'ouvre sur son dernier message. |
 | Rails d'accueil | Filtrage par rôle avec redessin animé de la piste. |
 
 ---
 
-## 10. Audit et optimisation
+## 10. Messagerie
+
+Une messagerie de monastère n'est pas un fil de discussion neutre : elle porte les règles
+du lieu.
+
+**Trois natures de canal.** `annonce` — lu par tous, écrit par les seuls maîtres, la règle
+étant affichée sous le fil plutôt que découverte par un envoi refusé. `group` — un groupe
+de pratique ou un corps de la communauté, où l'auteur est nommé au-dessus de sa bulle.
+`direct` — de personne à personne, sans nom d'auteur puisqu'il est déjà dans l'en-tête.
+
+**Le silence du monastère.** Pendant les méditations (05:30–06:30, 18:00–18:45) et après
+l'extinction des lampes (21:00–05:30), la zone de saisie est **remplacée** par un bandeau
+qui nomme la plage en cours et l'heure de reprise — elle n'est pas grisée sans explication.
+Hors de ces plages, un rappel discret annonce la prochaine. C'est la même donnée que le
+rythme quotidien de l'écran `planning` : un seul tableau `SILENCE` sert les deux.
+
+**Deux voix, une matière.** L'émetteur se distingue par la matière de sa bulle, pas par une
+couleur vive : encre sur papier en mode clair, soit un écart de 17:1. Deux surfaces sombres
+ne peuvent pas atteindre un tel écart — mesuré à 1,2:1 — donc le mode sombre confie la
+distinction à un filet doré, via les jetons `--bubble-mine-*`. Le principe tient dans les
+deux thèmes sans qu'aucun composant ne connaisse le thème courant.
+
+---
+
+## 11. Audit et optimisation
 
 Le prototype a été mesuré plutôt qu'estimé. Ce que l'audit a donné :
 

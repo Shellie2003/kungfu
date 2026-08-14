@@ -439,6 +439,111 @@
 .scard--done { opacity: 0.62; }
 .scard__time { font-family: var(--font-display); font-size: 30px; line-height: 32px; }
 
+/* ---------------------------------------------- 10 ter. Messagerie
+   Pas de bulles criardes ni d'accusés de lecture clignotants : un
+   échange se lit comme une page, l'émetteur se distingue par la
+   matière (encre contre papier) et non par une couleur vive. */
+.thread {
+  display: flex; flex-direction: column; gap: var(--s-2);
+  padding: var(--s-4) var(--gutter) var(--s-6);
+}
+
+.msg { max-width: 80%; align-self: flex-start; display: flex; flex-direction: column; }
+.msg--mine { align-self: flex-end; align-items: flex-end; }
+/* Deux messages successifs du même auteur se resserrent. */
+.msg + .msg { margin-top: 0; }
+.msg--start { margin-top: var(--s-3); }
+
+.msg__author {
+  font-size: 11px; font-weight: 600; color: var(--text-secondary);
+  margin: 0 0 4px 12px;
+}
+.msg__bubble {
+  padding: 10px 14px;
+  border-radius: var(--r-lg) var(--r-lg) var(--r-lg) 6px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  font-size: 15px; line-height: 21px;
+  box-shadow: var(--shadow-1);
+  overflow-wrap: anywhere;
+}
+.msg--mine .msg__bubble {
+  border-radius: var(--r-lg) var(--r-lg) 6px var(--r-lg);
+  background: var(--bubble-mine-bg);
+  color: var(--bubble-mine-fg);
+  border-color: var(--bubble-mine-border);
+}
+.msg__meta {
+  font-size: 10px; color: var(--text-tertiary);
+  margin: 4px 12px 0; display: flex; align-items: center; gap: 5px;
+}
+.msg__meta .ic { width: 12px; height: 12px; }
+
+/* Séparateur de journée — même filet que le reste de l'application */
+.daysep {
+  display: flex; align-items: center; gap: 10px;
+  margin: var(--s-5) 0 var(--s-2); color: var(--line-strong);
+}
+.daysep::before, .daysep::after { content: ""; flex: 1; height: 1px; background: currentColor; }
+.daysep span {
+  font-size: 10px; letter-spacing: var(--track); text-transform: uppercase;
+  font-weight: 600; color: var(--text-tertiary);
+}
+
+/* Zone de saisie */
+.composer {
+  flex: none; display: flex; align-items: flex-end; gap: 10px;
+  padding: 10px var(--gutter) 12px;
+  border-top: 1px solid var(--line);
+  background: var(--bg);
+}
+.composer__input {
+  flex: 1; min-height: 44px; max-height: 120px;
+  padding: 11px var(--s-4); border-radius: 22px;
+  background: var(--surface-sunken); border: 1px solid transparent;
+  color: var(--text); font-size: 15px; line-height: 21px;
+  resize: none; overflow-y: auto;
+}
+.composer__input:focus {
+  outline: none; background: var(--surface-raised);
+  border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft);
+}
+.composer__send {
+  width: 44px; height: 44px; flex: none; border-radius: 30%;
+  display: grid; place-items: center;
+  background: var(--surface-ink); color: var(--gold-bright);
+  transition: transform var(--d-fast) var(--e-out), opacity var(--d-fast);
+}
+.composer__send:active { transform: scale(0.92); }
+.composer__send[disabled] { opacity: 0.35; }
+.composer__send .ic { width: 20px; height: 20px; }
+
+/* Bandeau d'état : silence du monastère, ou canal en lecture seule.
+   Il remplace la zone de saisie plutôt que de la griser en silence. */
+.notice {
+  flex: none; display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-4) var(--gutter);
+  border-top: 1px solid var(--line);
+  background: var(--surface-sunken);
+}
+.notice__icon {
+  width: 34px; height: 34px; flex: none; border-radius: 30%;
+  display: grid; place-items: center;
+  background: var(--surface-ink); color: var(--gold-bright);
+}
+.notice__icon .ic { width: 16px; height: 16px; }
+.notice__text { font-size: 13px; line-height: 18px; color: var(--text-secondary); }
+.notice__text b { color: var(--text); font-weight: 600; }
+
+/* Pastille de messages non lus */
+.unread {
+  min-width: 20px; height: 20px; padding: 0 6px;
+  border-radius: var(--r-pill);
+  background: var(--accent); color: #fff;
+  font-size: 11px; font-weight: 700;
+  display: grid; place-items: center;
+}
+
 /* ---------------------------------------------- 11. Champs de saisie */
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field__label {

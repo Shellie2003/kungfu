@@ -59,6 +59,7 @@ const icon = {
   megaphone:P('<path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/>'),
   book:     P('<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H19v3H6.5"/>'),
   x:        P('<path d="M6 6l12 12M18 6 6 18"/>'),
+  send:     P('<path d="M12 20V5"/><path d="m5.5 11.5 6.5-6.5 6.5 6.5"/>'),
   dots:     P('<circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none"/>'),
   sun:      P('<circle cx="12" cy="12" r="4"/><path d="M12 2.5V5M12 19v2.5M2.5 12H5M19 12h2.5M5.2 5.2 7 7M17 17l1.8 1.8M18.8 5.2 17 7M7 17l-1.8 1.8"/>'),
   moon:     P('<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>')
@@ -327,6 +328,47 @@ function memberRailCards(key) {
     + moreCard(rest > 0 ? `+ ${rest} autre${rest > 1 ? 's' : ''}`
                         : students ? 'Tous les élèves' : 'Toute la communauté',
                students ? 'students' : 'community');
+}
+
+/* ---------------------------------------------- Messagerie */
+
+/** Emblème d'une conversation : sceau pour un canal, portrait sinon. */
+function convEmblem(c, size = 'md') {
+  /* Le sceau garde sa taille : c'est un emblème, pas un portrait.
+     Seuls les avatars suivent la taille demandée. */
+  if (c.kind === 'annonce') return `<span class="seal seal--sm">${icon.megaphone}</span>`;
+  if (c.kind === 'group') return `<span class="seal seal--sm seal--ink">${icon.users}</span>`;
+  return avatar(person(c.with), size);
+}
+
+/** Ligne de la liste des conversations. */
+function convRow(c) {
+  const author = c.kind === 'direct' ? '' : `${person(c.from).name.split(' ')[0]} : `;
+  return item({
+    lead: convEmblem(c),
+    title: `${esc(c.title)}${c.pinned ? ' <span class="dim" style="font-weight:400">· épinglé</span>' : ''}`,
+    sub: esc(author + c.last),
+    end: `<span class="stack" style="align-items:flex-end;gap:5px">
+            <span class="caption">${esc(c.time)}</span>
+            ${c.unread ? `<span class="unread">${c.unread}</span>` : ''}
+          </span>`,
+    to: `chat:${c.id}`
+  });
+}
+
+/** Bulle de message. `prev` sert à regrouper les envois consécutifs. */
+function messageBubble(m, conv, prev) {
+  if (m.day) return `<div class="daysep"><span>${esc(m.day)}</span></div>`;
+  const mine = m.from === ME;
+  const start = !prev || prev.day || prev.from !== m.from;
+  /* L'auteur n'est nommé que dans les canaux collectifs : en tête-à-tête
+     il est déjà dans le titre de l'écran. */
+  const showAuthor = start && !mine && conv.kind !== 'direct';
+  return `<div class="msg ${mine ? 'msg--mine' : ''} ${start ? 'msg--start' : ''}">
+    ${showAuthor ? `<span class="msg__author">${esc(person(m.from).name)}</span>` : ''}
+    <div class="msg__bubble">${esc(m.text)}</div>
+    <span class="msg__meta">${esc(m.time)}${mine && m.read ? ` ${icon.check} lu` : ''}</span>
+  </div>`;
 }
 
 /* ---------------------------------------------- Recherche globale

@@ -79,6 +79,8 @@ screen('community', {
         <div class="between">
           <div><p class="overline">${PEOPLE.length + 51} personnes</p>
             <h1 class="display mt-2">Communauté</h1></div>
+          <button class="iconbtn" data-nav="messages" aria-label="Messages">
+            ${icon.megaphone}<i class="iconbtn__dot"></i></button>
           <button class="iconbtn" data-nav="search" aria-label="Rechercher">${icon.search}</button>
         </div>
       </div>
@@ -108,6 +110,110 @@ screen('community', {
 });
 
 /* ============================================================
+   Messages — liste des conversations
+   ============================================================ */
+screen('messages', {
+  label: '· Messages', tab: 'community',
+  render: () => {
+    const unread = CONVERSATIONS.reduce((a, c) => a + c.unread, 0);
+    const next = silenceNext();
+    return `
+    <div class="screen">
+      ${appbar({ title: 'Messages', back: 'community',
+        actions: `<button class="iconbtn" data-action="sheet" aria-label="Nouvelle conversation">${icon.plus}</button>` })}
+      <div class="filters">
+        ${['Tous', 'Non lus', 'Canaux', 'Directs'].map((f, i) =>
+          `<button class="filter" aria-pressed="${i === 0}">${f}</button>`).join('')}
+      </div>
+      <div class="scroll">
+        <p class="caption pad">${CONVERSATIONS.length} conversations · ${unread} message${unread > 1 ? 's' : ''} non lu${unread > 1 ? 's' : ''}</p>
+
+        <div class="section" style="margin-top:var(--s-4)">
+          <div class="list list--card">
+            ${CONVERSATIONS.filter((c) => c.kind !== 'direct').map(convRow).join('')}
+          </div>
+        </div>
+
+        <div class="section" style="margin-bottom:var(--s-6)">
+          ${sectionHead('Échanges directs')}
+          <div class="list list--card">
+            ${CONVERSATIONS.filter((c) => c.kind === 'direct').map(convRow).join('')}
+          </div>
+        </div>
+
+        ${next ? `<div class="section" style="margin-bottom:var(--s-8)">
+          <div class="card card--sunken row gap-3">
+            <span class="notice__icon">${icon.lotus}</span>
+            <span class="notice__text grow">Le monastère observe le silence à partir de
+              <b>${next.at}</b> — ${esc(next.label.toLowerCase())}.</span>
+          </div>
+        </div>` : ''}
+      </div>
+    </div>`;
+  }
+});
+
+/* ============================================================
+   Conversation
+   ============================================================ */
+screen('chat', {
+  label: '· Conversation',
+  render: (convId = 'c4') => {
+    const c = CONVERSATIONS.find((x) => x.id === convId) || CONVERSATIONS[0];
+    const msgs = MESSAGES[c.id] || [];
+    const silent = silenceNow();
+    const next = silenceNext();
+    const sub = c.kind === 'direct'
+      ? `${person(c.with).level}${person(c.with).beltName ? ' · ceinture ' + person(c.with).beltName.toLowerCase() : ''}`
+      : `${c.people} membres`;
+
+    return `
+    <div class="screen">
+      <header class="appbar">
+        <button class="iconbtn" data-nav="messages" aria-label="Retour">${icon.back}</button>
+        <button class="grow row gap-3" data-nav="${c.kind === 'direct' ? 'member' : 'community'}"
+                style="text-align:left;min-width:0">
+          ${convEmblem(c, 'sm')}
+          <span class="grow" style="min-width:0">
+            <span class="item__title truncate" style="display:block">${esc(c.title)}</span>
+            <span class="item__sub" style="display:block">${esc(sub)}</span>
+          </span>
+        </button>
+        <button class="iconbtn" data-action="sheet" aria-label="Options">${icon.dots}</button>
+      </header>
+
+      <div class="scroll" data-thread-scroll>
+        <div class="thread" data-thread="${c.id}">
+          ${msgs.map((m, i) => messageBubble(m, c, msgs[i - 1])).join('')}
+        </div>
+      </div>
+
+      ${c.kind === 'annonce' ? `<div class="notice">
+        <span class="notice__icon">${icon.megaphone}</span>
+        <span class="notice__text grow">Canal d’annonces — lu par <b>${c.people} membres</b>.
+          Seuls les maîtres peuvent y écrire.</span>
+      </div>` : ''}
+
+      ${silent
+        ? `<div class="notice">
+             <span class="notice__icon">${icon.lotus}</span>
+             <span class="notice__text grow"><b>${esc(silent.label)}</b> — le monastère
+               observe le silence jusqu’à ${esc(silent.until)}. Votre message pourra être
+               envoyé à la reprise.</span>
+           </div>`
+        : `<form class="composer" data-send="${c.id}">
+             <textarea class="composer__input" rows="1" data-composer
+                       placeholder="Écrire à ${esc(c.kind === 'direct' ? c.title.split(' ')[0] : c.title)}…"
+                       aria-label="Votre message"></textarea>
+             <button class="composer__send" type="submit" aria-label="Envoyer">${icon.send}</button>
+           </form>
+           ${next ? `<p class="caption pad" style="padding-bottom:8px;text-align:center">
+             Silence à ${next.at} · ${esc(next.label.toLowerCase())}</p>` : ''}`}
+    </div>`;
+  }
+});
+
+/* ============================================================
    18. Profil membre
    ============================================================ */
 screen('member', {
@@ -128,6 +234,11 @@ screen('member', {
         </div>
 
         <div class="section" style="margin-top:var(--s-6)">
+          <button class="btn btn--primary btn--block" data-nav="chat:c7">
+            ${icon.megaphone}Envoyer un message</button>
+        </div>
+
+        <div class="section">
           <div class="card">
             <div class="row" style="justify-content:space-around">
               <div style="text-align:center"><p class="num heading">7 ans</p><p class="caption mt-1">au monastère</p></div>
