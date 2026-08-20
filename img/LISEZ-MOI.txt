@@ -1,0 +1,14 @@
+Déposez ici le logo du club sous le nom exact :
+
+    logo.png
+
+Formats acceptés : PNG, JPG, SVG ou WebP (renommez en logo.png).
+Idéalement un carré, fond transparent, au moins 512 x 512 pixels.
+
+La maquette le détecte au chargement et le place partout :
+en-tête d'accueil, écran de connexion, page « Le Club » et carte
+de membre. Rien d'autre à faire.
+
+Sans ce fichier, un bouton « Logo du club » dans la maquette permet
+d'en charger un depuis l'appareil — il reste alors sur cet appareil
+seulement, ce qui est pratique pour essayer avant de trancher.

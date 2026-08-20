@@ -354,6 +354,28 @@ const SCREENS = {
       </div></div>
     </div>
 
+    <div style="display:flex;flex-direction:column;gap:12px" data-feat="parents">
+      <h2 class="overline">Parents ou tuteur</h2>
+      <div class="card" style="padding:16px"><div style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span class="tile tile--sm"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/></svg></span>
+          <div style="flex-grow:1"><p style="font-size:14px;font-weight:600">RAKOTONDRABE Voahangy</p><p style="font-size:13px;color:#59685F">Mère · responsable légale</p></div>
+          <a class="calltag" href="#"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h4l2 5-2.5 1.5a12 12 0 0 0 5 5L16 12l5 2v4a2 2 0 0 1-2.2 2A16 16 0 0 1 4 5.2 2 2 0 0 1 6 3z"/></svg> 034 22 118 40</a>
+        </div>
+        <div class="hr"></div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span class="tile tile--sm"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/></svg></span>
+          <div style="flex-grow:1"><p style="font-size:14px;font-weight:600">RAKOTONDRABE Jean-Claude</p><p style="font-size:13px;color:#59685F">Père</p></div>
+          <a class="calltag" href="#"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h4l2 5-2.5 1.5a12 12 0 0 0 5 5L16 12l5 2v4a2 2 0 0 1-2.2 2A16 16 0 0 1 4 5.2 2 2 0 0 1 6 3z"/></svg> 033 41 907 12</a>
+        </div>
+        <div class="hr"></div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span class="tile tile--sm" style="background:#FBEEE2"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B0530F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h4l2 5-2.5 1.5a12 12 0 0 0 5 5L16 12l5 2v4a2 2 0 0 1-2.2 2A16 16 0 0 1 4 5.2 2 2 0 0 1 6 3z"/></svg></span>
+          <div style="flex-grow:1"><p style="font-size:14px;font-weight:600">À prévenir en urgence</p><p style="font-size:13px;color:#59685F">La mère, en priorité</p></div>
+        </div>
+      </div></div>
+    </div>
+
     <div style="display:flex;flex-direction:column;gap:12px">
       <h2 class="overline">Biographie</h2>
       <div class="card" style="padding:18px"><p style="font-size:14px;line-height:23px;color:#3C4A42">Entrée au club à treize ans. Régulière aux entraînements du mercredi et du samedi, elle prépare le passage à la ceinture bleue. A représenté le club à la démonstration d’Analamahitsy en 2024.</p></div>
@@ -1210,6 +1232,350 @@ const SCREENS = {
       <span style="font-size:10px;color:#7C8B82">Le Club</span>
     </button>
   </nav>
+  </div>`
+  },
+  carte: {
+    label: "14 · Carte de membre",
+    html: `
+  <div class="phone">
+    <div class="apphead">
+    <button class="tapicon" data-go="profilOuvert" aria-label="Retour"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0E2119" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5 8 12l7 7"/></svg></button>
+    <h1 class="apphead__title">Carte de membre</h1>
+    <button class="tapicon" aria-label="Partager"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#0E2119" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9a2.5 2.5 0 0 0-3.5-3.5L4.5 16.5z"/></svg></button>
+  </div>
+    <div style="flex-grow:1;padding:22px 20px 28px;display:flex;flex-direction:column;gap:20px">
+
+      <div class="carte" data-feat="carte">
+        <div class="carte__head">
+          <span class="emblem" style="width:36px;height:36px;border-radius:10px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/><path d="M9 12.2l2 2 4-4.4"/></svg></span>
+          <span style="flex-grow:1">
+            <b class="carte__org">KUNG-FU WAISHI</b>
+            <i class="carte__kind">Carte de membre</i>
+          </span>
+        </div>
+
+        <div class="carte__body">
+          <div style="width:96px;height:120px;border-radius:14px;background:#E8F1EC;display:flex;align-items:center;justify-content:center;flex:none;overflow:hidden">
+  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#8FB3A0" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8.5" r="3.6"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>
+  </svg>
+</div>
+          <div style="flex-grow:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+            <b class="carte__nom">RAKOTONDRABE</b>
+            <span class="carte__prenom">Nirina</span>
+            <span style="margin-top:2px"><span class="grade"><i style="background:#4E9C57"></i>Ceinture verte</span></span>
+            <span class="carte__num">WA-0042</span>
+          </div>
+        </div>
+
+        <div class="carte__qr">
+          <div class="carte__qrbox"><svg viewBox="-2 -2 25 25" width="128" height="128" shape-rendering="crispEdges" aria-label="Code QR de démonstration">
+    <rect x="-2" y="-2" width="25" height="25" fill="#FFF"/>
+    <g fill="#0E2119"><rect x="0" y="0" width="1" height="1"/><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="9" y="0" width="1" height="1"/><rect x="12" y="0" width="1" height="1"/><rect x="14" y="0" width="1" height="1"/><rect x="15" y="0" width="1" height="1"/><rect x="16" y="0" width="1" height="1"/><rect x="17" y="0" width="1" height="1"/><rect x="18" y="0" width="1" height="1"/><rect x="19" y="0" width="1" height="1"/><rect x="20" y="0" width="1" height="1"/><rect x="0" y="1" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="8" y="1" width="1" height="1"/><rect x="12" y="1" width="1" height="1"/><rect x="14" y="1" width="1" height="1"/><rect x="20" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="10" y="2" width="1" height="1"/><rect x="11" y="2" width="1" height="1"/><rect x="12" y="2" width="1" height="1"/><rect x="14" y="2" width="1" height="1"/><rect x="16" y="2" width="1" height="1"/><rect x="17" y="2" width="1" height="1"/><rect x="18" y="2" width="1" height="1"/><rect x="20" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="8" y="3" width="1" height="1"/><rect x="14" y="3" width="1" height="1"/><rect x="16" y="3" width="1" height="1"/><rect x="17" y="3" width="1" height="1"/><rect x="18" y="3" width="1" height="1"/><rect x="20" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="14" y="4" width="1" height="1"/><rect x="16" y="4" width="1" height="1"/><rect x="17" y="4" width="1" height="1"/><rect x="18" y="4" width="1" height="1"/><rect x="20" y="4" width="1" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="7" y="5" width="1" height="1"/><rect x="10" y="5" width="1" height="1"/><rect x="13" y="5" width="1" height="1"/><rect x="14" y="5" width="1" height="1"/><rect x="20" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/><rect x="8" y="6" width="1" height="1"/><rect x="10" y="6" width="1" height="1"/><rect x="12" y="6" width="1" height="1"/><rect x="14" y="6" width="1" height="1"/><rect x="15" y="6" width="1" height="1"/><rect x="16" y="6" width="1" height="1"/><rect x="17" y="6" width="1" height="1"/><rect x="18" y="6" width="1" height="1"/><rect x="19" y="6" width="1" height="1"/><rect x="20" y="6" width="1" height="1"/><rect x="5" y="7" width="1" height="1"/><rect x="7" y="7" width="1" height="1"/><rect x="13" y="7" width="1" height="1"/><rect x="14" y="7" width="1" height="1"/><rect x="20" y="7" width="1" height="1"/><rect x="1" y="8" width="1" height="1"/><rect x="3" y="8" width="1" height="1"/><rect x="6" y="8" width="1" height="1"/><rect x="10" y="8" width="1" height="1"/><rect x="12" y="8" width="1" height="1"/><rect x="14" y="8" width="1" height="1"/><rect x="16" y="8" width="1" height="1"/><rect x="18" y="8" width="1" height="1"/><rect x="0" y="9" width="1" height="1"/><rect x="11" y="9" width="1" height="1"/><rect x="12" y="9" width="1" height="1"/><rect x="13" y="9" width="1" height="1"/><rect x="14" y="9" width="1" height="1"/><rect x="15" y="9" width="1" height="1"/><rect x="2" y="10" width="1" height="1"/><rect x="5" y="10" width="1" height="1"/><rect x="6" y="10" width="1" height="1"/><rect x="8" y="10" width="1" height="1"/><rect x="11" y="10" width="1" height="1"/><rect x="14" y="10" width="1" height="1"/><rect x="17" y="10" width="1" height="1"/><rect x="20" y="10" width="1" height="1"/><rect x="2" y="11" width="1" height="1"/><rect x="9" y="11" width="1" height="1"/><rect x="10" y="11" width="1" height="1"/><rect x="13" y="11" width="1" height="1"/><rect x="17" y="11" width="1" height="1"/><rect x="0" y="12" width="1" height="1"/><rect x="1" y="12" width="1" height="1"/><rect x="2" y="12" width="1" height="1"/><rect x="6" y="12" width="1" height="1"/><rect x="8" y="12" width="1" height="1"/><rect x="9" y="12" width="1" height="1"/><rect x="15" y="12" width="1" height="1"/><rect x="16" y="12" width="1" height="1"/><rect x="17" y="12" width="1" height="1"/><rect x="5" y="13" width="1" height="1"/><rect x="7" y="13" width="1" height="1"/><rect x="9" y="13" width="1" height="1"/><rect x="11" y="13" width="1" height="1"/><rect x="13" y="13" width="1" height="1"/><rect x="20" y="13" width="1" height="1"/><rect x="0" y="14" width="1" height="1"/><rect x="1" y="14" width="1" height="1"/><rect x="2" y="14" width="1" height="1"/><rect x="3" y="14" width="1" height="1"/><rect x="4" y="14" width="1" height="1"/><rect x="5" y="14" width="1" height="1"/><rect x="6" y="14" width="1" height="1"/><rect x="7" y="14" width="1" height="1"/><rect x="8" y="14" width="1" height="1"/><rect x="9" y="14" width="1" height="1"/><rect x="10" y="14" width="1" height="1"/><rect x="0" y="15" width="1" height="1"/><rect x="6" y="15" width="1" height="1"/><rect x="9" y="15" width="1" height="1"/><rect x="12" y="15" width="1" height="1"/><rect x="15" y="15" width="1" height="1"/><rect x="18" y="15" width="1" height="1"/><rect x="0" y="16" width="1" height="1"/><rect x="2" y="16" width="1" height="1"/><rect x="3" y="16" width="1" height="1"/><rect x="4" y="16" width="1" height="1"/><rect x="6" y="16" width="1" height="1"/><rect x="8" y="16" width="1" height="1"/><rect x="12" y="16" width="1" height="1"/><rect x="16" y="16" width="1" height="1"/><rect x="19" y="16" width="1" height="1"/><rect x="20" y="16" width="1" height="1"/><rect x="0" y="17" width="1" height="1"/><rect x="2" y="17" width="1" height="1"/><rect x="3" y="17" width="1" height="1"/><rect x="4" y="17" width="1" height="1"/><rect x="6" y="17" width="1" height="1"/><rect x="10" y="17" width="1" height="1"/><rect x="11" y="17" width="1" height="1"/><rect x="12" y="17" width="1" height="1"/><rect x="18" y="17" width="1" height="1"/><rect x="19" y="17" width="1" height="1"/><rect x="0" y="18" width="1" height="1"/><rect x="2" y="18" width="1" height="1"/><rect x="3" y="18" width="1" height="1"/><rect x="4" y="18" width="1" height="1"/><rect x="6" y="18" width="1" height="1"/><rect x="8" y="18" width="1" height="1"/><rect x="15" y="18" width="1" height="1"/><rect x="17" y="18" width="1" height="1"/><rect x="19" y="18" width="1" height="1"/><rect x="0" y="19" width="1" height="1"/><rect x="6" y="19" width="1" height="1"/><rect x="16" y="19" width="1" height="1"/><rect x="17" y="19" width="1" height="1"/><rect x="18" y="19" width="1" height="1"/><rect x="19" y="19" width="1" height="1"/><rect x="20" y="19" width="1" height="1"/><rect x="0" y="20" width="1" height="1"/><rect x="1" y="20" width="1" height="1"/><rect x="2" y="20" width="1" height="1"/><rect x="3" y="20" width="1" height="1"/><rect x="4" y="20" width="1" height="1"/><rect x="5" y="20" width="1" height="1"/><rect x="6" y="20" width="1" height="1"/><rect x="7" y="20" width="1" height="1"/><rect x="10" y="20" width="1" height="1"/><rect x="13" y="20" width="1" height="1"/><rect x="16" y="20" width="1" height="1"/><rect x="19" y="20" width="1" height="1"/></g>
+  </svg></div>
+          <div style="flex-grow:1">
+            <p class="carte__qrtitle">Code de membre</p>
+            <p class="carte__qrtext">Présenté à l’entraînement pour pointer la présence.</p>
+            <p class="carte__faux">Motif de démonstration — ne se scanne pas</p>
+          </div>
+        </div>
+
+        <div class="carte__foot">
+          <span>Membre depuis<br><b>9 septembre 2019</b></span>
+          <span style="text-align:right">Valide jusqu’au<br><b>31 décembre 2026</b></span>
+        </div>
+        <div class="carte__band" style="background:#4E9C57"></div>
+      </div>
+
+      <div class="list">
+        <div class="listrow">
+          <span class="tile tile--sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg></span>
+          <span style="flex-grow:1;min-width:0"><b style="display:block;font-size:15px;font-weight:600">Enregistrer en image</b><span style="display:block;font-size:12px;color:#59685F;margin-top:1px">Pour l’envoyer ou l’imprimer</span></span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#A8B6AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+        </div>
+        <div class="listrow">
+          <span class="tile tile--sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9a2.5 2.5 0 0 0-3.5-3.5L4.5 16.5z"/></svg></span>
+          <span style="flex-grow:1;min-width:0"><b style="display:block;font-size:15px;font-weight:600">Imprimer la carte</b><span style="display:block;font-size:12px;color:#59685F;margin-top:1px">Format carte bancaire</span></span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#A8B6AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+        </div>
+        <div class="listrow">
+          <span class="tile tile--sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10" width="15" height="10.5" rx="3"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/></svg></span>
+          <span style="flex-grow:1;min-width:0"><b style="display:block;font-size:15px;font-weight:600">Régénérer le code</b><span style="display:block;font-size:12px;color:#59685F;margin-top:1px">En cas de perte de la carte</span></span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#A8B6AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+        </div>
+      </div>
+
+      <div class="warn">
+        <i></i>
+        <p>Le code affiché est un motif de démonstration : il ne contient aucune donnée et ne se scanne pas. Le vrai code, unique par membre, sera produit au développement une fois la maquette validée.</p>
+      </div>
+    </div>
+  </div>`
+  },
+  fonctionnalites: {
+    label: "00 · Fonctionnalités",
+    html: `
+  <div class="phone">
+    <div class="apphead">
+      <span style="width:12px"></span>
+      <h1 class="apphead__title">Fonctionnalités</h1>
+      <button class="link" style="padding:0 14px" data-action="exporter">Exporter</button>
+    </div>
+
+    <div class="featintro">
+      <p><b>Donnez votre avis point par point.</b> Touchez une ligne pour écrire un commentaire : ce que vous voulez changer, ajouter ou retirer.</p>
+      <p class="featintro__note">Vos commentaires restent sur votre appareil. Le bouton <b>Exporter</b> les rassemble pour me les envoyer.</p>
+    </div>
+
+    <div style="flex-grow:1;padding:4px 20px 28px;display:flex;flex-direction:column;gap:22px">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="overline">Accueil</h2>
+        <div class="list">
+          <button class="featrow" data-feat="acc-logo" data-screen="accueil">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Logo et nom du club</b>
+              <span class="featrow__d">En haut de l’accueil et sur la carte de membre</span>
+            </span>
+            <span class="featrow__end" data-count="acc-logo"></span>
+          </button>
+          <button class="featrow" data-feat="acc-visuel" data-screen="accueil">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Photo du club</b>
+              <span class="featrow__d">Grande image de présentation</span>
+            </span>
+            <span class="featrow__end" data-count="acc-visuel"></span>
+          </button>
+          <button class="featrow" data-feat="acc-presentation" data-screen="accueil">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Présentation courte</b>
+              <span class="featrow__d">Deux ou trois phrases sur le club</span>
+            </span>
+            <span class="featrow__end" data-count="acc-presentation"></span>
+          </button>
+          <button class="featrow" data-feat="acc-vaovao" data-screen="accueil">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Dernières actualités</b>
+              <span class="featrow__d">Les deux plus récentes, avec lien vers le casier</span>
+            </span>
+            <span class="featrow__end" data-count="acc-vaovao"></span>
+          </button>
+          <button class="featrow" data-feat="acc-notif" data-screen="accueil">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Pastille de notification</b>
+              <span class="featrow__d">Nombre de nouveautés non lues</span>
+            </span>
+            <span class="featrow__end" data-count="acc-notif"></span>
+          </button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="overline">Étudiants</h2>
+        <div class="list">
+          <button class="featrow" data-feat="etu-liste" data-screen="etudiants">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Liste des étudiants</b>
+              <span class="featrow__d">Photo, nom, prénom, grade</span>
+            </span>
+            <span class="featrow__end" data-count="etu-liste"></span>
+          </button>
+          <button class="featrow" data-feat="etu-recherche" data-screen="etudiants">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Recherche par nom ou prénom</b>
+              <span class="featrow__d">Filtre immédiat sur la liste</span>
+            </span>
+            <span class="featrow__end" data-count="etu-recherche"></span>
+          </button>
+          <button class="featrow" data-feat="etu-filtre" data-screen="etudiants">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Filtres par grade</b>
+              <span class="featrow__d">Blanche, jaune, orange, verte…</span>
+            </span>
+            <span class="featrow__end" data-count="etu-filtre"></span>
+          </button>
+          <button class="featrow" data-feat="etu-verrou" data-screen="profilVerrouille">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Fiche protégée</b>
+              <span class="featrow__d">Nom et photo visibles, le reste après connexion</span>
+            </span>
+            <span class="featrow__end" data-count="etu-verrou"></span>
+          </button>
+          <button class="featrow" data-feat="etu-fiche" data-screen="profilOuvert">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Fiche complète</b>
+              <span class="featrow__d">Naissance, numéro, début d’entraînement, grade</span>
+            </span>
+            <span class="featrow__end" data-count="etu-fiche"></span>
+          </button>
+          <button class="featrow" data-feat="parents" data-screen="profilOuvert">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Parents ou tuteur</b>
+              <span class="featrow__d">Noms, lien de parenté, téléphones, contact d’urgence</span>
+            </span>
+            <span class="featrow__end" data-count="parents"></span>
+          </button>
+          <button class="featrow" data-feat="etu-bio" data-screen="profilOuvert">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Biographie</b>
+              <span class="featrow__d">Quelques lignes sur le parcours</span>
+            </span>
+            <span class="featrow__end" data-count="etu-bio"></span>
+          </button>
+          <button class="featrow" data-feat="carte" data-screen="carte">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Carte de membre</b>
+              <span class="featrow__d">Photo, numéro, grade et code de présence</span>
+            </span>
+            <span class="featrow__end" data-count="carte"></span>
+          </button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="overline">Casier et notifications</h2>
+        <div class="list">
+          <button class="featrow" data-feat="cas-liste" data-screen="casier">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Casier des actualités</b>
+              <span class="featrow__d">Sorties, compétitions, réunions, cérémonies</span>
+            </span>
+            <span class="featrow__end" data-count="cas-liste"></span>
+          </button>
+          <button class="featrow" data-feat="cas-filtre" data-screen="casier">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Filtres par catégorie</b>
+              <span class="featrow__d">Pour retrouver un type d’annonce</span>
+            </span>
+            <span class="featrow__end" data-count="cas-filtre"></span>
+          </button>
+          <button class="featrow" data-feat="cas-detail" data-screen="casierDetail">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Détail d’une actualité</b>
+              <span class="featrow__d">Date, lieu, texte, participation</span>
+            </span>
+            <span class="featrow__end" data-count="cas-detail"></span>
+          </button>
+          <button class="featrow" data-feat="not-centre" data-screen="notifications">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Centre de notifications</b>
+              <span class="featrow__d">Lues et non lues, par date</span>
+            </span>
+            <span class="featrow__end" data-count="not-centre"></span>
+          </button>
+          <button class="featrow" data-feat="not-push" data-screen="notifications">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Notification sur le téléphone</b>
+              <span class="featrow__d">Hors de l’application — à chiffrer</span>
+            </span>
+            <span class="featrow__end" data-count="not-push"></span>
+          </button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="overline">Album photo</h2>
+        <div class="list">
+          <button class="featrow" data-feat="alb-cat" data-screen="album">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Catégories d’album</b>
+              <span class="featrow__d">Entraînements, compétitions, sorties, cérémonies</span>
+            </span>
+            <span class="featrow__end" data-count="alb-cat"></span>
+          </button>
+          <button class="featrow" data-feat="alb-grille" data-screen="album">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Grille de photos</b>
+              <span class="featrow__d">Aperçu en vignettes</span>
+            </span>
+            <span class="featrow__end" data-count="alb-grille"></span>
+          </button>
+          <button class="featrow" data-feat="alb-grand" data-screen="photo">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Photo en grand</b>
+              <span class="featrow__d">Plein écran avec légende</span>
+            </span>
+            <span class="featrow__end" data-count="alb-grand"></span>
+          </button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="overline">Le club</h2>
+        <div class="list">
+          <button class="featrow" data-feat="clb-presentation" data-screen="club">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Présentation du club</b>
+              <span class="featrow__d">Histoire et origine</span>
+            </span>
+            <span class="featrow__end" data-count="clb-presentation"></span>
+          </button>
+          <button class="featrow" data-feat="clb-valeurs" data-screen="club">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Valeurs</b>
+              <span class="featrow__d">Trois principes affichés</span>
+            </span>
+            <span class="featrow__end" data-count="clb-valeurs"></span>
+          </button>
+          <button class="featrow" data-feat="clb-horaires" data-screen="club">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Horaires d’entraînement</b>
+              <span class="featrow__d">Jours, heures, niveaux</span>
+            </span>
+            <span class="featrow__end" data-count="clb-horaires"></span>
+          </button>
+          <button class="featrow" data-feat="clb-contact" data-screen="club">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Contact et localisation</b>
+              <span class="featrow__d">Responsable, téléphone, adresse</span>
+            </span>
+            <span class="featrow__end" data-count="clb-contact"></span>
+          </button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="overline">Administration</h2>
+        <div class="list">
+          <button class="featrow" data-feat="adm-ajout" data-screen="admin">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Ajouter un étudiant</b>
+              <span class="featrow__d">Fiche, photo, grade, parents</span>
+            </span>
+            <span class="featrow__end" data-count="adm-ajout"></span>
+          </button>
+          <button class="featrow" data-feat="adm-modif" data-screen="admin">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Modifier une fiche</b>
+              <span class="featrow__d">Corriger ou compléter</span>
+            </span>
+            <span class="featrow__end" data-count="adm-modif"></span>
+          </button>
+          <button class="featrow" data-feat="adm-grade" data-screen="admin">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Changer un grade</b>
+              <span class="featrow__d">Après un passage validé</span>
+            </span>
+            <span class="featrow__end" data-count="adm-grade"></span>
+          </button>
+          <button class="featrow" data-feat="adm-comptes" data-screen="admin">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Comptes et accès</b>
+              <span class="featrow__d">Créer, suspendre, réinitialiser</span>
+            </span>
+            <span class="featrow__end" data-count="adm-comptes"></span>
+          </button>
+          <button class="featrow" data-feat="adm-publier" data-screen="admin">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Publier une actualité</b>
+              <span class="featrow__d">Et envoyer la notification</span>
+            </span>
+            <span class="featrow__end" data-count="adm-publier"></span>
+          </button>
+          <button class="featrow" data-feat="adm-album" data-screen="admin">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Gérer les albums</b>
+              <span class="featrow__d">Créer, ajouter et classer les photos</span>
+            </span>
+            <span class="featrow__end" data-count="adm-album"></span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>`
   }
 };

@@ -19,6 +19,43 @@ python3 -m http.server 8000     # puis ouvrir http://localhost:8000
 - Les écrans sont cliquables entre eux : la barre du bas, les fiches, les retours.
 - Sous 900 px de large, l'index disparaît et la maquette occupe tout l'écran.
 
+## Relire et commenter — c'est le cœur de cette version
+
+La maquette porte son propre outil de relecture. Rien à installer, rien à envoyer.
+
+**Écran « Fonctionnalités »** — le premier de la liste. Chaque fonctionnalité y est une
+ligne : touchez-la, écrivez ce qu'il faut changer, ajouter ou retirer. Une pastille verte
+marque les lignes commentées.
+
+**Bulle verte sur chaque écran** — pour réagir à ce que vous voyez, pas seulement à une
+liste.
+
+**Bouton « Exporter »** — rassemble tous les commentaires dans un fichier texte, et les
+copie dans le presse-papier. Envoyez-le, je travaille dessus.
+
+Les commentaires restent **sur votre appareil** : la maquette n'envoie rien nulle part.
+Ils survivent à la fermeture du navigateur, mais pas à un changement d'appareil — exportez
+avant de passer de votre téléphone à votre ordinateur.
+
+## Sur téléphone
+
+La maquette s'utilise depuis un téléphone. Une barre verte apparaît en haut avec le menu
+des écrans à gauche et l'export à droite ; le cadre de téléphone disparaît et l'écran
+occupe toute la place.
+
+## Le logo du club
+
+Deux façons de le poser, aucune ne demande un développeur.
+
+**Dans le dépôt** — déposez le fichier dans `img/logo.png`. La maquette le détecte au
+chargement et le place partout : accueil, connexion, page « Le Club », carte de membre. Il
+vaut alors pour tout le monde. Voir `img/LISEZ-MOI.txt`.
+
+**Depuis la maquette** — bouton « Logo du club » dans le menu. Le fichier reste sur votre
+appareil, ce qui est pratique pour essayer avant de trancher.
+
+Un carré à fond transparent, d'au moins 512 × 512 pixels, donne le meilleur résultat.
+
 ## Les écrans
 
 | # | Écran | Ce qu'il montre |
@@ -36,6 +73,8 @@ python3 -m http.server 8000     # puis ouvrir http://localhost:8000
 | 11 | Notifications | Centre de notifications, lues et non lues |
 | 12 | Administration | Ce que le responsable peut faire |
 | 13 | Charte graphique | Couleurs, typographies, composants — référence pour le développement |
+| 14 | Carte de membre | Photo, numéro, grade et code de présence |
+| 00 | Fonctionnalités | La liste à commenter |
 
 ## Décisions prises, à confirmer
 
@@ -57,6 +96,11 @@ possible : c'est une décision à prendre maintenant, car elle change la longueu
 libellés et donc la mise en page.
 
 ## À trancher avant le développement
+
+**Le code de la carte de membre est factice.** Le motif affiché ressemble à un QR mais
+n'encode rien et ne se scanne pas — la mention est écrite dans la carte elle-même, pour
+qu'elle suive la capture d'écran si on la partage. Le vrai code, unique par membre, sera
+produit au développement une fois la maquette validée.
 
 **Les mineurs.** Date de naissance et photo d'enfants, visibles par 64 membres, méritent
 une décision explicite du club. Une piste : n'ouvrir ces deux champs qu'à
@@ -96,10 +140,11 @@ compris pour les libellés de 11 px. Le grade est toujours écrit à côté de s
 couleur — la couleur seule ne porte jamais l'information, pour rester lisible par une
 personne daltonienne.
 
-Typographies : **Archivo** pour les titres et les chiffres, **Karla** pour le texte.
-Elles sont chargées depuis Google Fonts. Si la connexion des membres est incertaine, il
-faudra les embarquer dans l'application plutôt que les télécharger — à prévoir au
-développement.
+Typographies : **Archivo** pour les titres et les chiffres, **Karla** pour le texte. Elles
+sont **embarquées dans la maquette** (`css/fonts.css`, sous-ensemble latin, licence SIL
+Open Font). Elle s'affiche donc à l'identique partout, y compris sans connexion — ce qui
+compte pour un club à Antananarivo, et ce qui évite qu'elle change d'aspect d'un appareil
+à l'autre.
 
 ## Fichiers
 
@@ -109,6 +154,8 @@ développement.
 | `js/screens.js` | Généré — ne pas modifier à la main |
 | `css/app.css` | Couleurs, typographies, composants |
 | `js/app.js` | Navigation entre les écrans de la maquette |
+| `css/fonts.css` | Généré — Archivo et Karla embarquées en base64 |
+| `img/logo.png` | À déposer par le club — détecté automatiquement |
 | `build.js` | Assemble un fichier unique dans `dist/`, à envoyer par courriel |
 | `vercel.json` | Configuration d'hébergement, site statique sans étape de build |
 

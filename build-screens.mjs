@@ -260,6 +260,28 @@ screen('profilOuvert', '05 · Profil ouvert', { tab: 'students', body: `
       </div>`, 16)}
     </div>
 
+    <div style="display:flex;flex-direction:column;gap:12px" data-feat="parents">
+      ${overline('Parents ou tuteur')}
+      ${card(`<div style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span class="tile tile--sm">${svg('users', 17, '#0F5132')}</span>
+          <div style="flex-grow:1"><p style="font-size:14px;font-weight:600">RAKOTONDRABE Voahangy</p><p style="font-size:13px;color:#59685F">Mère · responsable légale</p></div>
+          <a class="calltag" href="#">${svg('phone', 15, '#0F5132')} 034 22 118 40</a>
+        </div>
+        <div class="hr"></div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span class="tile tile--sm">${svg('users', 17, '#0F5132')}</span>
+          <div style="flex-grow:1"><p style="font-size:14px;font-weight:600">RAKOTONDRABE Jean-Claude</p><p style="font-size:13px;color:#59685F">Père</p></div>
+          <a class="calltag" href="#">${svg('phone', 15, '#0F5132')} 033 41 907 12</a>
+        </div>
+        <div class="hr"></div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span class="tile tile--sm" style="background:#FBEEE2">${svg('phone', 17, '#B0530F')}</span>
+          <div style="flex-grow:1"><p style="font-size:14px;font-weight:600">À prévenir en urgence</p><p style="font-size:13px;color:#59685F">La mère, en priorité</p></div>
+        </div>
+      </div>`, 16)}
+    </div>
+
     <div style="display:flex;flex-direction:column;gap:12px">
       ${overline('Biographie')}
       ${card(`<p style="font-size:14px;line-height:23px;color:#3C4A42">Entrée au club à treize ans. Régulière aux entraînements du mercredi et du samedi, elle prépare le passage à la ceinture bleue. A représenté le club à la démonstration d’Analamahitsy en 2024.</p>`)}
@@ -723,6 +745,168 @@ screen('directionC', 'C · Tempo', { full: `
       </button>`).join('\n      ')}
     </div>
     ${tabbar('home')}
+  </div>` });
+
+
+/* --- Carte de membre — le QR est un motif de démonstration ------ */
+const faux_qr = () => {
+  /* Motif déterministe : trois repères d'angle et un damier stable.
+     Il n'encode rien — le vrai code sera produit au développement. */
+  const N = 21, cells = [];
+  const repere = (r, c) => (r < 7 && c < 7) || (r < 7 && c > 13) || (r > 13 && c < 7);
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    let on;
+    if (repere(r, c)) {
+      const dr = r < 7 ? r : r - 14, dc = c < 7 ? c : c - 14;
+      const d = Math.max(Math.abs(dr - 3), Math.abs(dc - 3));
+      on = d !== 2;
+    } else if (r === 6 || c === 6) { on = (r + c) % 2 === 0; }
+    else { on = ((r * 7 + c * 13 + ((r * c) % 5)) % 3) === 0; }
+    if (on) cells.push(`<rect x="${c}" y="${r}" width="1" height="1"/>`);
+  }
+  return `<svg viewBox="-2 -2 ${N + 4} ${N + 4}" width="128" height="128" shape-rendering="crispEdges" aria-label="Code QR de démonstration">
+    <rect x="-2" y="-2" width="${N + 4}" height="${N + 4}" fill="#FFF"/>
+    <g fill="#0E2119">${cells.join('')}</g>
+  </svg>`;
+};
+
+screen('carte', '14 · Carte de membre', { full: `
+  <div class="phone">
+    ${header('Carte de membre', { back: 'profilOuvert', action: `<button class="tapicon" aria-label="Partager">${svg('edit', 21, '#0E2119')}</button>` })}
+    <div style="flex-grow:1;padding:22px 20px 28px;display:flex;flex-direction:column;gap:20px">
+
+      <div class="carte" data-feat="carte">
+        <div class="carte__head">
+          <span class="emblem" style="width:36px;height:36px;border-radius:10px">${svg('shieldCheck', 20, '#0F5132')}</span>
+          <span style="flex-grow:1">
+            <b class="carte__org">KUNG-FU WAISHI</b>
+            <i class="carte__kind">Carte de membre</i>
+          </span>
+        </div>
+
+        <div class="carte__body">
+          ${portrait(96, 120, 14)}
+          <div style="flex-grow:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+            <b class="carte__nom">RAKOTONDRABE</b>
+            <span class="carte__prenom">Nirina</span>
+            <span style="margin-top:2px">${grade('Ceinture verte', '#4E9C57')}</span>
+            <span class="carte__num">WA-0042</span>
+          </div>
+        </div>
+
+        <div class="carte__qr">
+          <div class="carte__qrbox">${faux_qr()}</div>
+          <div style="flex-grow:1">
+            <p class="carte__qrtitle">Code de membre</p>
+            <p class="carte__qrtext">Présenté à l’entraînement pour pointer la présence.</p>
+            <p class="carte__faux">Motif de démonstration — ne se scanne pas</p>
+          </div>
+        </div>
+
+        <div class="carte__foot">
+          <span>Membre depuis<br><b>9 septembre 2019</b></span>
+          <span style="text-align:right">Valide jusqu’au<br><b>31 décembre 2026</b></span>
+        </div>
+        <div class="carte__band" style="background:#4E9C57"></div>
+      </div>
+
+      <div class="list">
+        ${[['Enregistrer en image', 'Pour l’envoyer ou l’imprimer', 'album'],
+           ['Imprimer la carte', 'Format carte bancaire', 'edit'],
+           ['Régénérer le code', 'En cas de perte de la carte', 'lock']]
+          .map(([t, d, ic]) => `<div class="listrow">
+          <span class="tile tile--sm">${svg(ic, 18, '#0F5132')}</span>
+          <span style="flex-grow:1;min-width:0"><b style="display:block;font-size:15px;font-weight:600">${t}</b><span style="display:block;font-size:12px;color:#59685F;margin-top:1px">${d}</span></span>
+          ${svg('chev', 17, '#A8B6AE', 2)}
+        </div>`).join('\n        ')}
+      </div>
+
+      <div class="warn">
+        <i></i>
+        <p>Le code affiché est un motif de démonstration : il ne contient aucune donnée et ne se scanne pas. Le vrai code, unique par membre, sera produit au développement une fois la maquette validée.</p>
+      </div>
+    </div>
+  </div>` });
+
+
+/* ============================================================
+   Liste des fonctionnalités — support des commentaires du client
+   Chaque ligne porte un `data-feat` : c'est la clé sous laquelle
+   le commentaire est enregistré, puis exporté pour le développeur.
+   ============================================================ */
+const FEATURES = [
+  ['Accueil', [
+    ['acc-logo', 'Logo et nom du club', 'En haut de l’accueil et sur la carte de membre', 'accueil'],
+    ['acc-visuel', 'Photo du club', 'Grande image de présentation', 'accueil'],
+    ['acc-presentation', 'Présentation courte', 'Deux ou trois phrases sur le club', 'accueil'],
+    ['acc-vaovao', 'Dernières actualités', 'Les deux plus récentes, avec lien vers le casier', 'accueil'],
+    ['acc-notif', 'Pastille de notification', 'Nombre de nouveautés non lues', 'accueil']
+  ]],
+  ['Étudiants', [
+    ['etu-liste', 'Liste des étudiants', 'Photo, nom, prénom, grade', 'etudiants'],
+    ['etu-recherche', 'Recherche par nom ou prénom', 'Filtre immédiat sur la liste', 'etudiants'],
+    ['etu-filtre', 'Filtres par grade', 'Blanche, jaune, orange, verte…', 'etudiants'],
+    ['etu-verrou', 'Fiche protégée', 'Nom et photo visibles, le reste après connexion', 'profilVerrouille'],
+    ['etu-fiche', 'Fiche complète', 'Naissance, numéro, début d’entraînement, grade', 'profilOuvert'],
+    ['parents', 'Parents ou tuteur', 'Noms, lien de parenté, téléphones, contact d’urgence', 'profilOuvert'],
+    ['etu-bio', 'Biographie', 'Quelques lignes sur le parcours', 'profilOuvert'],
+    ['carte', 'Carte de membre', 'Photo, numéro, grade et code de présence', 'carte']
+  ]],
+  ['Casier et notifications', [
+    ['cas-liste', 'Casier des actualités', 'Sorties, compétitions, réunions, cérémonies', 'casier'],
+    ['cas-filtre', 'Filtres par catégorie', 'Pour retrouver un type d’annonce', 'casier'],
+    ['cas-detail', 'Détail d’une actualité', 'Date, lieu, texte, participation', 'casierDetail'],
+    ['not-centre', 'Centre de notifications', 'Lues et non lues, par date', 'notifications'],
+    ['not-push', 'Notification sur le téléphone', 'Hors de l’application — à chiffrer', 'notifications']
+  ]],
+  ['Album photo', [
+    ['alb-cat', 'Catégories d’album', 'Entraînements, compétitions, sorties, cérémonies', 'album'],
+    ['alb-grille', 'Grille de photos', 'Aperçu en vignettes', 'album'],
+    ['alb-grand', 'Photo en grand', 'Plein écran avec légende', 'photo']
+  ]],
+  ['Le club', [
+    ['clb-presentation', 'Présentation du club', 'Histoire et origine', 'club'],
+    ['clb-valeurs', 'Valeurs', 'Trois principes affichés', 'club'],
+    ['clb-horaires', 'Horaires d’entraînement', 'Jours, heures, niveaux', 'club'],
+    ['clb-contact', 'Contact et localisation', 'Responsable, téléphone, adresse', 'club']
+  ]],
+  ['Administration', [
+    ['adm-ajout', 'Ajouter un étudiant', 'Fiche, photo, grade, parents', 'admin'],
+    ['adm-modif', 'Modifier une fiche', 'Corriger ou compléter', 'admin'],
+    ['adm-grade', 'Changer un grade', 'Après un passage validé', 'admin'],
+    ['adm-comptes', 'Comptes et accès', 'Créer, suspendre, réinitialiser', 'admin'],
+    ['adm-publier', 'Publier une actualité', 'Et envoyer la notification', 'admin'],
+    ['adm-album', 'Gérer les albums', 'Créer, ajouter et classer les photos', 'admin']
+  ]]
+];
+
+screen('fonctionnalites', '00 · Fonctionnalités', { full: `
+  <div class="phone">
+    <div class="apphead">
+      <span style="width:12px"></span>
+      <h1 class="apphead__title">Fonctionnalités</h1>
+      <button class="link" style="padding:0 14px" data-action="exporter">Exporter</button>
+    </div>
+
+    <div class="featintro">
+      <p><b>Donnez votre avis point par point.</b> Touchez une ligne pour écrire un commentaire : ce que vous voulez changer, ajouter ou retirer.</p>
+      <p class="featintro__note">Vos commentaires restent sur votre appareil. Le bouton <b>Exporter</b> les rassemble pour me les envoyer.</p>
+    </div>
+
+    <div style="flex-grow:1;padding:4px 20px 28px;display:flex;flex-direction:column;gap:22px">
+      ${FEATURES.map(([groupe, lignes]) => `<div style="display:flex;flex-direction:column;gap:10px">
+        ${overline(groupe)}
+        <div class="list">
+          ${lignes.map(([id, titre, desc, ecran]) => `<button class="featrow" data-feat="${id}" data-screen="${ecran}">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">${titre}</b>
+              <span class="featrow__d">${desc}</span>
+            </span>
+            <span class="featrow__end" data-count="${id}"></span>
+          </button>`).join('\n          ')}
+        </div>
+      </div>`).join('\n      ')}
+    </div>
   </div>` });
 
 /* ---------------------------------------------- Écriture */
