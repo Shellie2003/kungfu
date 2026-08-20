@@ -16,6 +16,7 @@ const GROUPES = [
   ['Album', ['album', 'photo']],
   ['Le club', ['club']],
   ['Administration', ['admin']],
+  ['Impression', ['impression']],
   ['Directions à choisir', ['directionA', 'directionB', 'directionC']],
   ['Référence', ['charte']]
 ];
@@ -90,8 +91,23 @@ function afficher(cle) {
   marquerActif();
   app.el.stage.scrollTop = 0;
   if (app.el.titre) app.el.titre.textContent = ecran.label.replace(/^\d+\s·\s/, '');
+  ajusterPlanche();
   fermerTiroir();
 }
+
+/* La planche d'impression fait 210 mm de large : sur un téléphone elle
+   sort du cadre. CSS ne sait pas diviser deux longueurs, l'échelle se
+   calcule donc ici. Les millimètres de l'impression ne bougent pas :
+   la mise à l'échelle est retirée par la feuille de style d'impression. */
+function ajusterPlanche() {
+  const cadre = app.el.stage.querySelector('.planche-cadre');
+  if (!cadre) return;
+  const A4_L = 794, A4_H = 1123;          /* 210 × 297 mm en pixels CSS */
+  const ech = Math.min(1, cadre.clientWidth / A4_L);
+  cadre.style.setProperty('--ech', ech);
+  cadre.style.height = ech < 1 ? Math.round(A4_H * ech) + 'px' : '';
+}
+window.addEventListener('resize', ajusterPlanche);
 
 function marquerActif() {
   document.querySelectorAll('#index [data-go], #tiroir [data-go]').forEach((b) =>
@@ -309,6 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const a = act.dataset.action;
       if (a === 'logo') choisirLogo();
       if (a === 'exporter') exporter();
+      if (a === 'imprimer') window.print();
       if (a === 'menu') ouvrirTiroir();
       if (a === 'fermerMenu') fermerTiroir();
       if (a === 'enregistrerCommentaire') enregistrerCommentaire();

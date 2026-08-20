@@ -575,3 +575,121 @@ body {
 .emblem--img img { width: 100%; height: 100%; object-fit: cover; }
 .index__mark i.emblem--img { padding: 0; border-radius: 50%; }
 .carte__head .emblem--img { box-shadow: 0 0 0 1px rgba(255, 255, 255, .35); }
+
+/* ============================================================
+   PLANCHE D'IMPRESSION A4
+   Tout est en millimètres : une carte imprimée se mesure en
+   millimètres, pas en pixels. Le navigateur convertit lui-même
+   pour l'écran, et respecte les valeurs à l'impression.
+   ============================================================ */
+.impr { gap: 28px; }
+.impr__intro { display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between; align-items: flex-end; }
+.impr__actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+.impr__note { font-size: 12px; color: var(--gris); max-width: 260px; text-align: right; line-height: 17px; }
+
+/* La planche fait 210 mm de large quel que soit l'écran : c'est une
+   feuille de papier, pas une mise en page fluide. Sur un téléphone on
+   la réduit à l'échelle — les millimètres de l'impression, eux, ne
+   bougent pas. */
+.planche-cadre { display: flex; justify-content: center; }
+.planche {
+  width: 210mm; height: 297mm; flex: none;
+  background: #FFF; margin: 0 auto; position: relative;
+  padding: 13.5mm 19.4mm;
+  box-shadow: 0 20px 60px -30px rgba(0, 0, 0, .55);
+  border: 1px solid var(--filet);
+}
+.planche__grille {
+  display: grid; grid-template-columns: repeat(2, 85.6mm); grid-auto-rows: 54mm;
+  justify-content: space-between; align-content: start;
+}
+.planche__pied {
+  position: absolute; left: 0; right: 0; bottom: 5mm; text-align: center;
+  font-size: 7pt; color: #9DB3A7;
+}
+
+/* Une carte : 85,6 x 54 mm, le format d'une carte bancaire. */
+.pc {
+  position: relative; width: 85.6mm; height: 54mm; overflow: hidden;
+  background: #FFF; color: var(--encre);
+  display: grid;
+  grid-template-columns: 18mm 1fr 14mm;
+  grid-template-rows: 7mm 1fr;
+  column-gap: 4mm;
+  /* La ligne du bas occupe toute la hauteur restante ; les trois blocs
+     s'y centrent, sinon un vide s'ouvre sous eux. */
+  align-items: center;
+  padding: 4mm 5mm 4mm 5mm;
+  /* Traits de coupe : un filet gris clair, à suivre au massicot. */
+  outline: 0.2mm dashed #C4D4CB; outline-offset: 0;
+}
+.pc__band { position: absolute; left: 0; top: 0; bottom: 0; width: 2.2mm; }
+.pc__logo { grid-column: 1; grid-row: 1; align-self: center; }
+.pc__logo .emblem { width: 7mm; height: 7mm; border-radius: 50%; background: var(--vert-clair); }
+.pc__org {
+  grid-column: 2 / 4; grid-row: 1; align-self: center;
+  font-family: var(--display); font-size: 7.5pt; font-weight: 700; letter-spacing: .1em; color: var(--vert);
+}
+/* Format photo d'identité, 3:4 — celui des photos que le club aura
+   déjà, et celui qu'on peut rephotographier sans recadrer. */
+.pc__photo {
+  grid-column: 1; grid-row: 2; height: 25mm; display: grid; place-items: center;
+  background: var(--vert-clair); border-radius: 1.5mm; overflow: hidden;
+}
+.pc__photo svg { width: 60%; height: 60%; }
+.pc__id { grid-column: 2; grid-row: 2; align-self: center; display: flex; flex-direction: column; gap: 0.8mm; min-width: 0; overflow: hidden; }
+/* Les patronymes malgaches sont longs : RANDRIAMAMPIONONA fait dix-sept
+   lettres. La taille du nom est calée sur le plus long du club, pour
+   qu'aucun ne passe à la ligne — un nom coupé en deux sur une carte de
+   membre se lit mal et se photographie mal. Le prénom, plus court,
+   reste plus grand : c'est lui qu'on lit en premier. */
+.pc__nom {
+  font-family: var(--display); font-size: 8.5pt; font-weight: 700; line-height: 1.15;
+  letter-spacing: -.005em;
+  overflow-wrap: anywhere;   /* filet de sécurité, ne devrait pas servir */
+}
+.pc__prenom { font-family: var(--display); font-size: 10pt; font-weight: 500; color: #3C4A42; line-height: 1.15; }
+.pc__grade { display: inline-flex; align-items: center; gap: 1.5mm; font-size: 7.5pt; font-weight: 600; margin-top: 1mm; }
+.pc__grade i { width: 2.2mm; height: 2.2mm; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 .2mm rgba(0, 0, 0, .2); }
+.pc__num { font-family: var(--display); font-size: 9pt; font-weight: 700; letter-spacing: .12em; color: var(--vert); margin-top: 1.5mm; }
+.pc__qr { grid-column: 3; grid-row: 2; align-self: center; line-height: 0; }
+.pc__qr svg { width: 14mm; height: 14mm; }
+
+/* Verso */
+.pc--verso { display: flex; flex-direction: column; gap: 2mm; justify-content: center; padding: 5mm 6mm 5mm 8mm; }
+.pcv__titre { font-family: var(--display); font-size: 10pt; font-weight: 700; color: var(--vert); }
+.pcv__txt { font-size: 7.5pt; line-height: 1.45; color: #3C4A42; }
+.pcv__contact { font-size: 7pt; color: var(--gris); margin-top: 1mm; }
+
+/* --ech et la hauteur du cadre sont posées par le script : voir
+   ajusterPlanche() dans js/app.js. */
+.planche-cadre { overflow: hidden; }
+.planche { transform: scale(var(--ech, 1)); transform-origin: top center; }
+
+@media (max-width: 900px) {
+  .impr__intro { flex-direction: column; align-items: stretch; }
+  .impr__actions { align-items: stretch; }
+  .impr__note { max-width: none; text-align: left; }
+}
+
+.impr__zoom { display: flex; flex-direction: column; gap: 14px; }
+.impr__duo { display: flex; flex-wrap: wrap; gap: 22px; }
+.impr__lab { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--gris); margin-bottom: 8px; }
+
+/* ------------------------------------------------------------
+   À l'impression, seule la planche part sur le papier.
+   ------------------------------------------------------------ */
+@media print {
+  @page { size: A4 portrait; margin: 0; }
+  html, body { background: #FFF; height: auto; }
+  .index, .topbar, .tiroir, .stage__caption, .bulle,
+  .impr__intro, .impr__zoom, .voile { display: none !important; }
+  .wrap { display: block; height: auto; }
+  .stage { display: block; padding: 0; background: #FFF; overflow: visible; }
+  .wide { width: auto; max-width: none; max-height: none; border-radius: 0; box-shadow: none; overflow: visible; }
+  .sheet { padding: 0; gap: 0; }
+  .planche-cadre { display: block; height: auto; overflow: visible; }
+  .planche { box-shadow: none; border: 0; margin: 0; break-after: page; transform: none; }
+  /* Les aplats de couleur doivent sortir tels quels, pas éclaircis. */
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

@@ -82,7 +82,29 @@ Un carré à fond transparent, d'au moins 512 × 512 pixels, donne le meilleur r
 | 12 | Administration | Ce que le responsable peut faire |
 | 13 | Charte graphique | Couleurs, typographies, composants — référence pour le développement |
 | 14 | Carte de membre | Photo, numéro, grade et code de présence |
+| 15 | Planche d'impression | La carte imprimée : dix par page A4, avec traits de coupe |
 | 00 | Fonctionnalités | La liste à commenter |
+
+## Imprimer les cartes
+
+Écran « Planche d'impression ». Le bouton **Imprimer ou enregistrer en PDF** ouvre la
+boîte d'impression du navigateur ; « Enregistrer en PDF » comme destination donne le
+fichier à envoyer à l'imprimeur.
+
+**Format retenu : 85,6 × 54 mm**, celui d'une carte bancaire, plutôt qu'un format inventé.
+Les étuis, porte-badges et cordons du commerce sont à cette taille, et la carte entre dans
+un portefeuille. Il en tient **dix par page A4**, en deux colonnes de cinq, séparées par
+des traits de coupe à suivre au massicot.
+
+Seule la feuille part sur le papier : l'index, le menu et le texte d'explication sont
+retirés à l'impression. Réglages du navigateur : format A4, marges **aucune**, et
+**imprimer les arrière-plans** coché — sinon les bandes de couleur de grade disparaissent.
+
+La taille du nom est calée sur le plus long patronyme du club :
+RANDRIAMAMPIONONA tient sur une ligne, aucun nom n'est coupé en deux.
+
+Le verso reste à décider — règlement, horaires, ou rien du tout pour imprimer en recto
+seul, deux fois moins cher. Une proposition figure sur l'écran.
 
 ## Décisions prises, à confirmer
 

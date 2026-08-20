@@ -909,6 +909,91 @@ screen('fonctionnalites', '00 · Fonctionnalités', { full: `
     </div>
   </div>` });
 
+
+/* ============================================================
+   Planche d'impression A4
+   Format retenu : 85,6 x 54 mm, celui d'une carte bancaire. Les
+   étuis, porte-badges et cordons du commerce sont à cette taille, et
+   la carte entre dans un portefeuille. Dix par page A4, en deux
+   colonnes de cinq, avec des traits de coupe.
+   ============================================================ */
+const ELEVES_PLANCHE = [
+  ['RAKOTONDRABE', 'Nirina', 'Ceinture verte', '#4E9C57', 'WA-0042'],
+  ['RASOAMANANA', 'Fanjaniaina', 'Ceinture jaune', '#D8A93A', 'WA-0043'],
+  ['ANDRIANJAFY', 'Tokiniaina', 'Ceinture bleue', '#3E6E9C', 'WA-0044'],
+  ['RABEMANANJARA', 'Hery', 'Ceinture noire', '#1E2320', 'WA-0045'],
+  ['RAZAFIMAHATRATRA', 'Miora', 'Ceinture orange', '#C97A32', 'WA-0046'],
+  ['RANDRIAMAMPIONONA', 'Toky', 'Ceinture blanche', '#E7EDE9', 'WA-0047'],
+  ['RAHARISOA', 'Fanja', 'Ceinture jaune', '#D8A93A', 'WA-0048'],
+  ['ANDRIAMBELO', 'Rado', 'Ceinture verte', '#4E9C57', 'WA-0049'],
+  ['RAKOTOARISOA', 'Lalaina', 'Ceinture orange', '#C97A32', 'WA-0050'],
+  ['RANDRIANASOLO', 'Mamy', 'Ceinture blanche', '#E7EDE9', 'WA-0051']
+];
+
+/* Le portrait de la planche est plus petit : on redéfinit sa taille
+   en millimètres, l'impression ne raisonne pas en pixels. */
+const portrait_mm = (l) => `<span class="pc__photo" style="width:${l}mm">
+  <svg viewBox="0 0 24 24" fill="none" stroke="#8FB3A0" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8.5" r="3.6"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>
+  </svg></span>`;
+
+const carte_imprimee = ([nom, prenom, gr, col, num]) => `<div class="pc">
+  <span class="pc__band" style="background:${col}"></span>
+  <span class="pc__logo"><span class="emblem"></span></span>
+  <span class="pc__org">KWOON ANALAMAHITSY</span>
+  ${portrait_mm(18)}
+  <span class="pc__id">
+    <b class="pc__nom">${nom}</b>
+    <span class="pc__prenom">${prenom}</span>
+    <span class="pc__grade"><i style="background:${col}"></i>${gr}</span>
+    <span class="pc__num">${num}</span>
+  </span>
+  <span class="pc__qr">${faux_qr()}</span>
+</div>`;
+
+screen('impression', '15 · Planche d’impression', { wide: true, full: `
+  <div class="sheet impr">
+    <div class="impr__intro">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${overline('Impression des cartes')}
+        <h1 class="display" style="font-size:28px;line-height:34px">Dix cartes par page A4</h1>
+        <p style="font-size:15px;line-height:24px;color:#59685F;max-width:560px">Format <b>85,6 × 54 mm</b>, celui d’une carte bancaire : les étuis, porte-badges et cordons du commerce sont à cette taille, et la carte entre dans un portefeuille. Deux colonnes de cinq, avec des traits de coupe.</p>
+      </div>
+      <div class="impr__actions">
+        <button class="btn btn--primary" data-action="imprimer" style="width:auto;padding:0 20px">Imprimer ou enregistrer en PDF</button>
+        <p class="impr__note">La page ci-dessous s’imprime seule : l’index, le menu et cette explication ne partent pas à l’impression.</p>
+      </div>
+    </div>
+
+    <div class="planche-cadre"><div class="planche">
+      <div class="planche__grille">
+        ${ELEVES_PLANCHE.map(carte_imprimee).join('\n        ')}
+      </div>
+      <span class="planche__pied">Kwoon Analamahitsy · planche de 10 cartes · maquette</span>
+    </div></div>
+
+    <div class="impr__zoom">
+      ${overline('La carte en détail')}
+      <div class="impr__duo">
+        <div>
+          <p class="impr__lab">Recto — grandeur réelle</p>
+          ${carte_imprimee(ELEVES_PLANCHE[0])}
+        </div>
+        <div>
+          <p class="impr__lab">Verso — proposition</p>
+          <div class="pc pc--verso">
+            <span class="pc__band" style="background:#0F5132"></span>
+            <span class="pcv__titre">Kwoon Analamahitsy</span>
+            <span class="pcv__txt">Cette carte est personnelle. Elle est présentée à chaque entraînement pour pointer la présence.</span>
+            <span class="pcv__txt">Perte ou vol : prévenir le responsable du club, la carte sera remplacée et le code renouvelé.</span>
+            <span class="pcv__contact">[TÉLÉPHONE DU CLUB] · Analamahitsy, Antananarivo</span>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:13px;line-height:21px;color:#59685F;max-width:560px">Le verso reste à décider : on peut y mettre le règlement, les horaires, ou le laisser vide pour imprimer en recto seul — c’est deux fois moins cher.</p>
+    </div>
+  </div>` });
+
 /* ---------------------------------------------- Écriture */
 const wrap = (def) => def.full
   ? def.full
