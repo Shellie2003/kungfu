@@ -1,0 +1,211 @@
+/* ============================================================
+   Kung-fu Waishi Analamahitsy — Maquette
+   Vert dominant, blanc secondaire. Toutes les couleurs de texte
+   ont été mesurées sur leur fond : minimum 4,5:1.
+   ============================================================ */
+
+:root {
+  --vert: #0F5132;        /* bandeaux, boutons — blanc dessus 9,4:1 */
+  --vert-texte: #12613C;  /* liens, libellés — sur blanc 7,5:1 */
+  --vert-clair: #E8F1EC;  /* fonds teintés, vignettes */
+  --fond: #F5F8F6;        /* fond d'écran */
+  --encre: #0E2119;       /* texte principal — 16,8:1 */
+  --gris: #59685F;        /* texte de soutien — 5,9:1 */
+  --gris-clair: #7C8B82;
+  --filet: #E4EDE8;
+  --bord: #DCE7E1;
+  --alerte: #E4572E;
+
+  --display: 'Archivo', 'Helvetica Neue', Helvetica, sans-serif;
+  --texte: 'Karla', 'Segoe UI', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; }
+p, h1, h2, h3 { margin: 0; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+
+body {
+  font-family: var(--texte);
+  color: var(--encre);
+  background: #0B1C13;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ------------------------------------------------------------
+   Coquille de présentation — index des écrans et cadre téléphone.
+   Cette partie ne fait pas partie de l'application : elle sert à
+   présenter la maquette au client.
+   ------------------------------------------------------------ */
+.wrap { display: grid; grid-template-columns: 274px 1fr; height: 100dvh; }
+
+.index {
+  overflow-y: auto; padding: 22px 0 40px;
+  background: #0B1C13; border-right: 1px solid rgba(255, 255, 255, .08);
+  color: #C7DCD0;
+}
+.index__brand { padding: 0 22px 18px; border-bottom: 1px solid rgba(255, 255, 255, .08); margin-bottom: 12px; }
+.index__mark { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-size: 16px; font-weight: 700; color: #FFF; letter-spacing: .02em; }
+.index__mark i { width: 28px; height: 28px; border-radius: 8px; background: #FFF; display: grid; place-items: center; flex: none; }
+.index__sub { margin-top: 8px; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: #7FA893; }
+.index__group { padding: 16px 22px 6px; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #6E9481; }
+.index__link {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 9px 22px; font-size: 13px; color: #B4CCC0; text-align: left;
+  border-left: 2px solid transparent;
+}
+.index__link:hover { background: rgba(255, 255, 255, .05); color: #FFF; }
+.index__link[aria-current="true"] { background: rgba(255, 255, 255, .09); border-left-color: #7FD9A8; color: #FFF; }
+.index__num { font-family: var(--display); font-size: 11px; color: #6E9481; min-width: 18px; }
+.index__link[aria-current="true"] .index__num { color: #7FD9A8; }
+
+.stage { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 28px; overflow: auto; background: radial-gradient(120% 90% at 50% 0%, #17392A 0%, #0B1C13 70%); }
+.stage__caption { font-size: 13px; color: #8FB3A0; text-align: center; }
+.stage__caption b { color: #FFF; font-weight: 600; }
+
+.device { width: 390px; flex: none; border-radius: 44px; padding: 10px; background: #060F0A; box-shadow: 0 40px 90px -30px rgba(0, 0, 0, .8), 0 0 0 1px rgba(255, 255, 255, .09); }
+.device__screen { width: 100%; height: 780px; border-radius: 36px; overflow: hidden; background: var(--fond); }
+.device__screen > .phone { height: 100%; overflow-y: auto; scrollbar-width: none; }
+.device__screen > .phone::-webkit-scrollbar { width: 0; }
+
+/* La charte sort du cadre téléphone : elle n'est pas un écran. */
+.wide { width: min(880px, 100%); background: #FFF; border-radius: 20px; overflow: hidden; box-shadow: 0 30px 70px -30px rgba(0, 0, 0, .6); max-height: 84vh; overflow-y: auto; }
+
+/* ------------------------------------------------------------
+   L'application
+   ------------------------------------------------------------ */
+.phone { min-height: 780px; display: flex; flex-direction: column; background: var(--fond); }
+.phone--green { background: var(--vert); }
+
+.display { font-family: var(--display); font-weight: 700; }
+.overline { font-family: var(--display); font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--gris); }
+
+/* Bandeau d'accueil */
+.hero { background: var(--vert); padding: 22px 20px 26px; display: flex; flex-direction: column; gap: 20px; }
+.hero__note { background: #12613C; border: 1px solid #2E7A55; border-radius: 14px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; }
+
+.emblem { width: 46px; height: 46px; border-radius: 12px; background: #FFF; display: grid; place-items: center; flex: none; }
+.emblem--lg { width: 72px; height: 72px; border-radius: 20px; }
+
+/* En-tête d'écran */
+.apphead { background: #FFF; border-bottom: 1px solid var(--filet); padding: 10px 8px 12px; display: flex; align-items: center; gap: 4px; }
+.apphead__title { flex-grow: 1; font-family: var(--display); font-size: 18px; font-weight: 600; }
+
+.tapicon { width: 44px; height: 44px; display: grid; place-items: center; flex: none; border-radius: 12px; }
+.tapicon:hover { background: rgba(15, 81, 50, .07); }
+
+.dot { position: absolute; top: 6px; right: 6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--alerte); color: #FFF; font-size: 11px; font-weight: 700; display: grid; place-items: center; border: 2px solid var(--vert); }
+.dot--plain { min-width: 0; width: 9px; height: 9px; padding: 0; top: 9px; right: 9px; border-color: #FFF; }
+
+/* Cartes et listes */
+.card { background: #FFF; border: 1px solid var(--filet); border-radius: 16px; padding: 18px; text-align: left; }
+.hr { height: 1px; background: #EDF3F0; }
+.list { background: #FFF; border: 1px solid var(--filet); border-radius: 16px; overflow: hidden; }
+.listrow { display: flex; align-items: center; gap: 13px; padding: 14px 16px; }
+.listrow + .listrow { border-top: 1px solid #EDF3F0; }
+
+.rowhead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.link { font-size: 13px; font-weight: 600; color: var(--vert-texte); }
+.linkrow { display: flex; align-items: center; gap: 6px; margin-top: 14px; font-size: 14px; font-weight: 600; color: var(--vert-texte); }
+
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+
+/* Marque-place d'image */
+.ph { background: var(--vert-clair); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+.ph__label { font-size: 11px; font-weight: 600; letter-spacing: .1em; color: #7C9A8A; text-transform: uppercase; }
+
+/* Actualités */
+.tag { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 4px 9px; border-radius: 6px; }
+.datebox { width: 56px; height: 56px; border-radius: 12px; background: var(--vert-clair); display: flex; flex-direction: column; align-items: center; justify-content: center; flex: none; }
+.datebox b { font-family: var(--display); font-size: 19px; color: var(--vert); line-height: 20px; }
+.datebox i { font-size: 10px; font-weight: 600; color: var(--gris); text-transform: uppercase; letter-spacing: .06em; font-style: normal; }
+.newsrow { display: flex; gap: 14px; align-items: flex-start; width: 100%; }
+.newscard { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+.newscard--new { border-color: #C4D4CB; }
+
+/* Étudiants */
+.searchbar { display: flex; align-items: center; gap: 10px; background: #FFF; border: 1px solid var(--bord); border-radius: 12px; padding: 0 14px; min-height: 48px; font-size: 15px; color: #8A978F; }
+.studentrow { display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 14px; }
+
+.grade { display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 999px; background: #F1F6F3; border: 1px solid var(--bord); font-size: 12px; font-weight: 600; }
+.grade i { width: 9px; height: 9px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .18); }
+
+/* Champs masqués du profil verrouillé */
+.masked { display: flex; flex-direction: column; gap: 1px; background: #EDF3F0; border-radius: 12px; overflow: hidden; }
+.masked > div { background: #F8FBF9; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--gris); }
+.masked__dots { display: flex; gap: 4px; }
+.masked__dots i { width: 5px; height: 5px; border-radius: 50%; background: #B9C7BF; }
+
+.tile { width: 46px; height: 46px; border-radius: 14px; background: var(--vert-clair); display: grid; place-items: center; flex: none; }
+.tile--sm { width: 36px; height: 36px; border-radius: 11px; }
+
+.banner { display: flex; align-items: center; gap: 8px; background: var(--vert-clair); border-radius: 10px; padding: 10px 13px; font-size: 12px; font-weight: 600; color: var(--vert); }
+
+.deflist { display: flex; flex-direction: column; }
+.deflist > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; font-size: 13px; color: var(--gris); }
+.deflist > div + div { border-top: 1px solid #EDF3F0; }
+.deflist b { font-size: 14px; font-weight: 600; color: var(--encre); text-align: right; }
+
+.valuerow { display: flex; gap: 13px; align-items: flex-start; padding: 14px 16px; }
+
+/* Album */
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.tilephoto { aspect-ratio: 1 / 1; border-radius: 12px; background: var(--vert-clair); display: grid; place-items: center; }
+
+/* Notifications */
+.notif { display: flex; gap: 13px; align-items: flex-start; width: 100%; padding: 14px 16px; }
+.notif--new { border-color: #C4D4CB; }
+.unread { width: 7px; height: 7px; border-radius: 50%; background: var(--alerte); flex: none; }
+
+.warn { background: #FBEEE2; border: 1px solid #EFD7BE; border-radius: 14px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; }
+.warn i { width: 8px; height: 8px; border-radius: 50%; background: #B0530F; flex: none; margin-top: 6px; }
+.warn p { font-size: 13px; line-height: 20px; color: #6B4218; }
+
+/* Contrôles */
+.chips { display: flex; gap: 8px; padding: 14px 20px 4px; overflow-x: auto; scrollbar-width: none; }
+.chips::-webkit-scrollbar { height: 0; }
+.chip { flex: none; padding: 9px 15px; border-radius: 999px; font-size: 13px; background: #FFF; color: var(--gris); border: 1px solid var(--bord); }
+.chip--on { background: var(--vert); color: #FFF; border-color: var(--vert); font-weight: 600; }
+
+.btn { min-height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; font-weight: 600; width: 100%; }
+.btn--primary { background: var(--vert); color: #FFF; }
+.btn--ghost { background: #FFF; color: var(--vert-texte); border: 1px solid #C4D4CB; }
+.btn--soft { background: var(--vert-clair); color: var(--vert); }
+
+.field { display: flex; flex-direction: column; gap: 7px; }
+.field__label { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gris); }
+.input { min-height: 48px; border-radius: 12px; background: #F1F6F3; border: 1px solid var(--bord); display: flex; align-items: center; padding: 0 14px; font-size: 15px; }
+.input--on { background: #FFF; border: 2px solid var(--vert); padding: 0 13px; }
+
+/* Navigation inférieure */
+.tabbar { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); background: #FFF; border-top: 1px solid var(--filet); padding: 8px 4px 14px; position: sticky; bottom: 0; }
+.tabbar__item { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 6px 0; min-height: 44px; }
+
+/* ------------------------------------------------------------
+   Charte graphique
+   ------------------------------------------------------------ */
+.sheet { padding: 40px; display: flex; flex-direction: column; gap: 36px; background: #FFF; }
+.swatches { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.swatch { border: 1px solid var(--filet); border-radius: 14px; padding: 0 0 13px; display: flex; flex-direction: column; gap: 3px; overflow: hidden; }
+.swatch__chip { height: 76px; display: block; border-bottom: 1px solid var(--filet); }
+.swatch b { font-size: 13px; padding: 11px 13px 0; }
+.swatch code { font-family: var(--display); font-size: 12px; color: var(--gris); padding: 0 13px; }
+.swatch span:not(.swatch__chip) { font-size: 11px; color: var(--gris); padding: 0 13px; line-height: 16px; }
+.duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.scale { display: flex; flex-direction: column; gap: 14px; }
+.scale > div { display: flex; align-items: baseline; gap: 20px; }
+.scale > div > span:first-child { width: 92px; font-size: 11px; color: var(--gris); flex: none; }
+
+/* ------------------------------------------------------------
+   Sur écran étroit, l'échafaudage disparaît et l'app prend tout
+   ------------------------------------------------------------ */
+@media (max-width: 900px) {
+  .wrap { grid-template-columns: 1fr; }
+  .index { display: none; }
+  .stage { padding: 0; gap: 0; justify-content: flex-start; background: var(--fond); }
+  .stage__caption { display: none; }
+  .device { width: 100%; border-radius: 0; padding: 0; box-shadow: none; }
+  .device__screen { height: 100dvh; border-radius: 0; }
+  .phone { min-height: 100dvh; }
+  .wide { max-height: none; border-radius: 0; }
+}
