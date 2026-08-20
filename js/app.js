@@ -12,6 +12,7 @@ const GROUPES = [
   ['Album', ['album', 'photo']],
   ['Le club', ['club']],
   ['Administration', ['admin']],
+  ['Directions à choisir', ['directionA', 'directionB', 'directionC']],
   ['Référence', ['charte']]
 ];
 
@@ -37,6 +38,13 @@ function afficher(cle) {
   app.el.index.querySelectorAll('[data-go]').forEach((b) =>
     b.setAttribute('aria-current', String(b.dataset.go === cle)));
 
+  /* Entrée en cascade : on marque le conteneur pour que la feuille
+     de style décale l'arrivée de chaque bloc. */
+  const phone = app.el.stage.querySelector('.phone, .sheet');
+  if (phone) {
+    const cible = phone.querySelector('.dirA__body, .dirB__content, [style*="flex-grow:1"]') || phone;
+    cible.classList.add('enter');
+  }
   app.el.stage.scrollTop = 0;
 }
 

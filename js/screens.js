@@ -968,5 +968,248 @@ const SCREENS = {
 
     <p style="font-size:12px;line-height:19px;color:#59685F;border-top:1px solid #E4EDE8;padding-top:20px">Cibles tactiles : jamais moins de 44 px de haut. Rayons : 12 px sur les contrôles, 14 à 18 px sur les cartes. Grille d’espacement de 4 px.</p>
   </div>`
+  },
+  directionA: {
+    label: "A · Lame",
+    html: `
+  <div class="phone dirA">
+    <header class="dirA__head">
+      <div class="dirA__glow"></div>
+      <div class="dirA__top">
+        <span class="emblem" style="width:40px;height:40px;border-radius:10px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/><path d="M9 12.2l2 2 4-4.4"/></svg></span>
+        <span style="flex-grow:1">
+          <b class="dirA__name">WAISHI</b>
+          <i class="dirA__place">Analamahitsy</i>
+        </span>
+        <button class="tapicon" data-go="notifications" style="position:relative"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 13 6 9"/><path d="M10 18a2 2 0 0 0 4 0"/></svg><span class="dot">3</span></button>
+      </div>
+
+      <div class="dirA__count">
+        <span class="dirA__num">64</span>
+        <span class="dirA__lbl">membres<br>actifs</span>
+      </div>
+      <div class="dirA__strokes"><i></i><i></i><i></i></div>
+    </header>
+
+    <div class="dirA__body">
+      <button class="dirA__next" data-go="casierDetail">
+        <span class="dirA__tag">Prochaine sortie</span>
+        <span class="dirA__title">Lac Mantasoa</span>
+        <span class="dirA__meta">Samedi 22 nov · départ 6h00</span>
+        <span class="dirA__go"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></span>
+      </button>
+
+      <div class="dirA__row">
+        <button class="dirA__cut" data-go="etudiants">
+          <span class="dirA__cutnum">3</span>
+          <span class="dirA__cutlbl">séances<br>par semaine</span>
+        </button>
+        <button class="dirA__cut dirA__cut--dark" data-go="album">
+          <span class="dirA__cutnum">186</span>
+          <span class="dirA__cutlbl">photos<br>au club</span>
+        </button>
+      </div>
+
+      <div class="rowhead" style="margin-top:6px"><h2 class="overline">Vaovao farany</h2><button class="link" data-go="casier">Tout voir</button></div>
+      <button class="dirA__news" data-go="casierDetail">
+        <span class="dirA__date">22<i>nov</i></span>
+        <span style="flex-grow:1;min-width:0;text-align:left">
+          <span class="dirA__newstag">Sortie</span>
+          <span class="dirA__newstitle">Sortie au lac Mantasoa</span>
+        </span>
+      </button>
+      <button class="dirA__news" data-go="casierDetail">
+        <span class="dirA__date">18<i>nov</i></span>
+        <span style="flex-grow:1;min-width:0;text-align:left">
+          <span class="dirA__newstag">Changement d’horaire</span>
+          <span class="dirA__newstitle">Séance du mercredi à 17h30</span>
+        </span>
+      </button>
+    </div>
+    <nav class="tabbar">
+    <button class="tabbar__item" data-go="accueil" aria-current="page">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z"/></svg>
+      <span style="font-size:10px;font-weight:700;color:#0F5132">Accueil</span>
+    </button>
+    <button class="tabbar__item" data-go="etudiants">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Étudiants</span>
+    </button>
+    <button class="tabbar__item" data-go="casier">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Casier</span>
+    </button>
+    <button class="tabbar__item" data-go="album">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Album</span>
+    </button>
+    <button class="tabbar__item" data-go="club">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Le Club</span>
+    </button>
+  </nav>
+  </div>`
+  },
+  directionB: {
+    label: "B · Souffle",
+    html: `
+  <div class="phone dirB">
+    <div class="dirB__aura"><i></i><i></i><i></i></div>
+
+    <div class="dirB__content">
+      <div class="dirB__top">
+        <span style="flex-grow:1">
+          <b class="dirB__hello">Kung-fu Waishi</b>
+          <i class="dirB__place">Analamahitsy · Antananarivo</i>
+        </span>
+        <button class="dirB__bell" data-go="notifications"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 13 6 9"/><path d="M10 18a2 2 0 0 0 4 0"/></svg><span class="dot" style="border-color:#EAF3EE">3</span></button>
+      </div>
+
+      <button class="dirB__hero" data-go="casierDetail">
+        <span class="dirB__pill">Prochaine sortie</span>
+        <span class="dirB__herotitle">Lac<br>Mantasoa</span>
+        <span class="dirB__herometa">Samedi 22 novembre · 6h00</span>
+        <span class="dirB__cta">Voir les détails <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></span>
+      </button>
+
+      <div class="dirB__glassrow">
+        <div class="dirB__glass">
+          <b>64</b><span>membres</span>
+        </div>
+        <div class="dirB__glass">
+          <b>3</b><span>séances</span>
+        </div>
+        <div class="dirB__glass">
+          <b>186</b><span>photos</span>
+        </div>
+      </div>
+
+      <div class="dirB__panel">
+        <div class="rowhead"><h2 class="overline">Vaovao farany</h2><button class="link" data-go="casier">Tout voir</button></div>
+        <button class="dirB__item" data-go="casierDetail">
+          <span class="dirB__dot"></span>
+          <span style="flex-grow:1;min-width:0;text-align:left">
+            <span class="dirB__itemtitle">Sortie au lac Mantasoa</span>
+            <span class="dirB__itemmeta">Sortie · 22 nov</span>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8FB3A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+        </button>
+        <button class="dirB__item" data-go="casierDetail">
+          <span class="dirB__dot"></span>
+          <span style="flex-grow:1;min-width:0;text-align:left">
+            <span class="dirB__itemtitle">Séance du mercredi à 17h30</span>
+            <span class="dirB__itemmeta">Changement d’horaire · 18 nov</span>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8FB3A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+        </button>
+        <button class="dirB__item" data-go="casierDetail">
+          <span class="dirB__dot"></span>
+          <span style="flex-grow:1;min-width:0;text-align:left">
+            <span class="dirB__itemtitle">Tournoi régional d’Antananarivo</span>
+            <span class="dirB__itemmeta">Compétition · 12 nov</span>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8FB3A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+    <nav class="tabbar">
+    <button class="tabbar__item" data-go="accueil" aria-current="page">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z"/></svg>
+      <span style="font-size:10px;font-weight:700;color:#0F5132">Accueil</span>
+    </button>
+    <button class="tabbar__item" data-go="etudiants">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Étudiants</span>
+    </button>
+    <button class="tabbar__item" data-go="casier">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Casier</span>
+    </button>
+    <button class="tabbar__item" data-go="album">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Album</span>
+    </button>
+    <button class="tabbar__item" data-go="club">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Le Club</span>
+    </button>
+  </nav>
+  </div>`
+  },
+  directionC: {
+    label: "C · Tempo",
+    html: `
+  <div class="phone dirC">
+    <div class="dirC__ticker"><span>SORTIE 22 NOV · LAC MANTASOA — SÉANCE MERCREDI 17H30 — TOURNOI RÉGIONAL : 8 SÉLECTIONNÉS — SORTIE 22 NOV · LAC MANTASOA — SÉANCE MERCREDI 17H30 — </span></div>
+
+    <div class="dirC__top">
+      <span style="flex-grow:1">
+        <b class="dirC__brand">WAISHI</b>
+        <i class="dirC__sub">Analamahitsy</i>
+      </span>
+      <button class="tapicon" data-go="notifications" style="position:relative"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0E2119" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 13 6 9"/><path d="M10 18a2 2 0 0 0 4 0"/></svg><span class="dot" style="border-color:#FFF">3</span></button>
+    </div>
+
+    <button class="dirC__poster" data-go="casierDetail">
+      <span class="dirC__posterbg"><svg width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.2"/><path d="M12 7.6v5.2"/><path d="m5.5 10.8 6.5-1.5 6.5 1.5"/><path d="m12 12.8-3.6 7.6"/><path d="m12 12.8 3.6 7.6"/></svg></span>
+      <span class="dirC__kicker">Samedi 22 novembre</span>
+      <span class="dirC__big">LAC<br>MANTASOA</span>
+      <span class="dirC__rule"></span>
+      <span class="dirC__foot">Départ 6h00 · devant la salle <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7FD9A8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></span>
+    </button>
+
+    <div class="dirC__figures">
+      <div class="dirC__fig"><b>64</b><span>MEMBRES</span></div>
+      <div class="dirC__fig"><b>3</b><span>SÉANCES</span></div>
+      <div class="dirC__fig"><b>186</b><span>PHOTOS</span></div>
+    </div>
+
+    <div class="dirC__list">
+      <div class="dirC__listhead"><b>VAOVAO FARANY</b><button class="link" data-go="casier">Tout voir</button></div>
+      <button class="dirC__row" data-go="casierDetail">
+        <span class="dirC__idx">01</span>
+        <span style="flex-grow:1;min-width:0;text-align:left">
+          <span class="dirC__rowtitle">Sortie au lac Mantasoa</span>
+          <span class="dirC__rowmeta">SORTIE · 22 NOV</span>
+        </span>
+      </button>
+      <button class="dirC__row" data-go="casierDetail">
+        <span class="dirC__idx">02</span>
+        <span style="flex-grow:1;min-width:0;text-align:left">
+          <span class="dirC__rowtitle">Séance du mercredi à 17h30</span>
+          <span class="dirC__rowmeta">CHANGEMENT D’HORAIRE · 18 NOV</span>
+        </span>
+      </button>
+      <button class="dirC__row" data-go="casierDetail">
+        <span class="dirC__idx">03</span>
+        <span style="flex-grow:1;min-width:0;text-align:left">
+          <span class="dirC__rowtitle">Tournoi régional d’Antananarivo</span>
+          <span class="dirC__rowmeta">COMPÉTITION · 12 NOV</span>
+        </span>
+      </button>
+    </div>
+    <nav class="tabbar">
+    <button class="tabbar__item" data-go="accueil" aria-current="page">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z"/></svg>
+      <span style="font-size:10px;font-weight:700;color:#0F5132">Accueil</span>
+    </button>
+    <button class="tabbar__item" data-go="etudiants">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Étudiants</span>
+    </button>
+    <button class="tabbar__item" data-go="casier">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Casier</span>
+    </button>
+    <button class="tabbar__item" data-go="album">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Album</span>
+    </button>
+    <button class="tabbar__item" data-go="club">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Le Club</span>
+    </button>
+  </nav>
+  </div>`
   }
 };

@@ -585,6 +585,146 @@ screen('charte', '13 · Charte graphique', { wide: true, full: `
     <p style="font-size:12px;line-height:19px;color:#59685F;border-top:1px solid #E4EDE8;padding-top:20px">Cibles tactiles : jamais moins de 44 px de haut. Rayons : 12 px sur les contrôles, 14 à 18 px sur les cartes. Grille d’espacement de 4 px.</p>
   </div>` });
 
+
+/* ============================================================
+   TROIS DIRECTIONS VISUELLES — à choisir
+   Le vert et le blanc sont acquis. Ce qui change : la géométrie,
+   la profondeur, le rapport au mouvement. Chaque direction est
+   poussée franchement, pour que le choix soit lisible.
+   ============================================================ */
+
+/* --- A · LAME — géométrie diagonale, tranchante, sportive ------- */
+screen('directionA', 'A · Lame', { full: `
+  <div class="phone dirA">
+    <header class="dirA__head">
+      <div class="dirA__glow"></div>
+      <div class="dirA__top">
+        <span class="emblem" style="width:40px;height:40px;border-radius:10px">${svg('shieldCheck', 22, '#0F5132')}</span>
+        <span style="flex-grow:1">
+          <b class="dirA__name">WAISHI</b>
+          <i class="dirA__place">Analamahitsy</i>
+        </span>
+        <button class="tapicon" data-go="notifications" style="position:relative">${svg('bell', 22, '#FFF')}<span class="dot">3</span></button>
+      </div>
+
+      <div class="dirA__count">
+        <span class="dirA__num">64</span>
+        <span class="dirA__lbl">membres<br>actifs</span>
+      </div>
+      <div class="dirA__strokes"><i></i><i></i><i></i></div>
+    </header>
+
+    <div class="dirA__body">
+      <button class="dirA__next" data-go="casierDetail">
+        <span class="dirA__tag">Prochaine sortie</span>
+        <span class="dirA__title">Lac Mantasoa</span>
+        <span class="dirA__meta">Samedi 22 nov · départ 6h00</span>
+        <span class="dirA__go">${svg('chev', 18, '#0F5132', 2.4)}</span>
+      </button>
+
+      <div class="dirA__row">
+        <button class="dirA__cut" data-go="etudiants">
+          <span class="dirA__cutnum">3</span>
+          <span class="dirA__cutlbl">séances<br>par semaine</span>
+        </button>
+        <button class="dirA__cut dirA__cut--dark" data-go="album">
+          <span class="dirA__cutnum">186</span>
+          <span class="dirA__cutlbl">photos<br>au club</span>
+        </button>
+      </div>
+
+      <div class="rowhead" style="margin-top:6px">${overline('Vaovao farany')}<button class="link" data-go="casier">Tout voir</button></div>
+      ${NEWS.slice(0, 2).map(([date, cat, cc, cb, title, text]) => `<button class="dirA__news" data-go="casierDetail">
+        <span class="dirA__date">${date.split(' ')[0]}<i>${date.split(' ')[1]}</i></span>
+        <span style="flex-grow:1;min-width:0;text-align:left">
+          <span class="dirA__newstag">${cat}</span>
+          <span class="dirA__newstitle">${title}</span>
+        </span>
+      </button>`).join('\n      ')}
+    </div>
+    ${tabbar('home')}
+  </div>` });
+
+/* --- B · SOUFFLE — profondeur, verre dépoli, respiration -------- */
+screen('directionB', 'B · Souffle', { full: `
+  <div class="phone dirB">
+    <div class="dirB__aura"><i></i><i></i><i></i></div>
+
+    <div class="dirB__content">
+      <div class="dirB__top">
+        <span style="flex-grow:1">
+          <b class="dirB__hello">Kung-fu Waishi</b>
+          <i class="dirB__place">Analamahitsy · Antananarivo</i>
+        </span>
+        <button class="dirB__bell" data-go="notifications">${svg('bell', 21, '#0F5132')}<span class="dot" style="border-color:#EAF3EE">3</span></button>
+      </div>
+
+      <button class="dirB__hero" data-go="casierDetail">
+        <span class="dirB__pill">Prochaine sortie</span>
+        <span class="dirB__herotitle">Lac<br>Mantasoa</span>
+        <span class="dirB__herometa">Samedi 22 novembre · 6h00</span>
+        <span class="dirB__cta">Voir les détails ${svg('chev', 15, '#0F5132', 2.4)}</span>
+      </button>
+
+      <div class="dirB__glassrow">
+        ${[['64', 'membres'], ['3', 'séances'], ['186', 'photos']].map(([n, l]) => `<div class="dirB__glass">
+          <b>${n}</b><span>${l}</span>
+        </div>`).join('\n        ')}
+      </div>
+
+      <div class="dirB__panel">
+        <div class="rowhead">${overline('Vaovao farany')}<button class="link" data-go="casier">Tout voir</button></div>
+        ${NEWS.slice(0, 3).map(([date, cat, cc, cb, title]) => `<button class="dirB__item" data-go="casierDetail">
+          <span class="dirB__dot"></span>
+          <span style="flex-grow:1;min-width:0;text-align:left">
+            <span class="dirB__itemtitle">${title}</span>
+            <span class="dirB__itemmeta">${cat} · ${date}</span>
+          </span>
+          ${svg('chev', 16, '#8FB3A0', 2)}
+        </button>`).join('\n        ')}
+      </div>
+    </div>
+    ${tabbar('home')}
+  </div>` });
+
+/* --- C · TEMPO — typographie massive, contraste, bandeau vivant - */
+screen('directionC', 'C · Tempo', { full: `
+  <div class="phone dirC">
+    <div class="dirC__ticker"><span>SORTIE 22 NOV · LAC MANTASOA — SÉANCE MERCREDI 17H30 — TOURNOI RÉGIONAL : 8 SÉLECTIONNÉS — SORTIE 22 NOV · LAC MANTASOA — SÉANCE MERCREDI 17H30 — </span></div>
+
+    <div class="dirC__top">
+      <span style="flex-grow:1">
+        <b class="dirC__brand">WAISHI</b>
+        <i class="dirC__sub">Analamahitsy</i>
+      </span>
+      <button class="tapicon" data-go="notifications" style="position:relative">${svg('bell', 22, '#0E2119')}<span class="dot" style="border-color:#FFF">3</span></button>
+    </div>
+
+    <button class="dirC__poster" data-go="casierDetail">
+      <span class="dirC__posterbg">${svg('martial', 200, 'rgba(255,255,255,.10)', 1)}</span>
+      <span class="dirC__kicker">Samedi 22 novembre</span>
+      <span class="dirC__big">LAC<br>MANTASOA</span>
+      <span class="dirC__rule"></span>
+      <span class="dirC__foot">Départ 6h00 · devant la salle ${svg('chev', 16, '#7FD9A8', 2.4)}</span>
+    </button>
+
+    <div class="dirC__figures">
+      ${[['64', 'MEMBRES'], ['3', 'SÉANCES'], ['186', 'PHOTOS']].map(([n, l]) => `<div class="dirC__fig"><b>${n}</b><span>${l}</span></div>`).join('\n      ')}
+    </div>
+
+    <div class="dirC__list">
+      <div class="dirC__listhead"><b>VAOVAO FARANY</b><button class="link" data-go="casier">Tout voir</button></div>
+      ${NEWS.slice(0, 3).map(([date, cat, cc, cb, title], i) => `<button class="dirC__row" data-go="casierDetail">
+        <span class="dirC__idx">0${i + 1}</span>
+        <span style="flex-grow:1;min-width:0;text-align:left">
+          <span class="dirC__rowtitle">${title}</span>
+          <span class="dirC__rowmeta">${cat.toUpperCase()} · ${date.toUpperCase()}</span>
+        </span>
+      </button>`).join('\n      ')}
+    </div>
+    ${tabbar('home')}
+  </div>` });
+
 /* ---------------------------------------------- Écriture */
 const wrap = (def) => def.full
   ? def.full
