@@ -47,9 +47,17 @@ occupe toute la place.
 
 Deux façons de le poser, aucune ne demande un développeur.
 
-**Dans le dépôt** — déposez le fichier dans `img/logo.png`. La maquette le détecte au
-chargement et le place partout : accueil, connexion, page « Le Club », carte de membre. Il
-vaut alors pour tout le monde. Voir `img/LISEZ-MOI.txt`.
+**Dans le dépôt** — déposez le fichier dans `img/`, sous le nom `logo` avec n'importe
+quelle extension : `logo.png`, `logo.jpg`, `logo.webp` ou `logo.svg`. Puis :
+
+```bash
+node build-logo.mjs    # réduit le logo et l'incorpore à la maquette
+node build.js          # réassemble le fichier unique
+```
+
+`build-logo.mjs` ramène l'image à 320 px et l'incorpore dans `js/logo.js`. Sans cette
+étape, le logo s'affiche quand même dans le site, mais **pas** dans le fichier unique
+envoyé par courriel : un chemin vers `img/` n'y résoudrait pas.
 
 **Depuis la maquette** — bouton « Logo du club » dans le menu. Le fichier reste sur votre
 appareil, ce qui est pratique pour essayer avant de trancher.
@@ -112,7 +120,6 @@ l'application, elles, ne coûtent rien de plus. À décider selon le budget.
 
 ## À fournir par le club
 
-- Le **logo** Kung-fu Waishi Analamahitsy
 - Les **photos** des membres, du club et des albums
 - Le **téléphone** et l'**adresse exacte**
 - La liste réelle des **grades** employés par le club
@@ -155,7 +162,8 @@ compte pour un club à Antananarivo, et ce qui évite qu'elle change d'aspect d'
 | `css/app.css` | Couleurs, typographies, composants |
 | `js/app.js` | Navigation entre les écrans de la maquette |
 | `css/fonts.css` | Généré — Archivo et Karla embarquées en base64 |
-| `img/logo.png` | À déposer par le club — détecté automatiquement |
+| `img/logo.*` | Le logo fourni par le club, dans sa taille d'origine |
+| `build-logo.mjs` | Réduit ce logo et l'incorpore dans `js/logo.js` |
 | `build.js` | Assemble un fichier unique dans `dist/`, à envoyer par courriel |
 | `vercel.json` | Configuration d'hébergement, site statique sans étape de build |
 

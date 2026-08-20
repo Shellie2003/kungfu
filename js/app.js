@@ -37,7 +37,10 @@ const MAGASIN = {
 };
 
 let commentaires = MAGASIN.lire('commentaires', {});
-let logo = MAGASIN.lire('logo', null);
+/* Trois sources, dans cet ordre : le logo choisi sur cet appareil,
+   celui livré avec la maquette, puis un fichier posé dans img/. */
+let logo = MAGASIN.lire('logo', null)
+  || (typeof LOGO_INTEGRE !== 'undefined' ? LOGO_INTEGRE : null);
 
 /* Libellé lisible d'une clé de commentaire, pour l'export. */
 function nomFonction(cle) {
@@ -286,15 +289,14 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>`);
   app.el.titre = document.getElementById('topbarTitre');
 
-  /* Deux façons de poser le logo, sans développeur :
-     — déposer le fichier dans `img/logo.png` : il vaut pour tout le
-       monde et part avec le dépôt ;
-     — ou le charger depuis la maquette : il reste sur cet appareil.
-     Le fichier du dépôt gagne, sauf si un logo local a été choisi. */
+  /* Rien d'embarqué ? On cherche un fichier déposé dans img/, quelle
+     que soit son extension — le club envoie ce qu'il a sous la main. */
   if (!logo) {
-    const essai = new Image();
-    essai.onload = () => { logo = 'img/logo.png'; appliquerLogo(); };
-    essai.src = 'img/logo.png';
+    ['png', 'jpg', 'jpeg', 'webp', 'svg'].forEach((ext) => {
+      const essai = new Image();
+      essai.onload = () => { if (!logo) { logo = `img/logo.${ext}`; appliquerLogo(); } };
+      essai.src = `img/logo.${ext}`;
+    });
   }
 
   afficher('fonctionnalites');

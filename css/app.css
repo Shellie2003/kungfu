@@ -568,3 +568,10 @@ body {
 }
 .carte__foot b { color: #FFF; font-size: 12px; }
 .carte__band { height: 6px; }
+
+/* Le logo du club est un disque : on l'affiche en rond et à fond
+   perdu, sinon son cercle flotte dans un carré blanc. */
+.emblem--img { padding: 0; border-radius: 50%; overflow: hidden; background: #FFF; }
+.emblem--img img { width: 100%; height: 100%; object-fit: cover; }
+.index__mark i.emblem--img { padding: 0; border-radius: 50%; }
+.carte__head .emblem--img { box-shadow: 0 0 0 1px rgba(255, 255, 255, .35); }
