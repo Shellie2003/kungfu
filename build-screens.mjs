@@ -30,7 +30,13 @@ const ICON = {
   pin: '<path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>',
   phone: '<path d="M6 3h4l2 5-2.5 1.5a12 12 0 0 0 5 5L16 12l5 2v4a2 2 0 0 1-2.2 2A16 16 0 0 1 4 5.2 2 2 0 0 1 6 3z"/>',
   x: '<path d="M6 6l12 12M18 6 6 18"/>',
-  martial: '<circle cx="12" cy="5" r="2.2"/><path d="M12 7.6v5.2"/><path d="m5.5 10.8 6.5-1.5 6.5 1.5"/><path d="m12 12.8-3.6 7.6"/><path d="m12 12.8 3.6 7.6"/>'
+  martial: '<circle cx="12" cy="5" r="2.2"/><path d="M12 7.6v5.2"/><path d="m5.5 10.8 6.5-1.5 6.5 1.5"/><path d="m12 12.8-3.6 7.6"/><path d="m12 12.8 3.6 7.6"/>',
+  chat: '<path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H8l-4 4V5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5z"/>',
+  send: '<path d="M4.5 12 20 4.5 15 20l-3.5-6z"/><path d="m11.5 14 3.5-5"/>',
+  key: '<circle cx="8" cy="12" r="4"/><path d="M12 12h9"/><path d="M18 12v3.5"/><path d="M15 12v2.5"/>',
+  eyeOff: '<path d="M4 4l16 16"/><path d="M9.5 9.6A3 3 0 0 0 12 15a3 3 0 0 0 2.4-1.2"/><path d="M6.4 6.6C4.3 8 3 10 3 12c0 0 3.5 5.5 9 5.5 1.5 0 2.9-.4 4.1-1"/><path d="M9.8 6.8A9.6 9.6 0 0 1 12 6.5c5.5 0 9 5.5 9 5.5a15 15 0 0 1-2.6 3.1"/>',
+  base: '<ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6"/><path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/>',
+  flag: '<path d="M12 3.5 21 19H3z"/><path d="M12 9.5v4"/><path d="M12 16.3v.2"/>'
 };
 
 const svg = (n, s, c, w = 1.7) =>
@@ -44,12 +50,16 @@ const portrait = (w, h, r = 12) => `<div style="width:${w}px;height:${h}px;borde
   </svg>
 </div>`;
 
+/* Cinq onglets, pas six : au-delà, les libellés se tronquent sur un
+   téléphone. Les messages entrent donc à la place du Club, qui se
+   consulte une ou deux fois par an et reste accessible depuis
+   l'accueil. */
 const TABS = [
   ['home', 'Accueil', 'home', 'accueil'],
   ['students', 'Étudiants', 'users', 'etudiants'],
+  ['chat', 'Messages', 'chat', 'messages'],
   ['news', 'Casier', 'news', 'casier'],
-  ['album', 'Album', 'album', 'album'],
-  ['club', 'Le Club', 'shield', 'club']
+  ['album', 'Album', 'album', 'album']
 ];
 
 const tabbar = (active) => `<nav class="tabbar">
@@ -385,8 +395,8 @@ screen('photo', '09 · Photo en grand', { full: `
   </div>` });
 
 /* --- 10 Le Club --- */
-screen('club', '10 · Le Club', { tab: 'club', body: `
-  ${header('Le Club')}
+screen('club', '10 · Le Club', { tab: 'home', body: `
+  ${header('Le Club', { back: 'accueil' })}
 
   <div style="flex-grow:1;padding:20px 20px 28px;display:flex;flex-direction:column;gap:22px">
     <div style="background:#0F5132;border-radius:18px;padding:24px 20px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center">
@@ -834,6 +844,192 @@ screen('carte', '14 · Carte de membre', { full: `
    Chaque ligne porte un `data-feat` : c'est la clé sous laquelle
    le commentaire est enregistré, puis exporté pour le développeur.
    ============================================================ */
+/* ============================================================
+   Messagerie et espace des maîtres
+   ============================================================ */
+
+const SALONS = [
+  ['club', 'Tout le club', 'RAHARISOA Fanja', 'L’entraînement de mercredi est maintenu.', '14:20', 3, '#0F5132'],
+  ['grade', 'Ceintures vertes', 'ANDRIANJAFY Tokiniaina', 'Qui vient tôt samedi pour la mise en place ?', '11:05', 1, '#4E9C57'],
+  ['compet', 'Tournoi régional', 'RABEMANANJARA Hery', 'Rendez-vous 6h devant la salle.', 'Hier', 0, '#B0530F'],
+  ['direct', 'RASOAMANANA Fanjaniaina', null, 'Merci pour la correction du taolu.', 'Hier', 0, '#3E6E9C'],
+  ['direct2', 'RAKOTOARISOA Lalaina', null, 'D’accord pour dimanche.', 'Lun.', 0, '#6E5AA6']
+];
+
+const salonAvatar = (nom, couleur, direct) => direct
+  ? portrait(44, 44, 22)
+  : `<span style="width:44px;height:44px;border-radius:14px;flex:none;background:${couleur}1A;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:15px;color:${couleur}">${nom.slice(0, 2).toUpperCase()}</span>`;
+
+screen('messages', '16 · Messages', { tab: 'chat', body: `
+  ${header('Messages', { action: `<button class="tapicon" data-go="maitresVerrou" aria-label="Espace des maîtres">${svg('key', 21, '#0E2119')}</button>` })}
+
+  <div style="padding:14px 20px 0">
+    <div class="searchbar">
+      ${svg('search', 19, '#7C8B82')}
+      <span style="color:#7C8B82;font-size:15px">Rechercher une conversation</span>
+    </div>
+  </div>
+
+  <div style="flex-grow:1;padding:16px 20px 24px;display:flex;flex-direction:column;gap:18px">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${overline('Salons du club')}
+      <div class="list">
+        ${SALONS.slice(0, 3).map(([id, nom, auteur, texte, heure, nonlus, couleur]) =>
+          `<button class="listrow" data-go="salon">
+          ${salonAvatar(nom, couleur, false)}
+          <span style="flex-grow:1;min-width:0;text-align:left">
+            <span class="convrow__haut">
+              <b class="convrow__nom">${nom}</b>
+              <i class="convrow__heure">${heure}</i>
+            </span>
+            <span class="convrow__txt">${auteur ? `<b>${auteur.split(' ')[1]} :</b> ` : ''}${texte}</span>
+          </span>
+          ${nonlus ? `<span class="pastille">${nonlus}</span>` : ''}
+        </button>`).join('\n        ')}
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${overline('Conversations')}
+      <div class="list">
+        ${SALONS.slice(3).map(([id, nom, auteur, texte, heure, nonlus, couleur]) =>
+          `<button class="listrow" data-go="salon">
+          ${salonAvatar(nom, couleur, true)}
+          <span style="flex-grow:1;min-width:0;text-align:left">
+            <span class="convrow__haut">
+              <b class="convrow__nom">${nom}</b>
+              <i class="convrow__heure">${heure}</i>
+            </span>
+            <span class="convrow__txt">${texte}</span>
+          </span>
+        </button>`).join('\n        ')}
+      </div>
+    </div>
+
+    <div class="card" style="display:flex;gap:12px;align-items:flex-start;background:#FFF7F2;border-color:#F2D8C6">
+      ${svg('flag', 20, '#B0530F')}
+      <div>
+        <p style="font-size:13px;font-weight:700;line-height:18px">Signaler un message</p>
+        <p style="font-size:12.5px;line-height:18px;color:#59685F;margin-top:4px">Un appui long sur un message le signale à l’administration. Le club compte des mineurs : la modération n’est pas une option.</p>
+      </div>
+    </div>
+  </div>` });
+
+/* --- 17 Une conversation --- */
+const MESSAGES = [
+  ['recu', 'RAHARISOA Fanja', 'Ceinture jaune', 'Bonsoir à tous. L’entraînement de mercredi est maintenu malgré les travaux.', '14:20'],
+  ['recu', 'RAHARISOA Fanja', 'Ceinture jaune', 'Rendez-vous à 17h30 comme d’habitude.', '14:20'],
+  ['envoye', null, null, 'Merci pour l’information.', '14:34'],
+  ['recu', 'ANDRIANJAFY Tokiniaina', 'Ceinture bleue', 'Est-ce qu’on travaille encore le taolu de la semaine dernière ?', '15:02'],
+  ['envoye', null, null, 'Oui, et on ajoute le passage en cercle.', '15:11']
+];
+
+screen('salon', '17 · Une conversation', { tab: 'chat', body: `
+  <div class="apphead">
+    <button class="tapicon" data-go="messages" aria-label="Retour">${svg('back', 22, '#0E2119', 2)}</button>
+    <span style="width:36px;height:36px;border-radius:12px;flex:none;background:#0F51321A;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:13px;color:#0F5132">TC</span>
+    <span style="flex-grow:1;min-width:0;margin-left:10px">
+      <b style="display:block;font-family:var(--display);font-size:16px;font-weight:600;line-height:19px">Tout le club</b>
+      <i style="display:block;font-size:11.5px;color:#59685F;font-style:normal;margin-top:1px">64 membres</i>
+    </span>
+  </div>
+
+  <div class="fil">
+    <p class="fil__jour">Aujourd’hui</p>
+    ${MESSAGES.map(([sens, auteur, gr, texte, heure]) => sens === 'recu'
+      ? `<div class="bul bul--recu">
+      <b class="bul__auteur">${auteur}</b>
+      <p class="bul__txt">${texte}</p>
+      <i class="bul__h">${heure}</i>
+    </div>`
+      : `<div class="bul bul--envoye">
+      <p class="bul__txt">${texte}</p>
+      <i class="bul__h">${heure} · lu</i>
+    </div>`).join('\n    ')}
+  </div>
+
+  <div class="saisie">
+    <span class="saisie__champ">Écrire un message…</span>
+    <button class="saisie__env" aria-label="Envoyer">${svg('send', 20, '#FFF', 1.8)}</button>
+  </div>` });
+
+/* --- 18 Espace des maîtres, verrouillé --- */
+screen('maitresVerrou', '18 · Espace des maîtres — verrouillé', { tab: 'chat', body: `
+  ${header('Espace des maîtres', { back: 'messages' })}
+
+  <div style="flex-grow:1;padding:34px 24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center">
+    <div style="width:74px;height:74px;border-radius:24px;background:#0F5132;display:grid;place-items:center">
+      ${svg('lock', 32, '#FFF', 1.8)}
+    </div>
+    <div>
+      <p class="display" style="font-size:20px;line-height:26px">Réservé aux maîtres</p>
+      <p style="font-size:14px;line-height:21px;color:#59685F;margin-top:10px;max-width:290px">Votre compte n’a pas ce rôle. Cet espace n’apparaît pas dans la liste des salons et son contenu n’est pas transmis à votre téléphone.</p>
+    </div>
+    <div class="card" style="width:100%;text-align:left;display:flex;flex-direction:column;gap:12px">
+      ${[
+        ['Le rôle est posé sur le serveur', 'Pas dans l’application : la modifier ne donne rien.'],
+        ['Le filtre est en base', 'Une requête d’un élève sur ces messages revient vide.'],
+        ['Seule l’administration accorde le rôle', 'Et peut le retirer à tout moment.']
+      ].map(([t, d]) => `<div style="display:flex;gap:11px;align-items:flex-start">
+        ${svg('shieldCheck', 19, '#12613C')}
+        <div><p style="font-size:13.5px;font-weight:600;line-height:18px">${t}</p>
+        <p style="font-size:12.5px;color:#59685F;line-height:17px;margin-top:2px">${d}</p></div>
+      </div>`).join('\n      ')}
+    </div>
+    <button class="link" data-go="maitres">Voir l’écran tel que le voit un maître →</button>
+  </div>` });
+
+/* --- 19 Espace des maîtres, ouvert --- */
+screen('maitres', '19 · Espace des maîtres', { tab: 'chat', body: `
+  <div class="apphead apphead--sombre">
+    <button class="tapicon" data-go="maitresVerrou" aria-label="Retour">${svg('back', 22, '#FFF', 2)}</button>
+    <span style="flex-grow:1;min-width:0;margin-left:4px">
+      <b style="display:block;font-family:var(--display);font-size:16px;font-weight:600;line-height:19px;color:#FFF">Espace des maîtres</b>
+      <i style="display:block;font-size:11.5px;color:#9CC4AF;font-style:normal;margin-top:1px">4 personnes · confidentiel</i>
+    </span>
+    ${svg('lock', 20, '#9CC4AF')}
+  </div>
+
+  <div style="flex-grow:1;display:flex;flex-direction:column;gap:20px;padding:18px 20px 24px">
+    <div class="card" style="display:flex;gap:12px;align-items:flex-start;background:#E8F1EC;border-color:#C4D9CC">
+      ${svg('eyeOff', 20, '#0F5132')}
+      <p style="font-size:12.5px;line-height:18px;color:#12613C">Rien de ce qui est écrit ici n’apparaît dans les salons des élèves. Les captures d’écran, en revanche, restent possibles : la confidentialité tient aussi aux personnes.</p>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${overline('Fil des maîtres')}
+      <div class="fil fil--incruste">
+        <div class="bul bul--recu">
+          <b class="bul__auteur">RABEMANANJARA Hery</b>
+          <p class="bul__txt">Passage de grade de décembre : je propose de reporter deux candidats, ils ne sont pas prêts sur les déplacements.</p>
+          <i class="bul__h">09:12</i>
+        </div>
+        <div class="bul bul--envoye">
+          <p class="bul__txt">D’accord. On en parle vendredi avant la séance.</p>
+          <i class="bul__h">09:40 · lu</i>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${overline('Ce que l’espace contient')}
+      <div class="list">
+        ${[
+          ['Délibérations de passage de grade', 'Avant l’annonce publique'],
+          ['Situations individuelles', 'Blessure, absence prolongée, difficulté familiale'],
+          ['Signalements des élèves', 'Messages remontés par la modération'],
+          ['Notes d’encadrement', 'Répartition des groupes, remplacements']
+        ].map(([t, d]) => `<div class="listrow">
+          <span style="flex-grow:1;min-width:0">
+            <b style="display:block;font-size:14px;font-weight:600;line-height:19px">${t}</b>
+            <span style="display:block;font-size:12.5px;color:#59685F;line-height:17px;margin-top:2px">${d}</span>
+          </span>
+          ${svg('lock', 17, '#7C8B82')}
+        </div>`).join('\n        ')}
+      </div>
+    </div>
+  </div>` });
+
 const FEATURES = [
   ['Accueil', [
     ['acc-logo', 'Logo et nom du club', 'En haut de l’accueil et sur la carte de membre', 'accueil'],
@@ -863,6 +1059,23 @@ const FEATURES = [
     ['alb-cat', 'Catégories d’album', 'Entraînements, compétitions, sorties, cérémonies', 'album'],
     ['alb-grille', 'Grille de photos', 'Aperçu en vignettes', 'album'],
     ['alb-grand', 'Photo en grand', 'Plein écran avec légende', 'photo']
+  ]],
+  ['Messages', [
+    ['msg-club', 'Salon de tout le club', 'Une annonce lue par les 64 membres', 'messages'],
+    ['msg-grade', 'Salons par grade', 'Un fil par groupe de niveau', 'messages'],
+    ['msg-evenement', 'Salon par événement', 'Ouvert pour un tournoi, une sortie, puis archivé', 'messages'],
+    ['msg-direct', 'Conversation à deux', 'Entre deux membres du club', 'salon'],
+    ['msg-ecrire', 'Écrire et recevoir en direct', 'Le message arrive sans rafraîchir', 'salon'],
+    ['msg-signaler', 'Signaler un message', 'Remonté à l’administration — le club compte des mineurs', 'messages'],
+    ['msg-qui', 'Qui peut écrire à qui', 'À décider : élève vers élève, ou seulement vers un maître', 'messages']
+  ]],
+  ['Espace des maîtres', [
+    ['mt-espace', 'Espace réservé aux maîtres', 'Invisible pour les élèves, filtré côté serveur', 'maitres'],
+    ['mt-grades', 'Délibérations de passage de grade', 'Avant l’annonce publique', 'maitres'],
+    ['mt-situations', 'Situations individuelles', 'Blessure, absence, difficulté familiale', 'maitres'],
+    ['mt-signalements', 'Signalements reçus', 'Ce que la modération remonte', 'maitres'],
+    ['mt-role', 'Attribution du rôle de maître', 'Par l’administration seule', 'admin'],
+    ['mt-securite', 'Comment la confidentialité est tenue', 'Rôles, filtre en base, journal des accès', 'securite']
   ]],
   ['Le club', [
     ['clb-presentation', 'Présentation du club', 'Histoire et origine', 'club'],
@@ -907,6 +1120,108 @@ screen('fonctionnalites', '00 · Fonctionnalités', { full: `
         </div>
       </div>`).join('\n      ')}
     </div>
+  </div>` });
+
+
+/* ============================================================
+   Sécurité et confidentialité — la note technique
+   Elle répond à une question du client : comment tenir la
+   confidentialité de l'espace des maîtres avec Supabase.
+   ============================================================ */
+
+const TABLES = [
+  ['profils', 'Une ligne par membre : nom, prénom, grade, rôle', 'rôle : élève · maître · admin'],
+  ['salons', 'Un fil de discussion : club, grade, événement, direct, maîtres', 'type et titre'],
+  ['membres_salon', 'Qui a le droit d’être dans quel salon', 'la table qui décide de tout'],
+  ['messages', 'Le texte, son auteur, son salon, sa date', 'jamais lue sans passer par membres_salon'],
+  ['signalements', 'Un message remonté à l’administration', 'motif, auteur du signalement, suite donnée'],
+  ['journal_acces', 'Qui a ouvert l’espace des maîtres, et quand', 'écrit par le serveur, non modifiable']
+];
+
+const REGLES = [
+  ['Lire un message', 'Autorisé si — et seulement si — je suis inscrit dans le salon.',
+    'Un élève qui interroge directement la base sur les messages des maîtres reçoit une liste vide. Pas une erreur : rien.'],
+  ['Entrer dans un salon', 'L’inscription est écrite par l’administration, jamais par l’application.',
+    'Se déclarer maître depuis son téléphone ne produit rien : le rôle vit sur le serveur.'],
+  ['Écrire un message', 'Autorisé dans mes salons, et l’auteur est forcé à mon identité.',
+    'On ne peut pas écrire sous le nom d’un autre, même en trafiquant la requête.'],
+  ['Modifier un message', 'L’auteur seul, et pendant quinze minutes.',
+    'Passé ce délai, le fil devient une trace stable — utile en cas de litige.'],
+  ['Supprimer', 'L’auteur ou l’administration. Le message reste marqué supprimé.',
+    'Effacer une ligne ferait disparaître la preuve d’un signalement.']
+];
+
+screen('securite', '20 · Sécurité et confidentialité', { wide: true, full: `
+  <div class="sheet">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${overline('Note technique — messagerie et espace des maîtres')}
+      <h1 class="display" style="font-size:30px;line-height:36px">Où se joue vraiment la confidentialité</h1>
+      <p style="font-size:15px;line-height:24px;color:#59685F;max-width:620px">Le compte du club héberge les données — c’est la bonne décision, mais pour une autre raison que la sécurité : elle garantit que le club <b>reste propriétaire</b> de ses messages et de ses photos, quel que soit le prestataire. La confidentialité, elle, ne vient pas du compte : elle vient des <b>règles écrites dans la base</b>.</p>
+    </div>
+
+    <div class="sec__avert">
+      ${svg('eyeOff', 22, '#8A3A12')}
+      <div>
+        <p style="font-size:14px;font-weight:700;line-height:20px;color:#8A3A12">La clé publique de l’application est publique — c’est son nom</p>
+        <p style="font-size:13.5px;line-height:21px;color:#7A4322;margin-top:5px">Elle est embarquée dans chaque téléphone et se lit en quelques minutes. Tout ce qui protège l’espace des maîtres tient donc aux règles posées sur les tables. Sans elles, n’importe quel élève lirait les délibérations de passage de grade. Avec elles, la requête revient vide.</p>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      ${overline('Les six tables')}
+      <div class="sec__tables">
+        ${TABLES.map(([n, r, d]) => `<div class="sec__table">
+          <span class="sec__ic">${svg('base', 18, '#12613C')}</span>
+          <b>${n}</b>
+          <span>${r}</span>
+          <i>${d}</i>
+        </div>`).join('\n        ')}
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      ${overline('Les règles d’accès')}
+      <p style="font-size:14px;line-height:22px;color:#59685F;max-width:620px">Elles sont posées une fois sur la base, et s’appliquent à toute requête, d’où qu’elle vienne — application, navigateur, outil de développement.</p>
+      <div class="sec__regles">
+        ${REGLES.map(([q, r, c]) => `<div class="sec__regle">
+          <b>${q}</b>
+          <p class="sec__r">${r}</p>
+          <p class="sec__c">${c}</p>
+        </div>`).join('\n        ')}
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      ${overline('Les trois rôles')}
+      <div class="sec__roles">
+        ${[
+          ['Élève', '#12613C', 'Lit et écrit dans ses salons. Voit la liste des membres, les actualités, l’album.', '64 personnes'],
+          ['Maître', '#B0530F', 'Tout ce que fait un élève, plus l’espace des maîtres et les signalements.', '4 personnes'],
+          ['Administration', '#0E2119', 'Crée les comptes, accorde les rôles, publie, modère. Ne lit pas l’espace des maîtres sans y être inscrite.', '1 ou 2 personnes']
+        ].map(([n, c, d, q]) => `<div class="sec__role">
+          <span class="sec__pastille" style="background:${c}"></span>
+          <b>${n}</b><i>${q}</i>
+          <p>${d}</p>
+        </div>`).join('\n        ')}
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      ${overline('Ce qui reste à décider')}
+      <div class="sec__dec">
+        ${[
+          ['Connexion par numéro de membre', 'Le service d’authentification travaille par courriel ou par téléphone, pas par numéro de membre. Trois voies : un courriel réel par membre, un courriel construit à partir du numéro, ou un code par SMS — qui se paie à l’envoi, à Madagascar comme ailleurs.'],
+          ['Les mineurs et la messagerie', 'Un fil entre mineurs sans adulte est une responsabilité pour le club. Une piste : les conversations à deux ouvertes seulement vers un maître, les salons de groupe toujours visibles par un maître.'],
+          ['Le coût', 'L’offre gratuite suffit à 64 membres, mais un projet inactif sept jours est mis en pause et doit être relancé à la main. L’offre payante, environ 25 dollars par mois, supprime cette pause. À trancher avec le club.'],
+          ['La conservation', 'Combien de temps garde-t-on les messages ? Un an ? Sans réponse, ils s’accumulent indéfiniment, et l’espace payant arrive plus vite.']
+        ].map(([t, d]) => `<div class="sec__q">
+          <b>${t}</b>
+          <p>${d}</p>
+        </div>`).join('\n        ')}
+      </div>
+    </div>
+
+    <p style="font-size:13px;line-height:21px;color:#7C8B82;border-top:1px solid #E4EDE8;padding-top:20px">Rien de tout cela n’est développé : cette note décrit ce qui sera construit une fois la maquette validée. Elle est ici pour que la décision se prenne en connaissance de cause, pas après coup.</p>
   </div>` });
 
 

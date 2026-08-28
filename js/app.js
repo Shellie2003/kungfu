@@ -12,11 +12,13 @@ const GROUPES = [
   ['À relire', ['fonctionnalites']],
   ['Entrée', ['connexion', 'accueil']],
   ['Étudiants', ['etudiants', 'profilVerrouille', 'profilOuvert', 'carte']],
+  ['Messages', ['messages', 'salon', 'maitresVerrou', 'maitres']],
   ['Casier', ['casier', 'casierDetail', 'notifications']],
   ['Album', ['album', 'photo']],
   ['Le club', ['club']],
   ['Administration', ['admin']],
   ['Impression', ['impression']],
+  ['Note technique', ['securite']],
   ['Directions à choisir', ['directionA', 'directionB', 'directionC']],
   ['Référence', ['charte']]
 ];

@@ -63,6 +63,10 @@
 html, body { margin: 0; padding: 0; height: 100%; }
 p, h1, h2, h3 { margin: 0; }
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+/* Une icône dont la taille est écrite dans la balise ne doit jamais
+   être rétrécie par la flexbox qui la contient : sans cette règle,
+   elle s'écrase à quelques pixels dès que le texte voisin est long. */
+svg[width] { flex: none; }
 
 body {
   font-family: var(--texte);
@@ -140,7 +144,10 @@ body {
 .card { background: #FFF; border: 1px solid var(--filet); border-radius: 16px; padding: 18px; text-align: left; }
 .hr { height: 1px; background: #EDF3F0; }
 .list { background: #FFF; border: 1px solid var(--filet); border-radius: 16px; overflow: hidden; }
-.listrow { display: flex; align-items: center; gap: 13px; padding: 14px 16px; }
+/* width:100% parce qu'une ligne peut être un <button> : un bouton se
+   dimensionne sur son contenu, même en display:flex, et débordait de
+   la liste au lieu de couper le texte. */
+.listrow { display: flex; align-items: center; gap: 13px; padding: 14px 16px; width: 100%; }
 .listrow + .listrow { border-top: 1px solid #EDF3F0; }
 
 .rowhead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
@@ -616,6 +623,96 @@ body {
 .carte__head .emblem--img { box-shadow: 0 0 0 1px rgba(255, 255, 255, .35); }
 
 /* ============================================================
+   MESSAGERIE
+   ============================================================ */
+.convrow__haut { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+/* min-width:0 sur chaque maillon : sans lui, un élément de flexbox
+   refuse de rétrécir sous son contenu et le nom pousse la ligne
+   hors du téléphone au lieu de se couper. */
+.convrow__nom { min-width: 0; font-size: 14.5px; font-weight: 600; line-height: 19px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.convrow__heure { font-size: 11.5px; color: var(--gris-clair); font-style: normal; flex: none; }
+.convrow__txt {
+  display: block; font-size: 13px; line-height: 18px; color: var(--gris); margin-top: 2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.convrow__txt b { color: var(--encre); font-weight: 600; }
+.pastille {
+  min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; flex: none;
+  background: var(--vert); color: #FFF; font-size: 11px; font-weight: 700;
+  display: grid; place-items: center;
+}
+
+/* Le fil : fond légèrement teinté, pour détacher les bulles blanches. */
+.fil {
+  flex-grow: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+  padding: 18px 16px 22px; background: var(--fond);
+}
+.fil--incruste { flex-grow: 0; border: 1px solid var(--filet); border-radius: 16px; padding: 14px; }
+.fil__jour {
+  align-self: center; font-size: 11px; font-weight: 600; color: var(--gris);
+  background: #FFF; border: 1px solid var(--filet); border-radius: 10px; padding: 4px 12px; margin-bottom: 4px;
+}
+.bul { max-width: 78%; border-radius: 16px; padding: 9px 13px 7px; }
+.bul--recu { background: #FFF; border: 1px solid var(--filet); border-bottom-left-radius: 5px; }
+/* Le message envoyé est vert plein : le blanc dessus mesure 9,4:1. */
+.bul--envoye { align-self: flex-end; background: var(--vert); color: #FFF; border-bottom-right-radius: 5px; }
+.bul__auteur { display: block; font-size: 12px; font-weight: 700; color: var(--vert-texte); margin-bottom: 3px; }
+.bul__txt { font-size: 14px; line-height: 20px; }
+.bul__h { display: block; font-size: 10.5px; font-style: normal; margin-top: 4px; text-align: right; color: var(--gris-clair); }
+/* #B9D4C6 sur le vert : 5,4:1 — l'heure reste lisible. */
+.bul--envoye .bul__h { color: #B9D4C6; }
+
+.saisie {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px 16px;
+  background: #FFF; border-top: 1px solid var(--filet);
+}
+.saisie__champ {
+  flex-grow: 1; min-height: 44px; display: flex; align-items: center;
+  padding: 0 16px; border-radius: 22px; background: var(--fond);
+  border: 1px solid var(--bord); font-size: 15px; color: #8A978F;
+}
+.saisie__env { width: 44px; height: 44px; border-radius: 50%; background: var(--vert); display: grid; place-items: center; flex: none; }
+
+/* En-tête de l'espace des maîtres : sombre, pour qu'on sache d'un
+   coup d'œil qu'on n'est plus dans les salons ordinaires. */
+.apphead--sombre { background: #0B2B1D; border-bottom-color: #0B2B1D; }
+
+/* ============================================================
+   NOTE TECHNIQUE — sécurité
+   ============================================================ */
+.sec__avert {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: #FDF3EC; border: 1px solid #F0D6C2; border-radius: 16px; padding: 18px 20px;
+}
+.sec__tables { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.sec__table {
+  border: 1px solid var(--filet); border-radius: 14px; padding: 16px;
+  display: grid; grid-template-columns: 26px 1fr; column-gap: 10px; row-gap: 4px; align-items: start;
+}
+.sec__ic { grid-row: 1 / 3; }
+.sec__table b { font-family: var(--display); font-size: 14.5px; }
+.sec__table span { font-size: 13px; line-height: 19px; color: var(--gris); }
+.sec__table i { grid-column: 2; font-size: 11.5px; font-style: normal; color: var(--vert-texte); font-weight: 600; margin-top: 3px; }
+
+.sec__regles { display: flex; flex-direction: column; gap: 1px; background: var(--filet); border: 1px solid var(--filet); border-radius: 14px; overflow: hidden; }
+.sec__regle { background: #FFF; padding: 16px 18px; }
+.sec__regle b { font-family: var(--display); font-size: 14.5px; }
+.sec__r { font-size: 13.5px; line-height: 20px; margin-top: 4px; }
+.sec__c { font-size: 12.5px; line-height: 19px; color: var(--gris); margin-top: 5px; padding-left: 12px; border-left: 2px solid var(--vert-clair); }
+
+.sec__roles { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.sec__role { border: 1px solid var(--filet); border-radius: 14px; padding: 16px; }
+.sec__pastille { display: block; width: 26px; height: 5px; border-radius: 3px; margin-bottom: 10px; }
+.sec__role b { font-family: var(--display); font-size: 15px; }
+.sec__role i { font-size: 11.5px; font-style: normal; color: var(--gris); margin-left: 8px; }
+.sec__role p { font-size: 13px; line-height: 19px; color: var(--gris); margin-top: 6px; }
+
+.sec__dec { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.sec__q { background: var(--fond); border-radius: 14px; padding: 16px 18px; }
+.sec__q b { font-family: var(--display); font-size: 14.5px; }
+.sec__q p { font-size: 13px; line-height: 20px; color: var(--gris); margin-top: 5px; }
+
+/* ============================================================
    PLANCHE D'IMPRESSION A4
    Tout est en millimètres : une carte imprimée se mesure en
    millimètres, pas en pixels. Le navigateur convertit lui-même
@@ -862,6 +959,10 @@ const SCREENS = {
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Étudiants</span>
     </button>
+    <button class="tabbar__item" data-go="messages">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H8l-4 4V5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5z"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Messages</span>
+    </button>
     <button class="tabbar__item" data-go="casier">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Casier</span>
@@ -869,10 +970,6 @@ const SCREENS = {
     <button class="tabbar__item" data-go="album">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Album</span>
-    </button>
-    <button class="tabbar__item" data-go="club">
-      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/></svg>
-      <span style="font-size:10px;color:#7C8B82">Le Club</span>
     </button>
   </nav>
 </div>`
@@ -983,6 +1080,10 @@ const SCREENS = {
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/></svg>
       <span style="font-size:10px;font-weight:700;color:#0F5132">Étudiants</span>
     </button>
+    <button class="tabbar__item" data-go="messages">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H8l-4 4V5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5z"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Messages</span>
+    </button>
     <button class="tabbar__item" data-go="casier">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Casier</span>
@@ -990,10 +1091,6 @@ const SCREENS = {
     <button class="tabbar__item" data-go="album">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Album</span>
-    </button>
-    <button class="tabbar__item" data-go="club">
-      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/></svg>
-      <span style="font-size:10px;color:#7C8B82">Le Club</span>
     </button>
   </nav>
 </div>`
@@ -1049,6 +1146,10 @@ const SCREENS = {
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/></svg>
       <span style="font-size:10px;font-weight:700;color:#0F5132">Étudiants</span>
     </button>
+    <button class="tabbar__item" data-go="messages">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H8l-4 4V5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5z"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Messages</span>
+    </button>
     <button class="tabbar__item" data-go="casier">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Casier</span>
@@ -1056,10 +1157,6 @@ const SCREENS = {
     <button class="tabbar__item" data-go="album">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Album</span>
-    </button>
-    <button class="tabbar__item" data-go="club">
-      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/></svg>
-      <span style="font-size:10px;color:#7C8B82">Le Club</span>
     </button>
   </nav>
 </div>`
@@ -1138,6 +1235,10 @@ const SCREENS = {
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/></svg>
       <span style="font-size:10px;font-weight:700;color:#0F5132">Étudiants</span>
     </button>
+    <button class="tabbar__item" data-go="messages">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H8l-4 4V5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5z"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Messages</span>
+    </button>
     <button class="tabbar__item" data-go="casier">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Casier</span>
@@ -1145,10 +1246,6 @@ const SCREENS = {
     <button class="tabbar__item" data-go="album">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Album</span>
-    </button>
-    <button class="tabbar__item" data-go="club">
-      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/></svg>
-      <span style="font-size:10px;color:#7C8B82">Le Club</span>
     </button>
   </nav>
 </div>`
@@ -1221,6 +1318,10 @@ const SCREENS = {
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Étudiants</span>
     </button>
+    <button class="tabbar__item" data-go="messages">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H8l-4 4V5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5z"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Messages</span>
+    </button>
     <button class="tabbar__item" data-go="casier" aria-current="page">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/></svg>
       <span style="font-size:10px;font-weight:700;color:#0F5132">Casier</span>
@@ -1228,10 +1329,6 @@ const SCREENS = {
     <button class="tabbar__item" data-go="album">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Album</span>
-    </button>
-    <button class="tabbar__item" data-go="club">
-      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/></svg>
-      <span style="font-size:10px;color:#7C8B82">Le Club</span>
     </button>
   </nav>
 </div>`
@@ -1285,6 +1382,10 @@ const SCREENS = {
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Étudiants</span>
     </button>
+    <button class="tabbar__item" data-go="messages">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H8l-4 4V5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5z"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Messages</span>
+    </button>
     <button class="tabbar__item" data-go="casier" aria-current="page">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/></svg>
       <span style="font-size:10px;font-weight:700;color:#0F5132">Casier</span>
@@ -1292,10 +1393,6 @@ const SCREENS = {
     <button class="tabbar__item" data-go="album">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Album</span>
-    </button>
-    <button class="tabbar__item" data-go="club">
-      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/></svg>
-      <span style="font-size:10px;color:#7C8B82">Le Club</span>
     </button>
   </nav>
 </div>`
@@ -1334,6 +1431,10 @@ const SCREENS = {
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Étudiants</span>
     </button>
+    <button class="tabbar__item" data-go="messages">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H8l-4 4V5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5z"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Messages</span>
+    </button>
     <button class="tabbar__item" data-go="casier">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Casier</span>
@@ -1341,10 +1442,6 @@ const SCREENS = {
     <button class="tabbar__item" data-go="album" aria-current="page">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg>
       <span style="font-size:10px;font-weight:700;color:#0F5132">Album</span>
-    </button>
-    <button class="tabbar__item" data-go="club">
-      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/></svg>
-      <span style="font-size:10px;color:#7C8B82">Le Club</span>
     </button>
   </nav>
 </div>`
@@ -1375,7 +1472,7 @@ const SCREENS = {
     html: `<div class="phone">
   
   <div class="apphead">
-    <span style="width:12px"></span>
+    <button class="tapicon" data-go="accueil" aria-label="Retour"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0E2119" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5 8 12l7 7"/></svg></button>
     <h1 class="apphead__title">Le Club</h1>
     
   </div>
@@ -1441,13 +1538,17 @@ const SCREENS = {
     </div>
   </div>
   <nav class="tabbar">
-    <button class="tabbar__item" data-go="accueil">
-      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z"/></svg>
-      <span style="font-size:10px;color:#7C8B82">Accueil</span>
+    <button class="tabbar__item" data-go="accueil" aria-current="page">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z"/></svg>
+      <span style="font-size:10px;font-weight:700;color:#0F5132">Accueil</span>
     </button>
     <button class="tabbar__item" data-go="etudiants">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Étudiants</span>
+    </button>
+    <button class="tabbar__item" data-go="messages">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H8l-4 4V5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5z"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Messages</span>
     </button>
     <button class="tabbar__item" data-go="casier">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/></svg>
@@ -1456,10 +1557,6 @@ const SCREENS = {
     <button class="tabbar__item" data-go="album">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Album</span>
-    </button>
-    <button class="tabbar__item" data-go="club" aria-current="page">
-      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/></svg>
-      <span style="font-size:10px;font-weight:700;color:#0F5132">Le Club</span>
     </button>
   </nav>
 </div>`
@@ -1524,6 +1621,10 @@ const SCREENS = {
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Étudiants</span>
     </button>
+    <button class="tabbar__item" data-go="messages">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H8l-4 4V5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5z"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Messages</span>
+    </button>
     <button class="tabbar__item" data-go="casier">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Casier</span>
@@ -1531,10 +1632,6 @@ const SCREENS = {
     <button class="tabbar__item" data-go="album">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Album</span>
-    </button>
-    <button class="tabbar__item" data-go="club">
-      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/></svg>
-      <span style="font-size:10px;color:#7C8B82">Le Club</span>
     </button>
   </nav>
 </div>`
@@ -1805,6 +1902,10 @@ const SCREENS = {
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Étudiants</span>
     </button>
+    <button class="tabbar__item" data-go="messages">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H8l-4 4V5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5z"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Messages</span>
+    </button>
     <button class="tabbar__item" data-go="casier">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Casier</span>
@@ -1812,10 +1913,6 @@ const SCREENS = {
     <button class="tabbar__item" data-go="album">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Album</span>
-    </button>
-    <button class="tabbar__item" data-go="club">
-      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/></svg>
-      <span style="font-size:10px;color:#7C8B82">Le Club</span>
     </button>
   </nav>
   </div>`
@@ -1891,6 +1988,10 @@ const SCREENS = {
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Étudiants</span>
     </button>
+    <button class="tabbar__item" data-go="messages">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H8l-4 4V5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5z"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Messages</span>
+    </button>
     <button class="tabbar__item" data-go="casier">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Casier</span>
@@ -1898,10 +1999,6 @@ const SCREENS = {
     <button class="tabbar__item" data-go="album">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Album</span>
-    </button>
-    <button class="tabbar__item" data-go="club">
-      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/></svg>
-      <span style="font-size:10px;color:#7C8B82">Le Club</span>
     </button>
   </nav>
   </div>`
@@ -1967,6 +2064,10 @@ const SCREENS = {
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Étudiants</span>
     </button>
+    <button class="tabbar__item" data-go="messages">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H8l-4 4V5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5z"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Messages</span>
+    </button>
     <button class="tabbar__item" data-go="casier">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Casier</span>
@@ -1974,10 +2075,6 @@ const SCREENS = {
     <button class="tabbar__item" data-go="album">
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg>
       <span style="font-size:10px;color:#7C8B82">Album</span>
-    </button>
-    <button class="tabbar__item" data-go="club">
-      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/></svg>
-      <span style="font-size:10px;color:#7C8B82">Le Club</span>
     </button>
   </nav>
   </div>`
@@ -2059,6 +2156,350 @@ const SCREENS = {
       </div>
     </div>
   </div>`
+  },
+  messages: {
+    label: "16 · Messages",
+    html: `<div class="phone">
+  
+  <div class="apphead">
+    <span style="width:12px"></span>
+    <h1 class="apphead__title">Messages</h1>
+    <button class="tapicon" data-go="maitresVerrou" aria-label="Espace des maîtres"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#0E2119" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="12" r="4"/><path d="M12 12h9"/><path d="M18 12v3.5"/><path d="M15 12v2.5"/></svg></button>
+  </div>
+
+  <div style="padding:14px 20px 0">
+    <div class="searchbar">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <span style="color:#7C8B82;font-size:15px">Rechercher une conversation</span>
+    </div>
+  </div>
+
+  <div style="flex-grow:1;padding:16px 20px 24px;display:flex;flex-direction:column;gap:18px">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <h2 class="overline">Salons du club</h2>
+      <div class="list">
+        <button class="listrow" data-go="salon">
+          <span style="width:44px;height:44px;border-radius:14px;flex:none;background:#0F51321A;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:15px;color:#0F5132">TO</span>
+          <span style="flex-grow:1;min-width:0;text-align:left">
+            <span class="convrow__haut">
+              <b class="convrow__nom">Tout le club</b>
+              <i class="convrow__heure">14:20</i>
+            </span>
+            <span class="convrow__txt"><b>Fanja :</b> L’entraînement de mercredi est maintenu.</span>
+          </span>
+          <span class="pastille">3</span>
+        </button>
+        <button class="listrow" data-go="salon">
+          <span style="width:44px;height:44px;border-radius:14px;flex:none;background:#4E9C571A;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:15px;color:#4E9C57">CE</span>
+          <span style="flex-grow:1;min-width:0;text-align:left">
+            <span class="convrow__haut">
+              <b class="convrow__nom">Ceintures vertes</b>
+              <i class="convrow__heure">11:05</i>
+            </span>
+            <span class="convrow__txt"><b>Tokiniaina :</b> Qui vient tôt samedi pour la mise en place ?</span>
+          </span>
+          <span class="pastille">1</span>
+        </button>
+        <button class="listrow" data-go="salon">
+          <span style="width:44px;height:44px;border-radius:14px;flex:none;background:#B0530F1A;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:15px;color:#B0530F">TO</span>
+          <span style="flex-grow:1;min-width:0;text-align:left">
+            <span class="convrow__haut">
+              <b class="convrow__nom">Tournoi régional</b>
+              <i class="convrow__heure">Hier</i>
+            </span>
+            <span class="convrow__txt"><b>Hery :</b> Rendez-vous 6h devant la salle.</span>
+          </span>
+          
+        </button>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <h2 class="overline">Conversations</h2>
+      <div class="list">
+        <button class="listrow" data-go="salon">
+          <div style="width:44px;height:44px;border-radius:22px;background:#E8F1EC;display:flex;align-items:center;justify-content:center;flex:none;overflow:hidden">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8FB3A0" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8.5" r="3.6"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>
+  </svg>
+</div>
+          <span style="flex-grow:1;min-width:0;text-align:left">
+            <span class="convrow__haut">
+              <b class="convrow__nom">RASOAMANANA Fanjaniaina</b>
+              <i class="convrow__heure">Hier</i>
+            </span>
+            <span class="convrow__txt">Merci pour la correction du taolu.</span>
+          </span>
+        </button>
+        <button class="listrow" data-go="salon">
+          <div style="width:44px;height:44px;border-radius:22px;background:#E8F1EC;display:flex;align-items:center;justify-content:center;flex:none;overflow:hidden">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8FB3A0" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8.5" r="3.6"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>
+  </svg>
+</div>
+          <span style="flex-grow:1;min-width:0;text-align:left">
+            <span class="convrow__haut">
+              <b class="convrow__nom">RAKOTOARISOA Lalaina</b>
+              <i class="convrow__heure">Lun.</i>
+            </span>
+            <span class="convrow__txt">D’accord pour dimanche.</span>
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <div class="card" style="display:flex;gap:12px;align-items:flex-start;background:#FFF7F2;border-color:#F2D8C6">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B0530F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 21 19H3z"/><path d="M12 9.5v4"/><path d="M12 16.3v.2"/></svg>
+      <div>
+        <p style="font-size:13px;font-weight:700;line-height:18px">Signaler un message</p>
+        <p style="font-size:12.5px;line-height:18px;color:#59685F;margin-top:4px">Un appui long sur un message le signale à l’administration. Le club compte des mineurs : la modération n’est pas une option.</p>
+      </div>
+    </div>
+  </div>
+  <nav class="tabbar">
+    <button class="tabbar__item" data-go="accueil">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Accueil</span>
+    </button>
+    <button class="tabbar__item" data-go="etudiants">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Étudiants</span>
+    </button>
+    <button class="tabbar__item" data-go="messages" aria-current="page">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H8l-4 4V5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5z"/></svg>
+      <span style="font-size:10px;font-weight:700;color:#0F5132">Messages</span>
+    </button>
+    <button class="tabbar__item" data-go="casier">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Casier</span>
+    </button>
+    <button class="tabbar__item" data-go="album">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Album</span>
+    </button>
+  </nav>
+</div>`
+  },
+  salon: {
+    label: "17 · Une conversation",
+    html: `<div class="phone">
+  
+  <div class="apphead">
+    <button class="tapicon" data-go="messages" aria-label="Retour"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0E2119" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5 8 12l7 7"/></svg></button>
+    <span style="width:36px;height:36px;border-radius:12px;flex:none;background:#0F51321A;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:13px;color:#0F5132">TC</span>
+    <span style="flex-grow:1;min-width:0;margin-left:10px">
+      <b style="display:block;font-family:var(--display);font-size:16px;font-weight:600;line-height:19px">Tout le club</b>
+      <i style="display:block;font-size:11.5px;color:#59685F;font-style:normal;margin-top:1px">64 membres</i>
+    </span>
+  </div>
+
+  <div class="fil">
+    <p class="fil__jour">Aujourd’hui</p>
+    <div class="bul bul--recu">
+      <b class="bul__auteur">RAHARISOA Fanja</b>
+      <p class="bul__txt">Bonsoir à tous. L’entraînement de mercredi est maintenu malgré les travaux.</p>
+      <i class="bul__h">14:20</i>
+    </div>
+    <div class="bul bul--recu">
+      <b class="bul__auteur">RAHARISOA Fanja</b>
+      <p class="bul__txt">Rendez-vous à 17h30 comme d’habitude.</p>
+      <i class="bul__h">14:20</i>
+    </div>
+    <div class="bul bul--envoye">
+      <p class="bul__txt">Merci pour l’information.</p>
+      <i class="bul__h">14:34 · lu</i>
+    </div>
+    <div class="bul bul--recu">
+      <b class="bul__auteur">ANDRIANJAFY Tokiniaina</b>
+      <p class="bul__txt">Est-ce qu’on travaille encore le taolu de la semaine dernière ?</p>
+      <i class="bul__h">15:02</i>
+    </div>
+    <div class="bul bul--envoye">
+      <p class="bul__txt">Oui, et on ajoute le passage en cercle.</p>
+      <i class="bul__h">15:11 · lu</i>
+    </div>
+  </div>
+
+  <div class="saisie">
+    <span class="saisie__champ">Écrire un message…</span>
+    <button class="saisie__env" aria-label="Envoyer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12 20 4.5 15 20l-3.5-6z"/><path d="m11.5 14 3.5-5"/></svg></button>
+  </div>
+  <nav class="tabbar">
+    <button class="tabbar__item" data-go="accueil">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Accueil</span>
+    </button>
+    <button class="tabbar__item" data-go="etudiants">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Étudiants</span>
+    </button>
+    <button class="tabbar__item" data-go="messages" aria-current="page">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H8l-4 4V5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5z"/></svg>
+      <span style="font-size:10px;font-weight:700;color:#0F5132">Messages</span>
+    </button>
+    <button class="tabbar__item" data-go="casier">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Casier</span>
+    </button>
+    <button class="tabbar__item" data-go="album">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Album</span>
+    </button>
+  </nav>
+</div>`
+  },
+  maitresVerrou: {
+    label: "18 · Espace des maîtres — verrouillé",
+    html: `<div class="phone">
+  
+  <div class="apphead">
+    <button class="tapicon" data-go="messages" aria-label="Retour"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0E2119" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5 8 12l7 7"/></svg></button>
+    <h1 class="apphead__title">Espace des maîtres</h1>
+    
+  </div>
+
+  <div style="flex-grow:1;padding:34px 24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center">
+    <div style="width:74px;height:74px;border-radius:24px;background:#0F5132;display:grid;place-items:center">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#FFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10" width="15" height="10.5" rx="3"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/></svg>
+    </div>
+    <div>
+      <p class="display" style="font-size:20px;line-height:26px">Réservé aux maîtres</p>
+      <p style="font-size:14px;line-height:21px;color:#59685F;margin-top:10px;max-width:290px">Votre compte n’a pas ce rôle. Cet espace n’apparaît pas dans la liste des salons et son contenu n’est pas transmis à votre téléphone.</p>
+    </div>
+    <div class="card" style="width:100%;text-align:left;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;gap:11px;align-items:flex-start">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#12613C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/><path d="M9 12.2l2 2 4-4.4"/></svg>
+        <div><p style="font-size:13.5px;font-weight:600;line-height:18px">Le rôle est posé sur le serveur</p>
+        <p style="font-size:12.5px;color:#59685F;line-height:17px;margin-top:2px">Pas dans l’application : la modifier ne donne rien.</p></div>
+      </div>
+      <div style="display:flex;gap:11px;align-items:flex-start">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#12613C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/><path d="M9 12.2l2 2 4-4.4"/></svg>
+        <div><p style="font-size:13.5px;font-weight:600;line-height:18px">Le filtre est en base</p>
+        <p style="font-size:12.5px;color:#59685F;line-height:17px;margin-top:2px">Une requête d’un élève sur ces messages revient vide.</p></div>
+      </div>
+      <div style="display:flex;gap:11px;align-items:flex-start">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#12613C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/><path d="M9 12.2l2 2 4-4.4"/></svg>
+        <div><p style="font-size:13.5px;font-weight:600;line-height:18px">Seule l’administration accorde le rôle</p>
+        <p style="font-size:12.5px;color:#59685F;line-height:17px;margin-top:2px">Et peut le retirer à tout moment.</p></div>
+      </div>
+    </div>
+    <button class="link" data-go="maitres">Voir l’écran tel que le voit un maître →</button>
+  </div>
+  <nav class="tabbar">
+    <button class="tabbar__item" data-go="accueil">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Accueil</span>
+    </button>
+    <button class="tabbar__item" data-go="etudiants">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Étudiants</span>
+    </button>
+    <button class="tabbar__item" data-go="messages" aria-current="page">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H8l-4 4V5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5z"/></svg>
+      <span style="font-size:10px;font-weight:700;color:#0F5132">Messages</span>
+    </button>
+    <button class="tabbar__item" data-go="casier">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Casier</span>
+    </button>
+    <button class="tabbar__item" data-go="album">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Album</span>
+    </button>
+  </nav>
+</div>`
+  },
+  maitres: {
+    label: "19 · Espace des maîtres",
+    html: `<div class="phone">
+  
+  <div class="apphead apphead--sombre">
+    <button class="tapicon" data-go="maitresVerrou" aria-label="Retour"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5 8 12l7 7"/></svg></button>
+    <span style="flex-grow:1;min-width:0;margin-left:4px">
+      <b style="display:block;font-family:var(--display);font-size:16px;font-weight:600;line-height:19px;color:#FFF">Espace des maîtres</b>
+      <i style="display:block;font-size:11.5px;color:#9CC4AF;font-style:normal;margin-top:1px">4 personnes · confidentiel</i>
+    </span>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CC4AF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10" width="15" height="10.5" rx="3"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/></svg>
+  </div>
+
+  <div style="flex-grow:1;display:flex;flex-direction:column;gap:20px;padding:18px 20px 24px">
+    <div class="card" style="display:flex;gap:12px;align-items:flex-start;background:#E8F1EC;border-color:#C4D9CC">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l16 16"/><path d="M9.5 9.6A3 3 0 0 0 12 15a3 3 0 0 0 2.4-1.2"/><path d="M6.4 6.6C4.3 8 3 10 3 12c0 0 3.5 5.5 9 5.5 1.5 0 2.9-.4 4.1-1"/><path d="M9.8 6.8A9.6 9.6 0 0 1 12 6.5c5.5 0 9 5.5 9 5.5a15 15 0 0 1-2.6 3.1"/></svg>
+      <p style="font-size:12.5px;line-height:18px;color:#12613C">Rien de ce qui est écrit ici n’apparaît dans les salons des élèves. Les captures d’écran, en revanche, restent possibles : la confidentialité tient aussi aux personnes.</p>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <h2 class="overline">Fil des maîtres</h2>
+      <div class="fil fil--incruste">
+        <div class="bul bul--recu">
+          <b class="bul__auteur">RABEMANANJARA Hery</b>
+          <p class="bul__txt">Passage de grade de décembre : je propose de reporter deux candidats, ils ne sont pas prêts sur les déplacements.</p>
+          <i class="bul__h">09:12</i>
+        </div>
+        <div class="bul bul--envoye">
+          <p class="bul__txt">D’accord. On en parle vendredi avant la séance.</p>
+          <i class="bul__h">09:40 · lu</i>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <h2 class="overline">Ce que l’espace contient</h2>
+      <div class="list">
+        <div class="listrow">
+          <span style="flex-grow:1;min-width:0">
+            <b style="display:block;font-size:14px;font-weight:600;line-height:19px">Délibérations de passage de grade</b>
+            <span style="display:block;font-size:12.5px;color:#59685F;line-height:17px;margin-top:2px">Avant l’annonce publique</span>
+          </span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10" width="15" height="10.5" rx="3"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/></svg>
+        </div>
+        <div class="listrow">
+          <span style="flex-grow:1;min-width:0">
+            <b style="display:block;font-size:14px;font-weight:600;line-height:19px">Situations individuelles</b>
+            <span style="display:block;font-size:12.5px;color:#59685F;line-height:17px;margin-top:2px">Blessure, absence prolongée, difficulté familiale</span>
+          </span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10" width="15" height="10.5" rx="3"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/></svg>
+        </div>
+        <div class="listrow">
+          <span style="flex-grow:1;min-width:0">
+            <b style="display:block;font-size:14px;font-weight:600;line-height:19px">Signalements des élèves</b>
+            <span style="display:block;font-size:12.5px;color:#59685F;line-height:17px;margin-top:2px">Messages remontés par la modération</span>
+          </span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10" width="15" height="10.5" rx="3"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/></svg>
+        </div>
+        <div class="listrow">
+          <span style="flex-grow:1;min-width:0">
+            <b style="display:block;font-size:14px;font-weight:600;line-height:19px">Notes d’encadrement</b>
+            <span style="display:block;font-size:12.5px;color:#59685F;line-height:17px;margin-top:2px">Répartition des groupes, remplacements</span>
+          </span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10" width="15" height="10.5" rx="3"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+  <nav class="tabbar">
+    <button class="tabbar__item" data-go="accueil">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Accueil</span>
+    </button>
+    <button class="tabbar__item" data-go="etudiants">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Étudiants</span>
+    </button>
+    <button class="tabbar__item" data-go="messages" aria-current="page">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H8l-4 4V5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5z"/></svg>
+      <span style="font-size:10px;font-weight:700;color:#0F5132">Messages</span>
+    </button>
+    <button class="tabbar__item" data-go="casier">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Casier</span>
+    </button>
+    <button class="tabbar__item" data-go="album">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Album</span>
+    </button>
+  </nav>
+</div>`
   },
   fonctionnalites: {
     label: "00 · Fonctionnalités",
@@ -2244,6 +2685,107 @@ const SCREENS = {
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="overline">Messages</h2>
+        <div class="list">
+          <button class="featrow" data-feat="msg-club" data-screen="messages">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Salon de tout le club</b>
+              <span class="featrow__d">Une annonce lue par les 64 membres</span>
+            </span>
+            <span class="featrow__end" data-count="msg-club"></span>
+          </button>
+          <button class="featrow" data-feat="msg-grade" data-screen="messages">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Salons par grade</b>
+              <span class="featrow__d">Un fil par groupe de niveau</span>
+            </span>
+            <span class="featrow__end" data-count="msg-grade"></span>
+          </button>
+          <button class="featrow" data-feat="msg-evenement" data-screen="messages">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Salon par événement</b>
+              <span class="featrow__d">Ouvert pour un tournoi, une sortie, puis archivé</span>
+            </span>
+            <span class="featrow__end" data-count="msg-evenement"></span>
+          </button>
+          <button class="featrow" data-feat="msg-direct" data-screen="salon">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Conversation à deux</b>
+              <span class="featrow__d">Entre deux membres du club</span>
+            </span>
+            <span class="featrow__end" data-count="msg-direct"></span>
+          </button>
+          <button class="featrow" data-feat="msg-ecrire" data-screen="salon">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Écrire et recevoir en direct</b>
+              <span class="featrow__d">Le message arrive sans rafraîchir</span>
+            </span>
+            <span class="featrow__end" data-count="msg-ecrire"></span>
+          </button>
+          <button class="featrow" data-feat="msg-signaler" data-screen="messages">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Signaler un message</b>
+              <span class="featrow__d">Remonté à l’administration — le club compte des mineurs</span>
+            </span>
+            <span class="featrow__end" data-count="msg-signaler"></span>
+          </button>
+          <button class="featrow" data-feat="msg-qui" data-screen="messages">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Qui peut écrire à qui</b>
+              <span class="featrow__d">À décider : élève vers élève, ou seulement vers un maître</span>
+            </span>
+            <span class="featrow__end" data-count="msg-qui"></span>
+          </button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="overline">Espace des maîtres</h2>
+        <div class="list">
+          <button class="featrow" data-feat="mt-espace" data-screen="maitres">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Espace réservé aux maîtres</b>
+              <span class="featrow__d">Invisible pour les élèves, filtré côté serveur</span>
+            </span>
+            <span class="featrow__end" data-count="mt-espace"></span>
+          </button>
+          <button class="featrow" data-feat="mt-grades" data-screen="maitres">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Délibérations de passage de grade</b>
+              <span class="featrow__d">Avant l’annonce publique</span>
+            </span>
+            <span class="featrow__end" data-count="mt-grades"></span>
+          </button>
+          <button class="featrow" data-feat="mt-situations" data-screen="maitres">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Situations individuelles</b>
+              <span class="featrow__d">Blessure, absence, difficulté familiale</span>
+            </span>
+            <span class="featrow__end" data-count="mt-situations"></span>
+          </button>
+          <button class="featrow" data-feat="mt-signalements" data-screen="maitres">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Signalements reçus</b>
+              <span class="featrow__d">Ce que la modération remonte</span>
+            </span>
+            <span class="featrow__end" data-count="mt-signalements"></span>
+          </button>
+          <button class="featrow" data-feat="mt-role" data-screen="admin">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Attribution du rôle de maître</b>
+              <span class="featrow__d">Par l’administration seule</span>
+            </span>
+            <span class="featrow__end" data-count="mt-role"></span>
+          </button>
+          <button class="featrow" data-feat="mt-securite" data-screen="securite">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Comment la confidentialité est tenue</b>
+              <span class="featrow__d">Rôles, filtre en base, journal des accès</span>
+            </span>
+            <span class="featrow__end" data-count="mt-securite"></span>
+          </button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
         <h2 class="overline">Le club</h2>
         <div class="list">
           <button class="featrow" data-feat="clb-presentation" data-screen="club">
@@ -2324,6 +2866,145 @@ const SCREENS = {
         </div>
       </div>
     </div>
+  </div>`
+  },
+  securite: {
+    label: "20 · Sécurité et confidentialité",
+    wide: true,
+    html: `
+  <div class="sheet">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <h2 class="overline">Note technique — messagerie et espace des maîtres</h2>
+      <h1 class="display" style="font-size:30px;line-height:36px">Où se joue vraiment la confidentialité</h1>
+      <p style="font-size:15px;line-height:24px;color:#59685F;max-width:620px">Le compte du club héberge les données — c’est la bonne décision, mais pour une autre raison que la sécurité : elle garantit que le club <b>reste propriétaire</b> de ses messages et de ses photos, quel que soit le prestataire. La confidentialité, elle, ne vient pas du compte : elle vient des <b>règles écrites dans la base</b>.</p>
+    </div>
+
+    <div class="sec__avert">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A3A12" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l16 16"/><path d="M9.5 9.6A3 3 0 0 0 12 15a3 3 0 0 0 2.4-1.2"/><path d="M6.4 6.6C4.3 8 3 10 3 12c0 0 3.5 5.5 9 5.5 1.5 0 2.9-.4 4.1-1"/><path d="M9.8 6.8A9.6 9.6 0 0 1 12 6.5c5.5 0 9 5.5 9 5.5a15 15 0 0 1-2.6 3.1"/></svg>
+      <div>
+        <p style="font-size:14px;font-weight:700;line-height:20px;color:#8A3A12">La clé publique de l’application est publique — c’est son nom</p>
+        <p style="font-size:13.5px;line-height:21px;color:#7A4322;margin-top:5px">Elle est embarquée dans chaque téléphone et se lit en quelques minutes. Tout ce qui protège l’espace des maîtres tient donc aux règles posées sur les tables. Sans elles, n’importe quel élève lirait les délibérations de passage de grade. Avec elles, la requête revient vide.</p>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <h2 class="overline">Les six tables</h2>
+      <div class="sec__tables">
+        <div class="sec__table">
+          <span class="sec__ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#12613C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6"/><path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/></svg></span>
+          <b>profils</b>
+          <span>Une ligne par membre : nom, prénom, grade, rôle</span>
+          <i>rôle : élève · maître · admin</i>
+        </div>
+        <div class="sec__table">
+          <span class="sec__ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#12613C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6"/><path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/></svg></span>
+          <b>salons</b>
+          <span>Un fil de discussion : club, grade, événement, direct, maîtres</span>
+          <i>type et titre</i>
+        </div>
+        <div class="sec__table">
+          <span class="sec__ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#12613C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6"/><path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/></svg></span>
+          <b>membres_salon</b>
+          <span>Qui a le droit d’être dans quel salon</span>
+          <i>la table qui décide de tout</i>
+        </div>
+        <div class="sec__table">
+          <span class="sec__ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#12613C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6"/><path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/></svg></span>
+          <b>messages</b>
+          <span>Le texte, son auteur, son salon, sa date</span>
+          <i>jamais lue sans passer par membres_salon</i>
+        </div>
+        <div class="sec__table">
+          <span class="sec__ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#12613C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6"/><path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/></svg></span>
+          <b>signalements</b>
+          <span>Un message remonté à l’administration</span>
+          <i>motif, auteur du signalement, suite donnée</i>
+        </div>
+        <div class="sec__table">
+          <span class="sec__ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#12613C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6"/><path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/></svg></span>
+          <b>journal_acces</b>
+          <span>Qui a ouvert l’espace des maîtres, et quand</span>
+          <i>écrit par le serveur, non modifiable</i>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <h2 class="overline">Les règles d’accès</h2>
+      <p style="font-size:14px;line-height:22px;color:#59685F;max-width:620px">Elles sont posées une fois sur la base, et s’appliquent à toute requête, d’où qu’elle vienne — application, navigateur, outil de développement.</p>
+      <div class="sec__regles">
+        <div class="sec__regle">
+          <b>Lire un message</b>
+          <p class="sec__r">Autorisé si — et seulement si — je suis inscrit dans le salon.</p>
+          <p class="sec__c">Un élève qui interroge directement la base sur les messages des maîtres reçoit une liste vide. Pas une erreur : rien.</p>
+        </div>
+        <div class="sec__regle">
+          <b>Entrer dans un salon</b>
+          <p class="sec__r">L’inscription est écrite par l’administration, jamais par l’application.</p>
+          <p class="sec__c">Se déclarer maître depuis son téléphone ne produit rien : le rôle vit sur le serveur.</p>
+        </div>
+        <div class="sec__regle">
+          <b>Écrire un message</b>
+          <p class="sec__r">Autorisé dans mes salons, et l’auteur est forcé à mon identité.</p>
+          <p class="sec__c">On ne peut pas écrire sous le nom d’un autre, même en trafiquant la requête.</p>
+        </div>
+        <div class="sec__regle">
+          <b>Modifier un message</b>
+          <p class="sec__r">L’auteur seul, et pendant quinze minutes.</p>
+          <p class="sec__c">Passé ce délai, le fil devient une trace stable — utile en cas de litige.</p>
+        </div>
+        <div class="sec__regle">
+          <b>Supprimer</b>
+          <p class="sec__r">L’auteur ou l’administration. Le message reste marqué supprimé.</p>
+          <p class="sec__c">Effacer une ligne ferait disparaître la preuve d’un signalement.</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <h2 class="overline">Les trois rôles</h2>
+      <div class="sec__roles">
+        <div class="sec__role">
+          <span class="sec__pastille" style="background:#12613C"></span>
+          <b>Élève</b><i>64 personnes</i>
+          <p>Lit et écrit dans ses salons. Voit la liste des membres, les actualités, l’album.</p>
+        </div>
+        <div class="sec__role">
+          <span class="sec__pastille" style="background:#B0530F"></span>
+          <b>Maître</b><i>4 personnes</i>
+          <p>Tout ce que fait un élève, plus l’espace des maîtres et les signalements.</p>
+        </div>
+        <div class="sec__role">
+          <span class="sec__pastille" style="background:#0E2119"></span>
+          <b>Administration</b><i>1 ou 2 personnes</i>
+          <p>Crée les comptes, accorde les rôles, publie, modère. Ne lit pas l’espace des maîtres sans y être inscrite.</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <h2 class="overline">Ce qui reste à décider</h2>
+      <div class="sec__dec">
+        <div class="sec__q">
+          <b>Connexion par numéro de membre</b>
+          <p>Le service d’authentification travaille par courriel ou par téléphone, pas par numéro de membre. Trois voies : un courriel réel par membre, un courriel construit à partir du numéro, ou un code par SMS — qui se paie à l’envoi, à Madagascar comme ailleurs.</p>
+        </div>
+        <div class="sec__q">
+          <b>Les mineurs et la messagerie</b>
+          <p>Un fil entre mineurs sans adulte est une responsabilité pour le club. Une piste : les conversations à deux ouvertes seulement vers un maître, les salons de groupe toujours visibles par un maître.</p>
+        </div>
+        <div class="sec__q">
+          <b>Le coût</b>
+          <p>L’offre gratuite suffit à 64 membres, mais un projet inactif sept jours est mis en pause et doit être relancé à la main. L’offre payante, environ 25 dollars par mois, supprime cette pause. À trancher avec le club.</p>
+        </div>
+        <div class="sec__q">
+          <b>La conservation</b>
+          <p>Combien de temps garde-t-on les messages ? Un an ? Sans réponse, ils s’accumulent indéfiniment, et l’espace payant arrive plus vite.</p>
+        </div>
+      </div>
+    </div>
+
+    <p style="font-size:13px;line-height:21px;color:#7C8B82;border-top:1px solid #E4EDE8;padding-top:20px">Rien de tout cela n’est développé : cette note décrit ce qui sera construit une fois la maquette validée. Elle est ici pour que la décision se prenne en connaissance de cause, pas après coup.</p>
   </div>`
   },
   impression: {
@@ -2597,11 +3278,13 @@ const GROUPES = [
   ['À relire', ['fonctionnalites']],
   ['Entrée', ['connexion', 'accueil']],
   ['Étudiants', ['etudiants', 'profilVerrouille', 'profilOuvert', 'carte']],
+  ['Messages', ['messages', 'salon', 'maitresVerrou', 'maitres']],
   ['Casier', ['casier', 'casierDetail', 'notifications']],
   ['Album', ['album', 'photo']],
   ['Le club', ['club']],
   ['Administration', ['admin']],
   ['Impression', ['impression']],
+  ['Note technique', ['securite']],
   ['Directions à choisir', ['directionA', 'directionB', 'directionC']],
   ['Référence', ['charte']]
 ];

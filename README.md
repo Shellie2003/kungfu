@@ -83,6 +83,11 @@ Un carré à fond transparent, d'au moins 512 × 512 pixels, donne le meilleur r
 | 13 | Charte graphique | Couleurs, typographies, composants — référence pour le développement |
 | 14 | Carte de membre | Photo, numéro, grade et code de présence |
 | 15 | Planche d'impression | La carte imprimée : dix par page A4, avec traits de coupe |
+| 16 | Messages | Salons du club et conversations à deux |
+| 17 | Une conversation | Le fil, avec l'auteur et l'heure |
+| 18 | Espace des maîtres — verrouillé | Ce que voit un élève qui tente d'y entrer |
+| 19 | Espace des maîtres | Le fil réservé, et ce qu'il contient |
+| 20 | Sécurité et confidentialité | Note technique : tables, règles d'accès, rôles |
 | 00 | Fonctionnalités | La liste à commenter |
 
 ## Imprimer les cartes
@@ -106,12 +111,37 @@ RANDRIAMAMPIONONA tient sur une ligne, aucun nom n'est coupé en deux.
 Le verso reste à décider — règlement, horaires, ou rien du tout pour imprimer en recto
 seul, deux fois moins cher. Une proposition figure sur l'écran.
 
+## Messagerie et espace des maîtres
+
+La messagerie tient en trois formes de fil : le **salon de tout le club** pour les
+annonces, un **salon par grade** ou par événement, et la **conversation à deux**. Un
+message se signale à l'administration par un appui long — le club compte des mineurs, la
+modération n'est pas une option.
+
+L'**espace des maîtres** est un salon comme les autres du point de vue du code, et pas du
+tout du point de vue de l'accès : il n'apparaît pas dans la liste d'un élève, et une
+requête d'un élève sur son contenu revient vide. Deux écrans le montrent — celui que voit
+un élève qui tente d'y entrer, et celui que voit un maître.
+
+L'écran **Sécurité et confidentialité** est la note technique correspondante : les six
+tables, les règles d'accès, les trois rôles, et ce qui reste à décider. Elle est écrite
+pour être lue par le club, pas seulement par un développeur.
+
 ## Décisions prises, à confirmer
 
 **Cinq onglets, pas six.** Le cahier des charges liste six entrées de menu. Six onglets
 deviennent illisibles sur un téléphone : chaque libellé se retrouve tronqué. Les
-Notifications passent donc en cloche dans l'en-tête, avec leur écran dédié ; les cinq
-autres restent en bas.
+Notifications passent donc en cloche dans l'en-tête, avec leur écran dédié.
+
+**Les messages prennent la place du Club en bas.** Une messagerie se consulte plusieurs
+fois par jour, la page de présentation du club une ou deux fois par an. Le Club reste
+accessible depuis l'accueil, d'un seul appui.
+
+**La confidentialité ne vient pas du compte, mais des règles.** Héberger les données sur
+le compte du club est la bonne décision — elle garantit que le club **reste propriétaire**
+de ses messages et de ses photos. Mais la clé publique de l'application se lit dans
+n'importe quel téléphone : ce qui protège l'espace des maîtres, ce sont les règles d'accès
+posées sur les tables. Sans elles, un élève lirait les délibérations de passage de grade.
 
 **Un compte par membre, plutôt qu'un code partagé.** Un code unique donné à tout le club
 ne protège rien : tous les élèves l'ont, il circule dès qu'une personne le communique, et
@@ -139,6 +169,21 @@ l'administration, et laisser aux membres le nom, le grade et la biographie.
 **Les notifications push.** Elles supposent un serveur et un compte développeur sur les
 boutiques d'applications, avec un coût annuel. Les notifications à l'intérieur de
 l'application, elles, ne coûtent rien de plus. À décider selon le budget.
+
+**La connexion par numéro de membre.** Le service d'authentification travaille par
+courriel ou par téléphone, pas par numéro de membre. Trois voies : un courriel réel par
+membre, un courriel construit à partir du numéro, ou un code par SMS — qui se paie à
+l'envoi. À trancher, cela change la procédure d'inscription.
+
+**Qui peut écrire à qui.** Une conversation à deux entre mineurs, sans adulte, est une
+responsabilité pour le club. Une piste : les conversations à deux ouvertes seulement vers
+un maître, les salons de groupe toujours lisibles par un maître.
+
+**L'hébergement des messages.** L'offre gratuite suffit à 64 membres, mais un projet
+inactif sept jours est mis en pause et doit être relancé à la main — inacceptable pour une
+messagerie. L'offre payante, environ 25 dollars par mois, supprime cette pause. Et il faut
+décider combien de temps les messages sont conservés, sinon ils s'accumulent
+indéfiniment.
 
 ## À fournir par le club
 
