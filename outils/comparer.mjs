@@ -28,6 +28,7 @@ import { build } from 'esbuild';
 import { chromium } from 'playwright';
 import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
+import { ECRANS } from './ecrans.mjs';
 
 /* La taille n'est pas devinée : elle est lue sur .device__screen de la
    maquette. Le cadre de téléphone a 10 px de marge, l'écran fait donc
@@ -38,10 +39,8 @@ const SEUIL_PIXEL = 0.12;                /* tolérance de couleur par pixel */
 const SEUIL_ECRAN = 0.3;                 /* % de pixels différents accepté */
 const SORTIE = 'outils/comparaisons';
 
-/* Les écrans portés, et leur clé dans la maquette. */
-const ECRANS = [
-  { cle: 'etudiants', module: 'app/ecrans/Etudiants.tsx' }
-];
+/* La liste des écrans portés est dans outils/ecrans.mjs, partagée
+   avec l'aperçu : porter un écran, c'est y ajouter une ligne. */
 
 const demandes = process.argv.slice(2);
 const liste = demandes.length ? ECRANS.filter((e) => demandes.includes(e.cle)) : ECRANS;
