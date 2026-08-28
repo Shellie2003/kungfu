@@ -147,3 +147,47 @@ create table notifications (
 );
 
 create index on notifications (profil_id, cree_le desc);
+
+-- ============================================================
+-- Participations à une actualité
+--
+-- « Rehefa mikitika j'y participe [...] mameno prénom sy numéro
+-- matricule [...] asio nombre koa sao itondra vady na zanaka izy »
+-- — on note qui vient, et avec combien de personnes.
+--
+-- « mandefa tsikelikely ny participation » — la contribution se verse
+-- en plusieurs fois. On garde donc le montant annoncé d'un côté, les
+-- versements reçus de l'autre : ce ne sont pas la même chose.
+-- ============================================================
+create table participations (
+  id            uuid primary key default gen_random_uuid(),
+  actualite_id  uuid not null references actualites (id) on delete cascade,
+  profil_id     uuid not null references profils (id) on delete cascade,
+  accompagnants int  not null default 0 check (accompagnants between 0 and 20),
+  montant_promis int check (montant_promis >= 0),      -- en ariary
+  note          text,
+  cree_le       timestamptz not null default now(),
+  unique (actualite_id, profil_id)
+);
+
+create index on participations (actualite_id);
+
+-- ------------------------------------------------------------
+-- versements — un par envoi MVola.
+--
+-- L'application ne peut pas savoir si un transfert a abouti : elle
+-- ouvre le clavier du téléphone avec le code, elle ne parle pas à
+-- l'opérateur. C'est donc l'administration qui pointe ce qui est
+-- arrivé. Le dire ici évite de laisser croire à un suivi automatique.
+-- ------------------------------------------------------------
+create table versements (
+  id               uuid primary key default gen_random_uuid(),
+  participation_id uuid not null references participations (id) on delete cascade,
+  montant          int  not null check (montant > 0),
+  recu_le          date not null default current_date,
+  pointe_par       uuid references profils (id) on delete set null,
+  reference        text,                                -- référence MVola, si donnée
+  cree_le          timestamptz not null default now()
+);
+
+create index on versements (participation_id);

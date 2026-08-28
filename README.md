@@ -14,7 +14,7 @@ hébergeur.
 python3 -m http.server 8000     # puis ouvrir http://localhost:8000
 ```
 
-- **Colonne de gauche** : les 13 écrans.
+- **Colonne de gauche** : les 26 écrans.
 - **Flèches ↑ ↓** : passer d'un écran à l'autre.
 - Les écrans sont cliquables entre eux : la barre du bas, les fiches, les retours.
 - Sous 900 px de large, l'index disparaît et la maquette occupe tout l'écran.
@@ -48,7 +48,9 @@ occupe toute la place.
 Deux façons de le poser, aucune ne demande un développeur.
 
 **Dans le dépôt** — déposez le fichier dans `img/`, sous le nom `logo` avec n'importe
-quelle extension : `logo.png`, `logo.jpg`, `logo.webp` ou `logo.svg`. Puis :
+quelle extension : `logo.png`, `logo.jpg`, `logo.webp` ou `logo.svg`. Le **cachet du club**
+suit exactement la même règle, sous le nom `cachet` : `img/cachet.png`, `img/cachet.jpg`…
+Puis :
 
 ```bash
 node build-logo.mjs    # réduit le logo et l'incorpore à la maquette
@@ -59,7 +61,7 @@ node build.js          # réassemble le fichier unique
 étape, le logo s'affiche quand même dans le site, mais **pas** dans le fichier unique
 envoyé par courriel : un chemin vers `img/` n'y résoudrait pas.
 
-**Depuis la maquette** — bouton « Logo du club » dans le menu. Le fichier reste sur votre
+**Depuis la maquette** — boutons « Logo du club » et « Cachet du club » dans le menu. Le fichier reste sur votre
 appareil, ce qui est pratique pour essayer avant de trancher.
 
 Un carré à fond transparent, d'au moins 512 × 512 pixels, donne le meilleur résultat.
@@ -88,6 +90,8 @@ Un carré à fond transparent, d'au moins 512 × 512 pixels, donne le meilleur r
 | 18 | Espace des maîtres — verrouillé | Ce que voit un élève qui tente d'y entrer |
 | 19 | Espace des maîtres | Le fil réservé, et ce qu'il contient |
 | 20 | Sécurité et confidentialité | Note technique : tables, règles d'accès, rôles |
+| 21 | Je participe | Inscription à une sortie, accompagnants, contribution MVola |
+| 22 | Mot de passe | Changement, et réinitialisation par l'administration |
 | 00 | Fonctionnalités | La liste à commenter |
 
 ## Imprimer les cartes
@@ -126,6 +130,37 @@ un élève qui tente d'y entrer, et celui que voit un maître.
 L'écran **Sécurité et confidentialité** est la note technique correspondante : les six
 tables, les règles d'accès, les trois rôles, et ce qui reste à décider. Elle est écrite
 pour être lue par le club, pas seulement par un développeur.
+
+## Retours du client, du 24 août
+
+Douze commentaires reçus. Ce qui en découle, et qui est déjà dans la maquette :
+
+**Le matricule est `F04x001`, puis `F04x002`, `F04x003`…** Le préfixe est un réglage en
+base, pas une constante du code : il pourra changer sans nouvelle version.
+
+**Tous les élèves n'ont pas de téléphone Android.** C'est le retour qui a corrigé une
+erreur d'architecture : la fiche du membre était liée au compte. Un élève sans téléphone
+n'aurait donc pas pu figurer à l'annuaire, ni sur une carte de membre. La fiche et le
+compte sont maintenant deux choses distinctes, et le compte est facultatif.
+
+**Les listes appartiennent au club, pas au code.** Grades, jours d'entraînement, maître
+responsable, téléphone, adresse : tout est en base et modifiable depuis l'administration.
+Les entraînements passent à mardi, jeudi, vendredi, samedi.
+
+**Changement de mot de passe** (écran 22). Sans réinitialisation par courriel, puisque la
+connexion se fait au matricule : c'est l'administration qui réinitialise.
+
+**Participation à une sortie** (écran 21) — prénom et matricule repris de la fiche, nombre
+d'accompagnants pour le conjoint et les enfants, et contribution **MVola** par code USSD :
+l'application ouvre le clavier avec le code déjà écrit, le membre appuie sur appeler. Le
+montant se choisit entre 1 000 et 10 000 Ar, ou se saisit librement, et se verse en
+plusieurs fois.
+
+**Le cachet du club** a son emplacement sur la carte de membre. Il est vide tant que le
+fichier n'est pas déposé — voir la section sur le logo.
+
+**Direction visuelle : A · Lame**, retenue par le client. Reste à appliquer à l'ensemble
+des écrans.
 
 ## Décisions prises, à confirmer
 

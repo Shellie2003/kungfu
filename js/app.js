@@ -11,9 +11,9 @@
 const GROUPES = [
   ['À relire', ['fonctionnalites']],
   ['Entrée', ['connexion', 'accueil']],
-  ['Étudiants', ['etudiants', 'profilVerrouille', 'profilOuvert', 'carte']],
+  ['Étudiants', ['etudiants', 'profilVerrouille', 'profilOuvert', 'motdepasse', 'carte']],
   ['Messages', ['messages', 'salon', 'maitresVerrou', 'maitres']],
-  ['Casier', ['casier', 'casierDetail', 'notifications']],
+  ['Casier', ['casier', 'casierDetail', 'participation', 'notifications']],
   ['Album', ['album', 'photo']],
   ['Le club', ['club']],
   ['Administration', ['admin']],
@@ -44,6 +44,10 @@ let commentaires = MAGASIN.lire('commentaires', {});
    celui livré avec la maquette, puis un fichier posé dans img/. */
 let logo = MAGASIN.lire('logo', null)
   || (typeof LOGO_INTEGRE !== 'undefined' ? LOGO_INTEGRE : null);
+/* Le cachet du club, sur la carte de membre. Même mécanique que le
+   logo : un fichier dans img/, ou un choisi depuis la maquette. */
+let cachet = MAGASIN.lire('cachet', null)
+  || (typeof CACHET_INTEGRE !== 'undefined' ? CACHET_INTEGRE : null);
 
 /* Libellé lisible d'une clé de commentaire, pour l'export. */
 function nomFonction(cle) {
@@ -89,6 +93,7 @@ function afficher(cle) {
   }
 
   appliquerLogo();
+  appliquerCachet();
   rafraichirCompteurs();
   marquerActif();
   app.el.stage.scrollTop = 0;
@@ -127,7 +132,15 @@ function appliquerLogo() {
   });
 }
 
-function choisirLogo() {
+function appliquerCachet() {
+  if (!cachet) return;
+  document.querySelectorAll('.cachet').forEach((n) => {
+    n.innerHTML = `<img src="${cachet}" alt="Cachet du club">`;
+    n.classList.add('cachet--img');
+  });
+}
+
+function choisirImage(quoi, poser) {
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = 'image/png,image/jpeg,image/svg+xml,image/webp';
@@ -140,14 +153,17 @@ function choisirLogo() {
     }
     const lecteur = new FileReader();
     lecteur.onload = () => {
-      logo = lecteur.result;
-      MAGASIN.ecrire('logo', logo);
+      poser(lecteur.result);
+      MAGASIN.ecrire(quoi, lecteur.result);
       afficher(app.current);
     };
     lecteur.readAsDataURL(f);
   });
   input.click();
 }
+
+const choisirLogo   = () => choisirImage('logo',   (v) => { logo = v; });
+const choisirCachet = () => choisirImage('cachet', (v) => { cachet = v; });
 
 /* ---------------------------------------------- Commentaires */
 function rafraichirCompteurs() {
@@ -268,6 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <p class="index__sub">Analamahitsy · maquette ${Object.keys(SCREENS).length} écrans</p>
       <div class="index__outils">
         <button class="outil" data-action="logo">Logo du club</button>
+        <button class="outil" data-action="cachet">Cachet du club</button>
         <button class="outil" data-action="exporter">Exporter <span data-total></span></button>
       </div>
     </div>`;
@@ -301,6 +318,8 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="tiroir__outils">
           <button class="outil" data-action="logo">Logo du club</button>
+          <button class="outil" data-action="cachet">Cachet du club</button>
+        <button class="outil" data-action="cachet">Cachet du club</button>
         </div>
         ${listeEcrans('listeMobile')}
       </div>
@@ -309,13 +328,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* Rien d'embarqué ? On cherche un fichier déposé dans img/, quelle
      que soit son extension — le club envoie ce qu'il a sous la main. */
-  if (!logo) {
+  const chercher = (nom, deja, poser) => {
+    if (deja()) return;
     ['png', 'jpg', 'jpeg', 'webp', 'svg'].forEach((ext) => {
       const essai = new Image();
-      essai.onload = () => { if (!logo) { logo = `img/logo.${ext}`; appliquerLogo(); } };
-      essai.src = `img/logo.${ext}`;
+      essai.onload = () => { if (!deja()) poser(`img/${nom}.${ext}`); };
+      essai.src = `img/${nom}.${ext}`;
     });
-  }
+  };
+  chercher('logo',   () => logo,   (v) => { logo = v; appliquerLogo(); });
+  chercher('cachet', () => cachet, (v) => { cachet = v; appliquerCachet(); });
 
   afficher('fonctionnalites');
 
@@ -326,6 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (act) {
       const a = act.dataset.action;
       if (a === 'logo') choisirLogo();
+      if (a === 'cachet') choisirCachet();
       if (a === 'exporter') exporter();
       if (a === 'imprimer') window.print();
       if (a === 'menu') ouvrirTiroir();

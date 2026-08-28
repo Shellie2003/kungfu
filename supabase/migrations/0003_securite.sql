@@ -25,13 +25,24 @@
 -- definer : sans lui, un utilisateur peut faire pointer un nom de
 -- table vers une table à lui.
 -- ------------------------------------------------------------
+-- auth.uid() est l'identifiant du COMPTE. L'identifiant de la FICHE
+-- est autre chose, puisqu'un membre peut exister sans compte. Tout ce
+-- qui suit compare des identifiants de fiche : d'où mon_profil().
+create or replace function public.mon_profil()
+returns uuid
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$ select id from public.profils where compte_id = auth.uid() $$;
+
 create or replace function public.mon_role()
 returns role_membre
 language sql
 stable
 security definer
 set search_path = public, pg_temp
-as $$ select role from public.profils where id = auth.uid() $$;
+as $$ select role from public.profils where compte_id = auth.uid() $$;
 
 create or replace function public.est_membre(p_salon uuid)
 returns boolean
@@ -42,10 +53,12 @@ set search_path = public, pg_temp
 as $$
   select exists (
     select 1 from public.membres_salon
-    where salon_id = p_salon and profil_id = auth.uid()
+    where salon_id = p_salon and profil_id = public.mon_profil()
   )
 $$;
 
+revoke execute on function public.mon_profil() from public, anon;
+grant  execute on function public.mon_profil() to authenticated;
 revoke execute on function public.mon_role() from public, anon;
 revoke execute on function public.est_membre(uuid) from public, anon;
 grant  execute on function public.mon_role() to authenticated;
@@ -66,6 +79,11 @@ alter table messages        enable row level security;
 alter table signalements    enable row level security;
 alter table journal_acces   enable row level security;
 alter table notifications   enable row level security;
+alter table grades          enable row level security;
+alter table horaires        enable row level security;
+alter table reglages        enable row level security;
+alter table participations  enable row level security;
+alter table versements      enable row level security;
 
 -- ============================================================
 -- L'annuaire
@@ -86,8 +104,8 @@ create policy "annuaire visible des membres" on profils
 -- cette porte — elle était ouverte, un test l'a montrée.
 create policy "je corrige ma fiche" on profils
   for update to authenticated
-  using (id = auth.uid())
-  with check (id = auth.uid());
+  using (compte_id = auth.uid())
+  with check (compte_id = auth.uid());
 
 create or replace function public.figer_profil()
 returns trigger
@@ -99,13 +117,15 @@ begin
   if mon_role() = 'admin' then
     return new;
   end if;
-  if new.role          is distinct from old.role
-  or new.numero        is distinct from old.numero
-  or new.grade         is distinct from old.grade
-  or new.grade_couleur is distinct from old.grade_couleur
-  or new.actif         is distinct from old.actif then
+  if new.role      is distinct from old.role
+  or new.numero    is distinct from old.numero
+  or new.grade_id  is distinct from old.grade_id
+  or new.actif     is distinct from old.actif
+  -- compte_id gelé aussi : sans cela un membre rattacherait sa fiche
+  -- au compte d'un autre, ou la fiche d'un maître au sien.
+  or new.compte_id is distinct from old.compte_id then
     raise exception
-      'le rôle, le numéro, le grade et l''activation ne se modifient que par l''administration';
+      'le rôle, le numéro, le grade, le compte et l''activation ne se modifient que par l''administration';
   end if;
   return new;
 end $$;
@@ -123,7 +143,7 @@ create policy "l'administration gère les fiches" on profils
 -- Un élève ne voit pas la date de naissance d'un autre élève.
 create policy "vie privée réservée" on profils_prives
   for select to authenticated
-  using (profil_id = auth.uid() or mon_role() in ('maitre', 'admin'));
+  using (profil_id = mon_profil() or mon_role() in ('maitre', 'admin'));
 
 create policy "l'administration tient la vie privée" on profils_prives
   for all to authenticated
@@ -134,7 +154,7 @@ create policy "l'administration tient la vie privée" on profils_prives
 -- contact d'annuaire.
 create policy "tuteurs réservés" on tuteurs
   for select to authenticated
-  using (profil_id = auth.uid() or mon_role() in ('maitre', 'admin'));
+  using (profil_id = mon_profil() or mon_role() in ('maitre', 'admin'));
 
 create policy "l'administration tient les tuteurs" on tuteurs
   for all to authenticated
@@ -170,6 +190,70 @@ create policy "l'administration gère les photos" on photos
   using (mon_role() = 'admin')
   with check (mon_role() = 'admin');
 
+-- ------------------------------------------------------------
+-- Grades, horaires, réglages : lus par tous les membres, écrits par
+-- l'administration seule. Ce sont les listes que le club voulait
+-- pouvoir modifier sans nouvelle version de l'application.
+-- ------------------------------------------------------------
+create policy "grades visibles" on grades
+  for select to authenticated using (mon_role() is not null);
+create policy "l'administration tient les grades" on grades
+  for all to authenticated
+  using (mon_role() = 'admin') with check (mon_role() = 'admin');
+
+create policy "horaires visibles" on horaires
+  for select to authenticated using (mon_role() is not null);
+create policy "l'administration tient les horaires" on horaires
+  for all to authenticated
+  using (mon_role() = 'admin') with check (mon_role() = 'admin');
+
+create policy "réglages visibles" on reglages
+  for select to authenticated using (mon_role() is not null);
+create policy "l'administration tient les réglages" on reglages
+  for all to authenticated
+  using (mon_role() = 'admin') with check (mon_role() = 'admin');
+
+-- ------------------------------------------------------------
+-- Participations et versements
+--
+-- Chacun s'inscrit pour lui-même. L'administration voit tout, parce
+-- qu'elle organise la sortie et compte les places.
+-- ------------------------------------------------------------
+create policy "je vois les participations" on participations
+  for select to authenticated
+  using (mon_role() is not null);
+
+create policy "je m'inscris moi-même" on participations
+  for insert to authenticated
+  with check (profil_id = mon_profil());
+
+create policy "je corrige mon inscription" on participations
+  for update to authenticated
+  using (profil_id = mon_profil()) with check (profil_id = mon_profil());
+
+create policy "je me désinscris" on participations
+  for delete to authenticated
+  using (profil_id = mon_profil());
+
+create policy "l'administration gère les participations" on participations
+  for all to authenticated
+  using (mon_role() = 'admin') with check (mon_role() = 'admin');
+
+-- Un versement est constaté par l'administration, jamais déclaré par
+-- le membre : l'application ne parle pas à l'opérateur et ne peut donc
+-- rien constater du tout.
+create policy "je vois mes versements" on versements
+  for select to authenticated
+  using (
+    mon_role() = 'admin'
+    or exists (select 1 from participations p
+               where p.id = participation_id and p.profil_id = mon_profil())
+  );
+
+create policy "l'administration pointe les versements" on versements
+  for all to authenticated
+  using (mon_role() = 'admin') with check (mon_role() = 'admin');
+
 -- ============================================================
 -- La messagerie — le cœur du sujet
 -- ============================================================
@@ -189,14 +273,14 @@ create policy "l'administration ouvre les salons" on salons
 -- Je vois qui est avec moi, et seulement là où je suis.
 create policy "les membres de mes salons" on membres_salon
   for select to authenticated
-  using (profil_id = auth.uid() or est_membre(salon_id));
+  using (profil_id = mon_profil() or est_membre(salon_id));
 
 -- Je peux marquer un salon comme lu — mon inscription, pas celle
 -- d'un autre.
 create policy "je marque mes salons comme lus" on membres_salon
   for update to authenticated
-  using (profil_id = auth.uid())
-  with check (profil_id = auth.uid());
+  using (profil_id = mon_profil())
+  with check (profil_id = mon_profil());
 
 -- Inscrire quelqu'un dans un salon est un acte d'administration.
 -- Se déclarer maître depuis son téléphone ne produit rien.
@@ -217,14 +301,14 @@ create policy "lire les messages de mes salons" on messages
 -- écrire sous le nom d'un autre en trafiquant la requête.
 create policy "écrire dans mes salons" on messages
   for insert to authenticated
-  with check (est_membre(salon_id) and auteur_id = auth.uid());
+  with check (est_membre(salon_id) and auteur_id = mon_profil());
 
 -- Corriger : l'auteur, pendant quinze minutes. Passé ce délai le
 -- fil devient une trace stable, ce qui compte en cas de litige.
 create policy "corriger mon message" on messages
   for update to authenticated
-  using (auteur_id = auth.uid() and cree_le > now() - interval '15 minutes')
-  with check (auteur_id = auth.uid());
+  using (auteur_id = mon_profil() and cree_le > now() - interval '15 minutes')
+  with check (auteur_id = mon_profil());
 
 create policy "l'administration masque un message" on messages
   for update to authenticated
@@ -238,13 +322,13 @@ create policy "l'administration masque un message" on messages
 create policy "signaler un message que je vois" on signalements
   for insert to authenticated
   with check (
-    auteur_id = auth.uid()
+    auteur_id = mon_profil()
     and exists (select 1 from messages m where m.id = message_id and est_membre(m.salon_id))
   );
 
 create policy "je vois mes signalements" on signalements
   for select to authenticated
-  using (auteur_id = auth.uid() or mon_role() in ('maitre', 'admin'));
+  using (auteur_id = mon_profil() or mon_role() in ('maitre', 'admin'));
 
 create policy "les maîtres traitent les signalements" on signalements
   for update to authenticated
@@ -255,7 +339,7 @@ create policy "les maîtres traitent les signalements" on signalements
 -- se modifie jamais.
 create policy "j'écris mon passage" on journal_acces
   for insert to authenticated
-  with check (profil_id = auth.uid());
+  with check (profil_id = mon_profil());
 
 create policy "l'administration lit le journal" on journal_acces
   for select to authenticated
@@ -264,12 +348,12 @@ create policy "l'administration lit le journal" on journal_acces
 -- Mes notifications, et rien que les miennes.
 create policy "mes notifications" on notifications
   for select to authenticated
-  using (profil_id = auth.uid());
+  using (profil_id = mon_profil());
 
 create policy "je marque mes notifications lues" on notifications
   for update to authenticated
-  using (profil_id = auth.uid())
-  with check (profil_id = auth.uid());
+  using (profil_id = mon_profil())
+  with check (profil_id = mon_profil());
 
 create policy "l'administration notifie" on notifications
   for insert to authenticated
@@ -285,7 +369,7 @@ security definer
 set search_path = public, pg_temp
 as $$
   insert into public.journal_acces (profil_id, salon_id, quoi)
-  values (auth.uid(), p_salon, p_quoi)
+  values (public.mon_profil(), p_salon, p_quoi)
 $$;
 
 revoke execute on function public.journaliser_acces(uuid, text) from public, anon;

@@ -584,6 +584,55 @@ body {
 .carte__head .emblem--img { box-shadow: 0 0 0 1px rgba(255, 255, 255, .35); }
 
 /* ============================================================
+   PARTICIPATION ET CONTRIBUTION MVOLA
+   ============================================================ */
+.modif { font-size: 11px; color: var(--vert-texte); font-weight: 600; }
+.aide { font-size: 12.5px; line-height: 18px; color: var(--gris); }
+.input--fige { background: var(--fond); color: var(--gris); }
+
+.compteur { display: flex; align-items: center; gap: 14px; }
+.compteur__b {
+  width: 46px; height: 46px; border-radius: 14px; flex: none;
+  background: var(--vert-clair); display: grid; place-items: center;
+}
+.compteur__v { flex-grow: 1; text-align: center; }
+.compteur__v b { display: block; font-family: var(--display); font-size: 30px; line-height: 34px; color: var(--vert); }
+.compteur__v span { display: block; font-size: 12.5px; color: var(--gris); margin-top: 2px; }
+
+.montants { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.montant {
+  flex: 1 1 calc(33.333% - 6px); min-width: 82px;
+  padding: 11px 6px; border-radius: 12px;
+  border: 1px solid var(--bord); background: #FFF;
+  font-family: var(--display); font-size: 15px; font-weight: 700; color: var(--encre);
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+}
+.montant i { font-size: 10.5px; font-weight: 500; font-style: normal; color: var(--gris); }
+/* Le montant retenu est vert plein : le blanc dessus mesure 9,4:1. */
+.montant--on { background: var(--vert); border-color: var(--vert); color: #FFF; }
+.montant--on i { color: #B9D4C6; }
+.montant--libre { border-style: dashed; color: var(--vert-texte); }
+
+.ussd { margin-top: 16px; background: var(--fond); border: 1px solid var(--filet); border-radius: 14px; padding: 14px 16px; }
+.ussd__lbl { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--gris); }
+/* Le code se lit chiffre par chiffre : une police à chasse fixe, et
+   de l'air entre les caractères. C'est ce que le membre vérifiera
+   avant d'appuyer sur appeler. */
+.ussd__code {
+  display: block; margin-top: 8px;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 16px; letter-spacing: .04em; color: var(--encre); word-break: break-all;
+}
+.ussd__code b { color: var(--vert); }
+.ussd__nom { font-size: 12px; color: var(--gris); margin-top: 7px; }
+
+.avert {
+  display: flex; gap: 10px; align-items: flex-start; margin-top: 14px;
+  background: #FDF3EC; border: 1px solid #F0D6C2; border-radius: 12px; padding: 12px 14px;
+}
+.avert p { font-size: 12.5px; line-height: 18px; color: #7A4322; }
+
+/* ============================================================
    MESSAGERIE
    ============================================================ */
 .convrow__haut { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
@@ -790,3 +839,31 @@ body {
   /* Les aplats de couleur doivent sortir tels quels, pas éclaircis. */
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* ------------------------------------------------------------
+   Le cachet du club, sur la carte de membre.
+   Tant que le fichier n'est pas fourni, l'emplacement reste vide
+   et le dit : un faux tampon serait pire qu'un blanc.
+   ------------------------------------------------------------ */
+.cachet {
+  width: 62px; height: 62px; border-radius: 50%; flex: none;
+  display: grid; place-items: center; text-align: center;
+  border: 1px dashed #C4D4CB; color: #9DB3A7;
+  transform: rotate(-8deg);
+}
+.cachet i { font-size: 9px; font-style: normal; line-height: 11px; letter-spacing: .04em; text-transform: uppercase; }
+.cachet--img { border: 0; }
+.cachet--img img { width: 100%; height: 100%; object-fit: contain; }
+/* Sur la carte de membre à l'écran, le cachet se pose dans l'angle,
+   hors du flux : en élément de flexbox il écrasait la colonne de
+   texte du code de membre. */
+.carte .cachet {
+  /* En haut à droite : le bas de la carte porte déjà la mention du
+     motif de démonstration, et un cachet posé dessus rendait les deux
+     illisibles. */
+  position: absolute; right: 14px; top: 14px; width: 56px; height: 56px;
+  border-color: rgba(255, 255, 255, .34); color: #A8CDB9;   /* 5,1:1 sur le vert */
+}
+/* Sur la carte imprimée, il se pose en filigrane :
+   un cachet ne doit pas gêner la lecture du nom. */
+.pc .cachet { position: absolute; right: 17mm; bottom: 3mm; width: 13mm; height: 13mm; opacity: .55; }

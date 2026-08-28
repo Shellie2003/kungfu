@@ -36,7 +36,8 @@ const ICON = {
   key: '<circle cx="8" cy="12" r="4"/><path d="M12 12h9"/><path d="M18 12v3.5"/><path d="M15 12v2.5"/>',
   eyeOff: '<path d="M4 4l16 16"/><path d="M9.5 9.6A3 3 0 0 0 12 15a3 3 0 0 0 2.4-1.2"/><path d="M6.4 6.6C4.3 8 3 10 3 12c0 0 3.5 5.5 9 5.5 1.5 0 2.9-.4 4.1-1"/><path d="M9.8 6.8A9.6 9.6 0 0 1 12 6.5c5.5 0 9 5.5 9 5.5a15 15 0 0 1-2.6 3.1"/>',
   base: '<ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6"/><path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/>',
-  flag: '<path d="M12 3.5 21 19H3z"/><path d="M12 9.5v4"/><path d="M12 16.3v.2"/>'
+  flag: '<path d="M12 3.5 21 19H3z"/><path d="M12 9.5v4"/><path d="M12 16.3v.2"/>',
+  moins: '<path d="M5 12h14"/>'
 };
 
 const svg = (n, s, c, w = 1.7) =>
@@ -125,7 +126,7 @@ screen('connexion', '01 · Connexion', { full: `
       <div style="background:#FFF;border-radius:20px;padding:24px 20px;display:flex;flex-direction:column;gap:18px">
         <p style="font-size:17px;font-weight:700">Connexion membre</p>
         <label class="field"><span class="field__label">Numéro de membre</span>
-          <span class="input">WA-0042</span></label>
+          <span class="input">F04x042</span></label>
         <label class="field"><span class="field__label">Mot de passe</span>
           <span class="input" style="color:#8A978F;letter-spacing:.2em">••••••••</span></label>
         ${btn('Entrer', 'primary', 'accueil')}
@@ -167,13 +168,13 @@ screen('accueil', '02 · Accueil', { tab: 'home', body: `
       </div>
       <div style="padding:18px">
         <p class="display" style="font-size:19px;line-height:24px">Kung-fu Waishi Analamahitsy</p>
-        <p style="font-size:14px;line-height:22px;color:#59685F;margin-top:8px">Un club ouvert à tous les âges, où la discipline se transmet par la pratique régulière. Entraînements trois fois par semaine à Analamahitsy.</p>
+        <p style="font-size:14px;line-height:22px;color:#59685F;margin-top:8px">Un club ouvert à tous les âges, où la discipline se transmet par la pratique régulière. Entraînements quatre fois par semaine à Analamahitsy.</p>
         <button class="linkrow" data-go="club">En savoir plus sur le club ${svg('chev', 16, '#12613C', 2)}</button>
       </div>
     </div>
 
     <div class="stats">
-      ${[['64', 'membres'], ['3', 'séances / sem.'], ['2014', 'fondé en']].map(([n, l]) =>
+      ${[['64', 'membres'], ['4', 'séances / sem.'], ['2014', 'fondé en']].map(([n, l]) =>
         `<div class="card" style="padding:14px 12px;text-align:center">
         <p class="display" style="font-size:22px;color:#0F5132">${n}</p>
         <p style="font-size:11px;color:#59685F;margin-top:3px">${l}</p>
@@ -265,7 +266,7 @@ screen('profilOuvert', '05 · Profil ouvert', { tab: 'students', body: `
     <div style="display:flex;flex-direction:column;gap:12px">
       ${overline('Informations personnelles')}
       ${card(`<div class="deflist">
-        ${[['Nom', 'RAKOTONDRABE'], ['Prénom', 'Nirina'], ['Date de naissance', '14 mars 2006'], ['Numéro de membre', 'WA-0042'], ['Début d’entraînement', '9 septembre 2019'], ['Grade', 'Ceinture verte']]
+        ${[['Nom', 'RAKOTONDRABE'], ['Prénom', 'Nirina'], ['Date de naissance', '14 mars 2006'], ['Numéro de membre', 'F04x042'], ['Début d’entraînement', '9 septembre 2019'], ['Grade', 'Ceinture verte']]
           .map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('\n        ')}
       </div>`, 16)}
     </div>
@@ -347,7 +348,7 @@ screen('casierDetail', '07 · Une actualité', { tab: 'news', body: `
 
       <p style="font-size:15px;line-height:25px;color:#3C4A42">La sortie annuelle est ouverte à tous les membres, quel que soit le grade. Le transport est organisé par le club. Chacun apporte son repas de midi et une tenue de rechange.</p>
       <p style="font-size:15px;line-height:25px;color:#3C4A42">Les mineurs doivent remettre une autorisation signée avant le mercredi 19 novembre.</p>
-      ${btn('J’y participe')}
+      ${btn('J’y participe', 'primary', 'participation')}
     </div>
   </div>` });
 
@@ -423,15 +424,15 @@ screen('club', '10 · Le Club', { tab: 'home', body: `
     </div>
 
     <div style="display:flex;flex-direction:column;gap:12px">
-      ${overline('Entraînements')}
+      <div class="rowhead">${overline('Entraînements')}<span class="modif">Modifiable par l’administration</span></div>
       ${card(`<div class="deflist">
-        ${[['Lundi', '17h30 – 19h00', 'Tous niveaux'], ['Mercredi', '17h30 – 19h00', 'Débutants'], ['Samedi', '09h00 – 11h00', 'Gradés']]
+        ${[['Mardi', '17h30 – 19h00', 'Tous niveaux'], ['Jeudi', '17h30 – 19h00', 'Tous niveaux'], ['Vendredi', '17h30 – 19h00', 'Débutants'], ['Samedi', '09h00 – 11h00', 'Gradés']]
           .map(([j, h, n]) => `<div><span style="width:74px;flex:none;color:#0E2119;font-weight:600">${j}</span><span style="flex-grow:1;color:#3C4A42">${h}</span><b style="font-size:12px;color:#7C8B82;font-weight:400">${n}</b></div>`).join('\n        ')}
       </div>`, 16)}
     </div>
 
     <div style="display:flex;flex-direction:column;gap:12px">
-      ${overline('Contact')}
+      <div class="rowhead">${overline('Contact')}<span class="modif">Modifiable par l’administration</span></div>
       ${card(`<div style="display:flex;flex-direction:column;gap:14px">
         <div style="display:flex;align-items:center;gap:12px">
           <span class="tile tile--sm">${svg('users', 17, '#0F5132')}</span>
@@ -600,7 +601,7 @@ screen('charte', '13 · Charte graphique', { wide: true, full: `
       <div class="duo">
         <div class="card" style="display:flex;flex-direction:column;gap:12px">
           <p style="font-size:12px;font-weight:700;color:#59685F">Champ de saisie</p>
-          <label class="field"><span class="field__label">Numéro de membre</span><span class="input">WA-0042</span></label>
+          <label class="field"><span class="field__label">Numéro de membre</span><span class="input">F04x042</span></label>
           <label class="field"><span class="field__label">Actif</span><span class="input input--on">Rakotondrabe</span></label>
         </div>
         <div class="card" style="display:flex;flex-direction:column;gap:12px">
@@ -699,7 +700,7 @@ screen('directionB', 'B · Souffle', { full: `
       </button>
 
       <div class="dirB__glassrow">
-        ${[['64', 'membres'], ['3', 'séances'], ['186', 'photos']].map(([n, l]) => `<div class="dirB__glass">
+        ${[['64', 'membres'], ['4', 'séances'], ['186', 'photos']].map(([n, l]) => `<div class="dirB__glass">
           <b>${n}</b><span>${l}</span>
         </div>`).join('\n        ')}
       </div>
@@ -786,6 +787,10 @@ screen('carte', '14 · Carte de membre', { full: `
     <div style="flex-grow:1;padding:22px 20px 28px;display:flex;flex-direction:column;gap:20px">
 
       <div class="carte" data-feat="carte">
+        <!-- Le cachet du club. L'emplacement reste vide tant que le
+             fichier n'est pas déposé dans img/ : un emplacement vide
+             est plus honnête qu'un faux tampon. -->
+        <span class="cachet" aria-label="Cachet du club"><i>cachet<br>du club</i></span>
         <div class="carte__head">
           <span class="emblem" style="width:36px;height:36px;border-radius:10px">${svg('shieldCheck', 20, '#0F5132')}</span>
           <span style="flex-grow:1">
@@ -800,7 +805,7 @@ screen('carte', '14 · Carte de membre', { full: `
             <b class="carte__nom">RAKOTONDRABE</b>
             <span class="carte__prenom">Nirina</span>
             <span style="margin-top:2px">${grade('Ceinture verte', '#4E9C57')}</span>
-            <span class="carte__num">WA-0042</span>
+            <span class="carte__num">F04x042</span>
           </div>
         </div>
 
@@ -844,6 +849,123 @@ screen('carte', '14 · Carte de membre', { full: `
    Chaque ligne porte un `data-feat` : c'est la clé sous laquelle
    le commentaire est enregistré, puis exporté pour le développeur.
    ============================================================ */
+/* ============================================================
+   Participation à une actualité, et contribution MVola
+   ------------------------------------------------------------
+   Le code USSD est composé à partir du montant choisi. Le bouton
+   ouvre le clavier du téléphone avec le code déjà écrit : c'est le
+   membre qui appuie sur appeler. L'application ne parle pas à
+   l'opérateur et ne peut donc pas savoir si le transfert a abouti —
+   la maquette le dit à l'écran plutôt que de le laisser croire.
+   ============================================================ */
+const MONTANTS = [1000, 2000, 5000, 10000];
+
+screen('participation', '21 · Je participe', { tab: 'news', body: `
+  ${header('Je participe', { back: 'casierDetail' })}
+
+  <div style="flex-grow:1;padding:18px 20px 24px;display:flex;flex-direction:column;gap:22px">
+    <div class="card" style="display:flex;gap:13px;align-items:center;padding:14px 16px">
+      <span class="datebox"><b>22</b><i>nov</i></span>
+      <div>
+        <p style="font-size:15px;font-weight:600;line-height:20px">Sortie au lac Mantasoa</p>
+        <p style="font-size:13px;color:#59685F;margin-top:3px">Départ 6h00 devant la salle</p>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+      ${overline('Qui vient')}
+      ${card(`<div style="display:flex;flex-direction:column;gap:14px">
+        <label class="field"><span class="field__label">Prénom</span>
+          <span class="input">Nirina</span></label>
+        <label class="field"><span class="field__label">Numéro matricule</span>
+          <span class="input input--fige">F04x042</span></label>
+        <p class="aide">Les deux sont repris de votre fiche. Le matricule ne se modifie pas.</p>
+      </div>`, 16)}
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="rowhead">${overline('J’amène du monde')}<span style="font-size:12px;color:#7C8B82">Conjoint, enfants</span></div>
+      ${card(`<div class="compteur">
+        <button class="compteur__b" aria-label="Retirer une personne">${svg('moins', 20, '#0F5132', 2)}</button>
+        <div class="compteur__v">
+          <b>2</b>
+          <span>personnes en plus</span>
+        </div>
+        <button class="compteur__b" aria-label="Ajouter une personne">${svg('plus', 20, '#0F5132', 2)}</button>
+      </div>
+      <p class="aide" style="margin-top:12px">Trois places au total avec vous. Le club compte les places pour le transport.</p>`, 16)}
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+      ${overline('Ma participation')}
+      ${card(`
+        <p style="font-size:13.5px;line-height:20px;color:#59685F">Vous pouvez envoyer en plusieurs fois. Choisissez le montant de cet envoi.</p>
+        <div class="montants">
+          ${MONTANTS.map((m, i) => `<button class="montant${i === 2 ? ' montant--on' : ''}">${m.toLocaleString('fr-FR').replace(/ | /g, ' ')}<i>Ar</i></button>`).join('\n          ')}
+          <button class="montant montant--libre">Autre<i>montant</i></button>
+        </div>
+
+        <div class="ussd">
+          <p class="ussd__lbl">Le code composé sur votre téléphone</p>
+          <code class="ussd__code">#111*1*2*<b>0388010853</b>*5000#</code>
+          <p class="ussd__nom">Santatra Nirina Antonio · MVola</p>
+        </div>
+
+        ${btn('Ouvrir le clavier avec ce code')}
+
+        <div class="avert">
+          ${svg('flag', 18, '#8A3A12')}
+          <p>L’application ouvre le clavier, elle n’envoie pas l’argent : c’est vous qui appuyez sur appeler. Elle ne sait pas non plus si le transfert a réussi — c’est le club qui pointe ce qu’il a reçu.</p>
+        </div>
+      `, 16)}
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+      ${overline('Ce que j’ai déjà envoyé')}
+      <div class="list">
+        ${[['5 000 Ar', '18 novembre', 'Pointé par le club'], ['5 000 Ar', '12 novembre', 'Pointé par le club']]
+          .map(([m, d, e]) => `<div class="listrow">
+          ${svg('shieldCheck', 19, '#12613C')}
+          <span style="flex-grow:1;min-width:0">
+            <b style="display:block;font-size:14.5px;font-weight:600">${m}</b>
+            <span style="display:block;font-size:12.5px;color:#59685F;margin-top:1px">${d} · ${e}</span>
+          </span>
+        </div>`).join('\n        ')}
+        <div class="listrow" style="background:#F5F8F6">
+          <span style="flex-grow:1;font-size:13.5px;color:#59685F">Total reçu</span>
+          <b class="display" style="font-size:16px;color:#0F5132">10 000 Ar</b>
+        </div>
+      </div>
+    </div>
+
+    ${btn('Confirmer ma participation')}
+  </div>` });
+
+/* --- 22 Changement de mot de passe --- */
+screen('motdepasse', '22 · Changer le mot de passe', { tab: 'students', body: `
+  ${header('Mot de passe', { back: 'profilOuvert' })}
+
+  <div style="flex-grow:1;padding:20px;display:flex;flex-direction:column;gap:22px">
+    ${card(`<div style="display:flex;flex-direction:column;gap:16px">
+      <label class="field"><span class="field__label">Mot de passe actuel</span>
+        <span class="input">••••••••</span></label>
+      <label class="field"><span class="field__label">Nouveau mot de passe</span>
+        <span class="input">••••••••••</span></label>
+      <label class="field"><span class="field__label">Répéter le nouveau</span>
+        <span class="input">••••••••••</span></label>
+    </div>`, 18)}
+
+    ${btn('Enregistrer')}
+
+    <div class="card" style="display:flex;gap:12px;align-items:flex-start;background:#E8F1EC;border-color:#C4D9CC">
+      ${svg('key', 19, '#0F5132')}
+      <div>
+        <p style="font-size:13.5px;font-weight:700;line-height:19px;color:#12613C">Mot de passe oublié</p>
+        <p style="font-size:12.5px;line-height:18px;color:#12613C;margin-top:4px">Adressez-vous à l’administration du club : elle le réinitialise depuis son écran. Il n’y a pas d’envoi par courriel, puisque la connexion se fait au numéro matricule.</p>
+      </div>
+    </div>
+  </div>` });
+
 /* ============================================================
    Messagerie et espace des maîtres
    ============================================================ */
@@ -1046,7 +1168,14 @@ const FEATURES = [
     ['etu-fiche', 'Fiche complète', 'Naissance, numéro, début d’entraînement, grade', 'profilOuvert'],
     ['parents', 'Parents ou tuteur', 'Noms, lien de parenté, téléphones, contact d’urgence', 'profilOuvert'],
     ['etu-bio', 'Biographie', 'Quelques lignes sur le parcours', 'profilOuvert'],
-    ['carte', 'Carte de membre', 'Photo, numéro, grade et code de présence', 'carte']
+    ['carte', 'Carte de membre', 'Photo, numéro, grade et code de présence', 'carte'],
+    ['motdepasse', 'Changer son mot de passe', 'Depuis sa fiche ; réinitialisation par l’administration', 'motdepasse']
+  ]],
+  ['Participation et contribution', [
+    ['part-inscription', 'S’inscrire à une sortie', 'Prénom et matricule repris de la fiche', 'participation'],
+    ['part-accompagnants', 'Amener du monde', 'Conjoint, enfants — le club compte les places', 'participation'],
+    ['part-mvola', 'Contribution par MVola', 'Le clavier s’ouvre avec le code déjà écrit', 'participation'],
+    ['part-tranches', 'Envoyer en plusieurs fois', 'Le total se cumule, le club pointe ce qu’il reçoit', 'participation']
   ]],
   ['Casier et notifications', [
     ['cas-liste', 'Casier des actualités', 'Sorties, compétitions, réunions, cérémonies', 'casier'],
@@ -1233,16 +1362,16 @@ screen('securite', '20 · Sécurité et confidentialité', { wide: true, full: `
    colonnes de cinq, avec des traits de coupe.
    ============================================================ */
 const ELEVES_PLANCHE = [
-  ['RAKOTONDRABE', 'Nirina', 'Ceinture verte', '#4E9C57', 'WA-0042'],
-  ['RASOAMANANA', 'Fanjaniaina', 'Ceinture jaune', '#D8A93A', 'WA-0043'],
-  ['ANDRIANJAFY', 'Tokiniaina', 'Ceinture bleue', '#3E6E9C', 'WA-0044'],
-  ['RABEMANANJARA', 'Hery', 'Ceinture noire', '#1E2320', 'WA-0045'],
-  ['RAZAFIMAHATRATRA', 'Miora', 'Ceinture orange', '#C97A32', 'WA-0046'],
-  ['RANDRIAMAMPIONONA', 'Toky', 'Ceinture blanche', '#E7EDE9', 'WA-0047'],
-  ['RAHARISOA', 'Fanja', 'Ceinture jaune', '#D8A93A', 'WA-0048'],
-  ['ANDRIAMBELO', 'Rado', 'Ceinture verte', '#4E9C57', 'WA-0049'],
-  ['RAKOTOARISOA', 'Lalaina', 'Ceinture orange', '#C97A32', 'WA-0050'],
-  ['RANDRIANASOLO', 'Mamy', 'Ceinture blanche', '#E7EDE9', 'WA-0051']
+  ['RAKOTONDRABE', 'Nirina', 'Ceinture verte', '#4E9C57', 'F04x042'],
+  ['RASOAMANANA', 'Fanjaniaina', 'Ceinture jaune', '#D8A93A', 'F04x043'],
+  ['ANDRIANJAFY', 'Tokiniaina', 'Ceinture bleue', '#3E6E9C', 'F04x044'],
+  ['RABEMANANJARA', 'Hery', 'Ceinture noire', '#1E2320', 'F04x045'],
+  ['RAZAFIMAHATRATRA', 'Miora', 'Ceinture orange', '#C97A32', 'F04x046'],
+  ['RANDRIAMAMPIONONA', 'Toky', 'Ceinture blanche', '#E7EDE9', 'F04x047'],
+  ['RAHARISOA', 'Fanja', 'Ceinture jaune', '#D8A93A', 'F04x048'],
+  ['ANDRIAMBELO', 'Rado', 'Ceinture verte', '#4E9C57', 'F04x049'],
+  ['RAKOTOARISOA', 'Lalaina', 'Ceinture orange', '#C97A32', 'F04x050'],
+  ['RANDRIANASOLO', 'Mamy', 'Ceinture blanche', '#E7EDE9', 'F04x051']
 ];
 
 /* Le portrait de la planche est plus petit : on redéfinit sa taille

@@ -623,6 +623,55 @@ body {
 .carte__head .emblem--img { box-shadow: 0 0 0 1px rgba(255, 255, 255, .35); }
 
 /* ============================================================
+   PARTICIPATION ET CONTRIBUTION MVOLA
+   ============================================================ */
+.modif { font-size: 11px; color: var(--vert-texte); font-weight: 600; }
+.aide { font-size: 12.5px; line-height: 18px; color: var(--gris); }
+.input--fige { background: var(--fond); color: var(--gris); }
+
+.compteur { display: flex; align-items: center; gap: 14px; }
+.compteur__b {
+  width: 46px; height: 46px; border-radius: 14px; flex: none;
+  background: var(--vert-clair); display: grid; place-items: center;
+}
+.compteur__v { flex-grow: 1; text-align: center; }
+.compteur__v b { display: block; font-family: var(--display); font-size: 30px; line-height: 34px; color: var(--vert); }
+.compteur__v span { display: block; font-size: 12.5px; color: var(--gris); margin-top: 2px; }
+
+.montants { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.montant {
+  flex: 1 1 calc(33.333% - 6px); min-width: 82px;
+  padding: 11px 6px; border-radius: 12px;
+  border: 1px solid var(--bord); background: #FFF;
+  font-family: var(--display); font-size: 15px; font-weight: 700; color: var(--encre);
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+}
+.montant i { font-size: 10.5px; font-weight: 500; font-style: normal; color: var(--gris); }
+/* Le montant retenu est vert plein : le blanc dessus mesure 9,4:1. */
+.montant--on { background: var(--vert); border-color: var(--vert); color: #FFF; }
+.montant--on i { color: #B9D4C6; }
+.montant--libre { border-style: dashed; color: var(--vert-texte); }
+
+.ussd { margin-top: 16px; background: var(--fond); border: 1px solid var(--filet); border-radius: 14px; padding: 14px 16px; }
+.ussd__lbl { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--gris); }
+/* Le code se lit chiffre par chiffre : une police à chasse fixe, et
+   de l'air entre les caractères. C'est ce que le membre vérifiera
+   avant d'appuyer sur appeler. */
+.ussd__code {
+  display: block; margin-top: 8px;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 16px; letter-spacing: .04em; color: var(--encre); word-break: break-all;
+}
+.ussd__code b { color: var(--vert); }
+.ussd__nom { font-size: 12px; color: var(--gris); margin-top: 7px; }
+
+.avert {
+  display: flex; gap: 10px; align-items: flex-start; margin-top: 14px;
+  background: #FDF3EC; border: 1px solid #F0D6C2; border-radius: 12px; padding: 12px 14px;
+}
+.avert p { font-size: 12.5px; line-height: 18px; color: #7A4322; }
+
+/* ============================================================
    MESSAGERIE
    ============================================================ */
 .convrow__haut { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
@@ -830,6 +879,34 @@ body {
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 
+/* ------------------------------------------------------------
+   Le cachet du club, sur la carte de membre.
+   Tant que le fichier n'est pas fourni, l'emplacement reste vide
+   et le dit : un faux tampon serait pire qu'un blanc.
+   ------------------------------------------------------------ */
+.cachet {
+  width: 62px; height: 62px; border-radius: 50%; flex: none;
+  display: grid; place-items: center; text-align: center;
+  border: 1px dashed #C4D4CB; color: #9DB3A7;
+  transform: rotate(-8deg);
+}
+.cachet i { font-size: 9px; font-style: normal; line-height: 11px; letter-spacing: .04em; text-transform: uppercase; }
+.cachet--img { border: 0; }
+.cachet--img img { width: 100%; height: 100%; object-fit: contain; }
+/* Sur la carte de membre à l'écran, le cachet se pose dans l'angle,
+   hors du flux : en élément de flexbox il écrasait la colonne de
+   texte du code de membre. */
+.carte .cachet {
+  /* En haut à droite : le bas de la carte porte déjà la mention du
+     motif de démonstration, et un cachet posé dessus rendait les deux
+     illisibles. */
+  position: absolute; right: 14px; top: 14px; width: 56px; height: 56px;
+  border-color: rgba(255, 255, 255, .34); color: #A8CDB9;   /* 5,1:1 sur le vert */
+}
+/* Sur la carte imprimée, il se pose en filigrane :
+   un cachet ne doit pas gêner la lecture du nom. */
+.pc .cachet { position: absolute; right: 17mm; bottom: 3mm; width: 13mm; height: 13mm; opacity: .55; }
+
   </style>
 </head>
 <body>
@@ -866,7 +943,7 @@ const SCREENS = {
       <div style="background:#FFF;border-radius:20px;padding:24px 20px;display:flex;flex-direction:column;gap:18px">
         <p style="font-size:17px;font-weight:700">Connexion membre</p>
         <label class="field"><span class="field__label">Numéro de membre</span>
-          <span class="input">WA-0042</span></label>
+          <span class="input">F04x042</span></label>
         <label class="field"><span class="field__label">Mot de passe</span>
           <span class="input" style="color:#8A978F;letter-spacing:.2em">••••••••</span></label>
         <button class="btn btn--primary" data-go="accueil">Entrer</button>
@@ -910,7 +987,7 @@ const SCREENS = {
       </div>
       <div style="padding:18px">
         <p class="display" style="font-size:19px;line-height:24px">Kung-fu Waishi Analamahitsy</p>
-        <p style="font-size:14px;line-height:22px;color:#59685F;margin-top:8px">Un club ouvert à tous les âges, où la discipline se transmet par la pratique régulière. Entraînements trois fois par semaine à Analamahitsy.</p>
+        <p style="font-size:14px;line-height:22px;color:#59685F;margin-top:8px">Un club ouvert à tous les âges, où la discipline se transmet par la pratique régulière. Entraînements quatre fois par semaine à Analamahitsy.</p>
         <button class="linkrow" data-go="club">En savoir plus sur le club <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#12613C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></button>
       </div>
     </div>
@@ -921,7 +998,7 @@ const SCREENS = {
         <p style="font-size:11px;color:#59685F;margin-top:3px">membres</p>
       </div>
       <div class="card" style="padding:14px 12px;text-align:center">
-        <p class="display" style="font-size:22px;color:#0F5132">3</p>
+        <p class="display" style="font-size:22px;color:#0F5132">4</p>
         <p style="font-size:11px;color:#59685F;margin-top:3px">séances / sem.</p>
       </div>
       <div class="card" style="padding:14px 12px;text-align:center">
@@ -1193,7 +1270,7 @@ const SCREENS = {
         <div><span>Nom</span><b>RAKOTONDRABE</b></div>
         <div><span>Prénom</span><b>Nirina</b></div>
         <div><span>Date de naissance</span><b>14 mars 2006</b></div>
-        <div><span>Numéro de membre</span><b>WA-0042</b></div>
+        <div><span>Numéro de membre</span><b>F04x042</b></div>
         <div><span>Début d’entraînement</span><b>9 septembre 2019</b></div>
         <div><span>Grade</span><b>Ceinture verte</b></div>
       </div></div>
@@ -1370,7 +1447,7 @@ const SCREENS = {
 
       <p style="font-size:15px;line-height:25px;color:#3C4A42">La sortie annuelle est ouverte à tous les membres, quel que soit le grade. Le transport est organisé par le club. Chacun apporte son repas de midi et une tenue de rechange.</p>
       <p style="font-size:15px;line-height:25px;color:#3C4A42">Les mineurs doivent remettre une autorisation signée avant le mercredi 19 novembre.</p>
-      <button class="btn btn--primary">J’y participe</button>
+      <button class="btn btn--primary" data-go="participation">J’y participe</button>
     </div>
   </div>
   <nav class="tabbar">
@@ -1509,16 +1586,17 @@ const SCREENS = {
     </div>
 
     <div style="display:flex;flex-direction:column;gap:12px">
-      <h2 class="overline">Entraînements</h2>
+      <div class="rowhead"><h2 class="overline">Entraînements</h2><span class="modif">Modifiable par l’administration</span></div>
       <div class="card" style="padding:16px"><div class="deflist">
-        <div><span style="width:74px;flex:none;color:#0E2119;font-weight:600">Lundi</span><span style="flex-grow:1;color:#3C4A42">17h30 – 19h00</span><b style="font-size:12px;color:#7C8B82;font-weight:400">Tous niveaux</b></div>
-        <div><span style="width:74px;flex:none;color:#0E2119;font-weight:600">Mercredi</span><span style="flex-grow:1;color:#3C4A42">17h30 – 19h00</span><b style="font-size:12px;color:#7C8B82;font-weight:400">Débutants</b></div>
+        <div><span style="width:74px;flex:none;color:#0E2119;font-weight:600">Mardi</span><span style="flex-grow:1;color:#3C4A42">17h30 – 19h00</span><b style="font-size:12px;color:#7C8B82;font-weight:400">Tous niveaux</b></div>
+        <div><span style="width:74px;flex:none;color:#0E2119;font-weight:600">Jeudi</span><span style="flex-grow:1;color:#3C4A42">17h30 – 19h00</span><b style="font-size:12px;color:#7C8B82;font-weight:400">Tous niveaux</b></div>
+        <div><span style="width:74px;flex:none;color:#0E2119;font-weight:600">Vendredi</span><span style="flex-grow:1;color:#3C4A42">17h30 – 19h00</span><b style="font-size:12px;color:#7C8B82;font-weight:400">Débutants</b></div>
         <div><span style="width:74px;flex:none;color:#0E2119;font-weight:600">Samedi</span><span style="flex-grow:1;color:#3C4A42">09h00 – 11h00</span><b style="font-size:12px;color:#7C8B82;font-weight:400">Gradés</b></div>
       </div></div>
     </div>
 
     <div style="display:flex;flex-direction:column;gap:12px">
-      <h2 class="overline">Contact</h2>
+      <div class="rowhead"><h2 class="overline">Contact</h2><span class="modif">Modifiable par l’administration</span></div>
       <div class="card" style="padding:16px"><div style="display:flex;flex-direction:column;gap:14px">
         <div style="display:flex;align-items:center;gap:12px">
           <span class="tile tile--sm"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/></svg></span>
@@ -1815,7 +1893,7 @@ const SCREENS = {
       <div class="duo">
         <div class="card" style="display:flex;flex-direction:column;gap:12px">
           <p style="font-size:12px;font-weight:700;color:#59685F">Champ de saisie</p>
-          <label class="field"><span class="field__label">Numéro de membre</span><span class="input">WA-0042</span></label>
+          <label class="field"><span class="field__label">Numéro de membre</span><span class="input">F04x042</span></label>
           <label class="field"><span class="field__label">Actif</span><span class="input input--on">Rakotondrabe</span></label>
         </div>
         <div class="card" style="display:flex;flex-direction:column;gap:12px">
@@ -1944,7 +2022,7 @@ const SCREENS = {
           <b>64</b><span>membres</span>
         </div>
         <div class="dirB__glass">
-          <b>3</b><span>séances</span>
+          <b>4</b><span>séances</span>
         </div>
         <div class="dirB__glass">
           <b>186</b><span>photos</span>
@@ -2091,6 +2169,10 @@ const SCREENS = {
     <div style="flex-grow:1;padding:22px 20px 28px;display:flex;flex-direction:column;gap:20px">
 
       <div class="carte" data-feat="carte">
+        <!-- Le cachet du club. L'emplacement reste vide tant que le
+             fichier n'est pas déposé dans img/ : un emplacement vide
+             est plus honnête qu'un faux tampon. -->
+        <span class="cachet" aria-label="Cachet du club"><i>cachet<br>du club</i></span>
         <div class="carte__head">
           <span class="emblem" style="width:36px;height:36px;border-radius:10px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/><path d="M9 12.2l2 2 4-4.4"/></svg></span>
           <span style="flex-grow:1">
@@ -2109,7 +2191,7 @@ const SCREENS = {
             <b class="carte__nom">RAKOTONDRABE</b>
             <span class="carte__prenom">Nirina</span>
             <span style="margin-top:2px"><span class="grade"><i style="background:#4E9C57"></i>Ceinture verte</span></span>
-            <span class="carte__num">WA-0042</span>
+            <span class="carte__num">F04x042</span>
           </div>
         </div>
 
@@ -2156,6 +2238,180 @@ const SCREENS = {
       </div>
     </div>
   </div>`
+  },
+  participation: {
+    label: "21 · Je participe",
+    html: `<div class="phone">
+  
+  <div class="apphead">
+    <button class="tapicon" data-go="casierDetail" aria-label="Retour"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0E2119" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5 8 12l7 7"/></svg></button>
+    <h1 class="apphead__title">Je participe</h1>
+    
+  </div>
+
+  <div style="flex-grow:1;padding:18px 20px 24px;display:flex;flex-direction:column;gap:22px">
+    <div class="card" style="display:flex;gap:13px;align-items:center;padding:14px 16px">
+      <span class="datebox"><b>22</b><i>nov</i></span>
+      <div>
+        <p style="font-size:15px;font-weight:600;line-height:20px">Sortie au lac Mantasoa</p>
+        <p style="font-size:13px;color:#59685F;margin-top:3px">Départ 6h00 devant la salle</p>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <h2 class="overline">Qui vient</h2>
+      <div class="card" style="padding:16px"><div style="display:flex;flex-direction:column;gap:14px">
+        <label class="field"><span class="field__label">Prénom</span>
+          <span class="input">Nirina</span></label>
+        <label class="field"><span class="field__label">Numéro matricule</span>
+          <span class="input input--fige">F04x042</span></label>
+        <p class="aide">Les deux sont repris de votre fiche. Le matricule ne se modifie pas.</p>
+      </div></div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="rowhead"><h2 class="overline">J’amène du monde</h2><span style="font-size:12px;color:#7C8B82">Conjoint, enfants</span></div>
+      <div class="card" style="padding:16px"><div class="compteur">
+        <button class="compteur__b" aria-label="Retirer une personne"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></button>
+        <div class="compteur__v">
+          <b>2</b>
+          <span>personnes en plus</span>
+        </div>
+        <button class="compteur__b" aria-label="Ajouter une personne"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></button>
+      </div>
+      <p class="aide" style="margin-top:12px">Trois places au total avec vous. Le club compte les places pour le transport.</p></div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <h2 class="overline">Ma participation</h2>
+      <div class="card" style="padding:16px">
+        <p style="font-size:13.5px;line-height:20px;color:#59685F">Vous pouvez envoyer en plusieurs fois. Choisissez le montant de cet envoi.</p>
+        <div class="montants">
+          <button class="montant">1 000<i>Ar</i></button>
+          <button class="montant">2 000<i>Ar</i></button>
+          <button class="montant montant--on">5 000<i>Ar</i></button>
+          <button class="montant">10 000<i>Ar</i></button>
+          <button class="montant montant--libre">Autre<i>montant</i></button>
+        </div>
+
+        <div class="ussd">
+          <p class="ussd__lbl">Le code composé sur votre téléphone</p>
+          <code class="ussd__code">#111*1*2*<b>0388010853</b>*5000#</code>
+          <p class="ussd__nom">Santatra Nirina Antonio · MVola</p>
+        </div>
+
+        <button class="btn btn--primary">Ouvrir le clavier avec ce code</button>
+
+        <div class="avert">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A3A12" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 21 19H3z"/><path d="M12 9.5v4"/><path d="M12 16.3v.2"/></svg>
+          <p>L’application ouvre le clavier, elle n’envoie pas l’argent : c’est vous qui appuyez sur appeler. Elle ne sait pas non plus si le transfert a réussi — c’est le club qui pointe ce qu’il a reçu.</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <h2 class="overline">Ce que j’ai déjà envoyé</h2>
+      <div class="list">
+        <div class="listrow">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#12613C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/><path d="M9 12.2l2 2 4-4.4"/></svg>
+          <span style="flex-grow:1;min-width:0">
+            <b style="display:block;font-size:14.5px;font-weight:600">5 000 Ar</b>
+            <span style="display:block;font-size:12.5px;color:#59685F;margin-top:1px">18 novembre · Pointé par le club</span>
+          </span>
+        </div>
+        <div class="listrow">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#12613C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/><path d="M9 12.2l2 2 4-4.4"/></svg>
+          <span style="flex-grow:1;min-width:0">
+            <b style="display:block;font-size:14.5px;font-weight:600">5 000 Ar</b>
+            <span style="display:block;font-size:12.5px;color:#59685F;margin-top:1px">12 novembre · Pointé par le club</span>
+          </span>
+        </div>
+        <div class="listrow" style="background:#F5F8F6">
+          <span style="flex-grow:1;font-size:13.5px;color:#59685F">Total reçu</span>
+          <b class="display" style="font-size:16px;color:#0F5132">10 000 Ar</b>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn--primary">Confirmer ma participation</button>
+  </div>
+  <nav class="tabbar">
+    <button class="tabbar__item" data-go="accueil">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Accueil</span>
+    </button>
+    <button class="tabbar__item" data-go="etudiants">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Étudiants</span>
+    </button>
+    <button class="tabbar__item" data-go="messages">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H8l-4 4V5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5z"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Messages</span>
+    </button>
+    <button class="tabbar__item" data-go="casier" aria-current="page">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/></svg>
+      <span style="font-size:10px;font-weight:700;color:#0F5132">Casier</span>
+    </button>
+    <button class="tabbar__item" data-go="album">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Album</span>
+    </button>
+  </nav>
+</div>`
+  },
+  motdepasse: {
+    label: "22 · Changer le mot de passe",
+    html: `<div class="phone">
+  
+  <div class="apphead">
+    <button class="tapicon" data-go="profilOuvert" aria-label="Retour"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0E2119" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5 8 12l7 7"/></svg></button>
+    <h1 class="apphead__title">Mot de passe</h1>
+    
+  </div>
+
+  <div style="flex-grow:1;padding:20px;display:flex;flex-direction:column;gap:22px">
+    <div class="card" style="padding:18px"><div style="display:flex;flex-direction:column;gap:16px">
+      <label class="field"><span class="field__label">Mot de passe actuel</span>
+        <span class="input">••••••••</span></label>
+      <label class="field"><span class="field__label">Nouveau mot de passe</span>
+        <span class="input">••••••••••</span></label>
+      <label class="field"><span class="field__label">Répéter le nouveau</span>
+        <span class="input">••••••••••</span></label>
+    </div></div>
+
+    <button class="btn btn--primary">Enregistrer</button>
+
+    <div class="card" style="display:flex;gap:12px;align-items:flex-start;background:#E8F1EC;border-color:#C4D9CC">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="12" r="4"/><path d="M12 12h9"/><path d="M18 12v3.5"/><path d="M15 12v2.5"/></svg>
+      <div>
+        <p style="font-size:13.5px;font-weight:700;line-height:19px;color:#12613C">Mot de passe oublié</p>
+        <p style="font-size:12.5px;line-height:18px;color:#12613C;margin-top:4px">Adressez-vous à l’administration du club : elle le réinitialise depuis son écran. Il n’y a pas d’envoi par courriel, puisque la connexion se fait au numéro matricule.</p>
+      </div>
+    </div>
+  </div>
+  <nav class="tabbar">
+    <button class="tabbar__item" data-go="accueil">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Accueil</span>
+    </button>
+    <button class="tabbar__item" data-go="etudiants" aria-current="page">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.4"/><path d="M16 13.5a4.5 4.5 0 0 1 4.5 4.5"/></svg>
+      <span style="font-size:10px;font-weight:700;color:#0F5132">Étudiants</span>
+    </button>
+    <button class="tabbar__item" data-go="messages">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H8l-4 4V5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5z"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Messages</span>
+    </button>
+    <button class="tabbar__item" data-go="casier">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Casier</span>
+    </button>
+    <button class="tabbar__item" data-go="album">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#7C8B82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg>
+      <span style="font-size:10px;color:#7C8B82">Album</span>
+    </button>
+  </nav>
+</div>`
   },
   messages: {
     label: "16 · Messages",
@@ -2616,6 +2872,46 @@ const SCREENS = {
             </span>
             <span class="featrow__end" data-count="carte"></span>
           </button>
+          <button class="featrow" data-feat="motdepasse" data-screen="motdepasse">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Changer son mot de passe</b>
+              <span class="featrow__d">Depuis sa fiche ; réinitialisation par l’administration</span>
+            </span>
+            <span class="featrow__end" data-count="motdepasse"></span>
+          </button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="overline">Participation et contribution</h2>
+        <div class="list">
+          <button class="featrow" data-feat="part-inscription" data-screen="participation">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">S’inscrire à une sortie</b>
+              <span class="featrow__d">Prénom et matricule repris de la fiche</span>
+            </span>
+            <span class="featrow__end" data-count="part-inscription"></span>
+          </button>
+          <button class="featrow" data-feat="part-accompagnants" data-screen="participation">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Amener du monde</b>
+              <span class="featrow__d">Conjoint, enfants — le club compte les places</span>
+            </span>
+            <span class="featrow__end" data-count="part-accompagnants"></span>
+          </button>
+          <button class="featrow" data-feat="part-mvola" data-screen="participation">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Contribution par MVola</b>
+              <span class="featrow__d">Le clavier s’ouvre avec le code déjà écrit</span>
+            </span>
+            <span class="featrow__end" data-count="part-mvola"></span>
+          </button>
+          <button class="featrow" data-feat="part-tranches" data-screen="participation">
+            <span style="flex-grow:1;min-width:0;text-align:left">
+              <b class="featrow__t">Envoyer en plusieurs fois</b>
+              <span class="featrow__d">Le total se cumule, le club pointe ce qu’il reçoit</span>
+            </span>
+            <span class="featrow__end" data-count="part-tranches"></span>
+          </button>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:10px">
@@ -3038,7 +3334,7 @@ const SCREENS = {
     <b class="pc__nom">RAKOTONDRABE</b>
     <span class="pc__prenom">Nirina</span>
     <span class="pc__grade"><i style="background:#4E9C57"></i>Ceinture verte</span>
-    <span class="pc__num">WA-0042</span>
+    <span class="pc__num">F04x042</span>
   </span>
   <span class="pc__qr"><svg viewBox="-2 -2 25 25" width="128" height="128" shape-rendering="crispEdges" aria-label="Code QR de démonstration">
     <rect x="-2" y="-2" width="25" height="25" fill="#FFF"/>
@@ -3057,7 +3353,7 @@ const SCREENS = {
     <b class="pc__nom">RASOAMANANA</b>
     <span class="pc__prenom">Fanjaniaina</span>
     <span class="pc__grade"><i style="background:#D8A93A"></i>Ceinture jaune</span>
-    <span class="pc__num">WA-0043</span>
+    <span class="pc__num">F04x043</span>
   </span>
   <span class="pc__qr"><svg viewBox="-2 -2 25 25" width="128" height="128" shape-rendering="crispEdges" aria-label="Code QR de démonstration">
     <rect x="-2" y="-2" width="25" height="25" fill="#FFF"/>
@@ -3076,7 +3372,7 @@ const SCREENS = {
     <b class="pc__nom">ANDRIANJAFY</b>
     <span class="pc__prenom">Tokiniaina</span>
     <span class="pc__grade"><i style="background:#3E6E9C"></i>Ceinture bleue</span>
-    <span class="pc__num">WA-0044</span>
+    <span class="pc__num">F04x044</span>
   </span>
   <span class="pc__qr"><svg viewBox="-2 -2 25 25" width="128" height="128" shape-rendering="crispEdges" aria-label="Code QR de démonstration">
     <rect x="-2" y="-2" width="25" height="25" fill="#FFF"/>
@@ -3095,7 +3391,7 @@ const SCREENS = {
     <b class="pc__nom">RABEMANANJARA</b>
     <span class="pc__prenom">Hery</span>
     <span class="pc__grade"><i style="background:#1E2320"></i>Ceinture noire</span>
-    <span class="pc__num">WA-0045</span>
+    <span class="pc__num">F04x045</span>
   </span>
   <span class="pc__qr"><svg viewBox="-2 -2 25 25" width="128" height="128" shape-rendering="crispEdges" aria-label="Code QR de démonstration">
     <rect x="-2" y="-2" width="25" height="25" fill="#FFF"/>
@@ -3114,7 +3410,7 @@ const SCREENS = {
     <b class="pc__nom">RAZAFIMAHATRATRA</b>
     <span class="pc__prenom">Miora</span>
     <span class="pc__grade"><i style="background:#C97A32"></i>Ceinture orange</span>
-    <span class="pc__num">WA-0046</span>
+    <span class="pc__num">F04x046</span>
   </span>
   <span class="pc__qr"><svg viewBox="-2 -2 25 25" width="128" height="128" shape-rendering="crispEdges" aria-label="Code QR de démonstration">
     <rect x="-2" y="-2" width="25" height="25" fill="#FFF"/>
@@ -3133,7 +3429,7 @@ const SCREENS = {
     <b class="pc__nom">RANDRIAMAMPIONONA</b>
     <span class="pc__prenom">Toky</span>
     <span class="pc__grade"><i style="background:#E7EDE9"></i>Ceinture blanche</span>
-    <span class="pc__num">WA-0047</span>
+    <span class="pc__num">F04x047</span>
   </span>
   <span class="pc__qr"><svg viewBox="-2 -2 25 25" width="128" height="128" shape-rendering="crispEdges" aria-label="Code QR de démonstration">
     <rect x="-2" y="-2" width="25" height="25" fill="#FFF"/>
@@ -3152,7 +3448,7 @@ const SCREENS = {
     <b class="pc__nom">RAHARISOA</b>
     <span class="pc__prenom">Fanja</span>
     <span class="pc__grade"><i style="background:#D8A93A"></i>Ceinture jaune</span>
-    <span class="pc__num">WA-0048</span>
+    <span class="pc__num">F04x048</span>
   </span>
   <span class="pc__qr"><svg viewBox="-2 -2 25 25" width="128" height="128" shape-rendering="crispEdges" aria-label="Code QR de démonstration">
     <rect x="-2" y="-2" width="25" height="25" fill="#FFF"/>
@@ -3171,7 +3467,7 @@ const SCREENS = {
     <b class="pc__nom">ANDRIAMBELO</b>
     <span class="pc__prenom">Rado</span>
     <span class="pc__grade"><i style="background:#4E9C57"></i>Ceinture verte</span>
-    <span class="pc__num">WA-0049</span>
+    <span class="pc__num">F04x049</span>
   </span>
   <span class="pc__qr"><svg viewBox="-2 -2 25 25" width="128" height="128" shape-rendering="crispEdges" aria-label="Code QR de démonstration">
     <rect x="-2" y="-2" width="25" height="25" fill="#FFF"/>
@@ -3190,7 +3486,7 @@ const SCREENS = {
     <b class="pc__nom">RAKOTOARISOA</b>
     <span class="pc__prenom">Lalaina</span>
     <span class="pc__grade"><i style="background:#C97A32"></i>Ceinture orange</span>
-    <span class="pc__num">WA-0050</span>
+    <span class="pc__num">F04x050</span>
   </span>
   <span class="pc__qr"><svg viewBox="-2 -2 25 25" width="128" height="128" shape-rendering="crispEdges" aria-label="Code QR de démonstration">
     <rect x="-2" y="-2" width="25" height="25" fill="#FFF"/>
@@ -3209,7 +3505,7 @@ const SCREENS = {
     <b class="pc__nom">RANDRIANASOLO</b>
     <span class="pc__prenom">Mamy</span>
     <span class="pc__grade"><i style="background:#E7EDE9"></i>Ceinture blanche</span>
-    <span class="pc__num">WA-0051</span>
+    <span class="pc__num">F04x051</span>
   </span>
   <span class="pc__qr"><svg viewBox="-2 -2 25 25" width="128" height="128" shape-rendering="crispEdges" aria-label="Code QR de démonstration">
     <rect x="-2" y="-2" width="25" height="25" fill="#FFF"/>
@@ -3237,7 +3533,7 @@ const SCREENS = {
     <b class="pc__nom">RAKOTONDRABE</b>
     <span class="pc__prenom">Nirina</span>
     <span class="pc__grade"><i style="background:#4E9C57"></i>Ceinture verte</span>
-    <span class="pc__num">WA-0042</span>
+    <span class="pc__num">F04x042</span>
   </span>
   <span class="pc__qr"><svg viewBox="-2 -2 25 25" width="128" height="128" shape-rendering="crispEdges" aria-label="Code QR de démonstration">
     <rect x="-2" y="-2" width="25" height="25" fill="#FFF"/>
@@ -3277,9 +3573,9 @@ const SCREENS = {
 const GROUPES = [
   ['À relire', ['fonctionnalites']],
   ['Entrée', ['connexion', 'accueil']],
-  ['Étudiants', ['etudiants', 'profilVerrouille', 'profilOuvert', 'carte']],
+  ['Étudiants', ['etudiants', 'profilVerrouille', 'profilOuvert', 'motdepasse', 'carte']],
   ['Messages', ['messages', 'salon', 'maitresVerrou', 'maitres']],
-  ['Casier', ['casier', 'casierDetail', 'notifications']],
+  ['Casier', ['casier', 'casierDetail', 'participation', 'notifications']],
   ['Album', ['album', 'photo']],
   ['Le club', ['club']],
   ['Administration', ['admin']],
@@ -3310,6 +3606,10 @@ let commentaires = MAGASIN.lire('commentaires', {});
    celui livré avec la maquette, puis un fichier posé dans img/. */
 let logo = MAGASIN.lire('logo', null)
   || (typeof LOGO_INTEGRE !== 'undefined' ? LOGO_INTEGRE : null);
+/* Le cachet du club, sur la carte de membre. Même mécanique que le
+   logo : un fichier dans img/, ou un choisi depuis la maquette. */
+let cachet = MAGASIN.lire('cachet', null)
+  || (typeof CACHET_INTEGRE !== 'undefined' ? CACHET_INTEGRE : null);
 
 /* Libellé lisible d'une clé de commentaire, pour l'export. */
 function nomFonction(cle) {
@@ -3355,6 +3655,7 @@ function afficher(cle) {
   }
 
   appliquerLogo();
+  appliquerCachet();
   rafraichirCompteurs();
   marquerActif();
   app.el.stage.scrollTop = 0;
@@ -3393,7 +3694,15 @@ function appliquerLogo() {
   });
 }
 
-function choisirLogo() {
+function appliquerCachet() {
+  if (!cachet) return;
+  document.querySelectorAll('.cachet').forEach((n) => {
+    n.innerHTML = `<img src="${cachet}" alt="Cachet du club">`;
+    n.classList.add('cachet--img');
+  });
+}
+
+function choisirImage(quoi, poser) {
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = 'image/png,image/jpeg,image/svg+xml,image/webp';
@@ -3406,14 +3715,17 @@ function choisirLogo() {
     }
     const lecteur = new FileReader();
     lecteur.onload = () => {
-      logo = lecteur.result;
-      MAGASIN.ecrire('logo', logo);
+      poser(lecteur.result);
+      MAGASIN.ecrire(quoi, lecteur.result);
       afficher(app.current);
     };
     lecteur.readAsDataURL(f);
   });
   input.click();
 }
+
+const choisirLogo   = () => choisirImage('logo',   (v) => { logo = v; });
+const choisirCachet = () => choisirImage('cachet', (v) => { cachet = v; });
 
 /* ---------------------------------------------- Commentaires */
 function rafraichirCompteurs() {
@@ -3534,6 +3846,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <p class="index__sub">Analamahitsy · maquette ${Object.keys(SCREENS).length} écrans</p>
       <div class="index__outils">
         <button class="outil" data-action="logo">Logo du club</button>
+        <button class="outil" data-action="cachet">Cachet du club</button>
         <button class="outil" data-action="exporter">Exporter <span data-total></span></button>
       </div>
     </div>`;
@@ -3567,6 +3880,8 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="tiroir__outils">
           <button class="outil" data-action="logo">Logo du club</button>
+          <button class="outil" data-action="cachet">Cachet du club</button>
+        <button class="outil" data-action="cachet">Cachet du club</button>
         </div>
         ${listeEcrans('listeMobile')}
       </div>
@@ -3575,13 +3890,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* Rien d'embarqué ? On cherche un fichier déposé dans img/, quelle
      que soit son extension — le club envoie ce qu'il a sous la main. */
-  if (!logo) {
+  const chercher = (nom, deja, poser) => {
+    if (deja()) return;
     ['png', 'jpg', 'jpeg', 'webp', 'svg'].forEach((ext) => {
       const essai = new Image();
-      essai.onload = () => { if (!logo) { logo = `img/logo.${ext}`; appliquerLogo(); } };
-      essai.src = `img/logo.${ext}`;
+      essai.onload = () => { if (!deja()) poser(`img/${nom}.${ext}`); };
+      essai.src = `img/${nom}.${ext}`;
     });
-  }
+  };
+  chercher('logo',   () => logo,   (v) => { logo = v; appliquerLogo(); });
+  chercher('cachet', () => cachet, (v) => { cachet = v; appliquerCachet(); });
 
   afficher('fonctionnalites');
 
@@ -3592,6 +3910,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (act) {
       const a = act.dataset.action;
       if (a === 'logo') choisirLogo();
+      if (a === 'cachet') choisirCachet();
       if (a === 'exporter') exporter();
       if (a === 'imprimer') window.print();
       if (a === 'menu') ouvrirTiroir();
