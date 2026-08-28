@@ -1,0 +1,13 @@
+# Ce qui n'a rien à faire sur l'hébergement : seuls la maquette et
+# l'aperçu sont servis.
+node_modules
+outils
+app
+supabase
+scripts
+*.mjs
+build.js
+build-screens.mjs
+build-logo.mjs
+package.json
+package-lock.json

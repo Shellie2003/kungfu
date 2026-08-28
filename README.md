@@ -8,10 +8,25 @@ Ce dépôt contient un site statique qui présente les écrans dans un cadre de 
 avec un index à gauche. Il s'ouvre dans un navigateur et se publie sur n'importe quel
 hébergeur.
 
-## Lancer
+## En ligne
+
+| Adresse | Ce qu'on y trouve |
+|---|---|
+| `/` | **La maquette** — 26 écrans, avec l'outil de commentaires |
+| `/apercu` | **L'application** — les vrais composants React Native, rendus dans le navigateur |
+
+Le site se redéploie à chaque poussée sur la branche : rien à compiler, rien à renvoyer.
+L'adresse exacte est celle du projet Vercel `kungfu_idealy`.
+
+L'aperçu n'est pas une capture d'écran : c'est le code de `app/` assemblé avec
+react-native-web. Ce qu'il ne montre pas, c'est le rendu **natif** — lissage des polices,
+ombres, défilement à l'inertie. Pour cela il faut l'APK, ou Expo Go.
+
+## Lancer en local
 
 ```bash
 python3 -m http.server 8000     # puis ouvrir http://localhost:8000
+npm run apercu                  # reconstruit /apercu après un changement dans app/
 ```
 
 - **Colonne de gauche** : les 26 écrans.

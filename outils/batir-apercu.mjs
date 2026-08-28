@@ -140,7 +140,8 @@ ${ECRANS.map((e, i) => `    <button onclick="window.__aller(${i})">${e.titre}</b
 
   <footer>
     Ce ne sont pas des images : ce sont les composants de l’application, rendus dans votre
-    navigateur. Le rendu natif Android — lissage, ombres, défilement — demande l’APK.
+    navigateur. Le rendu natif Android — lissage, ombres, défilement — demande l’APK.<br>
+    <a href="/" style="color:#8FB3A0">← La maquette validée, 26 écrans</a>
   </footer>
 
   <script>${script}</script>
