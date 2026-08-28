@@ -233,6 +233,8 @@ compte pour un club à Antananarivo, et ce qui évite qu'elle change d'aspect d'
 | `build-logo.mjs` | Réduit ce logo et l'incorpore dans `js/logo.js` |
 | `build.js` | Assemble un fichier unique dans `dist/`, à envoyer par courriel |
 | `vercel.json` | Configuration d'hébergement, site statique sans étape de build |
+| `ARCHITECTURE.md` | **Le topo de démarrage** : choix technologique, étapes, coûts |
+| `supabase/` | Les migrations et le test de sécurité, exécutés sur un vrai PostgreSQL |
 
 L'application de gestion de monastère développée précédemment reste consultable dans
 l'historique du dépôt : elle répondait à un autre cahier des charges.
