@@ -79,6 +79,11 @@ body {
    L'application
    ------------------------------------------------------------ */
 .phone { min-height: 780px; display: flex; flex-direction: column; background: var(--fond); }
+/* Sans cette règle, un écran dont le contenu dépasse la hauteur du
+   téléphone comprime ses blocs au lieu de défiler : le rail de
+   filtres tombait de 53 à 18 px sur Étudiants et sur Casier, et
+   personne ne l'avait vu. Un bloc garde sa hauteur, l'écran défile. */
+.phone > * { flex-shrink: 0; }
 .phone--green { background: var(--vert); }
 
 .display { font-family: var(--display); font-weight: 700; }
@@ -171,7 +176,7 @@ body {
 /* Contrôles */
 .chips { display: flex; gap: 8px; padding: 14px 20px 4px; overflow-x: auto; scrollbar-width: none; }
 .chips::-webkit-scrollbar { height: 0; }
-.chip { flex: none; padding: 9px 15px; border-radius: 999px; font-size: 13px; background: #FFF; color: var(--gris); border: 1px solid var(--bord); }
+.chip { flex: none; padding: 9px 15px; border-radius: 999px; font-size: 13px; line-height: 17px; background: #FFF; color: var(--gris); border: 1px solid var(--bord); }
 .chip--on { background: var(--vert); color: #FFF; border-color: var(--vert); font-weight: 600; }
 
 .btn { min-height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; font-weight: 600; width: 100%; }
@@ -230,6 +235,19 @@ body {
 @keyframes countin { from { opacity: 0; transform: translateY(24px) scale(.94); } }
 
 /* Entrée en cascade : les blocs arrivent l'un après l'autre. */
+/* Le système sait dire qu'on ne veut pas d'animation — vertige,
+   trouble vestibulaire, ou simple préférence. On l'écoute. Cela rend
+   aussi la comparaison avec l'application déterministe : sans cela,
+   la capture tombe au milieu de l'entrée en cascade. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}
+
 .enter > * { animation: rise .52s cubic-bezier(.2, .75, .3, 1) both; }
 .enter > *:nth-child(1) { animation-delay: .02s; }
 .enter > *:nth-child(2) { animation-delay: .08s; }

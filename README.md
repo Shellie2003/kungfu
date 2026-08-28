@@ -270,6 +270,8 @@ compte pour un club à Antananarivo, et ce qui évite qu'elle change d'aspect d'
 | `vercel.json` | Configuration d'hébergement, site statique sans étape de build |
 | `ARCHITECTURE.md` | **Le topo de démarrage** : choix technologique, étapes, coûts |
 | `supabase/` | Les migrations et le test de sécurité, exécutés sur un vrai PostgreSQL |
+| `app/` | **L'application** : thème extrait de cette maquette, composants, écrans |
+| `outils/` | L'extracteur de thème et la comparaison maquette / application |
 
 L'application de gestion de monastère développée précédemment reste consultable dans
 l'historique du dépôt : elle répondait à un autre cahier des charges.

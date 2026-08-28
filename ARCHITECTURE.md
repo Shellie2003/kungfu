@@ -66,6 +66,31 @@ Apple à 99 dollars par an, pas une réécriture.
 
 ---
 
+## 1 bis. Comment on garantit que le design ne dérive pas
+
+Le client demande que l'application ressemble à la maquette à 100 %. Une relecture côte à
+côte ne le garantit pas : une marge de 2 px, une graisse 600 au lieu de 700, un gris
+légèrement différent — rien de tout cela ne se voit, et tout cela s'accumule.
+
+Deux dispositifs, tous deux en place et exécutables :
+
+**Le thème est extrait, pas recopié.** `node outils/extraire-theme.mjs` lit `css/app.css`
+et produit `app/theme/tokens.ts` : 13 couleurs, 2 polices, 4 rayons et 34 mesures relevées
+règle par règle. Le fichier est généré ; on ne le modifie jamais à la main.
+
+**L'écart est mesuré, pas supposé.** `node outils/comparer.mjs` rend les composants React
+Native dans un navigateur, photographie l'écran correspondant de la maquette, et compare.
+La géométrie de chaque texte doit concorder **exactement** ; les pixels doivent rester
+sous 0,3 %. Aujourd'hui, sur l'écran Étudiants : 27 textes au même endroit, 0,04 % de
+pixels différents.
+
+Le détail est dans `app/README.md`, y compris ce que la méthode ne prouve pas.
+
+**Ce dispositif a déjà payé** : en portant un seul écran, il a trouvé trois défauts dans la
+maquette que personne n'avait vus — un rail de filtres comprimé de 53 à 18 px sur deux
+écrans, une hauteur de chip qui dépendait des métriques de la police, et une animation
+d'entrée qui ignorait le réglage « animations réduites » du système.
+
 ## 2. Ce qu'on ne construit pas
 
 Le dire maintenant évite de le construire par accident.
@@ -295,7 +320,7 @@ C'est la règle : pas d'étape invisible.
 
 | # | Étape | Ce qui marche à la fin | Durée |
 |---|---|---|---|
-| 1 | Projet, thème, migrations appliquées | L'application s'ouvre, aux bonnes couleurs | 2–3 j |
+| 1 | Projet Expo, thème extrait, migrations appliquées | L'application s'ouvre, aux bonnes couleurs, écart mesuré | 2–3 j |
 | 2 | Connexion, comptes créés par l'administration | Un membre se connecte avec son numéro | 3–4 j |
 | 3 | Annuaire, fiches, tuteurs | L'écran Étudiants sur les vraies données | 4–5 j |
 | 4 | Casier et album | Le club publie une actualité | 4–5 j |
