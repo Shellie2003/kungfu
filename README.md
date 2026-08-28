@@ -18,6 +18,13 @@ hébergeur.
 Le site se redéploie à chaque poussée sur la branche : rien à compiler, rien à renvoyer.
 L'adresse exacte est celle du projet Vercel `kungfu_idealy`.
 
+**Le code QR** de la page d'aperçu ouvre celle-ci sur un téléphone : à montrer depuis un
+ordinateur, le club scanne avec l'appareil photo, rien à installer. Il est régénéré par
+`npm run qr`, et le script **relit le code produit** pour vérifier qu'il encode bien
+l'adresse — un QR qu'on n'a pas décodé est une image, pas un lien.
+
+Ce n'est pas le code d'Expo Go : celui-là n'existera que lorsque le projet Expo existera.
+
 L'aperçu n'est pas une capture d'écran : c'est le code de `app/` assemblé avec
 react-native-web. Ce qu'il ne montre pas, c'est le rendu **natif** — lissage des polices,
 ombres, défilement à l'inertie. Pour cela il faut l'APK, ou Expo Go.

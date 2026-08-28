@@ -17,12 +17,17 @@
    l'enchaînement des écrans — c'est-à-dire l'essentiel du
    travail de relecture.
    ============================================================ */
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { build } from 'esbuild';
 import { ECRANS } from './ecrans.mjs';
 
 const POLICES = readFileSync('css/fonts.css', 'utf8');
+
+/* Le code QR, s'il a été produit. Incorporé en clair dans la page :
+   un chemin relatif casserait si la page est ouverte depuis un
+   fichier ou renvoyée par courriel. Produire le QR : node outils/qr.mjs */
+const QR = existsSync('apercu/qr.svg') ? readFileSync('apercu/qr.svg', 'utf8') : null;
 
 /* Un module d'entrée qui monte tous les écrans portés et le
    sélecteur qui passe de l'un à l'autre. */
@@ -104,6 +109,14 @@ h1 {
 }
 #onglets button[aria-current="true"] { background: #FFF; color: #0B1C13; border-color: #FFF; font-weight: 700; }
 
+/* Le QR n'a de sens que sur un grand écran : on ne scanne pas le
+   téléphone qu'on tient déjà dans la main. */
+.qr { display: flex; align-items: center; gap: 16px; background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.12); border-radius: 16px; padding: 14px 18px; }
+.qr svg { width: 96px; height: 96px; display: block; border-radius: 8px; background: #FFF; }
+.qr p { margin: 0; font-size: 13px; line-height: 19px; color: #B4CCC0; max-width: 240px; }
+.qr b { color: #FFF; }
+
 /* Le cadre a exactement la taille de celui de la maquette : 370 x 780.
    Une largeur différente changerait tous les retours à la ligne, et
    l'aperçu ne montrerait plus ce qui a été validé. */
@@ -120,6 +133,7 @@ footer { font-size: 12px; color: #6E9481; text-align: center; max-width: 460px; 
 /* Sur un téléphone, le cadre disparaît : l'application prend tout. */
 @media (max-width: 820px), (max-height: 900px) {
   body { justify-content: flex-start; gap: 12px; padding: 12px; }
+  .qr { display: none; }
   .cadre { width: 100%; max-width: 420px; padding: 0; border-radius: 0; background: none; box-shadow: none; }
   #ecran { width: 100%; height: 78vh; border-radius: 18px; }
 }
@@ -137,6 +151,11 @@ ${ECRANS.map((e, i) => `    <button onclick="window.__aller(${i})">${e.titre}</b
   </nav>
 
   <div class="cadre"><div id="ecran"></div></div>
+
+${QR ? `  <div class="qr">
+    ${QR.replace(/<\?xml[^>]*\?>/, '').trim()}
+    <p><b>Ouvrir sur un téléphone.</b> Scannez avec l’appareil photo : l’aperçu s’ouvre dans le navigateur, rien à installer.</p>
+  </div>` : ''}
 
   <footer>
     Ce ne sont pas des images : ce sont les composants de l’application, rendus dans votre
