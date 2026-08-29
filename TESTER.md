@@ -37,11 +37,10 @@ cd mobile
 npm install
 ```
 
-Puis créer `mobile/.env` — le fichier n'est pas dans le dépôt, et ne doit pas y être :
+Puis créer `mobile/.env` en copiant le fichier d'essai :
 
-```
-EXPO_PUBLIC_SUPABASE_URL=https://znotzkfwukvvtaqfrozn.supabase.co
-EXPO_PUBLIC_SUPABASE_CLE=sb_publishable_PsIJsXUNR6-9wbmJiiexkQ_Klh_0hDJ
+```bash
+cp .env.essai .env
 ```
 
 Sans ce fichier, l'application s'arrête au démarrage avec un message qui le dit. C'est
@@ -68,11 +67,15 @@ Plus lent, mais passe partout.
 
 ### Les comptes d'essai
 
-| Matricule | Mot de passe | Ce qu'on voit |
-|---|---|---|
-| `F04x042` | `essai-eleve` | Un élève : l'annuaire, un seul salon |
-| `F04x045` | `essai-maitre` | Un maître : deux salons, dont celui des maîtres |
-| `F04x001` | `essai-admin` | L'administration |
+| Matricule | Ce qu'on voit |
+|---|---|
+| `F04x042` | Un élève : l'annuaire, un seul salon |
+| `F04x045` | Un maître : deux salons, dont celui des maîtres |
+| `F04x001` | L'administration |
+
+**Les mots de passe ne sont pas dans ce dépôt.** Il est public : les y écrire donnerait à
+n'importe qui l'accès au projet d'essai, y compris en administrateur. Ils circulent
+autrement.
 
 **Ce qui vaut la peine d'être essayé** : connectez-vous en élève, puis en maître, et
 comparez ce que chacun voit. C'est la démonstration que les règles d'accès font leur
@@ -141,6 +144,21 @@ l'APK.
 
 Pour pointer vers le projet du club, ajoutez deux secrets au dépôt, `SUPABASE_URL` et
 `SUPABASE_CLE`. Le workflow les emploiera à la place, sans qu'on touche à un fichier.
+
+### Le dépôt est public — ce que cela implique
+
+Un dépôt public donne des minutes d'Actions **illimitées**, contre 2 000 par mois pour un
+dépôt privé sur un compte gratuit. C'est ce qui permet de construire l'APK sans compter.
+
+En contrepartie, tout ce qui est versionné est lisible par n'importe qui. D'où deux règles :
+
+**Les mots de passe ne sont jamais dans le dépôt** — ni ceux d'essai, ni a fortiori ceux du
+club.
+
+**Aucune donnée réelle du club dans le projet Supabase d'essai.** L'adresse et la clé
+publiable de ce projet sont dans `.env.essai`, donc publiques : c'est sans danger tant que
+la base ne contient que des données inventées, et intenable dès qu'elle contiendrait la
+date de naissance d'un mineur.
 
 ### Ce que l'APK demande comme permissions
 
