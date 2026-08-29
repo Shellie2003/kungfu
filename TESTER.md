@@ -88,28 +88,58 @@ Album. Ils disent quel écran de la maquette reste à porter.
 
 ---
 
-## 3. Un APK — ce que le club aura
+## 3. Un APK, construit par GitHub — ce que le club aura
 
-Pour faire essayer au club sans qu'il installe Expo Go, et pour juger le rendu natif.
+Aucun compte Expo, rien à installer sur votre machine : la construction se fait
+entièrement sur les serveurs de GitHub, et l'APK se télécharge depuis la page de
+l'exécution.
+
+### La mise en place, une seule fois
+
+**Cinq** secrets à ajouter dans **Settings → Secrets and variables → Actions → New
+repository secret** :
+
+| Nom | Valeur |
+|---|---|
+| `ANDROID_KEYSTORE_B64` | le contenu du fichier `.base64.txt` fourni |
+| `ANDROID_KEYSTORE_MDP` | le mot de passe fourni |
+| `ANDROID_KEY_ALIAS` | `waishi-essai` |
+| `SUPABASE_URL` | `https://znotzkfwukvvtaqfrozn.supabase.co` |
+| `SUPABASE_CLE` | la clé publiable du projet |
+
+**La clé de signature n'est pas anodine.** Deux constructions signées par des clés
+différentes ne s'installent pas l'une par-dessus l'autre : il faudrait désinstaller
+d'abord, et le club perdrait sa session à chaque mise à jour. D'où une clé stable, gardée
+en secret.
+
+Celle qui est fournie est une clé **d'essai**. Pour le Play Store, il en faudra une autre,
+que vous engendrerez vous-même et qui ne devra jamais circuler — **la perdre, c'est perdre
+la possibilité de mettre l'application à jour, définitivement** :
 
 ```bash
-cd mobile
-npx eas login          # compte Expo, gratuit
-npx eas init           # écrit l'identifiant du projet dans app.json
-npm run apk            # eas build --platform android --profile apercu
+keytool -genkeypair -v -storetype PKCS12 \
+  -keystore waishi-club.keystore -alias waishi \
+  -keyalg RSA -keysize 2048 -validity 10000
 ```
 
-La construction tourne chez Expo et rend un lien de téléchargement. Vous l'envoyez par
-WhatsApp, le club installe.
+### Construire
 
-Ensuite, pour livrer une correction **sans reconstruire** :
+Onglet **Actions** → **Construire l'APK** → **Run workflow**. Ou simplement pousser un
+changement dans `mobile/` : la construction part toute seule.
 
-```bash
-npm run diffuser       # eas update --branch apercu
-```
+Environ dix minutes. À la fin, l'APK est en bas de la page, dans **Artifacts**. On le
+télécharge, on l'envoie par WhatsApp, le club l'installe — en autorisant l'installation
+depuis cette source, ce qu'Android demande une fois.
 
-L'application se met à jour d'elle-même au prochain lancement, en quelques secondes. C'est
-ce qui évite de refaire un APK à chaque changement.
+Le workflow vérifie aussi les types avant de construire : une erreur TypeScript arrête la
+chaîne plutôt que de produire un APK cassé.
+
+### Ce que l'APK demande comme permissions
+
+**Internet et vibration. C'est tout.** Les permissions que React Native ajoute par défaut
+— dont « dessiner par-dessus les autres applications », qui inquiète à l'installation et
+attire l'attention du Play Store — sont explicitement retirées. L'appareil photo sera
+demandé le jour où la fonctionnalité photo existera, pas avant.
 
 ---
 
@@ -144,11 +174,23 @@ fait passer pour un élève, un maître et l'administration, et vérifie ce que 
 3,45 Mo de bytecode Hermes avec les 8 polices et les 26 images. TypeScript passe en strict.
 Les migrations s'appliquent sur le vrai Supabase et le test de sécurité y passe.
 
+**Vérifié aussi** : `npx expo prebuild` engendre un projet Android correct — paquet
+`mg.analamahitsy.waishi`, deux permissions seulement — et la substitution de la clé de
+signature s'applique bien au vrai `build.gradle` produit. C'est l'étape la plus fragile du
+workflow ; elle échoue bruyamment si le modèle d'Expo change, plutôt que de produire un APK
+signé par la mauvaise clé.
+
 **Pas vérifié** : que l'application se connecte réellement à Supabase depuis un téléphone.
 Mon environnement de travail ne peut pas joindre `supabase.co` — la politique réseau le
 bloque. Le code compile et la base répond aux requêtes SQL, mais l'appel HTTP depuis Expo,
 c'est vous qui le verrez en premier.
 
-Un défaut trouvé en faisant cette vérification : `expo-asset` manquait. Sans lui, rien ne
-démarre dès qu'on charge une police ou une image. Vous seriez tombé dessus au premier
-lancement.
+**Pas vérifié non plus** : la construction Gradle elle-même. Il n'y a pas de SDK Android
+ici. Tout ce qui la précède est validé ; le `./gradlew assembleRelease` s'exécutera pour la
+première fois sur GitHub. Si elle échoue, le journal de l'exécution le dira, et c'est
+réparable.
+
+Trois défauts trouvés en faisant ces vérifications : `expo-asset` manquait — rien ne démarre
+sans lui dès qu'on charge une police ou une image ; `expo-system-ui` manquait aussi, pour
+le verrouillage en thème clair ; et `app.json` demandait la permission caméra sans s'en
+servir.

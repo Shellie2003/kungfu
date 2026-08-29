@@ -1,0 +1,157 @@
+# ============================================================
+# Construit l'APK Android et le dépose en pièce jointe de
+# l'exécution. Rien à installer sur votre machine, aucun compte
+# Expo : la construction se fait entièrement sur le coureur GitHub.
+#
+# Se lance à la main — onglet Actions, « Construire l'APK », bouton
+# « Run workflow » — ou automatiquement quand un fichier de
+# mobile/ change sur la branche de travail.
+#
+# L'APK est signé avec une clé stockée en secret. C'est ce qui
+# permet au club d'installer une mise à jour PAR-DESSUS la
+# précédente : une signature différente à chaque construction
+# obligerait à désinstaller d'abord, en perdant la session.
+# ============================================================
+name: Construire l'APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      note:
+        description: "Ce que cette version apporte (apparaît dans le résumé)"
+        required: false
+        default: ""
+  push:
+    branches: [claude/kung-fu-monastery-mobile-app-4k7q3b]
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/apk.yml'
+
+jobs:
+  apk:
+    name: APK Android
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Java 17 : c'est la version que demande le greffon Android de
+      # Gradle employé par React Native 0.76. Le coureur en propose de
+      # plus récentes, qui échouent.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Installer les dépendances
+        working-directory: mobile
+        run: npm ci
+
+      - name: Vérifier les types
+        working-directory: mobile
+        run: npx tsc --noEmit
+
+      # Le dossier android/ n'est pas dans le dépôt : il se régénère
+      # à partir de app.json. Un dossier natif commité finit toujours
+      # par diverger de la configuration qui est censée le décrire.
+      - name: Engendrer le projet Android
+        working-directory: mobile
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_CLE: ${{ secrets.SUPABASE_CLE }}
+        run: npx expo prebuild --platform android --no-install
+
+      # La clé de signature arrive des secrets et n'existe que le
+      # temps de la construction.
+      - name: Poser la clé de signature
+        working-directory: mobile/android
+        env:
+          CLE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          CLE_MDP: ${{ secrets.ANDROID_KEYSTORE_MDP }}
+          CLE_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          if [ -z "$CLE_B64" ]; then
+            echo "::error::Le secret ANDROID_KEYSTORE_B64 est absent. Voir TESTER.md."
+            exit 1
+          fi
+          echo "$CLE_B64" | base64 -d > app/waishi.keystore
+          {
+            echo "WAISHI_STORE_FILE=waishi.keystore"
+            echo "WAISHI_STORE_PASSWORD=$CLE_MDP"
+            echo "WAISHI_KEY_ALIAS=$CLE_ALIAS"
+            echo "WAISHI_KEY_PASSWORD=$CLE_MDP"
+          } >> gradle.properties
+
+      # expo prebuild écrit une configuration de signature « debug ».
+      # On y substitue la nôtre, sans quoi l'APK serait signé par la
+      # clé de débogage du coureur — différente à chaque exécution.
+      - name: Brancher la signature sur la construction de sortie
+        working-directory: mobile/android/app
+        run: |
+          python3 - <<'PY'
+          import re, pathlib
+          p = pathlib.Path('build.gradle')
+          s = p.read_text()
+          s = s.replace(
+              "signingConfigs {",
+              "signingConfigs {\n"
+              "        waishi {\n"
+              "            storeFile file(WAISHI_STORE_FILE)\n"
+              "            storePassword WAISHI_STORE_PASSWORD\n"
+              "            keyAlias WAISHI_KEY_ALIAS\n"
+              "            keyPassword WAISHI_KEY_PASSWORD\n"
+              "        }", 1)
+          # La construction « release » employait signingConfigs.debug.
+          s = re.sub(r"(release \{[^}]*?)signingConfig signingConfigs\.debug",
+                     r"\1signingConfig signingConfigs.waishi", s, flags=re.S)
+          p.write_text(s)
+          assert 'signingConfigs.waishi' in s, "la signature n'a pas été branchée"
+          print('signature branchée sur release')
+          PY
+
+      - name: Construire
+        working-directory: mobile/android
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_CLE: ${{ secrets.SUPABASE_CLE }}
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Renommer avec le numéro d'exécution
+        id: nommer
+        working-directory: mobile/android/app/build/outputs/apk/release
+        run: |
+          NOM="waishi-${{ github.run_number }}.apk"
+          mv app-release.apk "$NOM"
+          echo "nom=$NOM" >> "$GITHUB_OUTPUT"
+          echo "taille=$(du -h "$NOM" | cut -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.nommer.outputs.nom }}
+          path: mobile/android/app/build/outputs/apk/release/*.apk
+          retention-days: 30
+
+      - name: Résumé
+        run: |
+          {
+            echo "## APK prêt"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Fichier | \`${{ steps.nommer.outputs.nom }}\` |"
+            echo "| Taille | ${{ steps.nommer.outputs.taille }} |"
+            echo "| Version | \`${{ github.sha }}\` |"
+            [ -n "${{ github.event.inputs.note }}" ] && echo "| Note | ${{ github.event.inputs.note }} |"
+            echo ""
+            echo "Téléchargez-le dans **Artifacts**, en bas de cette page."
+            echo "Sur le téléphone : autoriser l'installation depuis cette source, puis ouvrir le fichier."
+            echo ""
+            echo "Comptes d'essai : \`F04x042\` / \`essai-eleve\`, \`F04x045\` / \`essai-maitre\`."
+          } >> "$GITHUB_STEP_SUMMARY"
