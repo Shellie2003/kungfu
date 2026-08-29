@@ -5,4 +5,5 @@ android/
 ios/
 *.log
 .env
+!.env.essai
 expo-env.d.ts

@@ -94,33 +94,9 @@ Aucun compte Expo, rien à installer sur votre machine : la construction se fait
 entièrement sur les serveurs de GitHub, et l'APK se télécharge depuis la page de
 l'exécution.
 
-### La mise en place, une seule fois
+### La mise en place
 
-**Cinq** secrets à ajouter dans **Settings → Secrets and variables → Actions → New
-repository secret** :
-
-| Nom | Valeur |
-|---|---|
-| `ANDROID_KEYSTORE_B64` | le contenu du fichier `.base64.txt` fourni |
-| `ANDROID_KEYSTORE_MDP` | le mot de passe fourni |
-| `ANDROID_KEY_ALIAS` | `waishi-essai` |
-| `SUPABASE_URL` | `https://znotzkfwukvvtaqfrozn.supabase.co` |
-| `SUPABASE_CLE` | la clé publiable du projet |
-
-**La clé de signature n'est pas anodine.** Deux constructions signées par des clés
-différentes ne s'installent pas l'une par-dessus l'autre : il faudrait désinstaller
-d'abord, et le club perdrait sa session à chaque mise à jour. D'où une clé stable, gardée
-en secret.
-
-Celle qui est fournie est une clé **d'essai**. Pour le Play Store, il en faudra une autre,
-que vous engendrerez vous-même et qui ne devra jamais circuler — **la perdre, c'est perdre
-la possibilité de mettre l'application à jour, définitivement** :
-
-```bash
-keytool -genkeypair -v -storetype PKCS12 \
-  -keystore waishi-club.keystore -alias waishi \
-  -keyalg RSA -keysize 2048 -validity 10000
-```
+**Aucune.** Pas de secret à configurer, pas de compte à créer.
 
 ### Construire
 
@@ -133,6 +109,38 @@ depuis cette source, ce qu'Android demande une fois.
 
 Le workflow vérifie aussi les types avant de construire : une erreur TypeScript arrête la
 chaîne plutôt que de produire un APK cassé.
+
+### La signature
+
+L'APK est signé par la **clé de débogage livrée avec le modèle d'Expo**. C'est un fichier
+fixe, identique sur toutes les machines, valide jusqu'en 2052 — vérifié par empreinte à
+chaque construction. La signature est donc **stable** : le club installe une mise à jour
+par-dessus la précédente sans désinstaller, et sans perdre sa session.
+
+C'est ce qui permet de se passer entièrement de secrets.
+
+**Ce que cela interdit** : la publication sur le Play Store, qui refuse la clé de débogage.
+Le jour venu, il faudra une vraie clé — engendrée par vous, jamais partagée, et à ne jamais
+perdre : **la perdre, c'est perdre définitivement la possibilité de mettre l'application à
+jour**.
+
+```bash
+keytool -genkeypair -v -storetype PKCS12 \
+  -keystore waishi-club.keystore -alias waishi \
+  -keyalg RSA -keysize 2048 -validity 10000
+```
+
+Ce jour-là, la signature changera : l'application devra être **désinstallée une fois** sur
+chaque téléphone. C'est une gêne unique, à prévoir dans le passage en production.
+
+### Vers quel serveur pointe l'APK
+
+Par défaut, le projet Supabase d'essai — les valeurs sont dans `mobile/.env.essai`,
+versionné à dessein : l'adresse est publique et la clé publiable est faite pour partir dans
+l'APK.
+
+Pour pointer vers le projet du club, ajoutez deux secrets au dépôt, `SUPABASE_URL` et
+`SUPABASE_CLE`. Le workflow les emploiera à la place, sans qu'on touche à un fichier.
 
 ### Ce que l'APK demande comme permissions
 
