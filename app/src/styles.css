@@ -1,0 +1,71 @@
+/* ============================================================
+   Le design de l'application.
+
+   Les deux fichiers importés ci-dessous sont CEUX DE LA MAQUETTE,
+   à la racine du dépôt. Ils ne sont pas recopiés : ils sont lus.
+   C'est tout l'intérêt d'être passé au web — la ressemblance n'est
+   plus mesurée, elle est identique par construction. Corriger un
+   rembourrage dans la maquette le corrige dans l'application, et
+   il n'y a plus d'écart possible entre les deux.
+
+   Tailwind vient EN PLUS, pas à la place. Réécrire css/app.css en
+   classes utilitaires réintroduirait exactement la dérive qu'on
+   cherche à supprimer : px-4 au lieu de padding 0 14px, et un jour
+   quelqu'un écrira px-3. Son thème est alimenté par les mêmes
+   jetons, pour que les deux ne puissent pas diverger.
+   ============================================================ */
+
+@import '../../css/fonts.css';
+@import '../../css/app.css';
+
+@import 'tailwindcss';
+
+/* Les jetons de la maquette deviennent ceux de Tailwind. Écrire
+   bg-vert donne exactement --vert, pas une nuance approchante. */
+@theme {
+  --color-vert: var(--vert);
+  --color-vert-texte: var(--vert-texte);
+  --color-vert-clair: var(--vert-clair);
+  --color-fond: var(--fond);
+  --color-encre: var(--encre);
+  --color-gris: var(--gris);
+  --color-gris-clair: var(--gris-clair);
+  --color-filet: var(--filet);
+  --color-bord: var(--bord);
+  --color-alerte: var(--alerte);
+  --color-sur-vert: var(--sur-vert);
+
+  --font-titre: var(--display);
+  --font-texte: var(--texte);
+}
+
+/* ------------------------------------------------------------
+   Ce qui ne concerne QUE l'application, jamais la maquette.
+   La maquette se regarde dans un cadre de téléphone sur un
+   ordinateur ; l'application occupe un vrai téléphone.
+   ------------------------------------------------------------ */
+html, body, #racine {
+  height: 100%;
+  overscroll-behavior: none;   /* pas de rebond élastique du navigateur */
+}
+
+body {
+  background: var(--fond);
+  /* Le doigt ne doit pas faire apparaître le surlignage bleu de
+     sélection à chaque appui. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Le .phone de la maquette est un cadre de présentation : dans
+   l'application il occupe l'écran entier, encoche comprise. */
+#racine > .phone {
+  min-height: 100%;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* La barre du bas doit rester au-dessus de la barre de navigation
+   gestuelle d'Android. */
+.tabbar {
+  padding-bottom: calc(14px + env(safe-area-inset-bottom));
+}

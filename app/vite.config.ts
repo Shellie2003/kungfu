@@ -1,0 +1,19 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwind from '@tailwindcss/vite';
+
+export default defineConfig({
+  plugins: [react(), tailwind()],
+  /* La maquette vit à la racine du dépôt, hors de app/. On autorise
+     Vite à la lire : c'est elle la source du design, et la recopier
+     ici garantirait qu'un jour l'une changera sans l'autre. */
+  server: { fs: { allow: [new URL('..', import.meta.url).pathname] } },
+  build: {
+    outDir: 'dist',
+    /* Capacitor sert les fichiers depuis le système de fichiers de
+       l'application : les chemins absolus ne résoudraient pas. */
+    assetsDir: 'assets',
+    sourcemap: false
+  },
+  base: ''
+});
