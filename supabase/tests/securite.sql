@@ -2,6 +2,10 @@
 \pset format unaligned
 \pset tuples_only on
 
+-- Tout est dans une transaction annulée à la fin : le test se
+-- rejoue autant de fois qu'on veut sans laisser de trace.
+begin;
+
 -- ---------- Jeu d'essai, posé en tant que propriétaire ----------
 insert into auth.users (id) values
   ('11111111-1111-1111-1111-111111111111'),   -- Nirina, élève
@@ -49,7 +53,6 @@ insert into messages (salon_id, auteur_id, texte) values
 \echo '=============================================='
 \echo 'CE QUE VOIT NIRINA, ÉLÈVE'
 \echo '=============================================='
-begin;
 set role authenticated;
 set request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
 
@@ -93,7 +96,7 @@ rollback to savepoint s2;
 savepoint s3;
 do $$ begin
   insert into membres_salon (salon_id, profil_id)
-  values ('aaaaaaaa-0000-0000-0000-000000000002', mon_profil());
+  values ('aaaaaaaa-0000-0000-0000-000000000002', prive.mon_profil());
   raise notice 'FAILLE : inscription réussie';
 exception when others then raise notice 'refusé — %', sqlerrm;
 end $$;
@@ -153,7 +156,7 @@ do $$
 declare pid uuid;
 begin
   insert into participations (actualite_id, profil_id) values
-    ((select id from actualites limit 1), mon_profil()) returning id into pid;
+    ((select id from actualites limit 1), prive.mon_profil()) returning id into pid;
   insert into versements (participation_id, montant) values (pid, 10000);
   raise notice 'FAILLE : versement déclaré par le membre';
 exception when others then raise notice 'refusé — %', sqlerrm;
@@ -198,7 +201,7 @@ rollback to savepoint s6;
 \echo '=============================================='
 set request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
 \echo -n 'salons visibles (attendu 0 : non inscrite) '
-select count(*) from salons where est_membre(id);
+select count(*) from salons where prive.est_membre(id);
 \echo -n 'messages des maîtres (attendu 0) .... '
 select count(*) from messages where salon_id = 'aaaaaaaa-0000-0000-0000-000000000002';
 \echo -n 'fiches privées (attendu 1) .......... '

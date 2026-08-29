@@ -171,10 +171,19 @@ const RELEVE = `(racine) => {
 
 function comparerGeometrie(appli, maquette, exemples = []) {
   const ecarts = [];
+  /* « exemples » : des motifs de contenu qui diffèrent LÉGITIMEMENT
+     entre la maquette et l'application — une valeur montrée en
+     exemple dans un champ que l'application laisse vide, un
+     décompte qui dépend du jeu de données. Ils s'appliquent aux
+     DEUX côtés : sans cela, écarter « 64 membres » de la maquette
+     ferait apparaître « 6 membres » comme un texte en trop.
+     Ce sont des expressions régulières, déclarées écran par écran
+     dans outils/ecrans.mjs. */
+  const motifs = exemples.map((m) => new RegExp(m));
+  const attendu = (t) => motifs.some((r) => r.test(t));
+
   for (const [texte, m] of Object.entries(maquette)) {
-    /* Contenu d'exemple de la maquette : un champ que l'application
-       laisse vide au démarrage. Déclaré dans outils/ecrans.mjs. */
-    if (exemples.includes(texte)) continue;
+    if (attendu(texte)) continue;
     const a = appli[texte];
     if (!a) { ecarts.push(`« ${texte} » absent de l’application`); continue; }
     if (a.x !== m.x || a.y !== m.y) {
@@ -187,6 +196,7 @@ function comparerGeometrie(appli, maquette, exemples = []) {
     if (a.couleur !== m.couleur) ecarts.push(`« ${texte} » en ${a.couleur} au lieu de ${m.couleur}`);
   }
   for (const texte of Object.keys(appli)) {
+    if (attendu(texte)) continue;
     if (!maquette[texte]) ecarts.push(`« ${texte} » en trop dans l’application`);
   }
   return ecarts;
