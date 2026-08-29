@@ -119,7 +119,7 @@ screen('connexion', '01 · Connexion', { full: `
         <div class="emblem emblem--lg">${svg('shieldCheck', 38, '#0F5132')}</div>
         <div>
           <p class="display" style="font-size:21px;color:#FFF;line-height:26px">Kung-fu Waishi</p>
-          <p style="font-size:14px;color:#B9D4C6;margin-top:4px">Analamahitsy</p>
+          <p style="font-size:14px;color:var(--sur-vert);margin-top:4px">Analamahitsy</p>
         </div>
       </div>
 
@@ -144,7 +144,7 @@ screen('accueil', '02 · Accueil', { tab: 'home', body: `
       <div class="emblem">${svg('shieldCheck', 26, '#0F5132')}</div>
       <div style="flex-grow:1;min-width:0">
         <p class="display" style="font-size:17px;color:#FFF;letter-spacing:.02em;line-height:20px">KUNG-FU WAISHI</p>
-        <p style="font-size:13px;color:#B9D4C6;margin-top:2px">Analamahitsy · Antananarivo</p>
+        <p style="font-size:13px;color:var(--sur-vert);margin-top:2px">Analamahitsy · Antananarivo</p>
       </div>
       <button class="tapicon" data-go="notifications" aria-label="Notifications" style="position:relative">
         ${svg('bell', 22, '#FFF')}<span class="dot">3</span>
@@ -155,7 +155,7 @@ screen('accueil', '02 · Accueil', { tab: 'home', body: `
       ${svg('news', 20, '#7FD9A8')}
       <div style="flex-grow:1">
         <p style="font-size:14px;font-weight:600;color:#FFF;line-height:19px">Sortie prévue samedi 22 novembre</p>
-        <p style="font-size:12px;color:#B9D4C6;margin-top:3px">Consultez le casier pour les détails.</p>
+        <p style="font-size:12px;color:var(--sur-vert);margin-top:3px">Consultez le casier pour les détails.</p>
       </div>
     </div>
   </div>
@@ -404,7 +404,7 @@ screen('club', '10 · Le Club', { tab: 'home', body: `
       <div class="emblem emblem--lg">${svg('shield', 34, '#0F5132')}</div>
       <div>
         <p class="display" style="font-size:20px;color:#FFF;line-height:25px">Kung-fu Waishi<br>Analamahitsy</p>
-        <p style="font-size:13px;color:#B9D4C6;margin-top:8px">Fondé en 2014 · Antananarivo</p>
+        <p style="font-size:13px;color:var(--sur-vert);margin-top:8px">Fondé en 2014 · Antananarivo</p>
       </div>
       <p style="font-size:10px;font-weight:600;letter-spacing:.1em;color:#7FA893;text-transform:uppercase">Logo du club à fournir</p>
     </div>

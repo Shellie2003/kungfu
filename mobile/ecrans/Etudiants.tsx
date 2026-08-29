@@ -11,16 +11,18 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import {
-  Entete, BarreRecherche, Chip, Grade, Portrait, Liste, Ligne,
-  Cloche, Chevron, T
+  Entete, BarreRecherche, Chip, Grade, Portrait, Cloche, Chevron
 } from '../composants/base';
-import { couleurs, polices, composants as C } from '../theme/tokens';
+import { couleurs, composants as C } from '../theme/tokens';
+import { texte } from '../theme/typo';
 import { Onglets } from '../composants/Onglets';
 
 /* Le jeu d'essai de la maquette. Il sera remplacé par la requête
    Supabase ; il reste ici pour que la comparaison porte sur les
    mêmes données des deux côtés. */
-export const ELEVES = [
+type Eleve = readonly [nom: string, prenom: string, grade: string, couleur: string];
+
+export const ELEVES: readonly Eleve[] = [
   ['RAKOTONDRABE', 'Nirina', 'Ceinture verte', '#4E9C57'],
   ['RASOAMANANA', 'Fanjaniaina', 'Ceinture jaune', '#D8A93A'],
   ['ANDRIANJAFY', 'Tokiniaina', 'Ceinture bleue', '#3E6E9C'],
@@ -97,7 +99,7 @@ const s = StyleSheet.create({
   /* padding:14px 20px 24px, gap 12 */
   corps: { paddingTop: 14, paddingHorizontal: 20, paddingBottom: 24, gap: 12 },
 
-  compte: { fontFamily: polices.texte, fontSize: 12, color: couleurs.gris },
+  compte: { ...texte('texte'), fontSize: 12, color: couleurs.gris },
 
   /* .card.studentrow — la carte et la ligne cumulées */
   fiche: {
@@ -105,6 +107,6 @@ const s = StyleSheet.create({
     backgroundColor: '#FFF', borderWidth: 1, borderColor: couleurs.filet, borderRadius: 16,
     paddingVertical: C.ligneEleve.padVertical, paddingHorizontal: C.ligneEleve.padHorizontal
   },
-  nom: { fontFamily: polices.texte, fontSize: 15, fontWeight: '700', lineHeight: 19, color: couleurs.encre },
-  prenom: { fontFamily: polices.texte, fontSize: 14, lineHeight: 19, color: '#3C4A42' }
+  nom: { ...texte('texte', 700), fontSize: 15,  lineHeight: 19, color: couleurs.encre },
+  prenom: { ...texte('texte'), fontSize: 14, lineHeight: 19, color: '#3C4A42' }
 });

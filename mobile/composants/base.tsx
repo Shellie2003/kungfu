@@ -12,24 +12,25 @@
      · une ombre CSS n'existe pas : c'est elevation sur Android.
    ============================================================ */
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import type { ViewStyle, TextStyle } from 'react-native';
-import { couleurs, polices, rayons, composants as C } from '../theme/tokens';
+import { View, Text, Pressable, StyleSheet, TextInput } from 'react-native';
+import type { ViewStyle } from 'react-native';
+import { couleurs, rayons, composants as C } from '../theme/tokens';
+import { texte, type Graisse } from '../theme/typo';
 
 /* ---------------------------------------------- Typographie
    Les tailles et interlignes sont ceux de la maquette, relevés
    écran par écran. En React Native lineHeight est un nombre de
    pixels — ce qui tombe bien, la feuille les écrit déjà ainsi. */
 export const T = StyleSheet.create({
-  titreEcran: { fontFamily: polices.titre, fontSize: 18, fontWeight: '600', color: couleurs.encre },
+  titreEcran: { ...texte('titre', 600), fontSize: 18,  color: couleurs.encre },
   surTitre: {
-    fontFamily: polices.titre, fontSize: 12, fontWeight: '700',
+    ...texte('titre', 700), fontSize: 12, 
     letterSpacing: 1.44, textTransform: 'uppercase', color: couleurs.gris
   },
-  corps: { fontFamily: polices.texte, fontSize: 15, lineHeight: 22, color: couleurs.encre },
-  soutien: { fontFamily: polices.texte, fontSize: 13, lineHeight: 18, color: couleurs.gris },
-  nom: { fontFamily: polices.texte, fontSize: 15, fontWeight: '600', lineHeight: 20, color: couleurs.encre },
-  lien: { fontFamily: polices.texte, fontSize: 13, fontWeight: '600', color: couleurs.vertTexte }
+  corps: { ...texte('texte'), fontSize: 15, lineHeight: 22, color: couleurs.encre },
+  soutien: { ...texte('texte'), fontSize: 13, lineHeight: 18, color: couleurs.gris },
+  nom: { ...texte('texte', 600), fontSize: 15,  lineHeight: 20, color: couleurs.encre },
+  lien: { ...texte('texte', 600), fontSize: 13,  color: couleurs.vertTexte }
 });
 
 /* ---------------------------------------------- .card */
@@ -109,6 +110,45 @@ export function Entete(
   );
 }
 
+/* ---------------------------------------------- .field + .input
+   Un vrai champ de saisie, pas un marque-place : la maquette
+   montrait du texte figé, l'application doit accepter la frappe.
+   Les mesures restent celles relevées dans la feuille. */
+export function Champ(
+  { libelle, valeur, surSaisie, secret, auto, clavier, retour }:
+  {
+    libelle: string;
+    valeur: string;
+    surSaisie: (v: string) => void;
+    secret?: boolean;
+    auto?: 'characters' | 'none';
+    clavier?: 'default' | 'email-address';
+    retour?: 'next' | 'done';
+  }
+) {
+  const [actif, setActif] = React.useState(false);
+  return (
+    <View style={s.champ}>
+      <Text style={s.champLabel}>{libelle}</Text>
+      <TextInput
+        style={[s.saisie, actif && s.saisieActive]}
+        value={valeur}
+        onChangeText={surSaisie}
+        secureTextEntry={secret}
+        autoCapitalize={auto ?? 'none'}
+        autoCorrect={false}
+        keyboardType={clavier ?? 'default'}
+        returnKeyType={retour}
+        onFocus={() => setActif(true)}
+        onBlur={() => setActif(false)}
+        /* Le lecteur d'écran annonce le libellé, qui n'est pas
+           rattaché au champ comme le ferait un <label> en HTML. */
+        accessibilityLabel={libelle}
+      />
+    </View>
+  );
+}
+
 /* ---------------------------------------------- .searchbar */
 export function BarreRecherche({ texte }: { texte: string }) {
   return (
@@ -139,7 +179,9 @@ export function Portrait({ l, h, r = 12 }: { l: number; h: number; r?: number })
    ------------------------------------------------------------ */
 import Svg, { Path, Circle } from 'react-native-svg';
 
-export function Loupe({ taille = 19, couleur = couleurs.grisClair }) {
+type Icone = { taille?: number; couleur?: string };
+
+export function Loupe({ taille = 19, couleur = couleurs.grisClair }: Icone) {
   return (
     <Svg width={taille} height={taille} viewBox="0 0 24 24" fill="none"
          stroke={couleur} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
@@ -149,7 +191,7 @@ export function Loupe({ taille = 19, couleur = couleurs.grisClair }) {
   );
 }
 
-export function Cloche({ taille = 22, couleur = couleurs.encre }) {
+export function Cloche({ taille = 22, couleur = couleurs.encre }: Icone) {
   return (
     <Svg width={taille} height={taille} viewBox="0 0 24 24" fill="none"
          stroke={couleur} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
@@ -159,7 +201,7 @@ export function Cloche({ taille = 22, couleur = couleurs.encre }) {
   );
 }
 
-export function Chevron({ taille = 18, couleur = couleurs.grisClair }) {
+export function Chevron({ taille = 18, couleur = couleurs.grisClair }: Icone) {
   return (
     <Svg width={taille} height={taille} viewBox="0 0 24 24" fill="none"
          stroke={couleur} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -203,13 +245,13 @@ const s = StyleSheet.create({
   },
   chipActif: { backgroundColor: couleurs.vert, borderColor: couleurs.vert },
   chipTexte: {
-    fontFamily: polices.texte, fontSize: C.chip.taille,
+    ...texte('texte'), fontSize: C.chip.taille,
     /* Interligne posé, jamais laissé aux métriques de la police :
        c'est ce qui rend la hauteur du chip identique partout. */
     lineHeight: C.chip.interligne, color: couleurs.gris
   },
   /* .chip--on passe aussi en 600 : sans cela l'onglet actif s'affine. */
-  chipTexteActif: { color: '#FFF', fontWeight: '600' },
+  chipTexteActif: { ...texte('texte', 600), color: '#FFF' },
 
   grade: {
     flexDirection: 'row', alignItems: 'center', gap: C.grade.ecart, alignSelf: 'flex-start',
@@ -223,7 +265,7 @@ const s = StyleSheet.create({
        claires — sans lui, la ceinture blanche disparaît sur le fond. */
     borderWidth: 1, borderColor: 'rgba(0,0,0,.18)'
   },
-  gradeTexte: { fontFamily: polices.texte, fontSize: C.grade.taille, fontWeight: '600', color: couleurs.encre },
+  gradeTexte: { ...texte('texte', 600), fontSize: C.grade.taille,  color: couleurs.encre },
 
   btn: {
     minHeight: C.bouton.hauteur, borderRadius: C.bouton.rayon,
@@ -231,7 +273,8 @@ const s = StyleSheet.create({
   },
   btnPlein: { backgroundColor: couleurs.vert },
   btnFantome: { borderWidth: 1, borderColor: '#C4D4CB', backgroundColor: '#FFF' },
-  btnTexte: { fontFamily: polices.texte, fontSize: C.bouton.taille, fontWeight: C.bouton.graisse, color: '#FFF' },
+  /* La graisse du bouton vient de la maquette : .btn est en 600. */
+  btnTexte: { ...texte('texte', Number(C.bouton.graisse) as Graisse), fontSize: C.bouton.taille, color: '#FFF' },
   btnTexteFantome: { color: couleurs.vertTexte },
 
   entete: {
@@ -240,12 +283,28 @@ const s = StyleSheet.create({
     paddingTop: C.entete.padHaut, paddingBottom: C.entete.padBas, paddingHorizontal: C.entete.padCotes
   },
 
+  /* .field : gap 7 ; .field__label : 11px, 700, +.1em, majuscules */
+  champ: { gap: 7 },
+  champLabel: {
+    ...texte('texte', 700), fontSize: 11, 
+    letterSpacing: 1.1, textTransform: 'uppercase', color: couleurs.gris
+  },
+  /* .input : 48 de haut, rayon 12, fond #F1F6F3, bord --bord */
+  saisie: {
+    minHeight: 48, borderRadius: 12, backgroundColor: '#F1F6F3',
+    borderWidth: 1, borderColor: couleurs.bord, paddingHorizontal: 14,
+    ...texte('texte'), fontSize: 15, color: couleurs.encre
+  },
+  /* .input--on : bord de 2 px, donc 1 px de rembourrage en moins
+     pour que le texte ne bouge pas quand le champ prend le focus. */
+  saisieActive: { backgroundColor: '#FFF', borderWidth: 2, borderColor: couleurs.vert, paddingHorizontal: 13 },
+
   recherche: {
     flexDirection: 'row', alignItems: 'center', gap: C.recherche.ecart, minHeight: C.recherche.hauteur,
     backgroundColor: '#FFF', borderWidth: 1, borderColor: couleurs.bord,
     borderRadius: C.recherche.rayon, paddingHorizontal: C.recherche.padHorizontal
   },
-  rechercheTexte: { fontFamily: polices.texte, fontSize: C.recherche.taille, color: C.recherche.couleur },
+  rechercheTexte: { ...texte('texte'), fontSize: C.recherche.taille, color: C.recherche.couleur },
 
   portrait: {
     backgroundColor: couleurs.vertClair, alignItems: 'center', justifyContent: 'center',

@@ -4,10 +4,12 @@
   "scripts": {
     "maquette": "node build-screens.mjs && node build.js",
     "theme": "node outils/extraire-theme.mjs",
+    "polices": "python3 outils/extraire-polices.py",
+    "images": "node outils/images-app.mjs",
+    "qr": "node outils/qr.mjs",
     "apercu": "node outils/extraire-theme.mjs && node outils/qr.mjs && node outils/batir-apercu.mjs",
     "comparer": "node outils/comparer.mjs",
-    "verifier": "node outils/extraire-theme.mjs && node build-screens.mjs && node build.js && node outils/comparer.mjs && node outils/batir-apercu.mjs",
-    "qr": "node outils/qr.mjs"
+    "verifier": "node outils/extraire-theme.mjs && node build-screens.mjs && node build.js && node outils/comparer.mjs && node outils/batir-apercu.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.24.0",

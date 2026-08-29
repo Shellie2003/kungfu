@@ -2,7 +2,7 @@
 # l'aperçu sont servis.
 node_modules
 outils
-app
+mobile
 supabase
 scripts
 *.mjs

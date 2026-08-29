@@ -1,5 +1,5 @@
 /* ============================================================
-   css/app.css  →  app/theme/tokens.ts
+   css/app.css  →  mobile/theme/tokens.ts
 
    La maquette est la référence. Recopier ses couleurs à la main
    dans le code de l'application, c'est garantir qu'un jour l'une
@@ -28,7 +28,10 @@ for (const [, nom, val] of bloc[1].matchAll(/--([\w-]+)\s*:\s*([^;]+);/g)) {
 const COULEURS = {
   vert: 'vert', vertTexte: 'vert-texte', vertClair: 'vert-clair',
   fond: 'fond', encre: 'encre', gris: 'gris', grisClair: 'gris-clair',
-  filet: 'filet', bord: 'bord', alerte: 'alerte'
+  filet: 'filet', bord: 'bord', alerte: 'alerte',
+  /* Texte secondaire posé SUR le vert : sous-titres du bandeau et
+     de la connexion. Mesuré à 5,4:1 sur #0F5132. */
+  surVertDoux: 'sur-vert'
 };
 
 const couleurs = {};
@@ -193,9 +196,9 @@ export const espace = {
 } as const;
 `;
 
-mkdirSync('app/theme', { recursive: true });
-writeFileSync('app/theme/tokens.ts', ts);
+mkdirSync('mobile/theme', { recursive: true });
+writeFileSync('mobile/theme/tokens.ts', ts);
 
 const nCoul = Object.keys(couleurs).length + Object.keys(surVert).length;
 const nMes = Object.values(composants).reduce((t, g) => t + Object.keys(g).length, 0);
-console.log(`app/theme/tokens.ts — ${nCoul} couleurs, 2 polices, ${Object.keys(rayons).length} rayons, ${nMes} mesures`);
+console.log(`mobile/theme/tokens.ts — ${nCoul} couleurs, 2 polices, ${Object.keys(rayons).length} rayons, ${nMes} mesures`);

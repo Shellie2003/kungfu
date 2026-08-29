@@ -19,7 +19,8 @@ export const couleurs = {
   "grisClair": "#7C8B82",
   "filet": "#E4EDE8",
   "bord": "#DCE7E1",
-  "alerte": "#E4572E"
+  "alerte": "#E4572E",
+  "surVertDoux": "#B9D4C6"
 } as const;
 
 /* Employées sur le bandeau vert, où le blanc ne convient pas. */

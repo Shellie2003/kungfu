@@ -14,7 +14,7 @@ const SCREENS = {
         <div class="emblem emblem--lg"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/><path d="M9 12.2l2 2 4-4.4"/></svg></div>
         <div>
           <p class="display" style="font-size:21px;color:#FFF;line-height:26px">Kung-fu Waishi</p>
-          <p style="font-size:14px;color:#B9D4C6;margin-top:4px">Analamahitsy</p>
+          <p style="font-size:14px;color:var(--sur-vert);margin-top:4px">Analamahitsy</p>
         </div>
       </div>
 
@@ -41,7 +41,7 @@ const SCREENS = {
       <div class="emblem"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/><path d="M9 12.2l2 2 4-4.4"/></svg></div>
       <div style="flex-grow:1;min-width:0">
         <p class="display" style="font-size:17px;color:#FFF;letter-spacing:.02em;line-height:20px">KUNG-FU WAISHI</p>
-        <p style="font-size:13px;color:#B9D4C6;margin-top:2px">Analamahitsy · Antananarivo</p>
+        <p style="font-size:13px;color:var(--sur-vert);margin-top:2px">Analamahitsy · Antananarivo</p>
       </div>
       <button class="tapicon" data-go="notifications" aria-label="Notifications" style="position:relative">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 13 6 9"/><path d="M10 18a2 2 0 0 0 4 0"/></svg><span class="dot">3</span>
@@ -52,7 +52,7 @@ const SCREENS = {
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7FD9A8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4a1 1 0 0 0 1 1h3l8 4V5l-8 4H5a1 1 0 0 0-1 1z"/><path d="M19 9.5a4 4 0 0 1 0 5"/></svg>
       <div style="flex-grow:1">
         <p style="font-size:14px;font-weight:600;color:#FFF;line-height:19px">Sortie prévue samedi 22 novembre</p>
-        <p style="font-size:12px;color:#B9D4C6;margin-top:3px">Consultez le casier pour les détails.</p>
+        <p style="font-size:12px;color:var(--sur-vert);margin-top:3px">Consultez le casier pour les détails.</p>
       </div>
     </div>
   </div>
@@ -637,7 +637,7 @@ const SCREENS = {
       <div class="emblem emblem--lg"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/></svg></div>
       <div>
         <p class="display" style="font-size:20px;color:#FFF;line-height:25px">Kung-fu Waishi<br>Analamahitsy</p>
-        <p style="font-size:13px;color:#B9D4C6;margin-top:8px">Fondé en 2014 · Antananarivo</p>
+        <p style="font-size:13px;color:var(--sur-vert);margin-top:8px">Fondé en 2014 · Antananarivo</p>
       </div>
       <p style="font-size:10px;font-weight:600;letter-spacing:.1em;color:#7FA893;text-transform:uppercase">Logo du club à fournir</p>
     </div>

@@ -8,9 +8,10 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
-import { couleurs, polices, composants as C } from '../theme/tokens';
+import { couleurs, composants as C } from '../theme/tokens';
+import { texte } from '../theme/typo';
 
-type Cle = 'home' | 'students' | 'chat' | 'news' | 'album';
+export type Cle = 'home' | 'students' | 'chat' | 'news' | 'album';
 
 const ONGLETS: [Cle, string][] = [
   ['home', 'Accueil'],
@@ -80,6 +81,9 @@ const s = StyleSheet.create({
   /* grid-template-columns: repeat(5, minmax(0, 1fr)) — cinq colonnes
      égales. flex:1 avec minWidth:0 donne le même partage. */
   onglet: { flex: 1, minWidth: 0, alignItems: 'center', gap: 5, paddingVertical: 6, minHeight: 44 },
-  libelle: { fontFamily: polices.texte, fontSize: 10, color: couleurs.grisClair },
-  libelleActif: { fontWeight: '700', color: couleurs.vert }
+  libelle: { ...texte('texte'), fontSize: 10, color: couleurs.grisClair },
+  /* La graisse se choisit par le NOM de la police, pas par
+     fontWeight : sur Android, fontWeight ne sélectionne pas un
+     fichier embarqué. */
+  libelleActif: { ...texte('texte', 700), color: couleurs.vert }
 });

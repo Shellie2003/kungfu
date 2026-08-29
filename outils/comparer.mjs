@@ -24,7 +24,8 @@
    ============================================================ */
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { build } from 'esbuild';
+import { assembler } from './assembler.mjs';
+import { policesWeb } from './polices-web.mjs';
 import { chromium } from 'playwright';
 import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
@@ -52,34 +53,11 @@ if (!liste.length) {
 mkdirSync(SORTIE, { recursive: true });
 
 /* ------------------------------------------------------------
-   1. Assembler l'écran React Native pour le navigateur.
-   ------------------------------------------------------------ */
-async function assembler(module) {
-  const entree = `
-    import React from 'react';
-    import { createRoot } from 'react-dom/client';
-    import Ecran from '${join(process.cwd(), module).replace(/\\/g, '/')}';
-    createRoot(document.getElementById('r')).render(React.createElement(Ecran));
-  `;
-  const r = await build({
-    stdin: { contents: entree, resolveDir: process.cwd(), loader: 'tsx' },
-    bundle: true, write: false, format: 'iife', platform: 'browser',
-    jsx: 'automatic', loader: { '.tsx': 'tsx', '.ts': 'ts' },
-    define: { 'process.env.NODE_ENV': '"production"', __DEV__: 'false' },
-    alias: {
-      'react-native': 'react-native-web',
-      /* Module natif : remplacé par les balises SVG du DOM. */
-      'react-native-svg': join(process.cwd(), 'outils/shim-svg.js')
-    },
-    logLevel: 'silent'
-  });
-  return r.outputFiles[0].text;
-}
-
-/* ------------------------------------------------------------
    2. Photographier les deux écrans.
    ------------------------------------------------------------ */
-const POLICES = readFileSync('css/fonts.css', 'utf8');
+/* La page de l'application reçoit les TTF que l'APK embarquera ;
+   la maquette, elle, garde ses propres @font-face. */
+const POLICES = policesWeb();
 
 async function photoApplication(page, script, chemin) {
   await page.setViewportSize({ width: LARGEUR, height: HAUTEUR });
@@ -170,20 +148,33 @@ const RELEVE = `(racine) => {
     if (!b.width || !b.height) continue;
     if (b.bottom < o.top || b.top > o.bottom) continue;   /* hors écran */
     const c = getComputedStyle(e);
+    /* Les deux côtés expriment la graisse autrement : la maquette
+       par font-weight sur une police variable, l'application par le
+       NOM de la police, faute de quoi Android ne la trouverait pas.
+       On compare donc la graisse EFFECTIVE — celle que le lecteur
+       voit — et non la propriété CSS. */
+    const fam = c.fontFamily || '';
+    const parNom = /-Bold/.test(fam) ? '700'
+                 : /-SemiBold/.test(fam) ? '600'
+                 : /-Medium/.test(fam) ? '500'
+                 : null;
     out[texte] = {
       x: Math.round((b.left - o.left) * 2) / 2,
       y: Math.round((b.top - o.top) * 2) / 2,
       w: Math.round(b.width * 2) / 2,
       h: Math.round(b.height * 2) / 2,
-      taille: c.fontSize, graisse: c.fontWeight, couleur: c.color
+      taille: c.fontSize, graisse: parNom || c.fontWeight, couleur: c.color
     };
   }
   return out;
 }`;
 
-function comparerGeometrie(appli, maquette) {
+function comparerGeometrie(appli, maquette, exemples = []) {
   const ecarts = [];
   for (const [texte, m] of Object.entries(maquette)) {
+    /* Contenu d'exemple de la maquette : un champ que l'application
+       laisse vide au démarrage. Déclaré dans outils/ecrans.mjs. */
+    if (exemples.includes(texte)) continue;
     const a = appli[texte];
     if (!a) { ecarts.push(`« ${texte} » absent de l’application`); continue; }
     if (a.x !== m.x || a.y !== m.y) {
@@ -241,16 +232,16 @@ const page = await navigateur.newPage({
 });
 
 let echecs = 0;
-for (const { cle, module } of liste) {
+for (const { cle, module, props, exemples } of liste) {
   const appli = `${SORTIE}/${cle}-application.png`;
   const maq = `${SORTIE}/${cle}-maquette.png`;
   const dif = `${SORTIE}/${cle}-ecart.png`;
 
-  const script = await assembler(module);
+  const script = await assembler(module, { props });
   const geoMaq = await photoMaquette(page, cle, maq);   /* d'abord : elle donne la taille */
   const geoApp = await photoApplication(page, script, appli);
 
-  const ecarts = comparerGeometrie(geoApp, geoMaq);
+  const ecarts = comparerGeometrie(geoApp, geoMaq, exemples);
   const { n, total, pourcent } = comparer(appli, maq, dif);
   const bon = ecarts.length === 0 && pourcent <= SEUIL_ECRAN;
   if (!bon) echecs++;

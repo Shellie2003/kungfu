@@ -19,60 +19,22 @@
    ============================================================ */
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { build } from 'esbuild';
+import { assemblerPlusieurs } from './assembler.mjs';
+import { policesWeb } from './polices-web.mjs';
 import { ECRANS } from './ecrans.mjs';
 
-const POLICES = readFileSync('css/fonts.css', 'utf8');
+/* Les mêmes fichiers que l'APK : l'aperçu montre les polices
+   telles qu'elles seront sur le téléphone. */
+const POLICES = policesWeb();
 
 /* Le code QR, s'il a été produit. Incorporé en clair dans la page :
    un chemin relatif casserait si la page est ouverte depuis un
    fichier ou renvoyée par courriel. Produire le QR : node outils/qr.mjs */
 const QR = existsSync('apercu/qr.svg') ? readFileSync('apercu/qr.svg', 'utf8') : null;
 
-/* Un module d'entrée qui monte tous les écrans portés et le
-   sélecteur qui passe de l'un à l'autre. */
-const entree = `
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-${ECRANS.map((e, i) => `import E${i} from '${join(process.cwd(), e.module).replace(/\\/g, '/')}';`).join('\n')}
+const script = await assemblerPlusieurs(ECRANS);
 
-const ECRANS = [
-${ECRANS.map((e, i) => `  { cle: '${e.cle}', titre: ${JSON.stringify(e.titre)}, C: E${i} }`).join(',\n')}
-];
 
-function Apercu() {
-  const [i, setI] = React.useState(0);
-  const Ecran = ECRANS[i].C;
-  React.useEffect(() => {
-    document.getElementById('nom').textContent = ECRANS[i].titre;
-    document.querySelectorAll('#onglets button').forEach((b, k) =>
-      b.setAttribute('aria-current', String(k === i)));
-  }, [i]);
-  React.useEffect(() => {
-    window.__aller = setI;
-  }, []);
-  return React.createElement(Ecran);
-}
-
-createRoot(document.getElementById('ecran')).render(React.createElement(Apercu));
-`;
-
-const r = await build({
-  stdin: { contents: entree, resolveDir: process.cwd(), loader: 'tsx' },
-  bundle: true, write: false, format: 'iife', platform: 'browser',
-  jsx: 'automatic', minify: true,
-  define: { 'process.env.NODE_ENV': '"production"', __DEV__: 'false' },
-  alias: {
-    'react-native': 'react-native-web',
-    /* Le même bouchon que pour la comparaison : react-native-svg
-       est un module natif, il ne s'exécute pas dans un navigateur.
-       Les tracés, eux, sont identiques. */
-    'react-native-svg': join(process.cwd(), 'outils/shim-svg.js')
-  },
-  logLevel: 'silent'
-});
-
-const script = r.outputFiles[0].text;
 
 const html = `<!doctype html>
 <html lang="fr">
@@ -96,7 +58,7 @@ body {
 }
 header { text-align: center; }
 h1 {
-  margin: 0; font-family: 'Archivo', sans-serif; font-size: 15px; font-weight: 700;
+  margin: 0; font-family: 'Archivo-Bold', sans-serif; font-size: 15px;
   letter-spacing: .12em; text-transform: uppercase; color: #FFF;
 }
 .sous { margin: 6px 0 0; font-size: 13px; color: #8FB3A0; }
