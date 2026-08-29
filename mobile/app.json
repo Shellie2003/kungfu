@@ -28,10 +28,13 @@
         "android.permission.RECORD_AUDIO"
       ]
     },
-    "plugins": ["expo-router", "expo-font", "expo-secure-store"],
-    "experiments": { "typedRoutes": true },
-    "extra": {
-      "eas": { "projectId": "À REMPLIR après `eas init`" }
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }

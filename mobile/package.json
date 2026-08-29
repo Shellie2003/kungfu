@@ -26,7 +26,8 @@
     "react-native-screens": "~4.4.0",
     "react-native-svg": "15.8.0",
     "react-native-url-polyfill": "^2.0.0",
-    "zustand": "^5.0.2"
+    "zustand": "^5.0.2",
+    "expo-asset": "~11.0.1"
   },
   "devDependencies": {
     "@types/react": "~18.3.12",

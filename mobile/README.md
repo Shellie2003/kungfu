@@ -11,6 +11,9 @@ cp .env.example .env        # puis remplir les deux valeurs Supabase
 npx expo start              # QR code Expo Go, rechargement immédiat
 ```
 
+Le guide complet — les trois façons de tester, les comptes d'essai — est dans
+`TESTER.md`, à la racine.
+
 Rien ne démarre sans `.env` : le client Supabase échoue avec un message clair plutôt que
 de laisser chaque requête retourner une erreur incompréhensible.
 
