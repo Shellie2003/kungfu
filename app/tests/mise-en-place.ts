@@ -53,6 +53,12 @@ beforeAll(() => {
    couvre pas — que le temps réel fonctionne vraiment — ne se vérifie
    de toute façon que sur un téléphone, avec deux appareils.
    ------------------------------------------------------------ */
+/* Le registre des sorties tentées. Il ne sert pas à faire marcher
+   les tests : il sert à les faire ÉCHOUER ici plutôt que sur le
+   coureur GitHub, où le même défaut ne s'est manifesté qu'une fois
+   sur deux. Un test lit ce registre — voir tests/reseau.test.tsx. */
+export const socketsTentes: string[] = [];
+
 class FauxWebSocket {
   static readonly CONNECTING = 0;
   static readonly OPEN = 1;
@@ -68,6 +74,7 @@ class FauxWebSocket {
 
   constructor(url: string | URL) {
     this.url = String(url);
+    socketsTentes.push(this.url);
   }
   send() {}
   close() {
@@ -80,6 +87,19 @@ class FauxWebSocket {
 
 beforeAll(async () => {
   vi.stubGlobal('WebSocket', FauxWebSocket);
+
+  /* Et un fetch qui REFUSE, posé avant tout. « brancherServeur »
+     l'écrase dans les fichiers qui simulent le serveur ; celui qui
+     oublierait de l'appeler tomberait sinon sur le vrai réseau, et
+     son test dépendrait de la connexion de la machine qui le lance —
+     vert ici, rouge sur le coureur, ou l'inverse. Mieux vaut une
+     erreur qui nomme l'adresse demandée. */
+  vi.stubGlobal('fetch', async () => {
+    throw new Error(
+      'Un test a tenté de joindre le réseau sans serveur simulé. ' +
+        'Appelez brancherServeur() dans un beforeEach.'
+    );
+  });
 
   /* Le faux WebSocket global NE SUFFIT PAS, et cela m'a coûté une
      exécution rouge pour l'apprendre : realtime-js ne prend pas
