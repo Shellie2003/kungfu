@@ -265,6 +265,51 @@ projet d'essai : les sept passent, deux membres inscrits, la personne en face co
 nommée, et la fonction est idempotente — rappelée, elle rend le même salon plutôt qu'un
 doublon.
 
+### Les présences
+
+C'est ce que le code QR de la carte annonçait depuis le premier jour, et qui n'existait
+nulle part. Deux écrans :
+
+- **Pointer les présences** (accueil → Mon espace, ou l'écran d'administration), ouvert aux
+  **maîtres** et non à la seule administration : c'est le maître qui tient la salle. Il
+  scanne les cartes avec la caméra arrière, ou saisit le matricule.
+- **Mon assiduité**, côté membre : ses séances et son compte sur douze mois — la période que
+  le club regarde pour un passage de grade.
+
+Ce que la base impose, et que l'application ne décide pas :
+
+| | |
+|---|---|
+| Qui pointe | L'encadrement seul. Une présence qu'on se donne à soi-même ne vaut rien |
+| Qui voit quoi | Chacun la sienne, l'encadrement toutes |
+| L'absence | N'est **pas** une ligne : une ligne veut dire « était là » |
+| Deux fois la même carte | Met à jour, ne crée pas de doublon |
+
+**La caméra ne marche pas toujours** — autorisation refusée, téléphone sans lecteur de codes,
+carte oubliée, élève sans téléphone donc sans carte à l'écran. La saisie du matricule est
+donc visible d'emblée, pas cachée derrière « en cas de problème » : c'est le chemin qui
+marche toujours. Quand le lecteur manque, l'écran le dit.
+
+Les règles ont été rejouées sur la vraie base en se faisant passer pour chaque rôle : huit
+cas, tous conformes.
+
+### Les pièces jointes des conversations
+
+Une photo se joint à un message par le **+** de la barre de saisie.
+
+C'est le **seul endroit du projet où un membre écrit dans le stockage**, et cela mérite d'être
+dit clairement. Partout ailleurs — portraits, album — seule l'administration dépose. Ici il
+le faut, puisque n'importe qui peut écrire un message.
+
+La règle est tenue au plus serré : un seau à part, images seules, 5 Mo, aucune suppression
+sauf par l'administration, aucun remplacement. Et surtout, **le chemin porte le salon** —
+`<salon>/<hasard>.jpg` — si bien que la règle d'accès vérifie l'appartenance : on ne dépose
+que dans une conversation dont on est membre, et l'on ne lit que celles-là. L'espace des
+maîtres est fermé par la même mécanique que ses messages.
+
+Ce que cela n'empêche pas : un membre peut déposer ce qu'il veut dans **ses** salons, dans
+ces limites. La modération existe pour cela.
+
 **Ce qui reste à faire** : les notifications poussées sur l'écran verrouillé du téléphone.
 Elles demandent un projet Firebase au nom du club — je ne peux ni le créer ni en vérifier le
 fonctionnement d'ici, et écrire du code que personne ne peut essayer vaudrait moins que de
@@ -340,9 +385,14 @@ date de naissance d'un mineur.
 
 ### Ce que l'APK demande comme permissions
 
-**Internet. C'est tout.** C'est la seule permission du manifeste — vérifiable dans
-`app/android/app/src/main/AndroidManifest.xml` après `npx cap add android`. L'appareil
-photo sera demandé le jour où la fonctionnalité photo existera, pas avant.
+**Internet et l'appareil photo.** C'est tout — vérifiable dans
+`app/android/app/src/main/AndroidManifest.xml` après `npx cap add android`.
+
+L'appareil photo avait été explicitement **retiré** au début du projet, parce que rien ne
+s'en servait : une application qui réclame la caméra sans l'employer fait hésiter à
+l'installation. Elle sert maintenant, et uniquement à cela : **scanner les cartes de membre
+pour pointer les présences**. Elle est déclarée `required="false"`, si bien qu'un téléphone
+sans caméra installe quand même — la saisie du matricule marche sans elle.
 
 ---
 
