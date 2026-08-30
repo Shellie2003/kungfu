@@ -192,16 +192,26 @@ Les neuf écrans existent et écrivent réellement en base :
 
 **Une seule dépend d'un déploiement à part : « Comptes et accès ».** Créer un compte
 demande la clé `service_role`, qui passe outre toutes les règles d'accès — la mettre dans
-l'APK reviendrait à la publier. Elle vit donc dans une fonction sur le serveur, à déployer
-une fois :
+l'APK reviendrait à la publier. Elle vit donc dans une fonction sur le serveur.
+
+Elle est **désormais déployée sur le projet d'essai** : l'écran l'atteint réellement. Pour
+l'essayer, la fiche **F04x077 · ANDRIAMBELO Rado** est volontairement sans compte.
+
+Ce que je n'ai **pas** pu vérifier moi-même, et qu'il faut donc regarder sur le téléphone :
+l'environnement où je travaille bloque les connexions sortantes vers `supabase.co`, si
+bien que l'appel n'est jamais parti d'ici. Je sais que la fonction est en ligne ; je ne
+sais pas de mes yeux qu'elle crée un compte.
+
+Sur le projet du club, elle sera à déployer une fois :
 
 ```bash
 npx supabase functions deploy comptes
 ```
 
-Tant que ce n'est pas fait, l'écran fonctionne mais chaque action répond « la fonction
-n'est pas déployée ». C'est voulu : mieux vaut le dire que laisser croire qu'un compte a
-été créé. Le détail est dans `supabase/functions/comptes/LISEZ-MOI.md`.
+Tant que ce n'est pas fait sur un projet donné, l'écran y fonctionne mais chaque action
+répond « la fonction n'est pas déployée ». C'est voulu : mieux vaut le dire que laisser
+croire qu'un compte a été créé. Le détail est dans
+`supabase/functions/comptes/LISEZ-MOI.md`.
 
 ### La modération
 

@@ -29,6 +29,22 @@ Employer `service_role` pour cette lecture reviendrait à croire l'appelant sur 
 Si la fiche que le jeton désigne ne porte pas le rôle `admin`, la fonction répond 403 et
 s'arrête.
 
+## Où elle en est
+
+Elle est **déployée sur le projet d'essai** (`znotzkfwukvvtaqfrozn`), version 1, active,
+avec `verify_jwt` activé. L'écran « Comptes et accès » l'atteint donc réellement lors des
+essais.
+
+Une réserve à ne pas passer sous silence : je n'ai pas pu l'**exercer** de bout en bout
+depuis ici — l'environnement où je travaille bloque les connexions sortantes vers
+`supabase.co`, et l'appel n'est jamais parti. Ce qui est vérifié, c'est qu'elle est en
+ligne ; ce qui reste à voir sur un vrai téléphone, c'est la création d'un compte. La
+fiche **F04x077 · ANDRIAMBELO Rado** est justement sans compte dans la base d'essai :
+c'est celle sur laquelle essayer.
+
+Sur le projet du club, quand il existera, elle sera à déployer une fois de plus — une
+fonction appartient à son projet.
+
 ## Déployer
 
 ```bash
