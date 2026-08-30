@@ -177,7 +177,7 @@ téléphone. Il doit apparaître comme les autres.
 
 ### L'administration
 
-Les sept écrans existent et écrivent réellement en base :
+Les neuf écrans existent et écrivent réellement en base :
 
 | Écran | Ce qu'il fait |
 |---|---|
@@ -188,6 +188,8 @@ Les sept écrans existent et écrivent réellement en base :
 | Publier une actualité | Avec brouillon, et suppression de ce qui est au casier |
 | Envoyer une notification | À tous les membres actifs, une ligne chacun |
 | Albums et photos | Créer, envoyer plusieurs photos d'un coup, supprimer |
+| Participations | Qui vient à une sortie, et **pointer les versements reçus** |
+| Le club | Horaires, responsable, téléphone, adresse, numéro MVola |
 
 **Une seule dépend d'un déploiement à part : « Comptes et accès ».** Créer un compte
 demande la clé `service_role`, qui passe outre toutes les règles d'accès — la mettre dans
@@ -202,9 +204,44 @@ Tant que ce n'est pas fait, l'écran fonctionne mais chaque action répond « la
 n'est pas déployée ». C'est voulu : mieux vaut le dire que laisser croire qu'un compte a
 été créé. Le détail est dans `supabase/functions/comptes/LISEZ-MOI.md`.
 
-**Ce qui reste à faire** : les notifications poussées sur l'écran verrouillé du téléphone
-— elles demandent un service à part — et l'écran d'édition des horaires et des réglages du
-club, qui se changent pour l'instant depuis le tableau de bord Supabase.
+### La modération
+
+Les signalements remontent maintenant aux maîtres, depuis l'écran de messagerie. Deux
+issues : **retirer** le message ou **classer sans suite**.
+
+« Retirer » est une suppression douce — la ligne reste, seule sa date de retrait est posée.
+Un message effacé ne se défend pas, et le club doit pouvoir expliquer sa décision à un
+parent trois mois plus tard, ou revenir dessus si le signalement était abusif.
+
+### Les conversations à deux
+
+On en ouvre une depuis le **+** de l'écran Messages. La règle est posée en base, pas dans
+l'application :
+
+- écrire à un **maître ou à l'administration** est toujours possible — c'est le canal par
+  lequel un enfant signale un problème ;
+- entre **deux élèves**, il faut que les deux soient majeurs ;
+- une **date de naissance inconnue compte comme mineure**.
+
+C'est la réponse la plus prudente à une question que le club n'a pas encore tranchée. Il
+peut l'assouplir d'une ligne le jour où il décide ; ce qu'il ne faut pas faire, c'est ouvrir
+par défaut et corriger après un incident.
+
+Ce comportement est vérifié sur une **vraie base** :
+
+```bash
+psql "$DATABASE_URL" -f supabase/tests/directs.sql
+```
+
+Sept cas d'autorisation et de refus, plus le contenu du salon créé. Résultat obtenu sur le
+projet d'essai : les sept passent, deux membres inscrits, la personne en face correctement
+nommée, et la fonction est idempotente — rappelée, elle rend le même salon plutôt qu'un
+doublon.
+
+**Ce qui reste à faire** : les notifications poussées sur l'écran verrouillé du téléphone.
+Elles demandent un projet Firebase au nom du club — je ne peux ni le créer ni en vérifier le
+fonctionnement d'ici, et écrire du code que personne ne peut essayer vaudrait moins que de
+le dire.
 
 ---
 

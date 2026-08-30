@@ -14,8 +14,13 @@ construction.
 
 Dix-neuf écrans sur vingt-six sont portés ; les sept autres sont des planches de travail
 (charte graphique, sécurité, directions graphiques, planche d'impression) qui n'ont pas
-vocation à entrer dans l'application. **Les sept écrans d'administration existent** et
-écrivent en base — fiches, grades, comptes, actualités, notifications, albums, photos.
+vocation à entrer dans l'application. **Les neuf écrans d'administration existent** et
+écrivent en base — fiches, grades, comptes, actualités, notifications, albums, photos,
+participations, horaires et réglages du club. La modération des signalements et les
+conversations à deux existent aussi.
+
+**126 tests** unitaires et d'intégration, plus deux tests SQL exécutés sur un vrai
+PostgreSQL : `npm test` à la racine de `app/`, et les fichiers de `supabase/tests/`.
 
 La ressemblance est **mesurée**, pas affirmée : `npm run comparer-app` photographie le même
 écran des deux côtés et compare la géométrie de chaque texte, sans tolérance. Zéro écart,
@@ -312,7 +317,9 @@ compte pour un club à Antananarivo, et ce qui évite qu'elle change d'aspect d'
 | `vercel.json` | Configuration d'hébergement, site statique sans étape de build |
 | `ARCHITECTURE.md` | **Le topo de démarrage** : choix technologique, étapes, coûts |
 | `supabase/` | Les migrations et le test de sécurité, exécutés sur un vrai PostgreSQL |
-| `TESTER.md` | **Comment tester** : navigateur, APK |
+| `TESTER.md` | **Comment tester** : navigateur, APK, tests |
+| `app/tests/` | 126 tests, unitaires et d'intégration, avec un serveur simulé |
+| `supabase/functions/` | La fonction « comptes », qui détient la clé de service |
 | `icones.mjs` | **Le trait des icônes**, lu par la maquette ET par l'application |
 | `app/` | **L'application** : Vite + React + Tailwind + Capacitor |
 | `app/signature/` | La clé de signature de développement, et pourquoi elle est versionnée |
