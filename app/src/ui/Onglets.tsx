@@ -33,6 +33,7 @@ const RATTACHEMENT: [RegExp, string][] = [
   [/^\/club/, '/accueil'],
   [/^\/notifications/, '/accueil'],
   [/^\/carte/, '/accueil'],
+  [/^\/presences/, '/accueil'],
   [/^\/motdepasse/, '/etudiants'],
   [/^\/maitres/, '/messages'],
   [/^\/signalements/, '/messages']

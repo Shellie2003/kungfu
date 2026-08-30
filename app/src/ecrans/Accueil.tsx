@@ -7,7 +7,7 @@ import { Carte, Surtitre } from '../ui/base';
 import { useActualites, useNotifications, jourEtMois, teinte } from '../services/casier';
 import { useMembres } from '../services/membres';
 import { useHoraires, useReglages } from '../services/club';
-import { estAdmin, useSession } from '../services/session';
+import { estAdmin, estMaitre, useSession } from '../services/session';
 
 export function Accueil() {
   const aller = useNavigate();
@@ -235,6 +235,44 @@ export function Accueil() {
                 </span>
                 <Icone nom="chev" taille={17} couleur="#A8B6AE" epaisseur={2} />
               </button>
+
+              <button className="listrow" onClick={() => aller('/presences')}>
+                <span className="tile tile--sm">
+                  <Icone nom="calendar" taille={18} couleur="#0F5132" />
+                </span>
+                <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
+                  <b style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>
+                    Mon assiduité
+                  </b>
+                  <span
+                    style={{ display: 'block', fontSize: 12, color: '#59685F', marginTop: 1 }}
+                  >
+                    Les séances pointées, sur douze mois
+                  </span>
+                </span>
+                <Icone nom="chev" taille={17} couleur="#A8B6AE" epaisseur={2} />
+              </button>
+
+              {/* Le pointage revient au MAÎTRE, pas seulement à
+                  l'administration : c'est lui qui tient la salle. */}
+              {estMaitre(profil) && (
+                <button className="listrow" onClick={() => aller('/presences/pointer')}>
+                  <span className="tile tile--sm">
+                    <Icone nom="shield" taille={18} couleur="#0F5132" />
+                  </span>
+                  <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
+                    <b style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>
+                      Pointer les présences
+                    </b>
+                    <span
+                      style={{ display: 'block', fontSize: 12, color: '#59685F', marginTop: 1 }}
+                    >
+                      En scannant les cartes, ou au matricule
+                    </span>
+                  </span>
+                  <Icone nom="chev" taille={17} couleur="#A8B6AE" epaisseur={2} />
+                </button>
+              )}
 
               {estAdmin(profil) && (
                 <button className="listrow" onClick={() => aller('/admin')}>

@@ -44,9 +44,11 @@ import { AdminAlbums, AdminNotifier, AdminPublier } from './ecrans/admin/Publica
 import { AdminComptes } from './ecrans/admin/Comptes';
 import { AdminClub } from './ecrans/admin/Club';
 import { AdminParticipations } from './ecrans/admin/Participations';
+import { AdminPresences } from './ecrans/admin/Presences';
+import { MesPresences } from './ecrans/MesPresences';
 
 import { seConnecter } from './services/supabase';
-import { estAdmin, useEcouteSession, useSession } from './services/session';
+import { estAdmin, estMaitre, useEcouteSession, useSession } from './services/session';
 
 /* Un réessai suffit : sur un réseau qui coupe, insister trois fois
    fait attendre une minute pour le même échec. Les données ne
@@ -151,6 +153,13 @@ function Connectee() {
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/carte" element={<CarteMembre />} />
         <Route path="/motdepasse" element={<MotDePasse />} />
+        <Route path="/presences" element={<MesPresences />} />
+        {/* Le pointage est ouvert aux MAÎTRES, pas seulement à
+            l'administration : c'est le maître qui tient la salle, et
+            faire dépendre l'appel de la présence d'un administrateur
+            reviendrait à ce qu'il ne se fasse pas. La base dit la
+            même chose — « l'encadrement pointe ». */}
+        {estMaitre(profil) && <Route path="/presences/pointer" element={<AdminPresences />} />}
         {/* L'écran d'administration n'est pas une porte : y accéder
             ne donne rien de plus, puisque le serveur refuse tout ce
             que le rôle n'autorise pas. La route est masquée pour ne

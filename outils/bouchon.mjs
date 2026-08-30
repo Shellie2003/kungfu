@@ -130,7 +130,19 @@ export const REPONSES = {
   ],
   versements: [],
   mes_directs: [],
-  tuteurs: []
+  tuteurs: [],
+  /* Une séance pointée, pour que les deux écrans de présence
+     montrent une ligne plutôt que leur message de liste vide : c'est
+     la ligne, pas le vide, qui peut casser. */
+  presences: [
+    {
+      id: 'pr1',
+      seance_le: new Date().toISOString().slice(0, 10),
+      statut: 'present',
+      horaire_id: null,
+      profils: { id: 'p1', nom: 'RAKOTONDRABE', prenom: 'Nirina', numero: 'F04x042' }
+    }
+  ]
 };
 
 /* ---------------------------------------------- Servir app/dist */

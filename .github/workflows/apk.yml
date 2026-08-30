@@ -145,6 +145,37 @@ jobs:
           npx cap add android
           npx cap sync android
 
+      # La permission caméra, pour le pointage des présences.
+      #
+      # Elle n'est PAS dans le modèle de Capacitor, et elle a été
+      # explicitement retirée au début du projet parce que rien ne
+      # s'en servait — une application qui réclame la caméra sans
+      # l'employer fait hésiter à l'installation. Elle sert
+      # maintenant : le maître scanne les cartes de membre.
+      #
+      # Le manifeste est engendré, donc pas versionné ; on l'écrit
+      # ici. Et l'étape ÉCHOUE si l'ancre a disparu, plutôt que de
+      # produire un APK dont la caméra ne s'ouvrira jamais — on ne
+      # s'en apercevrait qu'au premier entraînement.
+      - name: Déclarer la caméra
+        working-directory: app/android/app/src/main
+        run: |
+          if grep -q 'android.permission.CAMERA' AndroidManifest.xml; then
+            echo "déjà déclarée"
+            exit 0
+          fi
+          if ! grep -q '</manifest>' AndroidManifest.xml; then
+            echo "::error::Le manifeste engendré n'a pas la forme attendue : la caméra ne serait pas déclarée et le pointage par code QR ne marcherait pas."
+            exit 1
+          fi
+          # « required=false » : le téléphone sans caméra installe
+          # quand même. La saisie du matricule marche sans elle, et
+          # c'est le chemin de repli assumé de l'écran de pointage.
+          sed -i 's|</manifest>|    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />\n</manifest>|' AndroidManifest.xml
+          grep -q 'android.permission.CAMERA' AndroidManifest.xml \
+            || { echo "::error::L'écriture de la permission caméra a échoué."; exit 1; }
+          echo "caméra déclarée"
+
       # La clé de débogage du projet remplace celle que Gradle
       # fabriquerait tout seul sur cette machine neuve. Sans cela la
       # signature changerait à chaque construction et le club ne
