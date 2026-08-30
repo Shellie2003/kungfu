@@ -421,6 +421,61 @@ describe('comptes et accès', () => {
   });
 });
 
+describe('attribuer le rôle de maître', () => {
+  /* Fonctionnalité validée à la livraison de la maquette —
+     « attribution du rôle de maître, par l'administration seule » —
+     et qu'aucun écran ne tenait. L'espace des maîtres, construit et
+     protégé, n'aurait servi qu'aux comptes posés à la main en base. */
+  const MEMBRES = [
+    { id: 'p1', numero: 'F04x042', nom: 'RAKOTONDRABE', prenom: 'Nirina',
+      role: 'eleve', actif: true, compte_id: 'u1' },
+    { id: 'p0', numero: 'F04x001', nom: 'IDEALY', prenom: 'Santatra',
+      role: 'admin', actif: true, compte_id: 'u0' }
+  ];
+
+  test('promeut un élève, et n’envoie QUE le rôle', async () => {
+    /* Ni le numéro, ni le grade : un déclencheur de la base les fige,
+       et les envoyer ferait échouer la mise à jour entière. */
+    poser({ profils: MEMBRES });
+    rendre(<AdminComptes />, { route: '/admin/comptes' });
+
+    await userEvent.selectOptions(
+      await screen.findByLabelText('Rôle de RAKOTONDRABE Nirina'),
+      'maitre'
+    );
+
+    await waitFor(() =>
+      expect(derniere('profils', 'PATCH')?.corps).toEqual({ role: 'maitre' })
+    );
+  });
+
+  test('l’administration ne peut pas se retirer son PROPRE rôle', async () => {
+    /* Ce n'est pas une sécurité — le tableau de bord le permettrait —
+       c'est un garde-fou : sans administrateur, plus personne ne peut
+       en nommer un depuis l'application. */
+    poser({ profils: MEMBRES });
+    rendre(<AdminComptes />, { route: '/admin/comptes' });
+
+    expect(await screen.findByLabelText('Rôle de IDEALY Santatra')).toBeDisabled();
+    expect(screen.getByLabelText('Rôle de RAKOTONDRABE Nirina')).not.toBeDisabled();
+  });
+
+  test('un refus du serveur ne s’annonce pas comme un succès', async () => {
+    /* Même piège que la correction d'un message : un PATCH que la
+       règle d'accès écarte ne touche aucune ligne et ne rend pas
+       d'erreur. */
+    poser({ profils: MEMBRES, 'profils:PATCH': [] });
+    rendre(<AdminComptes />, { route: '/admin/comptes' });
+
+    await userEvent.selectOptions(
+      await screen.findByLabelText('Rôle de RAKOTONDRABE Nirina'),
+      'maitre'
+    );
+
+    expect(await screen.findByText(/refusé ce changement de rôle/)).toBeInTheDocument();
+  });
+});
+
 describe('changer son mot de passe', () => {
   test('l’ancien mot de passe est VÉRIFIÉ, pas seulement demandé', async () => {
     /* Supabase ne le contrôle pas : updateUser accepte n'importe

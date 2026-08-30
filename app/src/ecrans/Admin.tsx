@@ -37,6 +37,7 @@ const PUBLICATION: Rangee[] = [
   ['Publier une actualité', 'Sortie, compétition, réunion…', 'news', '/admin/publier'],
   ['Envoyer une notification', 'Prévient tous les membres', 'bell', '/admin/notifier'],
   ['Albums et photos', 'Créer, ajouter, supprimer', 'album', '/admin/albums'],
+  ['Les salons', 'Ouvrir un fil par grade ou par événement', 'chat', '/admin/salons'],
   ['Participations', 'Qui vient, et pointer les versements', 'shieldCheck', '/admin/participations'],
   ['Le club', 'Horaires, responsable, contact, MVola', 'calendar', '/admin/club'],
   ['Pointer les présences', 'En scannant les cartes, ou au matricule', 'shield', '/presences/pointer']

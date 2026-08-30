@@ -13,16 +13,23 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icone } from '../../ui/Icone';
-import { Avis, Bouton, Carte, Champ, Choix, Entete, Etat, Surtitre } from '../../ui/base';
+import { Avis, Bouton, Carte, Champ, Choix, Entete, Etat, Surtitre, Tuile } from '../../ui/base';
 import { heure, nomDuJour, useHoraires, useReglages } from '../../services/club';
 import {
-  useAjouterHoraire, useEnregistrerReglages, useRetirerHoraire
+  televerser, useAjouterHoraire, useEnregistrerReglages, useRetirerHoraire
 } from '../../services/admin';
+import { useUrl } from '../../services/stockage';
 
 /* Les réglages que l'écran propose, dans l'ordre où on les lit.
    La table est en clé/valeur : en ajouter un ne demande pas de
    migration, seulement une ligne ici. */
 const REGLAGES: [cle: string, libelle: string, aide?: string][] = [
+  /* Le nom du club était écrit DANS le code, sur l'accueil et sur la
+     carte de membre. Or « le nom officiel » est l'une des décisions
+     que le club n'a pas encore tranchées : le figer obligeait à une
+     nouvelle version le jour où il tranche. */
+  ['nom_club', 'Nom du club', 'Sur l’accueil et sur la carte de membre.'],
+  ['lieu_club', 'Quartier ou commune', 'Sur la carte de membre, sous « Club ».'],
   ['responsable', 'Responsable du club'],
   ['telephone', 'Téléphone', 'Celui qu’on affiche aux membres.'],
   ['adresse', 'Adresse', 'Où se trouve la salle.'],
@@ -32,6 +39,12 @@ const REGLAGES: [cle: string, libelle: string, aide?: string][] = [
   ['mvola_numero', 'Numéro MVola', 'Celui qui reçoit les participations.'],
   ['mvola_nom', 'Nom du titulaire MVola', 'Affiché sous le code, pour vérification.']
 ];
+
+/* La photo du club n'est pas un champ de texte : elle s'envoie. Elle
+   figure quand même dans les réglages enregistrés — d'où cette
+   entrée à part, pour que l'« upsert » lui donne un libellé lisible
+   dans le tableau de bord comme les autres. */
+const PHOTO: [cle: string, libelle: string] = ['photo_club', 'Photo du club'];
 
 const JOURS = [1, 2, 3, 4, 5, 6, 7];
 const NIVEAUX = ['Tous niveaux', 'Débutants', 'Gradés'];
@@ -49,6 +62,8 @@ export function AdminClub() {
   const [neuf, setNeuf] = useState({
     jour: '', debut: '17:30', fin: '19:00', niveau: 'Tous niveaux', lieu: ''
   });
+  const [envoiPhoto, setEnvoiPhoto] = useState(false);
+  const apercuPhoto = useUrl('album', valeurs.photo_club || null);
 
   /* Les valeurs arrivent après le premier rendu. Sans cet effet, les
      champs resteraient vides alors que les réglages sont là — et
@@ -180,6 +195,68 @@ export function AdminClub() {
                   poser={(v) => setValeurs((p) => ({ ...p, [cle]: v }))}
                 />
               ))}
+
+              {/* La photo du club, sur l'accueil. Elle figurait dans
+                  la liste validée à la livraison — « photo du club :
+                  grande image de présentation » — et l'accueil
+                  affichait « Photo du club à fournir » sans que rien
+                  ne permette de la fournir.
+
+                  Elle part TOUT DE SUITE dans le seau, comme l'image
+                  d'une actualité ; ce qui va dans le réglage est son
+                  chemin, jamais son adresse — les seaux sont privés et
+                  l'adresse signée expire au bout d'une heure. */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {apercuPhoto ? (
+                  <img
+                    src={apercuPhoto}
+                    alt=""
+                    style={{ width: 64, height: 64, borderRadius: 12, objectFit: 'cover' }}
+                  />
+                ) : (
+                  <Tuile icone="martial" petite />
+                )}
+                <div style={{ flexGrow: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 13.5, fontWeight: 600 }}>Photo du club</p>
+                  <p style={{ fontSize: 12, color: '#59685F' }}>
+                    {valeurs.photo_club ? 'Affichée sur l’accueil.' : 'L’accueil est vide sans elle.'}
+                  </p>
+                </div>
+                {valeurs.photo_club && (
+                  <button
+                    className="link"
+                    style={{ color: '#B3341A' }}
+                    onClick={() => setValeurs((p) => ({ ...p, photo_club: '' }))}
+                  >
+                    Retirer
+                  </button>
+                )}
+                <label className="btn btn--ghost" style={{ width: 'auto', padding: '0 14px' }}>
+                  {envoiPhoto ? 'Envoi…' : valeurs.photo_club ? 'Changer' : 'Choisir'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={async (e) => {
+                      const f = e.target.files?.[0];
+                      if (!f) return;
+                      setEnvoiPhoto(true);
+                      try {
+                        const chemin = await televerser('album', f);
+                        setValeurs((p) => ({ ...p, photo_club: chemin }));
+                        setAvis({
+                          bon: true,
+                          texte: 'Photo envoyée. Enregistrez pour qu’elle apparaisse.'
+                        });
+                      } catch (err) {
+                        setAvis({ bon: false, texte: `Photo refusée : ${(err as Error).message}` });
+                      } finally {
+                        setEnvoiPhoto(false);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
             </div>
           </Carte>
         </div>
@@ -196,7 +273,7 @@ export function AdminClub() {
                l'administration. C'est donc celui de cet écran qui
                fait foi. */
             enregistrer.mutate(
-              REGLAGES.map(([cle, libelle]) => ({
+              [...REGLAGES, PHOTO].map(([cle, libelle]) => ({
                 cle,
                 libelle,
                 valeur: valeurs[cle] ?? ''

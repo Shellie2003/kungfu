@@ -11,6 +11,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Icone } from '../ui/Icone';
 import { Bouton, Carte, Entete, Surtitre } from '../ui/base';
 import {
+  MINUTES_CORRECTION,
+  corrigible,
   initiales,
   joindre,
   journaliser,
@@ -449,30 +451,55 @@ function Conversation({ salonId, sombre }: { salonId: string | undefined; sombre
         >
           {correction === null ? (
             <>
-              <p style={{ fontSize: 12.5, color: '#59685F' }}>Votre message</p>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <Bouton genre="ghost" onClick={() => setCorrection(mien.texte)}>
-                  Corriger
-                </Bouton>
-                <Bouton
-                  genre="ghost"
-                  desactive={retirer.isPending}
-                  onClick={() =>
-                    retirer.mutate(mien.id, {
-                      onSuccess: () => {
-                        setAvis('Message retiré. La trace du retrait reste dans le fil.');
-                        setMien(null);
-                      },
-                      onError: () => setAvis('Le retrait n’a pas abouti.')
-                    })
-                  }
-                >
-                  Retirer
-                </Bouton>
-                <Bouton genre="ghost" onClick={() => setMien(null)}>
-                  Annuler
-                </Bouton>
-              </div>
+              {/* La fenêtre de quinze minutes vient de la note de
+                  sécurité livrée au club : « passé ce délai, le fil
+                  devient une trace stable, utile en cas de litige ».
+                  Elle est tenue par la RÈGLE D'ACCÈS ; l'écran ne
+                  fait que s'y conformer, et le dit quand elle est
+                  passée plutôt que de proposer un geste que le
+                  serveur refusera. */}
+              {corrigible(mien, moi?.id) ? (
+                <>
+                  <p style={{ fontSize: 12.5, color: '#59685F' }}>
+                    Votre message — corrigeable pendant {MINUTES_CORRECTION} minutes
+                  </p>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <Bouton genre="ghost" onClick={() => setCorrection(mien.texte)}>
+                      Corriger
+                    </Bouton>
+                    <Bouton
+                      genre="ghost"
+                      desactive={retirer.isPending}
+                      onClick={() =>
+                        retirer.mutate(mien.id, {
+                          onSuccess: () => {
+                            setAvis('Message retiré. La trace du retrait reste dans le fil.');
+                            setMien(null);
+                          },
+                          onError: (e) => setAvis((e as Error).message)
+                        })
+                      }
+                    >
+                      Retirer
+                    </Bouton>
+                    <Bouton genre="ghost" onClick={() => setMien(null)}>
+                      Annuler
+                    </Bouton>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p style={{ fontSize: 12.5, lineHeight: '18px', color: '#59685F' }}>
+                    Les {MINUTES_CORRECTION} minutes pendant lesquelles un message se corrige
+                    sont passées. Le fil devient une trace stable — c’est ce qui le rend utile
+                    en cas de litige. Pour faire retirer ce message, signalez-le à
+                    l’administration.
+                  </p>
+                  <Bouton genre="ghost" onClick={() => setMien(null)}>
+                    Fermer
+                  </Bouton>
+                </>
+              )}
             </>
           ) : (
             <>

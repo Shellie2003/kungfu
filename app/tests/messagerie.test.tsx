@@ -235,6 +235,13 @@ describe('mon propre message', () => {
     profils: { nom: 'RAKOTONDRABE', prenom: 'Nirina' }
   };
 
+  /* Le même, envoyé il y a une heure : la règle d'accès ne le laisse
+     plus corriger. */
+  const VIEUX = {
+    ...MIEN,
+    cree_le: new Date(Date.now() - 60 * 60_000).toISOString()
+  };
+
   /* L'appui long est un « contextmenu » : c'est le geste que la
      maquette annonce, et le seul qui n'entre pas en conflit avec le
      défilement du fil. */
@@ -285,6 +292,59 @@ describe('mon propre message', () => {
     rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
 
     expect(await screen.findByText(/· modifié/)).toBeInTheDocument();
+  });
+
+  test('passé quinze minutes, l’écran ne PROPOSE plus de corriger', async () => {
+    /* La note de sécurité livrée au club le dit : « l'auteur seul, et
+       pendant quinze minutes. Passé ce délai, le fil devient une
+       trace stable, utile en cas de litige. » La règle d'accès le
+       tient ; l'écran doit s'y conformer plutôt que de proposer un
+       geste que le serveur refusera. */
+    poser({ salons: [SALON_CLUB], messages: [VIEUX] });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    await appuiLong('Merci pour l’information.');
+    expect(screen.queryByText('Corriger')).not.toBeInTheDocument();
+    expect(screen.getByText(/minutes pendant lesquelles un message se corrige/)).toBeInTheDocument();
+  });
+
+  test('un refus du serveur ne s’annonce PLUS comme un succès', async () => {
+    /* Le défaut : une mise à jour que la règle d'accès écarte ne
+       touche aucune ligne et ne rend pas d'erreur. PostgREST répond
+       « rien à signaler », et l'écran annonçait « Message corrigé »
+       alors que rien n'avait changé. L'application mentait. */
+    poser({
+      salons: [SALON_CLUB],
+      messages: [MIEN],
+      /* Zéro ligne touchée : c'est ce que rend un PATCH refusé par
+         la règle d'accès. */
+      'messages:PATCH': []
+    });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    await appuiLong('Merci pour l’information.');
+    await userEvent.click(screen.getByText('Corriger'));
+    await userEvent.click(screen.getByText('Enregistrer'));
+
+    expect(await screen.findByText(/Le serveur a refusé/)).toBeInTheDocument();
+  });
+
+  test('la correction demande les lignes touchées, sans quoi on ne sait rien', async () => {
+    poser({ salons: [SALON_CLUB], messages: [MIEN] });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    await appuiLong('Merci pour l’information.');
+    await userEvent.click(screen.getByText('Corriger'));
+    await userEvent.click(screen.getByText('Enregistrer'));
+
+    await waitFor(() => {
+      const r = derniere('messages', 'PATCH');
+      expect(r).toBeDefined();
+      /* « return=representation » : c'est ce que pose « .select() »,
+         et c'est lui qui fait la différence entre « refusé » et
+         « accepté ». */
+      expect(r!.entetes['prefer'] ?? '').toContain('return=representation');
+    });
   });
 
   test('sur le message d’un AUTRE, l’appui long signale au lieu de corriger', async () => {

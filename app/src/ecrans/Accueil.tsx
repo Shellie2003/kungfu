@@ -7,6 +7,7 @@ import { Carte, Surtitre } from '../ui/base';
 import { useActualites, useNotifications, jourEtMois, teinte } from '../services/casier';
 import { useMembres } from '../services/membres';
 import { useHoraires, useReglages } from '../services/club';
+import { useUrl } from '../services/stockage';
 import { estAdmin, estMaitre, useSession } from '../services/session';
 
 export function Accueil() {
@@ -17,6 +18,9 @@ export function Accueil() {
   const { data: membres } = useMembres();
   const { data: horaires } = useHoraires();
   const { data: reglages } = useReglages();
+  /* La photo du club vient d'un réglage : c'est un CHEMIN dans le
+     seau, dont il faut une adresse signée. */
+  const photoClub = useUrl('album', reglages?.photo_club ?? null);
 
   const nonlues = (notifs ?? []).filter((n) => !n.lue_le).length;
   const derniere = (actus ?? [])[0];
@@ -86,13 +90,24 @@ export function Accueil() {
         }}
       >
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div className="ph" style={{ height: 168 }}>
-            <Icone nom="martial" taille={52} couleur="#8FB3A0" epaisseur={1.4} />
-            <p className="ph__label">Photo du club à fournir</p>
-          </div>
+          {/* La photo du club, quand il l'a fournie. L'emplacement
+              vide reste sinon, et le DIT : une image d'illustration
+              prise ailleurs ferait plus joli et serait un mensonge. */}
+          {photoClub ? (
+            <img
+              src={photoClub}
+              alt=""
+              style={{ height: 168, width: '100%', objectFit: 'cover', display: 'block' }}
+            />
+          ) : (
+            <div className="ph" style={{ height: 168 }}>
+              <Icone nom="martial" taille={52} couleur="#8FB3A0" epaisseur={1.4} />
+              <p className="ph__label">Photo du club à fournir</p>
+            </div>
+          )}
           <div style={{ padding: 18 }}>
             <p className="display" style={{ fontSize: 19, lineHeight: '24px' }}>
-              Kung-fu Waishi Analamahitsy
+              {reglages?.nom_club ?? 'Kung-fu Waishi Analamahitsy'}
             </p>
             <p style={{ fontSize: 14, lineHeight: '22px', color: '#59685F', marginTop: 8 }}>
               {/* Deux présentations, pas une : la maquette en montre

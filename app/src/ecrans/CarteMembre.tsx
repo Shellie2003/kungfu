@@ -19,12 +19,14 @@ import { Icone } from '../ui/Icone';
 import { dateFr, useFiche } from '../services/membres';
 import { useUrl } from '../services/stockage';
 import { useSession } from '../services/session';
+import { useReglages } from '../services/club';
 
 export function CarteMembre() {
   const aller = useNavigate();
   const moi = useSession((e) => e.profil);
   const { data: fiche } = useFiche(moi?.id);
   const portraitUrl = useUrl('portraits', fiche?.photo);
+  const { data: reglages } = useReglages();
   const [qr, setQr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -84,7 +86,14 @@ export function CarteMembre() {
               <Icone nom="shieldCheck" taille={20} couleur="#0F5132" />
             </span>
             <span style={{ flexGrow: 1 }}>
-              <b className="carte__org">KUNG-FU WAISHI</b>
+              {/* Le nom du club vient d'un réglage : « le nom
+                  officiel » est une décision que le club n'a pas
+                  encore tranchée, et le figer dans le code
+                  obligerait à une nouvelle version le jour où il
+                  tranche. */}
+              <b className="carte__org">
+                {(reglages?.nom_club ?? 'Kung-fu Waishi').toUpperCase()}
+              </b>
               <i className="carte__kind">Carte de membre</i>
             </span>
           </div>
@@ -145,7 +154,7 @@ export function CarteMembre() {
             <span style={{ textAlign: 'right' }}>
               Club
               <br />
-              <b>Analamahitsy</b>
+              <b>{reglages?.lieu_club ?? 'Analamahitsy'}</b>
             </span>
           </div>
           <div className="carte__band" style={{ background: couleur }} />

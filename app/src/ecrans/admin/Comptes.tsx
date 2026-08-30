@@ -15,10 +15,14 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icone } from '../../ui/Icone';
 import { Avis, Carte, Entete, Etat, Surtitre, Tuile } from '../../ui/base';
-import { useComptes, useCreerCompte, useReinitialiser } from '../../services/admin';
+import {
+  useChangerRole, useComptes, useCreerCompte, useReinitialiser
+} from '../../services/admin';
+import { useSession } from '../../services/session';
+import type { Role } from '../../services/session';
 import { correspond } from '../../services/texte';
 
-const ROLES: Record<string, string> = {
+const ROLES: Record<Role, string> = {
   eleve: 'Élève',
   maitre: 'Maître',
   admin: 'Administration'
@@ -29,6 +33,8 @@ export function AdminComptes() {
   const { data: comptes, isPending, error } = useComptes();
   const creer = useCreerCompte();
   const reinitialiser = useReinitialiser();
+  const role = useChangerRole();
+  const moi = useSession((e) => e.profil);
   const [q, setQ] = useState('');
   const [avis, setAvis] = useState<{ bon: boolean; texte: string } | null>(null);
 
@@ -121,6 +127,48 @@ export function AdminComptes() {
                       {c.compte_id ? '' : ' · sans compte'}
                     </span>
                   </span>
+                  {/* Le rôle, ici et nulle part ailleurs. C'était une
+                      fonctionnalité validée à la livraison —
+                      « attribution du rôle de maître, par
+                      l'administration seule » — et rien ne la tenait :
+                      l'espace des maîtres, construit et protégé,
+                      n'aurait servi qu'aux comptes posés à la main en
+                      base.
+
+                      Le refus de se retirer son propre rôle n'est pas
+                      une sécurité, c'est un garde-fou : s'il ne reste
+                      aucun administrateur, plus personne ne peut en
+                      nommer un depuis l'application. */}
+                  <select
+                    className="input"
+                    aria-label={`Rôle de ${c.nom} ${c.prenom}`}
+                    style={{ width: 'auto', padding: '0 8px', fontSize: 12.5 }}
+                    value={c.role}
+                    disabled={c.id === moi?.id || role.isPending}
+                    onChange={(e) =>
+                      role.mutate(
+                        { profilId: c.id, role: e.target.value as Role },
+                        {
+                          onSuccess: () =>
+                            setAvis({
+                              bon: true,
+                              texte: `${c.nom} ${c.prenom} est maintenant ${
+                                ROLES[e.target.value as Role]
+                              }.`
+                            }),
+                          onError: (err) =>
+                            setAvis({ bon: false, texte: (err as Error).message })
+                        }
+                      )
+                    }
+                  >
+                    {(Object.keys(ROLES) as Role[]).map((r) => (
+                      <option key={r} value={r}>
+                        {ROLES[r]}
+                      </option>
+                    ))}
+                  </select>
+
                   <button
                     className="link"
                     style={{ padding: '0 4px' }}
@@ -139,6 +187,15 @@ export function AdminComptes() {
               ))}
             </div>
           </Etat>
+        </div>
+
+        <div className="warn">
+          <i />
+          <p>
+            Votre propre rôle ne se change pas depuis cet écran. S’il ne restait aucun
+            administrateur, plus personne ne pourrait en nommer un depuis l’application, et
+            le club serait enfermé dehors.
+          </p>
         </div>
 
         <div className="warn">

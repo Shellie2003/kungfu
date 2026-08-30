@@ -174,7 +174,12 @@ export function brancherServeur() {
       const requete: Requete = { methode, table, parametres: url.searchParams, corps, entetes };
       recues.push(requete);
 
-      const reponse = tables[table];
+      /* Une réponse peut être posée POUR UNE MÉTHODE — « messages:PATCH »
+         — ou pour la table entière. La distinction compte : un PATCH
+         que la règle d'accès écarte ne touche aucune ligne et rend un
+         tableau vide, là où le GET de la même table rend les
+         messages. Sans cela, on ne peut pas simuler un refus. */
+      const reponse = tables[`${table}:${methode}`] ?? tables[table];
       if (reponse === undefined) {
         /* Une table non prévue rend un tableau vide plutôt qu'une
            erreur : un test qui ne s'intéresse pas aux notifications

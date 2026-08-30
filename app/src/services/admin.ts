@@ -16,6 +16,7 @@
    ============================================================ */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from './supabase';
+import type { Role } from './session';
 
 /* Après une écriture, les listes en mémoire sont périmées. On les
    invalide toutes plutôt que de choisir : se tromper de clé donne
@@ -165,6 +166,44 @@ export function useActiverGrade() {
   return useEcrire(async ({ id, actif }: { id: string; actif: boolean }) => {
     const { error } = await supabase.from('grades').update({ actif }).eq('id', id);
     if (error) throw error;
+  });
+}
+
+/* ---------------------------------------------- Le rôle
+
+   « Attribution du rôle de maître — par l'administration seule » :
+   c'est l'une des fonctionnalités validées à la livraison de la
+   maquette, et aucun écran ne la tenait. Le club ne pouvait donc
+   promouvoir personne — et l'espace des maîtres, construit et
+   protégé, n'aurait jamais servi à personne d'autre qu'aux comptes
+   posés à la main en base.
+
+   Le déclencheur « figer_profil » interdit déjà à un membre de
+   changer son propre rôle : « le rôle, le numéro, le grade, le
+   compte et l'activation ne se modifient que par l'administration ».
+   Cet appel est le chemin autorisé, pas une permission de plus.
+
+   ⚠ Un garde-fou qui n'est PAS une règle d'accès, et qui n'a pas à
+   en être une : refuser à l'administration de se retirer son propre
+   rôle. Ce n'est pas une question de sécurité — quelqu'un qui veut
+   le faire y arrivera par le tableau de bord — c'est une question
+   d'accident. S'il ne reste aucun administrateur, plus personne ne
+   peut en nommer un depuis l'application, et le club est enfermé
+   dehors. */
+export function useChangerRole() {
+  return useEcrire(async ({ profilId, role }: { profilId: string; role: Role }) => {
+    const { data, error } = await supabase
+      .from('profils')
+      .update({ role })
+      .eq('id', profilId)
+      .select('id');
+    if (error) throw error;
+    /* Comme pour la correction d'un message : une mise à jour qu'une
+       règle d'accès écarte ne rend pas d'erreur. Sans « .select() »,
+       un refus s'annoncerait comme un succès. */
+    if (!data?.length) {
+      throw new Error('Le serveur a refusé ce changement de rôle.');
+    }
   });
 }
 
@@ -390,6 +429,106 @@ export function useChangerPortrait() {
   return useEcrire(async ({ profilId, fichier }: { profilId: string; fichier: File }) => {
     const chemin = await televerser('portraits', fichier);
     const { error } = await supabase.from('profils').update({ photo: chemin }).eq('id', profilId);
+    if (error) throw error;
+  });
+}
+
+/* ---------------------------------------------- Les salons
+
+   « Salons par grade » et « salon par événement » figuraient tous
+   deux dans la liste validée à la livraison de la maquette, et rien
+   ne les créait : le club n'avait que les salons posés à la main en
+   base, et n'aurait jamais pu ouvrir un fil pour un tournoi.
+
+   Créer un salon et y inscrire quelqu'un sont réservés à
+   l'administration — c'est ce qui empêche un élève de s'inscrire
+   tout seul dans l'espace des maîtres. Ces fonctions sont le chemin
+   autorisé ; le serveur refuserait les mêmes gestes à un autre rôle.
+
+   L'ordre compte : le salon d'abord, les membres ensuite. Si la
+   seconde écriture échoue, il reste un salon vide, que l'on peuple
+   d'un second essai. L'inverse est impossible — on ne peut pas
+   inscrire dans un salon qui n'existe pas. */
+export function useCreerSalon() {
+  return useEcrire(
+    async ({
+      type, titre, couleur, membres
+    }: {
+      type: 'grade' | 'evenement' | 'club';
+      titre: string;
+      couleur: string;
+      membres: string[];
+    }) => {
+      const { data, error } = await supabase
+        .from('salons')
+        .insert({ type, titre: titre.trim(), couleur })
+        .select('id')
+        .single();
+      if (error) throw error;
+
+      const salonId = (data as { id: string }).id;
+      if (!membres.length) return;
+
+      const { error: eMembres } = await supabase
+        .from('membres_salon')
+        .insert(membres.map((profil_id) => ({ salon_id: salonId, profil_id })));
+      if (eMembres) throw eMembres;
+    }
+  );
+}
+
+/* Qui est dans un salon. Les règles d'accès ne rendent la liste
+   complète qu'à ses membres — l'administration la voit par sa propre
+   règle. */
+export function useMembresSalon(salonId: string | undefined) {
+  return useQuery({
+    queryKey: ['membres-salon', salonId],
+    enabled: Boolean(salonId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('membres_salon')
+        .select('profil_id, profils:profil_id ( nom, prenom, numero )')
+        .eq('salon_id', salonId!);
+      if (error) throw error;
+      type Ligne = {
+        profil_id: string;
+        profils:
+          | { nom: string; prenom: string; numero: string }
+          | { nom: string; prenom: string; numero: string }[]
+          | null;
+      };
+      return (data as unknown as Ligne[]).map((l) => ({
+        profil_id: l.profil_id,
+        membre: Array.isArray(l.profils) ? (l.profils[0] ?? null) : l.profils
+      }));
+    }
+  });
+}
+
+export function useInscrireAuSalon() {
+  return useEcrire(async ({ salonId, profilIds }: { salonId: string; profilIds: string[] }) => {
+    if (!profilIds.length) return;
+    /* « upsert » plutôt qu'« insert » : réinscrire quelqu'un qui est
+       déjà là est un geste ordinaire — on ajoute dix personnes dont
+       deux y étaient — et cela ne doit pas faire échouer les huit
+       autres sur une contrainte d'unicité. */
+    const { error } = await supabase
+      .from('membres_salon')
+      .upsert(
+        profilIds.map((profil_id) => ({ salon_id: salonId, profil_id })),
+        { onConflict: 'salon_id,profil_id', ignoreDuplicates: true }
+      );
+    if (error) throw error;
+  });
+}
+
+export function useRetirerDuSalon() {
+  return useEcrire(async ({ salonId, profilId }: { salonId: string; profilId: string }) => {
+    const { error } = await supabase
+      .from('membres_salon')
+      .delete()
+      .eq('salon_id', salonId)
+      .eq('profil_id', profilId);
     if (error) throw error;
   });
 }

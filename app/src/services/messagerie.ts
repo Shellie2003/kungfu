@@ -215,21 +215,58 @@ export function useEnvoyer(salonId: string | undefined) {
   });
 }
 
-/* Corriger son propre message. La règle d'accès « corriger mon
-   message » existait depuis le premier jour et aucun écran ne s'en
-   servait : une faute de frappe restait pour toujours.
+/* La fenêtre pendant laquelle un message se corrige.
 
-   Ce que l'application n'a PAS à vérifier ici : que c'est bien le
-   sien. La règle de la base le fait, et la refaire ici donnerait
-   l'illusion que c'est l'application qui protège. */
+   Elle est écrite dans la RÈGLE D'ACCÈS de la base — « auteur_id =
+   mon_profil() AND cree_le > now() - 15 minutes » — et c'était l'un
+   des points de la note de sécurité livrée au club : « l'auteur
+   seul, et pendant quinze minutes. Passé ce délai, le fil devient
+   une trace stable, utile en cas de litige. »
+
+   La valeur est répétée ici pour ce que l'écran AFFICHE, jamais pour
+   décider : c'est la base qui refuse. Si les deux divergent un jour,
+   l'écran proposera une correction que le serveur rejettera — un
+   défaut visible, et non une protection contournée. */
+export const MINUTES_CORRECTION = 15;
+
+export const corrigible = (m: Message, moiId: string | undefined) =>
+  m.auteur_id === moiId &&
+  !m.supprime_le &&
+  Date.now() - new Date(m.cree_le).getTime() < MINUTES_CORRECTION * 60_000;
+
+/* Corriger son propre message.
+
+   ⚠ Le « .select() » n'est pas décoratif, et son absence était un
+   vrai défaut : une mise à jour qui ne touche AUCUNE ligne — parce
+   que la règle d'accès l'a écartée — ne rend pas d'erreur. PostgREST
+   répond « 204, rien à signaler », supabase-js n'y voit rien, et
+   l'écran annonçait « Message corrigé » alors que rien n'avait
+   changé. L'application MENTAIT, poliment.
+
+   Avec « .select() », la réponse porte les lignes touchées. Zéro
+   ligne veut dire refusé, et on le dit.
+
+   Ce que l'application ne fait toujours PAS : vérifier que c'est
+   bien le sien, ni compter les minutes pour décider. La base le
+   fait ; le refaire ici donnerait l'illusion que c'est
+   l'application qui protège. */
 export function useCorriger(salonId: string | undefined) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, texte }: { id: string; texte: string }) => {
       const propre = texte.trim();
       if (!propre) throw new Error('Un message vide se retire, il ne s’enregistre pas.');
-      const { error } = await supabase.from('messages').update({ texte: propre }).eq('id', id);
+      const { data, error } = await supabase
+        .from('messages')
+        .update({ texte: propre })
+        .eq('id', id)
+        .select('id');
       if (error) throw error;
+      if (!data?.length) {
+        throw new Error(
+          `Le serveur a refusé : un message ne se corrige que dans les ${MINUTES_CORRECTION} minutes qui suivent son envoi.`
+        );
+      }
     },
     onSuccess: () => client.invalidateQueries({ queryKey: ['messages', salonId] })
   });
@@ -245,11 +282,22 @@ export function useRetirerMonMessage(salonId: string | undefined) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      /* Même mécanique, et même défaut à éviter : le retrait passe
+         par la MÊME règle d'accès que la correction, donc par la
+         même fenêtre de quinze minutes. Sans « .select() », un
+         retrait refusé s'annonçait comme réussi et le message
+         restait dans le fil sous les yeux de son auteur. */
+      const { data, error } = await supabase
         .from('messages')
         .update({ supprime_le: new Date().toISOString() })
-        .eq('id', id);
+        .eq('id', id)
+        .select('id');
       if (error) throw error;
+      if (!data?.length) {
+        throw new Error(
+          `Le serveur a refusé : un message ne se retire que dans les ${MINUTES_CORRECTION} minutes qui suivent son envoi. Passé ce délai, signalez-le à l’administration.`
+        );
+      }
     },
     onSuccess: () => {
       client.invalidateQueries({ queryKey: ['messages', salonId] });
