@@ -6,7 +6,8 @@ import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icone } from '../ui/Icone';
 import { Bouton, Carte, Entete } from '../ui/base';
-import { supabase } from '../services/supabase';
+import { seConnecter, supabase } from '../services/supabase';
+import { useSession } from '../services/session';
 
 /* Huit caractères, le minimum de Supabase. Exiger davantage ici
    sans le régler sur le serveur ne protégerait de rien : le contrôle
@@ -15,6 +16,8 @@ const MINIMUM = 8;
 
 export function MotDePasse() {
   const aller = useNavigate();
+  const profil = useSession((e) => e.profil);
+  const [actuel, setActuel] = useState('');
   const [nouveau, setNouveau] = useState('');
   const [repete, setRepete] = useState('');
   const [avis, setAvis] = useState<{ bon: boolean; texte: string } | null>(null);
@@ -22,6 +25,10 @@ export function MotDePasse() {
 
   async function envoyer(e: FormEvent) {
     e.preventDefault();
+    if (!actuel) {
+      setAvis({ bon: false, texte: 'Entrez votre mot de passe actuel.' });
+      return;
+    }
     if (nouveau.length < MINIMUM) {
       setAvis({ bon: false, texte: `Le mot de passe doit faire au moins ${MINIMUM} caractères.` });
       return;
@@ -31,6 +38,22 @@ export function MotDePasse() {
       return;
     }
     setEnCours(true);
+
+    /* Le mot de passe actuel est VÉRIFIÉ, pas seulement demandé.
+       Supabase ne le contrôle pas de lui-même : updateUser accepte
+       n'importe quel nouveau mot de passe dès qu'une session est
+       ouverte. Un téléphone laissé déverrouillé quelques minutes
+       suffirait donc à s'emparer du compte. On se reconnecte avec
+       ce qui a été saisi ; si cela échoue, on s'arrête là. */
+    if (profil) {
+      const controle = await seConnecter(profil.numero, actuel);
+      if (!controle.ok) {
+        setEnCours(false);
+        setAvis({ bon: false, texte: 'Le mot de passe actuel est incorrect.' });
+        return;
+      }
+    }
+
     const { error } = await supabase.auth.updateUser({ password: nouveau });
     setEnCours(false);
     if (error) {
@@ -38,6 +61,7 @@ export function MotDePasse() {
       return;
     }
     setAvis({ bon: true, texte: 'Mot de passe changé.' });
+    setActuel('');
     setNouveau('');
     setRepete('');
   }
@@ -52,6 +76,16 @@ export function MotDePasse() {
       >
         <Carte>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <label className="field">
+              <span className="field__label">Mot de passe actuel</span>
+              <input
+                className="input"
+                type="password"
+                value={actuel}
+                onChange={(e) => setActuel(e.target.value)}
+                autoComplete="current-password"
+              />
+            </label>
             <label className="field">
               <span className="field__label">Nouveau mot de passe</span>
               <input

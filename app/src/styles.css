@@ -40,6 +40,23 @@
 }
 
 /* ------------------------------------------------------------
+   Neutraliser ce que Tailwind impose et que la maquette n'a pas.
+
+   Sa base pose « line-height: 1.5 » sur html. La maquette, elle,
+   vit en « normal ». Tout texte dont l'interligne n'est pas écrit
+   explicitement devenait donc plus haut de deux ou trois pixels —
+   et l'écart s'accumulait en descendant l'écran : le libellé de la
+   barre du bas était décalé de 2 px, un titre de section de 13 px.
+
+   Ce n'est pas une préférence : c'est mesuré par
+   outils/comparer-app.mjs, et c'était la cause de la totalité des
+   décalages qu'il relevait.
+   ------------------------------------------------------------ */
+html {
+  line-height: normal;
+}
+
+/* ------------------------------------------------------------
    Ce qui ne concerne QUE l'application, jamais la maquette.
    La maquette se regarde dans un cadre de téléphone sur un
    ordinateur ; l'application occupe un vrai téléphone.

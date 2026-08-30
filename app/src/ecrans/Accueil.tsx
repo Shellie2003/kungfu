@@ -95,7 +95,11 @@ export function Accueil() {
               Kung-fu Waishi Analamahitsy
             </p>
             <p style={{ fontSize: 14, lineHeight: '22px', color: '#59685F', marginTop: 8 }}>
-              {reglages?.presentation ??
+              {/* Deux présentations, pas une : la maquette en montre
+                  une courte ici et une longue sur l'écran du Club.
+                  N'en garder qu'une obligeait le club à choisir entre
+                  un accueil bavard et une page de club maigre. */}
+              {reglages?.presentation_courte ??
                 'Un club ouvert à tous les âges, où la discipline se transmet par la pratique régulière.'}
             </p>
             <button className="linkrow" onClick={() => aller('/club')}>
@@ -115,73 +119,6 @@ export function Accueil() {
             </div>
           ))}
         </div>
-
-        {/* Trois écrans n'avaient aucune porte d'entrée : la carte de
-            membre, sa propre fiche, et l'administration. Les routes
-            existaient, rien n'y menait — un compte d'administration
-            ne montrait donc rien de plus qu'un compte d'élève.
-
-            Ce bloc est cette porte. L'administration n'y figure que
-            pour qui a le rôle, mais ce n'est pas ce qui protège : le
-            serveur refuse de toute façon ce que le rôle n'autorise
-            pas. C'est de la place gagnée, pas une serrure. */}
-        {profil && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <Surtitre>Mon espace</Surtitre>
-            <div className="list">
-              <button className="listrow" onClick={() => aller('/carte')}>
-                <span className="tile tile--sm">
-                  <Icone nom="shieldCheck" taille={18} couleur="#0F5132" />
-                </span>
-                <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
-                  <b style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>
-                    Ma carte de membre
-                  </b>
-                  <span
-                    style={{ display: 'block', fontSize: 12, color: '#59685F', marginTop: 1 }}
-                  >
-                    {profil.numero} · avec le code à présenter
-                  </span>
-                </span>
-                <Icone nom="chev" taille={17} couleur="#A8B6AE" epaisseur={2} />
-              </button>
-
-              <button className="listrow" onClick={() => aller(`/etudiants/${profil.id}`)}>
-                <span className="tile tile--sm">
-                  <Icone nom="users" taille={18} couleur="#0F5132" />
-                </span>
-                <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
-                  <b style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>Ma fiche</b>
-                  <span
-                    style={{ display: 'block', fontSize: 12, color: '#59685F', marginTop: 1 }}
-                  >
-                    Et le changement de mot de passe
-                  </span>
-                </span>
-                <Icone nom="chev" taille={17} couleur="#A8B6AE" epaisseur={2} />
-              </button>
-
-              {estAdmin(profil) && (
-                <button className="listrow" onClick={() => aller('/admin')}>
-                  <span className="tile tile--sm">
-                    <Icone nom="lock" taille={18} couleur="#0F5132" />
-                  </span>
-                  <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
-                    <b style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>
-                      Administration
-                    </b>
-                    <span
-                      style={{ display: 'block', fontSize: 12, color: '#59685F', marginTop: 1 }}
-                    >
-                      Membres, publications, comptes
-                    </span>
-                  </span>
-                  <Icone nom="chev" taille={17} couleur="#A8B6AE" epaisseur={2} />
-                </button>
-              )}
-            </div>
-          </div>
-        )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div className="rowhead">
@@ -246,6 +183,81 @@ export function Accueil() {
             </Carte>
           )}
         </div>
+
+        {/* Trois écrans n'avaient aucune porte d'entrée : la carte de
+            membre, sa propre fiche, et l'administration. Les routes
+            existaient, rien n'y menait — un compte d'administration
+            ne montrait donc rien de plus qu'un compte d'élève.
+
+            Ce bloc est cette porte. L'administration n'y figure que
+            pour qui a le rôle, mais ce n'est pas ce qui protège : le
+            serveur refuse de toute façon ce que le rôle n'autorise
+            pas. C'est de la place gagnée, pas une serrure.
+
+            Il est EN BAS, après les actualités, et c'est délibéré :
+            la maquette n'a pas ce bloc, et le poser plus haut
+            décalait tout ce qu'elle montre. Mesuré — la comparaison
+            perdait « Vaovao farany » et les deux actualités, sortis
+            du premier écran. En bas, la maquette reste intacte et
+            l'ajout reste atteignable. */}
+        {profil && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Surtitre>Mon espace</Surtitre>
+            <div className="list">
+              <button className="listrow" onClick={() => aller('/carte')}>
+                <span className="tile tile--sm">
+                  <Icone nom="shieldCheck" taille={18} couleur="#0F5132" />
+                </span>
+                <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
+                  <b style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>
+                    Ma carte de membre
+                  </b>
+                  <span
+                    style={{ display: 'block', fontSize: 12, color: '#59685F', marginTop: 1 }}
+                  >
+                    {profil.numero} · avec le code à présenter
+                  </span>
+                </span>
+                <Icone nom="chev" taille={17} couleur="#A8B6AE" epaisseur={2} />
+              </button>
+
+              <button className="listrow" onClick={() => aller(`/etudiants/${profil.id}`)}>
+                <span className="tile tile--sm">
+                  <Icone nom="users" taille={18} couleur="#0F5132" />
+                </span>
+                <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
+                  <b style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>Ma fiche</b>
+                  <span
+                    style={{ display: 'block', fontSize: 12, color: '#59685F', marginTop: 1 }}
+                  >
+                    Et le changement de mot de passe
+                  </span>
+                </span>
+                <Icone nom="chev" taille={17} couleur="#A8B6AE" epaisseur={2} />
+              </button>
+
+              {estAdmin(profil) && (
+                <button className="listrow" onClick={() => aller('/admin')}>
+                  <span className="tile tile--sm">
+                    <Icone nom="lock" taille={18} couleur="#0F5132" />
+                  </span>
+                  <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
+                    <b style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>
+                      Administration
+                    </b>
+                    <span
+                      style={{ display: 'block', fontSize: 12, color: '#59685F', marginTop: 1 }}
+                    >
+                      Membres, publications, comptes
+                    </span>
+                  </span>
+                  <Icone nom="chev" taille={17} couleur="#A8B6AE" epaisseur={2} />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
       </div>
     </>
   );

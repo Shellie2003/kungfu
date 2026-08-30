@@ -112,6 +112,17 @@ jobs:
           npx playwright install --with-deps chromium
           node outils/verifier-app.mjs
 
+      # Mesure l'écart avec la maquette : chaque texte doit être au
+      # même pixel, à la même taille, dans la même graisse et la même
+      # couleur. C'est ce qui tient la ressemblance dans le temps —
+      # sans cette étape, elle se dégrade d'une version à l'autre
+      # sans que personne le voie.
+      - name: Comparer à la maquette
+        run: |
+          node build-screens.mjs
+          node build.js
+          node outils/comparer-app.mjs
+
       # Le dossier android/ n'est pas dans le dépôt : il se régénère
       # à partir de capacitor.config.ts. Un dossier natif commité
       # finit toujours par diverger de la configuration censée le
