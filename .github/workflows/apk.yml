@@ -95,6 +95,18 @@ jobs:
         working-directory: app
         run: npx tsc --noEmit
 
+      # Les tests unitaires et d'intégration. Ils tournent AVANT la
+      # construction : un test rouge doit arrêter la chaîne, pas
+      # produire un APK qu'on découvrirait cassé sur un téléphone.
+      #
+      # Ce qu'ils couvrent : la logique (dates, matricules, codes
+      # USSD) et le comportement des écrans face à un serveur
+      # simulé — ce qui s'affiche, et surtout ce qui PART. Un
+      # formulaire qui s'affiche mais n'écrit rien ne se voit pas.
+      - name: Tests
+        working-directory: app
+        run: npm test
+
       - name: Construire la partie web
         working-directory: app
         run: npx vite build

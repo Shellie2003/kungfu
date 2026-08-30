@@ -16,9 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import { Icone } from '../../ui/Icone';
 import { Avis, Carte, Entete, Etat, Surtitre, Tuile } from '../../ui/base';
 import { useComptes, useCreerCompte, useReinitialiser } from '../../services/admin';
-
-const pliage = (s: string) =>
-  s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+import { correspond } from '../../services/texte';
 
 const ROLES: Record<string, string> = {
   eleve: 'Élève',
@@ -34,12 +32,10 @@ export function AdminComptes() {
   const [q, setQ] = useState('');
   const [avis, setAvis] = useState<{ bon: boolean; texte: string } | null>(null);
 
-  const liste = useMemo(() => {
-    const r = pliage(q.trim());
-    return (comptes ?? []).filter(
-      (c) => !r || pliage(`${c.nom} ${c.prenom} ${c.numero}`).includes(r)
-    );
-  }, [comptes, q]);
+  const liste = useMemo(
+    () => (comptes ?? []).filter((c) => correspond(q, c.nom, c.prenom, c.numero)),
+    [comptes, q]
+  );
 
   const sansCompte = liste.filter((c) => !c.compte_id).length;
 

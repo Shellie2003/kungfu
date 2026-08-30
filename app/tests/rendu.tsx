@@ -1,0 +1,78 @@
+/* ============================================================
+   Rendre un écran comme l'application le rend.
+
+   Un écran seul ne s'affiche pas : il lui faut le routeur, le cache
+   de requêtes, et parfois une session. Composer tout cela dans
+   chaque test le rendrait illisible et ferait diverger les
+   conditions d'un test à l'autre.
+   ============================================================ */
+import type { ReactElement, ReactNode } from 'react';
+import { render } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { Profil } from '../src/services/session';
+import { useSession } from '../src/services/session';
+
+/* Pas de réessai dans les tests : une requête qui échoue doit
+   échouer TOUT DE SUITE, sinon chaque cas d'erreur attend une
+   seconde pour rien et la suite devient interminable.
+
+   Et un cache neuf par test : sans cela, le deuxième test lit la
+   réponse du premier et passe pour de mauvaises raisons. */
+function clientNeuf() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, gcTime: 0, staleTime: 0 },
+      mutations: { retry: false }
+    }
+  });
+}
+
+export const PROFIL_ELEVE: Profil = {
+  id: 'p1', numero: 'F04x042', nom: 'RAKOTONDRABE', prenom: 'Nirina',
+  role: 'eleve', grade_id: 'gv', photo: null
+};
+
+export const PROFIL_ADMIN: Profil = {
+  id: 'p0', numero: 'F04x001', nom: 'IDEALY', prenom: 'Santatra',
+  role: 'admin', grade_id: 'gn', photo: null
+};
+
+export function poserProfil(profil: Profil | null) {
+  useSession.setState({
+    session: profil ? ({ access_token: 'x' } as never) : null,
+    profil,
+    chargement: false
+  });
+}
+
+export function rendre(
+  element: ReactElement,
+  {
+    route = '/',
+    chemin,
+    profil = PROFIL_ADMIN
+  }: { route?: string; chemin?: string; profil?: Profil | null } = {}
+) {
+  poserProfil(profil);
+  const client = clientNeuf();
+
+  const Enveloppe = ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={client}>
+      <MemoryRouter initialEntries={[route]}>
+        {/* « chemin » sert aux écrans qui lisent un paramètre
+            d'adresse : sans une vraie Route, useParams rend un objet
+            vide et l'écran croit qu'aucune fiche n'est demandée. */}
+        {chemin ? (
+          <Routes>
+            <Route path={chemin} element={children} />
+          </Routes>
+        ) : (
+          children
+        )}
+      </MemoryRouter>
+    </QueryClientProvider>
+  );
+
+  return render(element, { wrapper: Enveloppe });
+}

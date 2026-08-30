@@ -13,19 +13,7 @@ import { Entete, Etat, Grade, Portrait, Puce } from '../ui/base';
 import { useGrades, useMembres } from '../services/membres';
 import { useNotifications } from '../services/casier';
 import { urlPhoto } from '../services/club';
-
-/* Les accents ne doivent pas empêcher de trouver quelqu'un :
-   « Razafimahatratra » se cherche aussi bien sans eux. */
-const pliage = (s: string) =>
-  s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-
-/* Le filtre n'a pas la place d'\u00e9crire \u00ab Ceinture verte \u00bb cinq fois
-   de suite ; il garde la couleur seule, avec sa majuscule \u2014 sans
-   quoi la puce affiche \u00ab verte \u00bb, qui se lit comme une faute. */
-const courtGrade = (nom: string) => {
-  const reste = nom.replace(/^Ceinture\s+/i, '');
-  return reste.charAt(0).toUpperCase() + reste.slice(1);
-};
+import { correspond, courtGrade } from '../services/texte';
 
 export function Etudiants() {
   const aller = useNavigate();
@@ -37,14 +25,14 @@ export function Etudiants() {
 
   const nonlues = (notifs ?? []).filter((n) => !n.lue_le).length;
 
-  const liste = useMemo(() => {
-    const q = pliage(recherche.trim());
-    return (membres ?? []).filter((m) => {
-      if (filtre && m.grade?.nom !== filtre) return false;
-      if (!q) return true;
-      return pliage(`${m.nom} ${m.prenom}`).includes(q);
-    });
-  }, [membres, recherche, filtre]);
+  const liste = useMemo(
+    () =>
+      (membres ?? []).filter(
+        (m) =>
+          (!filtre || m.grade?.nom === filtre) && correspond(recherche, m.nom, m.prenom)
+      ),
+    [membres, recherche, filtre]
+  );
 
   return (
     <>

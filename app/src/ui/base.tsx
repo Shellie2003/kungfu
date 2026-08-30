@@ -264,8 +264,12 @@ export function Champ({
             échoue. */}
         {obligatoire && <span style={{ color: 'var(--alerte)' }}> *</span>}
       </span>
+      {/* Le nom accessible est écrit explicitement, comme pour la
+          liste déroulante : sans lui il est calculé sur tout le
+          contenu du <label>, texte d'aide et astérisque compris. */}
       <input
         className={fige ? 'input input--fige' : 'input'}
+        aria-label={libelle}
         type={type}
         value={valeur}
         onChange={(e) => poser(e.target.value)}
@@ -296,6 +300,7 @@ export function Zone({
       <span className="field__label">{libelle}</span>
       <textarea
         className="input"
+        aria-label={libelle}
         style={{ minHeight: lignes * 22 + 20, padding: '12px 14px', lineHeight: '22px' }}
         value={valeur}
         onChange={(e) => poser(e.target.value)}
@@ -327,8 +332,13 @@ export function Choix<T extends string>({
           et rien ne dit qu'elle s'ouvre. Il est dessiné en fond
           plutôt qu'en élément, pour rester dans la boîte du champ. */}
       <span style={{ position: 'relative', display: 'block' }}>
+        {/* Le nom accessible est écrit explicitement. Sans lui, il
+            est calculé à partir du libellé PLUS le texte de toutes
+            les options — un lecteur d'écran annonçait « Catégorie
+            Choisir… Sortie Compétition Réunion… ». */}
         <select
           className="input"
+          aria-label={libelle}
           value={valeur}
           onChange={(e) => poser(e.target.value as T)}
           style={{ appearance: 'none', width: '100%', paddingRight: 40 }}

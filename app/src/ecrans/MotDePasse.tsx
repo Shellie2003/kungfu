@@ -5,7 +5,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icone } from '../ui/Icone';
-import { Bouton, Carte, Entete } from '../ui/base';
+import { Avis, Bouton, Carte, Entete } from '../ui/base';
 import { seConnecter, supabase } from '../services/supabase';
 import { useSession } from '../services/session';
 
@@ -109,14 +109,11 @@ export function MotDePasse() {
           </div>
         </Carte>
 
-        {avis && (
-          <p
-            role="alert"
-            style={{ fontSize: 13, lineHeight: '19px', color: avis.bon ? '#12613C' : '#B3341A' }}
-          >
-            {avis.texte}
-          </p>
-        )}
+        {/* « Avis » distingue le succès de l'échec : role="status"
+            pour l'un, role="alert" pour l'autre. Tout annoncer comme
+            une alerte fait entendre « Mot de passe changé » sur le
+            ton d'une erreur. */}
+        {avis && <Avis bon={avis.bon}>{avis.texte}</Avis>}
 
         <Bouton type="submit" desactive={enCours}>
           {enCours ? 'Enregistrement…' : 'Enregistrer'}

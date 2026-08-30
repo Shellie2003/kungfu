@@ -37,7 +37,7 @@ const RATTACHEMENT: [RegExp, string][] = [
   [/^\/maitres/, '/messages']
 ];
 
-function ongletDe(chemin: string): string {
+export function ongletDe(chemin: string): string {
   for (const [motif, onglet] of RATTACHEMENT) {
     if (motif.test(chemin)) return onglet;
   }

@@ -1,0 +1,158 @@
+/* ============================================================
+   Un serveur Supabase simulé, pour les tests d'intégration.
+
+   Il intercepte fetch et répond comme PostgREST : c'est la FORME
+   des réponses qui compte — une jointure rendue en tableau plutôt
+   qu'en objet est exactement le genre d'écart qui casse un écran
+   sans que le typage s'en aperçoive.
+
+   Ce qu'il n'est pas, et ce qu'il ne faut pas lui demander : une
+   base de données. Il n'applique aucune règle d'accès. Les règles
+   ont leur propre test, dans supabase/tests/, exécuté sur un vrai
+   PostgreSQL en se faisant passer pour un élève, un maître et
+   l'administration. Les simuler ici donnerait l'illusion de les
+   vérifier — le pire des deux mondes.
+   ============================================================ */
+import { vi } from 'vitest';
+
+export const URL_ESSAI = 'https://essai.supabase.co';
+
+/* Une session complète, telle que le service d'authentification la
+   rend. La forme compte : supabase-js refuse une session à laquelle
+   il manque « token_type » ou « expires_in », et rend alors une
+   erreur générique qui ressemble à un problème de réseau. Un premier
+   essai avec un objet abrégé a échoué exactement ainsi. */
+export function sessionFactice(id = 'u1') {
+  return {
+    access_token: 'jeton-de-controle',
+    token_type: 'bearer',
+    expires_in: 3600,
+    expires_at: Math.floor(Date.now() / 1000) + 3600,
+    refresh_token: 'renouvellement-de-controle',
+    user: {
+      id,
+      aud: 'authenticated',
+      role: 'authenticated',
+      email: 'f04x042@waishi.local',
+      app_metadata: {},
+      user_metadata: {},
+      created_at: new Date().toISOString()
+    }
+  };
+}
+
+export type Requete = {
+  methode: string;
+  table: string;
+  parametres: URLSearchParams;
+  corps: unknown;
+  entetes: Record<string, string>;
+};
+
+/* Ce que le serveur simulé a reçu. Les tests s'en servent pour
+   vérifier ce qui a été ENVOYÉ, et pas seulement ce qui s'affiche :
+   un formulaire peut sembler marcher et n'écrire aucun champ. */
+export const recues: Requete[] = [];
+
+type Reponse = unknown | ((r: Requete) => unknown);
+
+let tables: Record<string, Reponse> = {};
+let auth: Record<string, Reponse> = {};
+
+export function poser(nouvelles: Record<string, Reponse>) {
+  tables = { ...tables, ...nouvelles };
+}
+
+export function poserAuth(nouvelles: Record<string, Reponse>) {
+  auth = { ...auth, ...nouvelles };
+}
+
+export function reinitialiser() {
+  tables = {};
+  auth = {};
+  recues.length = 0;
+}
+
+/* La dernière requête reçue sur une table, ou undefined. Presque
+   tous les tests d'écriture s'en servent. */
+export const derniere = (table: string, methode = 'POST') =>
+  [...recues].reverse().find((r) => r.table === table && r.methode === methode);
+
+const json = (corps: unknown, statut = 200) =>
+  new Response(JSON.stringify(corps), {
+    status: statut,
+    headers: { 'content-type': 'application/json' }
+  });
+
+export function brancherServeur() {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (entree: RequestInfo | URL, options?: RequestInit) => {
+      const url = new URL(String(entree instanceof Request ? entree.url : entree));
+      const methode = (options?.method ?? (entree instanceof Request ? entree.method : 'GET')).toUpperCase();
+
+      let corps: unknown = null;
+      const brut = options?.body;
+      if (typeof brut === 'string') {
+        try { corps = JSON.parse(brut); } catch { corps = brut; }
+      }
+
+      const entetes: Record<string, string> = {};
+      new Headers(options?.headers ?? {}).forEach((v, k) => { entetes[k] = v; });
+
+      /* --- Authentification --- */
+      if (url.pathname.startsWith('/auth/v1/')) {
+        const quoi = url.pathname.replace('/auth/v1/', '');
+        const reponse = auth[quoi];
+        if (reponse === undefined) return json({ user: null, session: null });
+        const valeur = typeof reponse === 'function' ? (reponse as (r: Requete) => unknown)({ methode, table: quoi, parametres: url.searchParams, corps, entetes }) : reponse;
+        recues.push({ methode, table: `auth:${quoi}`, parametres: url.searchParams, corps, entetes });
+        if (valeur && typeof valeur === 'object' && 'erreur' in (valeur as object)) {
+          return json({ error: 'invalid_grant', error_description: (valeur as { erreur: string }).erreur, msg: (valeur as { erreur: string }).erreur }, 400);
+        }
+        return json(valeur);
+      }
+
+      /* --- Fonctions déployées --- */
+      if (url.pathname.startsWith('/functions/v1/')) {
+        const nom = url.pathname.replace('/functions/v1/', '');
+        recues.push({ methode, table: `fonction:${nom}`, parametres: url.searchParams, corps, entetes });
+        const reponse = tables[`fonction:${nom}`];
+        if (reponse === undefined) return json({ message: 'Not Found' }, 404);
+        return json(typeof reponse === 'function' ? (reponse as (r: Requete) => unknown)({ methode, table: nom, parametres: url.searchParams, corps, entetes }) : reponse);
+      }
+
+      /* --- Le stockage de fichiers --- */
+      if (url.pathname.startsWith('/storage/v1/')) {
+        recues.push({ methode, table: 'storage', parametres: url.searchParams, corps, entetes });
+        return json({ Key: 'album/essai.jpg' });
+      }
+
+      /* --- PostgREST --- */
+      const table = url.pathname.replace('/rest/v1/', '').replace(/^rpc\//, 'rpc:');
+      const requete: Requete = { methode, table, parametres: url.searchParams, corps, entetes };
+      recues.push(requete);
+
+      const reponse = tables[table];
+      if (reponse === undefined) {
+        /* Une table non prévue rend un tableau vide plutôt qu'une
+           erreur : un test qui ne s'intéresse pas aux notifications
+           ne doit pas avoir à les déclarer. Mais elle est notée dans
+           « recues », consultable en cas de doute. */
+        return json([]);
+      }
+
+      const valeur = typeof reponse === 'function'
+        ? (reponse as (r: Requete) => unknown)(requete)
+        : reponse;
+
+      /* .single() et .maybeSingle() demandent un OBJET, pas un
+         tableau. C'est la distinction que fait PostgREST par
+         l'en-tête Accept, et la reproduire ici est le cœur de
+         l'intérêt de ce simulateur. */
+      const seul = (entetes['accept'] ?? '').includes('vnd.pgrst.object');
+      if (seul && Array.isArray(valeur)) return json(valeur[0] ?? null);
+      return json(valeur);
+    })
+  );
+}

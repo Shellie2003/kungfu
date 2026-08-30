@@ -13,9 +13,7 @@ import { useGrades, useMembres } from '../../services/membres';
 import type { Membre } from '../../services/membres';
 import { urlPhoto } from '../../services/club';
 import { useChangerGrade } from '../../services/admin';
-
-const pliage = (s: string) =>
-  s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+import { correspond } from '../../services/texte';
 
 /* La liste avec sa recherche, réutilisée par les deux écrans. */
 function Annuaire({
@@ -28,10 +26,10 @@ function Annuaire({
   const { data: membres, isPending, error } = useMembres();
   const [q, setQ] = useState('');
 
-  const liste = useMemo(() => {
-    const r = pliage(q.trim());
-    return (membres ?? []).filter((m) => !r || pliage(`${m.nom} ${m.prenom}`).includes(r));
-  }, [membres, q]);
+  const liste = useMemo(
+    () => (membres ?? []).filter((m) => correspond(q, m.nom, m.prenom)),
+    [membres, q]
+  );
 
   return (
     <>

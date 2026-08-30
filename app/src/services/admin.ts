@@ -301,9 +301,15 @@ async function appelerFonction(action: string, corps: Record<string, unknown>) {
   if (error) {
     /* Distinguer « pas déployée » de « refusée » : ce n'est pas la
        même chose à faire ensuite, et un message générique enverrait
-       chercher au mauvais endroit. */
-    const message = String(error.message ?? '');
-    if (message.includes('404') || message.toLowerCase().includes('not found')) {
+       chercher au mauvais endroit.
+
+       Le STATUT, pas le message : supabase-js enveloppe toute
+       réponse non-2xx dans le même texte, « Edge Function returned
+       a non-2xx status code ». Chercher « 404 » dedans ne trouvait
+       jamais rien, et l'écran annonçait un refus du serveur là où
+       la fonction n'existait pas. */
+    const statut = (error as { context?: { status?: number } }).context?.status;
+    if (statut === 404) {
       return {
         ok: false as const,
         message:
@@ -311,7 +317,18 @@ async function appelerFonction(action: string, corps: Record<string, unknown>) {
           'Voir supabase/functions/comptes/LISEZ-MOI.md.'
       };
     }
-    return { ok: false as const, message: 'Le serveur a refusé : ' + message };
+
+    /* Le corps de la réponse porte le vrai message — « Réservé à
+       l'administration », par exemple. Le lire vaut mieux que de
+       répéter le texte générique de la bibliothèque. */
+    let detail = String(error.message ?? '');
+    try {
+      const corps = await (error as { context?: Response }).context?.json?.();
+      if (corps?.message) detail = String(corps.message);
+    } catch {
+      /* Réponse sans corps JSON : on garde le message générique. */
+    }
+    return { ok: false as const, message: 'Le serveur a refusé : ' + detail };
   }
   return { ok: true as const, ...(data as { motDePasse?: string }) };
 }

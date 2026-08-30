@@ -43,7 +43,38 @@ vérifier ce que le club aura, pas à travailler.
 
 ---
 
-## 2. Sans téléphone, sans même regarder — le contrôle automatique
+## 2. Sans téléphone, sans même regarder — les contrôles automatiques
+
+```bash
+cd app && npm test
+```
+
+**106 tests**, unitaires et d'intégration. Ils tournent en cinq secondes et couvrent deux
+choses que l'œil ne voit pas :
+
+**La logique** — dates, matricules, teintes, codes USSD. Une erreur y est invisible à
+l'écran et se découvre sur le téléphone du club. « Il y a 1 j » au lieu de « Hier » ne
+saute pas aux yeux ; une date de sortie décalée fait rater le car.
+
+**Le comportement des écrans**, face à un serveur Supabase simulé qui répond exactement
+comme PostgREST — jointure rendue en objet ou en tableau comprise, car c'est là que les
+écrans se cassent. Ces tests regardent ce qui **part** vers le serveur, pas seulement ce
+qui s'affiche : un formulaire peut sembler marcher et n'écrire aucun champ.
+
+Quelques comportements qu'ils tiennent, et qui comptent :
+
+- l'élève **sans compte** figure à l'annuaire comme les autres ;
+- la fiche montre le verrou ou les informations selon ce que le **serveur** a rendu,
+  jamais selon un test de rôle fait dans l'application ;
+- la date de naissance part dans sa **propre table**, jamais dans `profils` ;
+- une modification de fiche n'envoie **ni le numéro, ni le rôle, ni le grade** ;
+- le mot de passe actuel est **vérifié**, pas seulement demandé ;
+- l'espace des maîtres n'apparaît pas parce qu'il n'a **pas été reçu**.
+
+Ce qu'ils ne couvrent pas, et qu'il ne faut pas leur demander : le rendu visuel — jsdom ne
+met pas en page, c'est `comparer-app` qui s'en charge — et les règles d'accès, qui ont leur
+propre test sur un vrai PostgreSQL dans `supabase/tests/`. Les simuler donnerait l'illusion
+de les vérifier.
 
 ```bash
 npm install                      # une fois, à la racine
