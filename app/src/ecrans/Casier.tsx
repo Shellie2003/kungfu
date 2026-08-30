@@ -5,14 +5,15 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Icone } from '../ui/Icone';
 import { Bouton, Carte, Entete, Etat, Puce, Filet } from '../ui/base';
-import { categories, dateLongue, jourEtMois, useActualite, useActualites, useNotifications } from '../services/casier';
-
-/* Un fond par catégorie. Celles que le club invente tombent sur le
-   vert du club : mieux qu'une couleur tirée au hasard, et lisible. */
-const TEINTES: Record<string, [string, string]> = {
-  'Changement d’horaire': ['#B0530F', '#FBEEE2']
-};
-const teinte = (c: string): [string, string] => TEINTES[c] ?? ['#12613C', '#E8F1EC'];
+import {
+  categories,
+  dateLongue,
+  jourEtMois,
+  teinte,
+  useActualite,
+  useActualites,
+  useNotifications
+} from '../services/casier';
 
 export function Casier() {
   const aller = useNavigate();

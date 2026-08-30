@@ -74,6 +74,13 @@ const PROFILS = [
   { id: 'p3', numero: 'F04x061', nom: 'RANDRIAMAMPIONONA', prenom: 'Toky', role: 'eleve', grade_id: 'g3', photo: null, debut: null, biographie: null }
 ];
 
+/* La fiche de celui qui est connecté pendant le contrôle. On prend
+   l'administration : c'est le rôle qui voit le PLUS d'écrans, donc
+   celui qui en exerce le plus. Ce n'est pas une permission — le
+   bouchon ne fait pas respecter les règles d'accès, c'est la base
+   qui s'en charge et elle a son propre test. */
+const MOI = { id: 'p0', numero: 'F04x001', nom: 'IDEALY', prenom: 'Santatra', role: 'admin', grade_id: 'g1', photo: null, debut: '2014-02-01', biographie: null };
+
 const avecGrade = (p) => ({ ...p, grades: GRADES.find((g) => g.id === p.grade_id) ?? null });
 
 const ACTUALITES = [
@@ -134,7 +141,11 @@ const ECRANS = [
   ['salon', '/#/messages/s1', 'Merci pour l’information.'],
   ['maitres', '/#/maitres', 'Espace des maîtres'],
   ['carte', '/#/carte', 'Carte de membre'],
-  ['motdepasse', '/#/motdepasse', 'Nouveau mot de passe']
+  ['motdepasse', '/#/motdepasse', 'Nouveau mot de passe'],
+  /* L'écran d'administration, et surtout la PORTE qui y mène : la
+     route existait sans que rien n'y conduise, et un compte
+     d'administration ne montrait alors rien de plus qu'un élève. */
+  ['admin', '/#/admin', 'Publication']
 ];
 
 const plat = (s) =>
@@ -174,9 +185,20 @@ await page.route(`https://${PROJET}.supabase.co/**`, async (route) => {
   /* PostgREST rend un objet, pas un tableau, quand la requête
      demande une ligne unique — c'est ce que fait .single(). */
   const seul = (route.request().headers()['accept'] ?? '').includes('vnd.pgrst.object');
+
+  /* La requête de session est la seule à demander « role » sur une
+     ligne unique : c'est ainsi qu'on rend MA fiche, et non celle du
+     premier venu de la liste. */
+  if (table === 'profils' && seul && (url.searchParams.get('select') ?? '').includes('role')) {
+    return route.fulfill({ json: avecGrade(MOI) });
+  }
+
   let donnees = corps;
   const id = url.searchParams.get('id')?.replace('eq.', '');
-  if (id) donnees = corps.filter((l) => l.id === id);
+  /* MA fiche se cherche par identifiant comme les autres — la carte
+     de membre le fait. L'oublier vidait la carte, et le code QR
+     devenait illisible faute de matricule à encoder. */
+  if (id) donnees = [...corps, ...(table === 'profils' ? [avecGrade(MOI)] : [])].filter((l) => l.id === id);
   return route.fulfill({ json: seul ? (donnees[0] ?? null) : donnees });
 });
 
@@ -237,11 +259,11 @@ for (const [nom, adresse, attendu] of ECRANS) {
 {
   const brut = PNG.sync.read(readFileSync(join(SORTIE, 'carte.png')));
   const lu = jsQR(new Uint8ClampedArray(brut.data), brut.width, brut.height);
-  if (lu?.data === 'F04x042') {
-    console.log('✓ code QR        se décode, et rend « F04x042 » — le matricule de la fiche');
+  if (lu?.data === MOI.numero) {
+    console.log(`✓ code QR        se décode, et rend « ${MOI.numero} » — le matricule de la fiche`);
   } else {
     echecs++;
-    console.log(`✗ code QR        ${lu ? `rend « ${lu.data} »` : 'illisible'}, au lieu de « F04x042 »`);
+    console.log(`✗ code QR        ${lu ? `rend « ${lu.data} »` : 'illisible'}, au lieu de « ${MOI.numero} »`);
   }
 }
 

@@ -103,7 +103,15 @@ Depuis un téléphone sur le même réseau : `npm run dev -- --host`, puis l'adr
 |---|---|
 | `F04x042` | Un élève : l'annuaire, un seul salon |
 | `F04x045` | Un maître : deux salons, dont celui des maîtres |
-| `F04x001` | L'administration |
+| `F04x001` | **L'administration** : en plus, la rangée « Administration » sur l'accueil |
+
+Une fois connecté, un bloc **« Mon espace »** apparaît sur l'accueil : la carte de membre
+avec son code QR, sa propre fiche, et — pour l'administration seulement — l'écran
+d'administration. C'est la seule porte vers ces trois écrans.
+
+Cette rangée n'est pas une serrure : elle n'apparaît pas à un élève parce que c'est de la
+place gagnée, mais atteindre l'adresse ne lui donnerait rien de plus — le serveur refuse
+ce que le rôle n'autorise pas.
 
 **Les mots de passe ne sont pas dans ce dépôt.** Il est public : les y écrire donnerait à
 n'importe qui l'accès au projet d'essai, y compris en administrateur. Ils circulent
@@ -120,8 +128,9 @@ téléphone. Il doit apparaître comme les autres.
 
 ### Ce qui ne marche pas encore
 
-Les huit rangées de l'écran d'administration ne s'ouvrent pas : ces écrans restent à
-écrire. Elles sont volontairement inertes plutôt que boutons morts.
+L'écran d'administration s'ouvre et montre les vrais chiffres du club, mais ses **huit
+rangées ne s'ouvrent pas** : ces écrans restent à écrire. Elles sont volontairement
+inertes plutôt que boutons morts, et l'écran le dit.
 
 ---
 
@@ -231,7 +240,11 @@ chose qui manque, et c'est vous qui la verrez en premier. Tant que ce n'est pas 
 `mobile/` — la version React Native — reste dans le dépôt : on ne retire pas un chemin qui
 marche avant que le nouveau ait fait ses preuves.
 
-Défauts trouvés en faisant ces vérifications : le filtre par grade affichait « verte » en
-minuscule ; la carte de membre répétait le matricule dans son pied de page à la place d'une
-date de validité qui n'existe pas en base ; et Gradle aurait engendré une clé de signature
+Défauts trouvés en faisant ces vérifications : **aucune porte ne menait à l'écran
+d'administration, à la carte de membre ni à sa propre fiche** — les routes existaient, rien
+n'y conduisait, et un compte d'administration ne montrait donc rien de plus qu'un compte
+d'élève ; la même actualité s'affichait en vert sur l'accueil et en orange dans le casier,
+la couleur étant définie deux fois ; le filtre par grade affichait « verte » en minuscule ;
+la carte de membre répétait le matricule dans son pied de page à la place d'une date de
+validité qui n'existe pas en base ; et Gradle aurait engendré une clé de signature
 différente à chaque construction, ce qui aurait fait refuser toutes les mises à jour.

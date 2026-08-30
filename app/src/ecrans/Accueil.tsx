@@ -4,12 +4,14 @@
 import { useNavigate } from 'react-router-dom';
 import { Icone } from '../ui/Icone';
 import { Carte, Surtitre } from '../ui/base';
-import { useActualites, useNotifications, jourEtMois } from '../services/casier';
+import { useActualites, useNotifications, jourEtMois, teinte } from '../services/casier';
 import { useMembres } from '../services/membres';
 import { useHoraires, useReglages } from '../services/club';
+import { estAdmin, useSession } from '../services/session';
 
 export function Accueil() {
   const aller = useNavigate();
+  const profil = useSession((e) => e.profil);
   const { data: actus } = useActualites();
   const { data: notifs } = useNotifications();
   const { data: membres } = useMembres();
@@ -114,6 +116,73 @@ export function Accueil() {
           ))}
         </div>
 
+        {/* Trois écrans n'avaient aucune porte d'entrée : la carte de
+            membre, sa propre fiche, et l'administration. Les routes
+            existaient, rien n'y menait — un compte d'administration
+            ne montrait donc rien de plus qu'un compte d'élève.
+
+            Ce bloc est cette porte. L'administration n'y figure que
+            pour qui a le rôle, mais ce n'est pas ce qui protège : le
+            serveur refuse de toute façon ce que le rôle n'autorise
+            pas. C'est de la place gagnée, pas une serrure. */}
+        {profil && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Surtitre>Mon espace</Surtitre>
+            <div className="list">
+              <button className="listrow" onClick={() => aller('/carte')}>
+                <span className="tile tile--sm">
+                  <Icone nom="shieldCheck" taille={18} couleur="#0F5132" />
+                </span>
+                <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
+                  <b style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>
+                    Ma carte de membre
+                  </b>
+                  <span
+                    style={{ display: 'block', fontSize: 12, color: '#59685F', marginTop: 1 }}
+                  >
+                    {profil.numero} · avec le code à présenter
+                  </span>
+                </span>
+                <Icone nom="chev" taille={17} couleur="#A8B6AE" epaisseur={2} />
+              </button>
+
+              <button className="listrow" onClick={() => aller(`/etudiants/${profil.id}`)}>
+                <span className="tile tile--sm">
+                  <Icone nom="users" taille={18} couleur="#0F5132" />
+                </span>
+                <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
+                  <b style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>Ma fiche</b>
+                  <span
+                    style={{ display: 'block', fontSize: 12, color: '#59685F', marginTop: 1 }}
+                  >
+                    Et le changement de mot de passe
+                  </span>
+                </span>
+                <Icone nom="chev" taille={17} couleur="#A8B6AE" epaisseur={2} />
+              </button>
+
+              {estAdmin(profil) && (
+                <button className="listrow" onClick={() => aller('/admin')}>
+                  <span className="tile tile--sm">
+                    <Icone nom="lock" taille={18} couleur="#0F5132" />
+                  </span>
+                  <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
+                    <b style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>
+                      Administration
+                    </b>
+                    <span
+                      style={{ display: 'block', fontSize: 12, color: '#59685F', marginTop: 1 }}
+                    >
+                      Membres, publications, comptes
+                    </span>
+                  </span>
+                  <Icone nom="chev" taille={17} couleur="#A8B6AE" epaisseur={2} />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div className="rowhead">
             {/* « Vaovao farany » — les dernières nouvelles. Le club
@@ -127,6 +196,7 @@ export function Accueil() {
 
           {deux.map((a) => {
             const { jour, mois } = jourEtMois(a.date_evt ?? a.cree_le);
+            const [cc, cb] = teinte(a.categorie);
             return (
               <button
                 key={a.id}
@@ -138,7 +208,7 @@ export function Accueil() {
                   <i>{mois}</i>
                 </span>
                 <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
-                  <span className="tag" style={{ color: '#12613C', background: '#E8F1EC' }}>
+                  <span className="tag" style={{ color: cc, background: cb }}>
                     {a.categorie}
                   </span>
                   <span
