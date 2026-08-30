@@ -45,6 +45,7 @@ import { AdminComptes } from './ecrans/admin/Comptes';
 import { AdminClub } from './ecrans/admin/Club';
 import { AdminParticipations } from './ecrans/admin/Participations';
 import { AdminPresences } from './ecrans/admin/Presences';
+import { AdminGrades } from './ecrans/admin/Grades';
 import { MesPresences } from './ecrans/MesPresences';
 
 import { seConnecter } from './services/supabase';
@@ -169,6 +170,9 @@ function Connectee() {
         {estAdmin(profil) && <Route path="/admin/fiche/:id" element={<AdminFiche />} />}
         {estAdmin(profil) && <Route path="/admin/fiches" element={<AdminChoisirFiche />} />}
         {estAdmin(profil) && <Route path="/admin/grades" element={<AdminGrade />} />}
+        {estAdmin(profil) && (
+          <Route path="/admin/grades/liste" element={<AdminGrades />} />
+        )}
         {estAdmin(profil) && <Route path="/admin/comptes" element={<AdminComptes />} />}
         {estAdmin(profil) && <Route path="/admin/publier" element={<AdminPublier />} />}
         {estAdmin(profil) && <Route path="/admin/notifier" element={<AdminNotifier />} />}

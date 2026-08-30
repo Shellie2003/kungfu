@@ -65,7 +65,15 @@ export type Album = {
   id: string;
   titre: string;
   categorie: string;
-  photos: { id: string; chemin: string; legende: string | null }[];
+  /* Le chemin de la photo qui représente l'album. Nulle tant que le
+     club n'a rien choisi : l'écran prend alors la première, ce qui
+     est presque toujours la bonne — et « presque » est la raison
+     pour laquelle la colonne existe. */
+  couverture: string | null;
+  /* « rang » est conservé : l'écran d'administration en a besoin
+     pour échanger deux photos, et le recalculer depuis la position
+     dans le tableau se tromperait dès qu'une photo est retirée. */
+  photos: { id: string; chemin: string; legende: string | null; rang: number }[];
 };
 
 export function useAlbums() {
@@ -74,11 +82,10 @@ export function useAlbums() {
     queryFn: async (): Promise<Album[]> => {
       const { data, error } = await supabase
         .from('albums')
-        .select('id, titre, categorie, photos ( id, chemin, legende, rang )')
+        .select('id, titre, categorie, couverture, photos ( id, chemin, legende, rang )')
         .order('cree_le', { ascending: false });
       if (error) throw error;
-      type Ligne = Album & { photos: (Album['photos'][number] & { rang: number })[] };
-      return (data as unknown as Ligne[]).map((a) => ({
+      return (data as unknown as Album[]).map((a) => ({
         ...a,
         photos: [...a.photos].sort((x, y) => x.rang - y.rang)
       }));

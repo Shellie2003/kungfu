@@ -23,7 +23,17 @@ const ALBUM = {
   id: 'a1',
   titre: 'Championnat régional',
   categorie: 'Compétitions',
+  couverture: null as string | null,
   photos: [{ id: 'ph1', chemin: 'une.jpg', legende: null, rang: 1 }]
+};
+
+/* Deux photos : le déplacement n'a de sens qu'à partir de là. */
+const ALBUM2 = {
+  ...ALBUM,
+  photos: [
+    { id: 'ph1', chemin: 'une.jpg', legende: 'Première', rang: 1 },
+    { id: 'ph2', chemin: 'deux.jpg', legende: 'Seconde', rang: 2 }
+  ]
 };
 
 const fichier = () => new File(['x'], 'IMG_0001.jpg', { type: 'image/jpeg' });
@@ -154,5 +164,56 @@ describe('retirer une photo', () => {
 
     await userEvent.click(screen.getByText('Oui, supprimer'));
     await waitFor(() => expect(derniere('albums', 'DELETE')).toBeDefined());
+  });
+});
+
+
+describe('la couverture et l’ordre', () => {
+  test('choisir la couverture enregistre le CHEMIN, pas l’identifiant', async () => {
+    /* L'affichage a besoin du chemin pour demander une adresse
+       signée ; passer par l'identifiant obligerait à retrouver la
+       photo dans la liste à chaque rendu. */
+    poser({ albums: [ALBUM] });
+    rendre(<AdminAlbums />);
+
+    await userEvent.click(await screen.findByLabelText('Photo sans légende'));
+    await userEvent.click(screen.getByText('Faire la couverture de l’album'));
+
+    await waitFor(() =>
+      expect(derniere('albums', 'PATCH')?.corps).toEqual({ couverture: 'une.jpg' })
+    );
+  });
+
+  test('une couverture déjà choisie le dit, au lieu de proposer deux fois', async () => {
+    poser({ albums: [{ ...ALBUM, couverture: 'une.jpg' }] });
+    rendre(<AdminAlbums />);
+
+    await userEvent.click(await screen.findByLabelText('Photo sans légende'));
+    expect(screen.getByText('C’est déjà la couverture')).toBeInTheDocument();
+  });
+
+  test('déplacer ÉCHANGE deux rangs, en deux mises à jour', async () => {
+    /* Renuméroter vingt photos pour en déplacer une ferait vingt
+       écritures là où deux suffisent. */
+    poser({ albums: [ALBUM2] });
+    rendre(<AdminAlbums />);
+
+    await userEvent.click(await screen.findByLabelText('Seconde'));
+    await userEvent.click(screen.getByRole('button', { name: 'Avancer' }));
+
+    await waitFor(() => {
+      const envois = recues.filter((r) => r.table === 'photos' && r.methode === 'PATCH');
+      expect(envois).toHaveLength(2);
+      expect(envois.map((e) => (e.corps as { rang: number }).rang).sort()).toEqual([1, 2]);
+    });
+  });
+
+  test('la première photo ne peut pas avancer, la dernière pas reculer', async () => {
+    poser({ albums: [ALBUM2] });
+    rendre(<AdminAlbums />);
+
+    await userEvent.click(await screen.findByLabelText('Première'));
+    expect(screen.getByRole('button', { name: 'Avancer' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Reculer' })).not.toBeDisabled();
   });
 });

@@ -11,8 +11,9 @@ import { useActualites, teinte } from '../../services/casier';
 import { useAlbums } from '../../services/club';
 import { useUrl, useUrls } from '../../services/stockage';
 import {
-  useAjouterPhotos, useCreerAlbum, useLegender, useNotifierTous, usePublier,
-  useSupprimerActualite, useSupprimerAlbum, useSupprimerPhoto, televerser
+  useAjouterPhotos, useCouverture, useCreerAlbum, useDeplacerPhoto, useLegender,
+  useNotifierTous, usePublier, useSupprimerActualite, useSupprimerAlbum,
+  useSupprimerPhoto, televerser
 } from '../../services/admin';
 
 /* Les catégories que le club emploie déjà, plus celles qu'il
@@ -37,6 +38,17 @@ export function AdminPublier() {
   const [image, setImage] = useState<string | null>(null);
   const [envoiImage, setEnvoiImage] = useState(false);
   const apercu = useUrl('album', image);
+  /* L'actualité en cours de modification. « null » = on en crée une
+     neuve. Un seul formulaire pour les deux : deux écrans auraient
+     divergé au premier champ ajouté. */
+  const [edite, setEdite] = useState<string | null>(null);
+  /* Ce qui attend une confirmation de suppression. */
+  const [aSupprimer, setASupprimer] = useState<{ id: string; titre: string } | null>(null);
+
+  function vider() {
+    setTitre(''); setCategorie(''); setTexte(''); setDate(''); setLieu('');
+    setImage(null); setEdite(null);
+  }
 
   function envoyer(publiee: boolean) {
     if (!titre.trim() || !categorie.trim() || !texte.trim()) {
@@ -44,12 +56,20 @@ export function AdminPublier() {
       return;
     }
     publier.mutate(
-      { titre: titre.trim(), categorie: categorie.trim(), texte: texte.trim(),
+      { id: edite ?? undefined,
+        titre: titre.trim(), categorie: categorie.trim(), texte: texte.trim(),
         date_evt: date || null, lieu: lieu || null, image, publiee },
       {
         onSuccess: () => {
-          setAvis({ bon: true, texte: publiee ? 'Publiée. Tout le club la voit.' : 'Enregistrée en brouillon.' });
-          setTitre(''); setCategorie(''); setTexte(''); setDate(''); setLieu(''); setImage(null);
+          setAvis({
+            bon: true,
+            texte: edite
+              ? 'Modifiée. La version corrigée remplace l’ancienne.'
+              : publiee
+                ? 'Publiée. Tout le club la voit.'
+                : 'Enregistrée en brouillon.'
+          });
+          vider();
         },
         onError: (e) => setAvis({ bon: false, texte: `Refusé : ${(e as Error).message}` })
       }
@@ -58,8 +78,24 @@ export function AdminPublier() {
 
   return (
     <>
-      <Entete titre="Publier une actualité" retour={() => aller('/admin')} />
+      <Entete
+        titre={edite ? 'Modifier une actualité' : 'Publier une actualité'}
+        retour={() => aller('/admin')}
+      />
       <div style={{ flexGrow: 1, padding: '18px 20px 28px', display: 'flex', flexDirection: 'column', gap: 22 }}>
+        {/* Sans ce bandeau, on ne saurait pas qu'on modifie plutôt
+            qu'on crée : le formulaire est le même, et l'on
+            publierait une seconde fois la même annonce en croyant en
+            écrire une neuve. */}
+        {edite && (
+          <div className="banner">
+            <Icone nom="edit" taille={16} couleur="#0F5132" />
+            <span style={{ flexGrow: 1 }}>Modification d’une actualité déjà au casier</span>
+            <button className="link" onClick={vider}>
+              Annuler
+            </button>
+          </div>
+        )}
         <Carte pad={16}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <Champ libelle="Titre" valeur={titre} poser={setTitre} obligatoire />
@@ -135,13 +171,15 @@ export function AdminPublier() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <Bouton onClick={() => envoyer(true)} desactive={publier.isPending}>
-            {publier.isPending ? 'Envoi…' : 'Publier'}
+            {publier.isPending ? 'Envoi…' : edite ? 'Enregistrer et publier' : 'Publier'}
           </Bouton>
           {/* Un brouillon n'est visible que de l'administration : la
               règle d'accès exclut « publiee = false » pour tous les
-              autres. C'est ce qui permet de préparer sans annoncer. */}
+              autres. C'est ce qui permet de préparer sans annoncer —
+              et, en modification, de RETIRER du casier une annonce
+              publiée par erreur sans la détruire. */}
           <Bouton genre="ghost" onClick={() => envoyer(false)} desactive={publier.isPending}>
-            Enregistrer en brouillon
+            {edite ? 'Enregistrer et remettre en brouillon' : 'Enregistrer en brouillon'}
           </Bouton>
         </div>
 
@@ -152,16 +190,45 @@ export function AdminPublier() {
               const [cc, cb] = teinte(a.categorie);
               return (
                 <div key={a.id} className="listrow">
-                  <span style={{ flexGrow: 1, minWidth: 0 }}>
+                  {/* Un appui charge l'actualité dans le formulaire.
+                      Jusqu'ici, corriger une faute de frappe imposait
+                      de supprimer et de tout réécrire — et les
+                      inscriptions à une sortie, rattachées à la ligne
+                      supprimée, partaient avec elle. */}
+                  <button
+                    style={{
+                      flexGrow: 1,
+                      minWidth: 0,
+                      textAlign: 'left',
+                      border: 0,
+                      background: 'transparent',
+                      padding: 0,
+                      font: 'inherit',
+                      color: 'inherit',
+                      cursor: 'pointer'
+                    }}
+                    aria-label={`Modifier ${a.titre}`}
+                    onClick={() => {
+                      setEdite(a.id);
+                      setTitre(a.titre);
+                      setCategorie(a.categorie);
+                      setTexte(a.texte);
+                      setDate(a.date_evt ?? '');
+                      setLieu(a.lieu ?? '');
+                      setImage(a.image);
+                      setAvis(null);
+                      window.scrollTo({ top: 0 });
+                    }}
+                  >
                     <span className="tag" style={{ color: cc, background: cb }}>{a.categorie}</span>
                     <b style={{ display: 'block', fontSize: 14, fontWeight: 600, marginTop: 6 }}>
                       {a.titre}
                     </b>
-                  </span>
+                  </button>
                   <button
                     className="tapicon"
                     aria-label={`Supprimer ${a.titre}`}
-                    onClick={() => supprimer.mutate(a.id)}
+                    onClick={() => setASupprimer({ id: a.id, titre: a.titre })}
                   >
                     <Icone nom="x" taille={17} couleur="#B3341A" />
                   </button>
@@ -175,6 +242,40 @@ export function AdminPublier() {
             )}
           </div>
         </div>
+
+        {/* Supprimer une actualité emporte les inscriptions à la
+            sortie : la question nomme donc ce qui va disparaître, et
+            rappelle qu'un simple retrait du casier se fait autrement. */}
+        {aSupprimer && (
+          <div className="warn">
+            <i />
+            <p>
+              Supprimer <b>{aSupprimer.titre}</b> ? Les inscriptions et les versements
+              rattachés partent avec elle.
+              <br />
+              Pour la retirer du casier sans rien perdre, ouvrez-la et enregistrez-la en
+              brouillon.
+            </p>
+            <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+              <Bouton
+                onClick={() => {
+                  supprimer.mutate(aSupprimer.id, {
+                    onSuccess: () => setAvis({ bon: true, texte: 'Actualité supprimée.' }),
+                    onError: (e) =>
+                      setAvis({ bon: false, texte: `Refusé : ${(e as Error).message}` })
+                  });
+                  if (edite === aSupprimer.id) vider();
+                  setASupprimer(null);
+                }}
+              >
+                Oui, supprimer
+              </Bouton>
+              <Bouton genre="ghost" onClick={() => setASupprimer(null)}>
+                Annuler
+              </Bouton>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
@@ -253,6 +354,8 @@ export function AdminAlbums() {
   const [categorie, setCategorie] = useState('');
   const ajouter = useAjouterPhotos();
   const legender = useLegender();
+  const couverture = useCouverture();
+  const deplacer = useDeplacerPhoto();
   const photos = useUrls('album', (albums ?? []).flatMap((a) => a.photos.map((p) => p.chemin)));
   const [avis, setAvis] = useState<{ bon: boolean; texte: string } | null>(null);
 
@@ -313,7 +416,23 @@ export function AdminAlbums() {
             {(albums ?? []).map((a) => (
               <Carte key={a.id} pad={16}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <Tuile icone="album" petite />
+                  {/* La couverture, ou la première photo à défaut :
+                      « presque toujours la bonne » est justement la
+                      raison pour laquelle on peut en choisir une
+                      autre. */}
+                  {(() => {
+                    const c = a.couverture ?? a.photos[0]?.chemin ?? null;
+                    const src = c ? photos[c] ?? null : null;
+                    return src ? (
+                      <img
+                        src={src}
+                        alt=""
+                        style={{ width: 38, height: 38, borderRadius: 12, objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <Tuile icone="album" petite />
+                    );
+                  })()}
                   <span style={{ flexGrow: 1, minWidth: 0 }}>
                     <b style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>{a.titre}</b>
                     <span style={{ display: 'block', fontSize: 12.5, color: '#59685F' }}>
@@ -406,6 +525,56 @@ export function AdminAlbums() {
                         Fermer
                       </Bouton>
                     </div>
+                    {/* Déplacer, et choisir la couverture. Les deux
+                        n'ont de sens que sur une photo précise, donc
+                        ici et pas ailleurs. */}
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                      {(() => {
+                        const i = a.photos.findIndex((p) => p.id === choisie.id);
+                        const echanger = (j: number) => {
+                          const x = a.photos[i];
+                          const y = a.photos[j];
+                          if (x && y) deplacer.mutate({ a: x, b: y });
+                        };
+                        return (
+                          <>
+                            <Bouton
+                              genre="ghost"
+                              desactive={i <= 0 || deplacer.isPending}
+                              onClick={() => echanger(i - 1)}
+                            >
+                              Avancer
+                            </Bouton>
+                            <Bouton
+                              genre="ghost"
+                              desactive={i < 0 || i >= a.photos.length - 1 || deplacer.isPending}
+                              onClick={() => echanger(i + 1)}
+                            >
+                              Reculer
+                            </Bouton>
+                          </>
+                        );
+                      })()}
+                    </div>
+
+                    <button
+                      className="link"
+                      disabled={couverture.isPending}
+                      onClick={() =>
+                        couverture.mutate(
+                          { albumId: a.id, chemin: choisie.chemin },
+                          {
+                            onSuccess: () =>
+                              setAvis({ bon: true, texte: 'Couverture de l’album choisie.' })
+                          }
+                        )
+                      }
+                    >
+                      {a.couverture === choisie.chemin
+                        ? 'C’est déjà la couverture'
+                        : 'Faire la couverture de l’album'}
+                    </button>
+
                     <button
                       className="link"
                       style={{ color: '#B3341A' }}

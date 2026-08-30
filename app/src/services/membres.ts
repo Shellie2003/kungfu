@@ -61,17 +61,29 @@ export function useMembres() {
 /* La liste des grades, pour les filtres. Elle vient de la base :
    « Mety modifiena » — le club doit pouvoir la modifier sans
    nouvelle version de l'application. */
-export type Grade = { id: string; nom: string; couleur: string; rang: number };
+export type Grade = {
+  id: string;
+  nom: string;
+  couleur: string;
+  /* Le rang ordonne les ceintures de la plus basse à la plus haute.
+     Il ne se déduit pas de la couleur : chaque école a la sienne. */
+  rang: number;
+  /* Absent des lectures ordinaires, présent pour l'administration. */
+  actif?: boolean;
+};
 
-export function useGrades() {
+/* « tous » inclut les grades DÉSACTIVÉS. L'écran d'administration
+   en a besoin — sans quoi un grade retiré par erreur deviendrait
+   irrécupérable depuis l'application — mais nulle part ailleurs :
+   proposer une ceinture que le club n'emploie plus au filtre de
+   l'annuaire serait un piège. */
+export function useGrades(tous = false) {
   return useQuery({
-    queryKey: ['grades'],
+    queryKey: ['grades', tous],
     queryFn: async (): Promise<Grade[]> => {
-      const { data, error } = await supabase
-        .from('grades')
-        .select('id, nom, couleur, rang')
-        .eq('actif', true)
-        .order('rang');
+      let q = supabase.from('grades').select('id, nom, couleur, rang, actif');
+      if (!tous) q = q.eq('actif', true);
+      const { data, error } = await q.order('rang');
       if (error) throw error;
       return data as Grade[];
     }

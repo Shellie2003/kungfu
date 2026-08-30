@@ -12,7 +12,9 @@ import { Icone } from '../ui/Icone';
 import { Bouton, Carte, Entete, Surtitre } from '../ui/base';
 import {
   initiales,
+  joindre,
   journaliser,
+  useArchiver,
   marquerLu,
   useCorriger,
   useRetirerMonMessage,
@@ -24,7 +26,8 @@ import {
   useSignaler
 } from '../services/messagerie';
 import type { Message } from '../services/messagerie';
-import { useSession } from '../services/session';
+import { estAdmin, useSession } from '../services/session';
+import { useUrls } from '../services/stockage';
 
 /* ---------------------------------------------- Le fil */
 function Fil({
@@ -39,6 +42,9 @@ function Fil({
   onMien: (m: Message) => void;
 }) {
   const bas = useRef<HTMLDivElement>(null);
+  /* Les pièces jointes du fil en UN appel : une adresse signée par
+     image ferait autant d'allers-retours que de photos. */
+  const pieces = useUrls('pieces', messages.map((m) => m.piece));
 
   /* On arrive en bas du fil, comme dans toute messagerie : lire les
      messages d'il y a trois semaines n'intéresse personne. */
@@ -81,6 +87,22 @@ function Fil({
                 {m.auteur.nom} {m.auteur.prenom}
               </b>
             )}
+            {/* La pièce jointe avant le texte : c'est elle qu'on
+                regarde, le texte la commente. */}
+            {m.piece && pieces[m.piece] && (
+              <img
+                src={pieces[m.piece]}
+                alt={m.texte}
+                loading="lazy"
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  maxWidth: 240,
+                  borderRadius: 12,
+                  marginBottom: 6
+                }}
+              />
+            )}
             <p className="bul__txt">{m.texte}</p>
             <i className="bul__h">
               {new Date(m.cree_le).toLocaleTimeString('fr-FR', {
@@ -101,20 +123,92 @@ function Fil({
 }
 
 /* ---------------------------------------------- La saisie */
-function Saisie({ envoyer, occupe }: { envoyer: (texte: string) => void; occupe: boolean }) {
+function Saisie({
+  envoyer,
+  occupe,
+  joindreFichier
+}: {
+  envoyer: (texte: string, piece: string | null) => void;
+  occupe: boolean;
+  joindreFichier: ((f: File) => Promise<string>) | null;
+}) {
   const [texte, setTexte] = useState('');
+  const [piece, setPiece] = useState<string | null>(null);
+  const [envoiPiece, setEnvoiPiece] = useState(false);
+  const [souci, setSouci] = useState<string | null>(null);
+  /* Une pièce jointe SEULE suffit : « regarde » n'ajoute rien à une
+     photo, et exiger un texte ferait taper « photo » vingt fois. */
   const propre = texte.trim();
+  const envoyable = Boolean(propre || piece);
 
   return (
     <form
       className="saisie"
+      style={{ flexWrap: 'wrap' }}
       onSubmit={(e) => {
         e.preventDefault();
-        if (!propre || occupe) return;
-        envoyer(propre);
+        if (!envoyable || occupe) return;
+        envoyer(propre || '📎', piece);
         setTexte('');
+        setPiece(null);
       }}
     >
+      {/* Ce qui est joint, avant l'envoi : sans cet indice, on ne
+          saurait pas si le fichier est bien parti. */}
+      {(piece || envoiPiece || souci) && (
+        <div
+          style={{
+            width: '100%',
+            fontSize: 12,
+            color: souci ? '#B3341A' : '#59685F',
+            padding: '0 4px 6px',
+            display: 'flex',
+            gap: 8
+          }}
+        >
+          <span style={{ flexGrow: 1 }}>
+            {souci ?? (envoiPiece ? 'Envoi de la photo…' : 'Photo jointe.')}
+          </span>
+          {piece && (
+            <button
+              type="button"
+              className="link"
+              style={{ color: '#B3341A' }}
+              onClick={() => { setPiece(null); setSouci(null); }}
+            >
+              Retirer
+            </button>
+          )}
+        </div>
+      )}
+
+      {joindreFichier && (
+        <label
+          className="tapicon"
+          aria-label="Joindre une photo"
+          style={{ cursor: 'pointer', display: 'grid', placeItems: 'center' }}
+        >
+          <Icone nom="plus" taille={20} couleur="#0F5132" epaisseur={2} />
+          <input
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={async (e) => {
+              const f = e.target.files?.[0];
+              if (!f) return;
+              setEnvoiPiece(true);
+              setSouci(null);
+              try {
+                setPiece(await joindreFichier(f));
+              } catch (err) {
+                setSouci(`Photo refusée : ${(err as Error).message}`);
+              } finally {
+                setEnvoiPiece(false);
+              }
+            }}
+          />
+        </label>
+      )}
       <input
         className="saisie__champ"
         value={texte}
@@ -123,7 +217,12 @@ function Saisie({ envoyer, occupe }: { envoyer: (texte: string) => void; occupe:
         aria-label="Écrire un message"
         maxLength={4000}
       />
-      <button className="saisie__env" type="submit" aria-label="Envoyer" disabled={!propre || occupe}>
+      <button
+        className="saisie__env"
+        type="submit"
+        aria-label="Envoyer"
+        disabled={!envoyable || occupe || envoiPiece}
+      >
         <Icone nom="send" taille={20} couleur="#FFF" epaisseur={1.8} />
       </button>
     </form>
@@ -145,6 +244,7 @@ function Conversation({ salonId, sombre }: { salonId: string | undefined; sombre
   const corriger = useCorriger(salonId);
   const retirer = useRetirerMonMessage(salonId);
   const signalement = useSignaler();
+  const archiver = useArchiver();
   const [avis, setAvis] = useState<string | null>(null);
   /* Le message sur lequel on vient d'appuyer longuement, et le texte
      en cours de correction. « null » = aucun, donc rien d'affiché. */
@@ -243,6 +343,38 @@ function Conversation({ salonId, sombre }: { salonId: string | undefined; sombre
             {sombre ? 'confidentiel' : ''}
           </i>
         </span>
+        {/* Ranger la conversation. Réservé à l'administration : la
+            règle d'accès ne laisse qu'elle écrire sur un salon, et
+            laisser chacun archiver ferait disparaître de sa liste un
+            salon que le club croit lu.
+
+            Archiver n'est pas supprimer — les messages restent, le
+            salon se rouvre, et un litige de l'an dernier se relit. */}
+        {estAdmin(moi) && salonId && !sombre && (
+          <button
+            className="tapicon"
+            aria-label={
+              salon?.archive ? 'Sortir de l’archive' : 'Archiver cette conversation'
+            }
+            disabled={archiver.isPending}
+            onClick={() =>
+              archiver.mutate(
+                { salonId, archive: !salon?.archive },
+                {
+                  onSuccess: () => aller('/messages'),
+                  onError: (e) => setAvis((e as Error).message)
+                }
+              )
+            }
+          >
+            <Icone
+              nom={salon?.archive ? 'plus' : 'base'}
+              taille={20}
+              couleur="#0E2119"
+              epaisseur={salon?.archive ? 2 : undefined}
+            />
+          </button>
+        )}
         {sombre && <Icone nom="lock" taille={20} couleur="#9CC4AF" />}
       </div>
 
@@ -380,8 +512,9 @@ function Conversation({ salonId, sombre }: { salonId: string | undefined; sombre
       )}
 
       <Saisie
-        envoyer={(texte) => moi && envoi.mutate({ texte, auteurId: moi.id })}
+        envoyer={(texte, piece) => moi && envoi.mutate({ texte, auteurId: moi.id, piece })}
         occupe={envoi.isPending}
+        joindreFichier={salonId ? (f) => joindre(salonId, f) : null}
       />
     </>
   );

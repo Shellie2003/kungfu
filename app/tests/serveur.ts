@@ -47,6 +47,10 @@ export type Requete = {
   parametres: URLSearchParams;
   corps: unknown;
   entetes: Record<string, string>;
+  /* Le chemin appelé. Il ne sert que pour le stockage, où c'est
+     justement le chemin qui porte l'information : « <salon>/<nom> »
+     pour une pièce jointe, et c'est lui que la règle d'accès lit. */
+  chemin?: string;
 };
 
 /* Ce que le serveur simulé a reçu. Les tests s'en servent pour
@@ -128,7 +132,10 @@ export function brancherServeur() {
          cette forme-là qu'il faut reproduire : une photo manquante
          ne doit pas faire échouer la liste entière. */
       if (url.pathname.startsWith('/storage/v1/')) {
-        recues.push({ methode, table: 'storage', parametres: url.searchParams, corps, entetes });
+        recues.push({
+          methode, table: 'storage', parametres: url.searchParams, corps, entetes,
+          chemin: url.pathname
+        });
         const prevu = tables['storage'];
         if (prevu !== undefined) return json(prevu);
         const chemins = (corps as { paths?: string[] } | null)?.paths;

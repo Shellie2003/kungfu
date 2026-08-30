@@ -37,9 +37,14 @@ type LigneSalon = {
   messages: { texte: string; cree_le: string; profils: { nom: string; prenom: string } | null }[];
 };
 
-export function useSalons() {
+/* « archivees » bascule la liste : les conversations en cours, ou
+   celles qu'on a rangées. Deux requêtes distinctes plutôt qu'un tri
+   dans l'application — le club aura des dizaines de salons de sortie
+   au bout de deux ans, et les charger tous pour en cacher la moitié
+   ferait payer l'archive à chaque ouverture de l'écran. */
+export function useSalons(archivees = false) {
   return useQuery({
-    queryKey: ['salons'],
+    queryKey: ['salons', archivees],
     queryFn: async (): Promise<Salon[]> => {
       const { data, error } = await supabase
         .from('salons')
@@ -48,7 +53,7 @@ export function useSalons() {
            membres_salon ( lu_le ),
            messages ( texte, cree_le, profils:auteur_id ( nom, prenom ) )`
         )
-        .eq('archive', false)
+        .eq('archive', archivees)
         .order('dernier_le', { ascending: false })
         /* Un seul message par salon : celui qu'on affiche en aperçu.
            Tout charger pour n'en montrer qu'un serait payer la liste
@@ -80,6 +85,30 @@ export function useSalons() {
   });
 }
 
+/* Ranger une conversation, et la ressortir.
+
+   La colonne « archive » était filtrée à la lecture depuis le
+   premier jour et personne ne la posait : elle valait « false » pour
+   tous les salons, à jamais. Une sortie de 2024 restait donc en tête
+   de la messagerie du club en 2026.
+
+   Archiver n'est PAS supprimer, et c'est le point : les messages
+   restent, le salon se rouvre, et un litige de l'an dernier se
+   relit. C'est l'administration qui range — la règle d'accès
+   « l'administration ouvre les salons » couvre déjà l'écriture, et
+   laisser chacun archiver ferait disparaître de sa liste un salon
+   que le club croit lu. */
+export function useArchiver() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ salonId, archive }: { salonId: string; archive: boolean }) => {
+      const { error } = await supabase.from('salons').update({ archive }).eq('id', salonId);
+      if (error) throw error;
+    },
+    onSuccess: () => client.invalidateQueries({ queryKey: ['salons'] })
+  });
+}
+
 export type Message = {
   id: string;
   texte: string;
@@ -90,6 +119,9 @@ export type Message = {
      cela, on pourrait réécrire ce qu'on a dit hier et prétendre
      l'avoir toujours dit. */
   modifie_le: string | null;
+  /* Le CHEMIN de la pièce jointe dans le seau « pieces », pas son
+     adresse : elle est signée et expire au bout d'une heure. */
+  piece: string | null;
   supprime_le: string | null;
   auteur_id: string;
   auteur: { nom: string; prenom: string } | null;
@@ -128,7 +160,8 @@ export function useMessages(salonId: string | undefined) {
       const { data, error } = await supabase
         .from('messages')
         .select(
-          'id, texte, cree_le, modifie_le, supprime_le, auteur_id, profils:auteur_id ( nom, prenom )'
+          'id, texte, cree_le, modifie_le, piece, supprime_le, auteur_id, ' +
+            'profils:auteur_id ( nom, prenom )'
         )
         .eq('salon_id', salonId!)
         .order('cree_le', { ascending: true })
@@ -142,13 +175,37 @@ export function useMessages(salonId: string | undefined) {
   });
 }
 
+/* Joindre un fichier à une conversation.
+
+   Le chemin PORTE le salon — « <salon>/<hasard>.jpg » — et ce n'est
+   pas une commodité de rangement : c'est ce que lit la règle d'accès
+   pour vérifier qu'on est membre du salon. Déposer ailleurs est
+   refusé par le serveur, et lire la pièce d'un salon dont on n'est
+   pas membre aussi. L'espace des maîtres est fermé par la même
+   mécanique que ses messages.
+
+   Le nom est tiré au sort : deux téléphones qui envoient tous deux
+   « IMG_0001.jpg » écraseraient sinon la photo l'un de l'autre. */
+export async function joindre(salonId: string, fichier: File): Promise<string> {
+  const ext = fichier.name.split('.').pop()?.toLowerCase() ?? 'jpg';
+  const chemin = `${salonId}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from('pieces').upload(chemin, fichier, {
+    cacheControl: '3600',
+    upsert: false
+  });
+  if (error) throw error;
+  return chemin;
+}
+
 export function useEnvoyer(salonId: string | undefined) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: async ({ texte, auteurId }: { texte: string; auteurId: string }) => {
+    mutationFn: async ({
+      texte, auteurId, piece = null
+    }: { texte: string; auteurId: string; piece?: string | null }) => {
       const { error } = await supabase
         .from('messages')
-        .insert({ salon_id: salonId, auteur_id: auteurId, texte });
+        .insert({ salon_id: salonId, auteur_id: auteurId, texte, piece });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -292,11 +349,17 @@ export function useSalon(salonId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('salons')
-        .select('id, type, titre, couleur')
+        .select('id, type, titre, couleur, archive')
         .eq('id', salonId!)
         .maybeSingle();
       if (error) throw error;
-      return data as { id: string; type: TypeSalon; titre: string | null; couleur: string | null } | null;
+      /* « archive » sert à l'écran : le même bouton range ou
+         ressort, et sans savoir dans quel état on est il proposerait
+         d'archiver une conversation déjà archivée. */
+      return data as {
+        id: string; type: TypeSalon; titre: string | null;
+        couleur: string | null; archive: boolean;
+      } | null;
     }
   });
 }

@@ -29,6 +29,7 @@ const MEMBRES: Rangee[] = [
   ['Ajouter un étudiant', 'Fiche, photo, grade, biographie', 'plus', '/admin/fiche'],
   ['Modifier une fiche', 'Corriger ou compléter', 'edit', '/admin/fiches'],
   ['Changer un grade', 'Après un passage validé', 'edit', '/admin/grades'],
+  ['Les grades du club', 'Créer, renommer, recolorer, ordonner', 'martial', '/admin/grades/liste'],
   ['Comptes et accès', 'Créer, suspendre, réinitialiser', 'lock', '/admin/comptes']
 ];
 
@@ -37,7 +38,8 @@ const PUBLICATION: Rangee[] = [
   ['Envoyer une notification', 'Prévient tous les membres', 'bell', '/admin/notifier'],
   ['Albums et photos', 'Créer, ajouter, supprimer', 'album', '/admin/albums'],
   ['Participations', 'Qui vient, et pointer les versements', 'shieldCheck', '/admin/participations'],
-  ['Le club', 'Horaires, responsable, contact, MVola', 'calendar', '/admin/club']
+  ['Le club', 'Horaires, responsable, contact, MVola', 'calendar', '/admin/club'],
+  ['Pointer les présences', 'En scannant les cartes, ou au matricule', 'shield', '/presences/pointer']
 ];
 
 function Bloc({ titre, lignes }: { titre: string; lignes: Rangee[] }) {

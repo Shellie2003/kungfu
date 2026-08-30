@@ -10,11 +10,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icone } from '../ui/Icone';
-import { Carte, Entete, Etat, Portrait, Surtitre } from '../ui/base';
+import { Carte, Entete, Etat, Portrait, Puce, Surtitre } from '../ui/base';
 import { heureCourte, initiales, useDirects, useSalons } from '../services/messagerie';
 import type { Salon } from '../services/messagerie';
 import { useSignalementsEnAttente } from '../services/moderation';
-import { estMaitre, useSession } from '../services/session';
+import { estAdmin, estMaitre, useSession } from '../services/session';
 
 function Vignette({ salon, photo }: { salon: Salon; photo?: string | null }) {
   if (salon.type === 'direct') return <Portrait taille={44} rayon={22} photo={photo ?? null} />;
@@ -82,7 +82,12 @@ function Ligne({
 export function Messages() {
   const aller = useNavigate();
   const profil = useSession((e) => e.profil);
-  const { data: salons, isPending, error } = useSalons();
+  /* Les conversations en cours, ou l'archive. Deux requêtes
+     distinctes : le club aura des dizaines de salons de sortie au
+     bout de deux ans, et les charger tous pour en cacher la moitié
+     ferait payer l'archive à chaque ouverture. */
+  const [archive, setArchive] = useState(false);
+  const { data: salons, isPending, error } = useSalons(archive);
   const { data: directs } = useDirects();
   /* Le décompte n'est demandé qu'à qui peut traiter : un élève ne
      recevrait de toute façon que ses propres signalements, et la
@@ -152,6 +157,16 @@ export function Messages() {
         </div>
       </div>
 
+      {/* L'archive n'apparaît qu'à l'administration : c'est elle qui
+          range, et proposer aux élèves une liste qu'ils ne peuvent
+          pas remplir encombrerait pour rien. */}
+      {estAdmin(profil) && (
+        <div className="chips">
+          <Puce texte="En cours" actif={!archive} onClick={() => setArchive(false)} />
+          <Puce texte="Archivées" actif={archive} onClick={() => setArchive(true)} />
+        </div>
+      )}
+
       <div
         style={{
           flexGrow: 1,
@@ -165,7 +180,7 @@ export function Messages() {
           chargement={isPending}
           erreur={error}
           vide={liste.length === 0}
-          messageVide="Aucune conversation."
+          messageVide={archive ? 'Aucune conversation archivée.' : 'Aucune conversation.'}
         >
           {maitres.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

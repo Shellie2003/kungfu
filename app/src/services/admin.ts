@@ -130,6 +130,44 @@ export function useChangerGrade() {
   });
 }
 
+/* ---------------------------------------------- Les grades
+
+   Ils vivaient en base et ne se modifiaient que par le tableau de
+   bord Supabase — c'est-à-dire par le développeur. Un club qui
+   renomme une ceinture ou en ajoute une devait donc écrire à
+   quelqu'un et attendre. Cela ne se serait pas fait.
+
+   Le grade n'est PAS supprimé quand le club cesse de l'employer : des
+   fiches y sont rattachées, et une suppression casserait leur
+   historique. Il est désactivé, comme une fiche d'élève. */
+export type SaisieGrade = { nom: string; couleur: string; rang: number };
+
+export function useCreerGrade() {
+  return useEcrire(async (g: SaisieGrade) => {
+    const { error } = await supabase
+      .from('grades')
+      .insert({ nom: g.nom.trim(), couleur: g.couleur, rang: g.rang });
+    if (error) throw error;
+  });
+}
+
+export function useModifierGrade() {
+  return useEcrire(async ({ id, ...g }: SaisieGrade & { id: string }) => {
+    const { error } = await supabase
+      .from('grades')
+      .update({ nom: g.nom.trim(), couleur: g.couleur, rang: g.rang })
+      .eq('id', id);
+    if (error) throw error;
+  });
+}
+
+export function useActiverGrade() {
+  return useEcrire(async ({ id, actif }: { id: string; actif: boolean }) => {
+    const { error } = await supabase.from('grades').update({ actif }).eq('id', id);
+    if (error) throw error;
+  });
+}
+
 export function useDesactiver() {
   return useEcrire(async ({ profilId, actif }: { profilId: string; actif: boolean }) => {
     /* On désactive, on ne supprime pas : un élève qui revient
@@ -176,8 +214,17 @@ export type SaisieActualite = {
   publiee: boolean;
 };
 
-export function usePublier(id?: string) {
-  return useEcrire(async (s: SaisieActualite) => {
+/* L'identifiant est un paramètre de la MUTATION, jamais du hook.
+
+   C'est la leçon de l'album : passé au hook, il serait capturé au
+   rendu, et choisir une actualité puis enregistrer dans la même
+   interaction écrirait dans la précédente — ou créerait un doublon.
+   Le défaut est silencieux et se découvre en relisant le casier du
+   club trois jours plus tard.
+
+   Sans identifiant, on crée. Avec, on remplace. */
+export function usePublier() {
+  return useEcrire(async ({ id, ...s }: SaisieActualite & { id?: string }) => {
     if (id) {
       const { error } = await supabase.from('actualites').update(s).eq('id', id);
       if (error) throw error;
@@ -285,6 +332,48 @@ export function useLegender() {
       .eq('id', id);
     if (error) throw error;
   });
+}
+
+/* La photo qui représente l'album. On enregistre son CHEMIN et non
+   son identifiant : l'affichage a besoin du chemin pour demander une
+   adresse signée, et passer par l'identifiant obligerait à retrouver
+   la photo dans la liste à chaque rendu. */
+export function useCouverture() {
+  return useEcrire(async ({ albumId, chemin }: { albumId: string; chemin: string | null }) => {
+    const { error } = await supabase
+      .from('albums')
+      .update({ couverture: chemin })
+      .eq('id', albumId);
+    if (error) throw error;
+  });
+}
+
+/* Déplacer une photo dans l'album.
+
+   Les deux rangs sont ÉCHANGÉS, plutôt que renumérotés de proche en
+   proche : renuméroter vingt photos pour en déplacer une ferait
+   vingt écritures là où deux suffisent, sur un réseau qui n'aime pas
+   les allers-retours. L'ordre reste juste puisque seul l'ordre
+   relatif compte.
+
+   Deux mises à jour, et non un « upsert » de deux lignes : un upsert
+   est un INSERT avec repli, et l'insertion exigerait album_id et
+   chemin, qui ne sont pas obligatoires ici. Il échouerait sur une
+   contrainte au lieu de déplacer la photo.
+
+   Si la seconde échoue, deux photos portent le même rang : elles se
+   suivent dans un ordre indéterminé, ce qui se corrige d'un appui.
+   L'inverse — renuméroter et s'arrêter au milieu — laisserait des
+   trous et un ordre faux durablement. */
+export function useDeplacerPhoto() {
+  return useEcrire(
+    async ({ a, b }: { a: { id: string; rang: number }; b: { id: string; rang: number } }) => {
+      const { error } = await supabase.from('photos').update({ rang: b.rang }).eq('id', a.id);
+      if (error) throw error;
+      const { error: e2 } = await supabase.from('photos').update({ rang: a.rang }).eq('id', b.id);
+      if (e2) throw e2;
+    }
+  );
 }
 
 export function useSupprimerPhoto() {

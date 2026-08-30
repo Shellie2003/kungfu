@@ -18,7 +18,7 @@ import userEvent from '@testing-library/user-event';
 import { Messages } from '../src/ecrans/Messages';
 import { Maitres, Salon } from '../src/ecrans/Salon';
 import { NouvelleConversation } from '../src/ecrans/NouvelleConversation';
-import { brancherServeur, derniere, poser, reinitialiser } from './serveur';
+import { brancherServeur, derniere, poser, recues, reinitialiser } from './serveur';
 import { PROFIL_ELEVE, rendre } from './rendu';
 
 const maintenant = new Date().toISOString();
@@ -301,6 +301,172 @@ describe('mon propre message', () => {
     /* Aucune proposition de correction : on ne corrige pas ce qu'on
        n'a pas écrit. */
     expect(screen.queryByText('Corriger')).not.toBeInTheDocument();
+  });
+});
+
+describe('joindre une photo', () => {
+  /* messages.piece existait depuis le premier jour et rien ne
+     l'écrivait : un maître qui voulait montrer l'affiche d'une
+     compétition la décrivait en toutes lettres. */
+  const photo = () => new File(['x'], 'affiche.jpg', { type: 'image/jpeg' });
+
+  test('le chemin PORTE le salon — c’est ce que lit la règle d’accès', async () => {
+    /* Déposer ailleurs est refusé par le serveur : le premier
+       dossier du chemin est le salon, et la règle vérifie qu'on en
+       est membre. C'est ce qui ferme l'espace des maîtres. */
+    poser({ salons: [SALON_CLUB], messages: [] });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    await userEvent.upload(await screen.findByLabelText('Joindre une photo'), photo());
+
+    await waitFor(() => {
+      const envoi = recues.find((r) => r.table === 'storage' && r.methode === 'POST');
+      expect(envoi).toBeDefined();
+      expect(String(envoi!.chemin)).toContain('/pieces/s1/');
+    });
+  });
+
+  test('la pièce part avec le message, en CHEMIN et non en adresse', async () => {
+    /* L'adresse est signée et expire au bout d'une heure :
+       l'enregistrer donnerait un message dont la photo disparaît le
+       lendemain. */
+    poser({ salons: [SALON_CLUB], messages: [] });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    await userEvent.upload(await screen.findByLabelText('Joindre une photo'), photo());
+    await screen.findByText('Photo jointe.');
+    await userEvent.type(screen.getByLabelText('Écrire un message'), 'Voici l’affiche.');
+    await userEvent.click(screen.getByLabelText('Envoyer'));
+
+    await waitFor(() => {
+      const corps = derniere('messages')?.corps as { piece: string | null; texte: string };
+      expect(corps.texte).toBe('Voici l’affiche.');
+      expect(corps.piece).toContain('s1/');
+      expect(corps.piece).not.toMatch(/^https?:/);
+    });
+  });
+
+  test('une photo SEULE s’envoie, sans texte', async () => {
+    /* « Regarde » n'ajoute rien à une photo, et exiger un texte
+       ferait taper « photo » vingt fois. */
+    poser({ salons: [SALON_CLUB], messages: [] });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    expect(await screen.findByLabelText('Envoyer')).toBeDisabled();
+    await userEvent.upload(screen.getByLabelText('Joindre une photo'), photo());
+    await screen.findByText('Photo jointe.');
+
+    expect(screen.getByLabelText('Envoyer')).not.toBeDisabled();
+  });
+
+  test('la pièce d’un message reçu s’affiche par une adresse signée', async () => {
+    poser({
+      salons: [SALON_CLUB],
+      messages: [{
+        id: 'm1', texte: 'L’affiche.', cree_le: maintenant, modifie_le: null,
+        piece: 's1/affiche.jpg', supprime_le: null, auteur_id: 'p4',
+        profils: { nom: 'RABEMANANJARA', prenom: 'Hery' }
+      }]
+    });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    await screen.findByText('L’affiche.');
+    await waitFor(() =>
+      expect(document.querySelector('img')?.getAttribute('src')).toContain(
+        '/object/sign/pieces/s1/affiche.jpg'
+      )
+    );
+  });
+
+  test('un message retiré n’affiche plus sa pièce', async () => {
+    /* Retirer le texte et laisser la photo ne retirerait rien du
+       tout — c'est souvent la photo qui pose problème. */
+    poser({
+      salons: [SALON_CLUB],
+      messages: [{
+        id: 'm1', texte: 'L’affiche.', cree_le: maintenant, modifie_le: null,
+        piece: 's1/affiche.jpg', supprime_le: maintenant, auteur_id: 'p4',
+        profils: { nom: 'RABEMANANJARA', prenom: 'Hery' }
+      }]
+    });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    await screen.findByText('Message retiré');
+    expect(document.querySelector('img')).toBeNull();
+  });
+});
+
+describe('archiver une conversation', () => {
+  /* La colonne « archive » était filtrée à la lecture depuis le
+     premier jour et personne ne la posait : elle valait « false »
+     pour tous les salons, à jamais. Une sortie de 2024 restait en
+     tête de la messagerie du club en 2026. */
+
+  test('la liste ne demande QUE les conversations en cours', async () => {
+    poser({ salons: [SALON_CLUB] });
+    rendre(<Messages />, { profil: PROFIL_ELEVE });
+    await screen.findByText('Tout le club');
+
+    const r = derniere('salons', 'GET');
+    expect(r?.parametres.get('archive')).toBe('eq.false');
+  });
+
+  test('l’archive se demande séparément, et non par un tri en mémoire', async () => {
+    /* Charger tout pour en cacher la moitié ferait payer l'archive à
+       chaque ouverture de l'écran. */
+    poser({ salons: [SALON_CLUB] });
+    rendre(<Messages />);
+    await screen.findByText('Tout le club');
+
+    await userEvent.click(screen.getByText('Archivées'));
+    await waitFor(() =>
+      expect(derniere('salons', 'GET')?.parametres.get('archive')).toBe('eq.true')
+    );
+  });
+
+  test('un élève ne se voit pas proposer l’archive', async () => {
+    /* La règle d'accès ne laisse que l'administration écrire sur un
+       salon : lui montrer le filtre ne servirait qu'à encombrer. */
+    poser({ salons: [SALON_CLUB] });
+    rendre(<Messages />, { profil: PROFIL_ELEVE });
+    await screen.findByText('Tout le club');
+
+    expect(screen.queryByText('Archivées')).not.toBeInTheDocument();
+  });
+
+  test('archiver POSE la colonne, il ne supprime rien', async () => {
+    poser({ salons: [SALON_CLUB], messages: [] });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id' });
+
+    await userEvent.click(await screen.findByLabelText('Archiver cette conversation'));
+
+    await waitFor(() =>
+      expect(derniere('salons', 'PATCH')?.corps).toEqual({ archive: true })
+    );
+    expect(derniere('salons', 'DELETE')).toBeUndefined();
+    /* Et les messages restent : archiver n'est pas supprimer. */
+    expect(derniere('messages', 'DELETE')).toBeUndefined();
+  });
+
+  test('sur une conversation archivée, le même bouton la ressort', async () => {
+    poser({
+      salons: [{ ...SALON_CLUB, archive: true }],
+      messages: []
+    });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id' });
+
+    await userEvent.click(await screen.findByLabelText('Sortir de l’archive'));
+    await waitFor(() =>
+      expect(derniere('salons', 'PATCH')?.corps).toEqual({ archive: false })
+    );
+  });
+
+  test('un élève n’a pas le bouton', async () => {
+    poser({ salons: [SALON_CLUB], messages: [] });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    await screen.findByLabelText('Écrire un message');
+    expect(screen.queryByLabelText('Archiver cette conversation')).not.toBeInTheDocument();
   });
 });
 

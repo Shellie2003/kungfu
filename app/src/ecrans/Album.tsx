@@ -57,6 +57,27 @@ export function Album() {
           {liste.map((album) => (
             <div key={album.id} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div className="rowhead">
+                {/* La couverture choisie par le club, à défaut la
+                    première photo. Elle donne un visage à l'album
+                    dans une liste où tous les titres se ressemblent —
+                    « Compétitions 2025 », « Compétitions 2026 ». */}
+                {(() => {
+                  const c = album.couverture ?? album.photos[0]?.chemin ?? null;
+                  const src = c ? photos[c] ?? null : null;
+                  return src ? (
+                    <img
+                      src={src}
+                      alt=""
+                      style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: 9,
+                        objectFit: 'cover',
+                        marginRight: 10
+                      }}
+                    />
+                  ) : null;
+                })()}
                 <Surtitre>{album.titre}</Surtitre>
                 <span style={{ fontSize: 12, color: '#7C8B82' }}>
                   {album.photos.length} photo{album.photos.length > 1 ? 's' : ''}

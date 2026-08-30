@@ -261,6 +261,80 @@ describe('publier une actualité', () => {
   });
 });
 
+describe('modifier une actualité déjà publiée', () => {
+  const AU_CASIER = {
+    id: 'a1', titre: 'Sortie au lac', categorie: 'Sortie', texte: 'Départ 6h00.',
+    date_evt: '2026-09-12', lieu: 'Devant la salle', image: null,
+    cree_le: new Date().toISOString(), profils: null
+  };
+
+  test('un appui charge l’actualité dans le formulaire', async () => {
+    poser({ actualites: [AU_CASIER] });
+    rendre(<AdminPublier />, { route: '/admin/publier' });
+
+    await userEvent.click(await screen.findByLabelText('Modifier Sortie au lac'));
+
+    expect(screen.getByLabelText(/^Titre/)).toHaveValue('Sortie au lac');
+    expect(screen.getByLabelText('Texte')).toHaveValue('Départ 6h00.');
+    expect(screen.getByLabelText('Lieu')).toHaveValue('Devant la salle');
+  });
+
+  test('l’enregistrement REMPLACE, il ne crée pas un doublon', async () => {
+    poser({ actualites: [AU_CASIER] });
+    rendre(<AdminPublier />, { route: '/admin/publier' });
+
+    await userEvent.click(await screen.findByLabelText('Modifier Sortie au lac'));
+    await userEvent.clear(screen.getByLabelText(/^Titre/));
+    await userEvent.type(screen.getByLabelText(/^Titre/), 'Sortie au lac Mantasoa');
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer et publier' }));
+
+    await waitFor(() =>
+      expect(derniere('actualites', 'PATCH')?.corps).toMatchObject({
+        titre: 'Sortie au lac Mantasoa'
+      })
+    );
+    /* Et surtout : aucune création. C'était le défaut de l'album —
+       un identifiant capturé au rendu écrivait au mauvais endroit. */
+    expect(derniere('actualites', 'POST')).toBeUndefined();
+  });
+
+  test('l’identifiant ne part PAS dans le corps de la mise à jour', async () => {
+    /* Il sert à viser la ligne, pas à être réécrit. */
+    poser({ actualites: [AU_CASIER] });
+    rendre(<AdminPublier />, { route: '/admin/publier' });
+
+    await userEvent.click(await screen.findByLabelText('Modifier Sortie au lac'));
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer et publier' }));
+
+    await waitFor(() => expect(derniere('actualites', 'PATCH')).toBeDefined());
+    expect(derniere('actualites', 'PATCH')?.corps).not.toHaveProperty('id');
+  });
+
+  test('annuler la modification rend le formulaire à une création', async () => {
+    poser({ actualites: [AU_CASIER] });
+    rendre(<AdminPublier />, { route: '/admin/publier' });
+
+    await userEvent.click(await screen.findByLabelText('Modifier Sortie au lac'));
+    await userEvent.click(screen.getByRole('button', { name: 'Annuler' }));
+
+    expect(screen.getByLabelText(/^Titre/)).toHaveValue('');
+    expect(screen.getByRole('button', { name: 'Publier' })).toBeInTheDocument();
+  });
+
+  test('la suppression demande confirmation, et dit ce qu’elle emporte', async () => {
+    /* Les inscriptions à la sortie sont rattachées à cette ligne. */
+    poser({ actualites: [AU_CASIER] });
+    rendre(<AdminPublier />, { route: '/admin/publier' });
+
+    await userEvent.click(await screen.findByLabelText('Supprimer Sortie au lac'));
+    expect(screen.getByText(/versements rattachés partent avec elle/)).toBeInTheDocument();
+    expect(derniere('actualites', 'DELETE')).toBeUndefined();
+
+    await userEvent.click(screen.getByText('Oui, supprimer'));
+    await waitFor(() => expect(derniere('actualites', 'DELETE')).toBeDefined());
+  });
+});
+
 describe('envoyer une notification', () => {
   test('écrit une ligne PAR membre actif', async () => {
     /* La table porte profil_id : chacun marque la sienne comme lue
