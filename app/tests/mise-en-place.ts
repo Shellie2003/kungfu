@@ -78,8 +78,33 @@ class FauxWebSocket {
   removeEventListener() {}
 }
 
-beforeAll(() => {
+beforeAll(async () => {
   vi.stubGlobal('WebSocket', FauxWebSocket);
+
+  /* Le faux WebSocket global NE SUFFIT PAS, et cela m'a coûté une
+     exécution rouge pour l'apprendre : realtime-js ne prend pas
+     forcément celui de globalThis — sur le coureur GitHub il tombait
+     sur celui d'undici, et le remplacement n'y changeait rien. Le
+     symptôme était intermittent, ce qui est pire : une exécution
+     passait, la suivante échouait sur le même code.
+
+     On coupe donc à la source. Le client Supabase est chargé ICI,
+     après que les variables d'environnement sont posées — il les
+     exige au chargement — et ses méthodes de temps réel sont
+     remplacées. Aucune bibliothèque n'a plus l'occasion d'ouvrir
+     quoi que ce soit.
+
+     Ce que cela ne couvre pas — que le temps réel fonctionne — ne se
+     vérifie de toute façon que sur un téléphone, avec deux
+     appareils. */
+  const { supabase } = await import('../src/services/supabase');
+  const canalMuet = {
+    on: () => canalMuet,
+    subscribe: () => canalMuet,
+    unsubscribe: async () => 'ok' as const
+  };
+  supabase.channel = (() => canalMuet) as unknown as typeof supabase.channel;
+  supabase.removeChannel = (async () => 'ok') as unknown as typeof supabase.removeChannel;
 });
 
 afterEach(() => {
