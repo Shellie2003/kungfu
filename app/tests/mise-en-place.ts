@@ -32,6 +32,56 @@ beforeAll(() => {
   }
 });
 
+/* ------------------------------------------------------------
+   Aucun test ne sort de la machine.
+
+   « brancherServeur » intercepte fetch, mais PAS les WebSockets — et
+   la messagerie en ouvre une : le temps réel écoute les messages du
+   salon affiché. Le test tentait donc une vraie connexion vers
+   essai.supabase.co.
+
+   Ici, elle échouait sans bruit, faute de réseau. Sur le coureur
+   GitHub, elle allait plus loin et undici finissait par lever
+   « The "event" argument must be an instance of Event. Received an
+   instance of Event » — deux classes Event de mondes différents,
+   celle de jsdom et celle de Node. Les 126 tests passaient, et
+   vitest sortait quand même en échec sur cette erreur non
+   rattrapée.
+
+   Un faux socket règle les deux : plus de réseau, et un
+   comportement identique sur toutes les machines. Ce que cela ne
+   couvre pas — que le temps réel fonctionne vraiment — ne se vérifie
+   de toute façon que sur un téléphone, avec deux appareils.
+   ------------------------------------------------------------ */
+class FauxWebSocket {
+  static readonly CONNECTING = 0;
+  static readonly OPEN = 1;
+  static readonly CLOSING = 2;
+  static readonly CLOSED = 3;
+
+  readyState = FauxWebSocket.CONNECTING;
+  url: string;
+  onopen: (() => void) | null = null;
+  onclose: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  onmessage: (() => void) | null = null;
+
+  constructor(url: string | URL) {
+    this.url = String(url);
+  }
+  send() {}
+  close() {
+    this.readyState = FauxWebSocket.CLOSED;
+    this.onclose?.();
+  }
+  addEventListener() {}
+  removeEventListener() {}
+}
+
+beforeAll(() => {
+  vi.stubGlobal('WebSocket', FauxWebSocket);
+});
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
