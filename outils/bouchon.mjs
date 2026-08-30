@@ -176,6 +176,20 @@ export async function brancher(page, inconnues = []) {
     if (url.pathname.startsWith('/auth/v1')) {
       return route.fulfill({ json: { user: { id: 'u1' } } });
     }
+
+    /* Le stockage. createSignedUrls rend un TABLEAU, une entrée par
+       chemin demandé, chacune avec sa propre erreur éventuelle. Les
+       photos du bouchon n'ont pas de chemin — l'écran doit donc
+       montrer son marque-place, ce qui est justement ce qu'on veut
+       voir tant que le club n'a rien fourni. */
+    if (url.pathname.startsWith('/storage/v1/')) {
+      let corps = null;
+      try { corps = JSON.parse(route.request().postData() ?? 'null'); } catch { /* pas du JSON */ }
+      const chemins = corps?.paths ?? [];
+      return route.fulfill({
+        json: chemins.map((p) => ({ path: p, signedUrl: null, error: 'Object not found' }))
+      });
+    }
     const table = url.pathname.replace('/rest/v1/', '');
     const corps = REPONSES[table];
     if (corps === undefined) {

@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { Icone } from '../ui/Icone';
 import { Avis, Carte, Entete, Etat, Grade, Portrait } from '../ui/base';
 import { useMembres } from '../services/membres';
-import { urlPhoto } from '../services/club';
+import { useUrls } from '../services/stockage';
 import { correspond } from '../services/texte';
 import { useOuvrirDirect } from '../services/messagerie';
 import { useSession } from '../services/session';
@@ -22,6 +22,7 @@ export function NouvelleConversation() {
   const moi = useSession((e) => e.profil);
   const { data: membres, isPending, error } = useMembres();
   const ouvrir = useOuvrirDirect();
+  const portraits = useUrls('portraits', (membres ?? []).map((m) => m.photo));
   const [q, setQ] = useState('');
   const [refus, setRefus] = useState<string | null>(null);
 
@@ -84,7 +85,7 @@ export function NouvelleConversation() {
                 });
               }}
             >
-              <Portrait taille={44} rayon={12} photo={urlPhoto('portraits', m.photo)} />
+              <Portrait taille={44} rayon={12} photo={m.photo ? portraits[m.photo] : null} />
               <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
                 <span style={{ display: 'block', fontSize: 14.5, fontWeight: 700 }}>{m.nom}</span>
                 <span style={{ display: 'block', fontSize: 13.5, color: '#3C4A42' }}>

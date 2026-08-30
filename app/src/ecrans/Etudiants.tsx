@@ -12,7 +12,7 @@ import { Icone } from '../ui/Icone';
 import { Entete, Etat, Grade, Portrait, Puce } from '../ui/base';
 import { useGrades, useMembres } from '../services/membres';
 import { useNotifications } from '../services/casier';
-import { urlPhoto } from '../services/club';
+import { useUrls } from '../services/stockage';
 import { correspond, courtGrade } from '../services/texte';
 
 export function Etudiants() {
@@ -24,6 +24,10 @@ export function Etudiants() {
   const [filtre, setFiltre] = useState<string | null>(null);
 
   const nonlues = (notifs ?? []).filter((n) => !n.lue_le).length;
+  /* Les soixante-quatre portraits en UN appel. Une adresse signée
+     par photo ferait soixante-quatre allers-retours sur un réseau
+     malgache — plusieurs secondes d'écran vide. */
+  const portraits = useUrls('portraits', (membres ?? []).map((m) => m.photo));
 
   const liste = useMemo(
     () =>
@@ -110,7 +114,7 @@ export function Etudiants() {
               className="card studentrow"
               onClick={() => aller(`/etudiants/${m.id}`)}
             >
-              <Portrait taille={52} rayon={14} photo={urlPhoto('portraits', m.photo)} />
+              <Portrait taille={52} rayon={14} photo={m.photo ? portraits[m.photo] : null} />
               <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
                 <span
                   style={{ display: 'block', fontSize: 15, fontWeight: 700, lineHeight: '19px' }}

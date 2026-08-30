@@ -13,7 +13,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Icone } from '../ui/Icone';
 import { Carte, Entete, Grade, Portrait, Surtitre, Filet, Tuile } from '../ui/base';
 import { dateFr, useFiche } from '../services/membres';
-import { urlPhoto } from '../services/club';
+import { useUrl } from '../services/stockage';
 import { useSession } from '../services/session';
 
 const MASQUES = [
@@ -29,6 +29,7 @@ export function Profil() {
   const aller = useNavigate();
   const { data: fiche, isPending } = useFiche(id);
   const moi = useSession((e) => e.profil);
+  const portraitUrl = useUrl('portraits', fiche?.photo);
 
   if (isPending) {
     return (
@@ -82,7 +83,7 @@ export function Profil() {
               textAlign: 'center'
             }}
           >
-            <Portrait taille={132} rayon={24} photo={urlPhoto('portraits', fiche.photo)} />
+            <Portrait taille={132} rayon={24} photo={portraitUrl} />
             <div>
               <p className="display" style={{ fontSize: 22, lineHeight: '26px' }}>
                 {fiche.nom}
@@ -176,7 +177,7 @@ export function Profil() {
         }}
       >
         <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-          <Portrait taille={96} rayon={20} photo={urlPhoto('portraits', fiche.photo)} />
+          <Portrait taille={96} rayon={20} photo={portraitUrl} />
           <div style={{ flexGrow: 1, minWidth: 0 }}>
             <p className="display" style={{ fontSize: 19, lineHeight: '23px' }}>
               {fiche.nom}

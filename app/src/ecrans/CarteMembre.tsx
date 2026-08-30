@@ -17,13 +17,14 @@ import QRCode from 'qrcode';
 import { Entete, Grade, Portrait } from '../ui/base';
 import { Icone } from '../ui/Icone';
 import { dateFr, useFiche } from '../services/membres';
-import { urlPhoto } from '../services/club';
+import { useUrl } from '../services/stockage';
 import { useSession } from '../services/session';
 
 export function CarteMembre() {
   const aller = useNavigate();
   const moi = useSession((e) => e.profil);
   const { data: fiche } = useFiche(moi?.id);
+  const portraitUrl = useUrl('portraits', fiche?.photo);
   const [qr, setQr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -93,7 +94,7 @@ export function CarteMembre() {
               taille={96}
               hauteur={120}
               rayon={14}
-              photo={urlPhoto('portraits', fiche.photo)}
+              photo={portraitUrl}
             />
             <div
               style={{

@@ -11,7 +11,7 @@ import { Icone } from '../../ui/Icone';
 import { Avis, Entete, Etat, Grade, Portrait, Surtitre } from '../../ui/base';
 import { useGrades, useMembres } from '../../services/membres';
 import type { Membre } from '../../services/membres';
-import { urlPhoto } from '../../services/club';
+import { useUrls, useUrl } from '../../services/stockage';
 import { useChangerGrade } from '../../services/admin';
 import { correspond } from '../../services/texte';
 
@@ -24,6 +24,7 @@ function Annuaire({
   suffixe?: (m: Membre) => React.ReactNode;
 }) {
   const { data: membres, isPending, error } = useMembres();
+  const portraits = useUrls('portraits', (membres ?? []).map((m) => m.photo));
   const [q, setQ] = useState('');
 
   const liste = useMemo(
@@ -63,7 +64,7 @@ function Annuaire({
         >
           {liste.map((m) => (
             <button key={m.id} className="card studentrow" onClick={() => action(m)}>
-              <Portrait taille={44} rayon={12} photo={urlPhoto('portraits', m.photo)} />
+              <Portrait taille={44} rayon={12} photo={m.photo ? portraits[m.photo] : null} />
               <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
                 <span style={{ display: 'block', fontSize: 14.5, fontWeight: 700 }}>{m.nom}</span>
                 <span style={{ display: 'block', fontSize: 13.5, color: '#3C4A42' }}>
@@ -101,6 +102,7 @@ export function AdminGrade() {
   const { data: grades } = useGrades();
   const changer = useChangerGrade();
   const [cible, setCible] = useState<Membre | null>(null);
+  const portraitCible = useUrl('portraits', cible?.photo);
   const [avis, setAvis] = useState<{ bon: boolean; texte: string } | null>(null);
 
   if (!cible) {
@@ -122,7 +124,7 @@ export function AdminGrade() {
         }}
       >
         <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-          <Portrait taille={64} rayon={16} photo={urlPhoto('portraits', cible.photo)} />
+          <Portrait taille={64} rayon={16} photo={portraitCible} />
           <div>
             <p className="display" style={{ fontSize: 17, lineHeight: '21px' }}>{cible.nom}</p>
             <p style={{ fontSize: 14, color: '#3C4A42' }}>{cible.prenom}</p>

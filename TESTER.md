@@ -212,6 +212,24 @@ issues : **retirer** le message ou **classer sans suite**.
 Un message effacé ne se défend pas, et le club doit pouvoir expliquer sa décision à un
 parent trois mois plus tard, ou revenir dessus si le signalement était abusif.
 
+### Les photos
+
+Les seaux de stockage sont **privés**, et c'est délibéré : ce sont des photos d'enfants. Un
+seau public rend chaque fichier lisible par quiconque possède son adresse — et une adresse
+se copie, se transfère, se retrouve dans un historique de navigateur, et **ne se révoque
+jamais**.
+
+L'application demande donc des adresses **signées**, valables une heure, que le serveur ne
+délivre qu'à qui a le droit de voir le fichier. Une adresse qui fuite expire ; un membre
+exclu cesse d'en obtenir.
+
+Elles sont demandées **en lot** : l'annuaire affiche soixante-quatre portraits, et une
+demande par photo ferait soixante-quatre allers-retours sur un réseau malgache. Quatre tests
+verrouillent ces deux propriétés.
+
+Ce que cela impose au club : les photos ne s'ouvrent qu'**une fois connecté**. Un lien
+copié-collé hors de l'application ne montrera rien à un tiers, et c'est voulu.
+
 ### Les conversations à deux
 
 On en ouvre une depuis le **+** de l'écran Messages. La règle est posée en base, pas dans

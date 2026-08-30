@@ -5,11 +5,16 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Icone } from '../ui/Icone';
 import { Entete, Etat, Puce, Surtitre } from '../ui/base';
-import { urlPhoto, useAlbums } from '../services/club';
+import { useAlbums } from '../services/club';
+import { useUrls } from '../services/stockage';
 
 export function Album() {
   const aller = useNavigate();
   const { data: albums, isPending, error } = useAlbums();
+  /* Toutes les photos de tous les albums en UN appel : les adresses
+     sont signées, et une par une ferait autant d'allers-retours que
+     de vignettes. */
+  const photos = useUrls('album', (albums ?? []).flatMap((a) => a.photos.map((p) => p.chemin)));
   const [filtre, setFiltre] = useState<string | null>(null);
 
   const cats = useMemo(
@@ -59,7 +64,7 @@ export function Album() {
               </div>
               <div className="grid3">
                 {album.photos.map((p, i) => {
-                  const src = urlPhoto('album', p.chemin);
+                  const src = p.chemin ? photos[p.chemin] ?? null : null;
                   return (
                     <button
                       key={p.id}
@@ -98,11 +103,13 @@ export function Photo() {
   const { id, index } = useParams();
   const aller = useNavigate();
   const { data: albums } = useAlbums();
-
   const album = (albums ?? []).find((a) => a.id === id);
+  /* Une seule photo demandée ici, mais par la même mécanique donc le
+     même cache : arriver depuis la grille n'en redemande aucune. */
+  const photos = useUrls('album', album?.photos.map((p) => p.chemin) ?? []);
   const rang = Number(index ?? 0);
   const photo = album?.photos[rang];
-  const src = urlPhoto('album', photo?.chemin ?? null);
+  const src = photo?.chemin ? photos[photo.chemin] ?? null : null;
 
   return (
     <div className="phone" style={{ background: '#0B1712' }}>

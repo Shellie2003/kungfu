@@ -86,9 +86,7 @@ export function useAlbums() {
   });
 }
 
-/* Une photo est stockée dans un seau ; ce qui est en base n'est que
-   son chemin. L'adresse publique se compose ici, pas dans l'écran. */
-export function urlPhoto(seau: string, chemin: string | null): string | null {
-  if (!chemin) return null;
-  return supabase.storage.from(seau).getPublicUrl(chemin).data.publicUrl;
-}
+/* L'adresse d'une photo ne se compose plus ici : les seaux sont
+   privés et il faut une adresse SIGNÉE, que seul le serveur délivre.
+   Voir services/stockage.ts — et surtout useUrls(), qui les demande
+   en lot plutôt qu'une par une. */

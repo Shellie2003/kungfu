@@ -8,7 +8,8 @@ import {
   Avis, Bouton, Carte, Champ, Choix, Entete, Etat, Surtitre, Tuile, Zone
 } from '../../ui/base';
 import { useActualites, teinte } from '../../services/casier';
-import { urlPhoto, useAlbums } from '../../services/club';
+import { useAlbums } from '../../services/club';
+import { useUrls } from '../../services/stockage';
 import {
   useAjouterPhotos, useCreerAlbum, useNotifierTous, usePublier,
   useSupprimerActualite, useSupprimerAlbum, useSupprimerPhoto
@@ -197,6 +198,7 @@ export function AdminAlbums() {
   const [titre, setTitre] = useState('');
   const [categorie, setCategorie] = useState('');
   const ajouter = useAjouterPhotos();
+  const photos = useUrls('album', (albums ?? []).flatMap((a) => a.photos.map((p) => p.chemin)));
   const [avis, setAvis] = useState<{ bon: boolean; texte: string } | null>(null);
 
   return (
@@ -262,7 +264,7 @@ export function AdminAlbums() {
                 {a.photos.length > 0 && (
                   <div className="grid3" style={{ marginTop: 14 }}>
                     {a.photos.map((p) => {
-                      const src = urlPhoto('album', p.chemin);
+                      const src = p.chemin ? photos[p.chemin] ?? null : null;
                       return (
                         <button
                           key={p.id}

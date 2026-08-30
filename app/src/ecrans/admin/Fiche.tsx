@@ -27,7 +27,7 @@ import {
   Zone
 } from '../../ui/base';
 import { useFiche, useGrades } from '../../services/membres';
-import { urlPhoto } from '../../services/club';
+import { useUrl } from '../../services/stockage';
 import {
   useAjouterTuteur,
   useChangerPortrait,
@@ -49,6 +49,7 @@ export function AdminFiche() {
   const modification = Boolean(id);
 
   const { data: fiche } = useFiche(id);
+  const portraitUrl = useUrl('portraits', fiche?.photo);
   const { data: grades } = useGrades();
   const creer = useCreerFiche();
   const modifier = useModifierFiche(id);
@@ -122,7 +123,7 @@ export function AdminFiche() {
         {modification && fiche && (
           <Carte pad={16}>
             <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-              <Portrait taille={64} rayon={16} photo={urlPhoto('portraits', fiche.photo)} />
+              <Portrait taille={64} rayon={16} photo={portraitUrl} />
               <div style={{ flexGrow: 1, minWidth: 0 }}>
                 <p style={{ fontSize: 15, fontWeight: 700 }}>{fiche.numero}</p>
                 <p style={{ fontSize: 13, color: '#59685F', marginTop: 2 }}>

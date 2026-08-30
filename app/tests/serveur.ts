@@ -122,9 +122,21 @@ export function brancherServeur() {
         return json(typeof reponse === 'function' ? (reponse as (r: Requete) => unknown)({ methode, table: nom, parametres: url.searchParams, corps, entetes }) : reponse);
       }
 
-      /* --- Le stockage de fichiers --- */
+      /* --- Le stockage de fichiers ---
+         createSignedUrls rend UN TABLEAU, une entrée par chemin
+         demandé, chacune avec sa propre erreur éventuelle. C'est
+         cette forme-là qu'il faut reproduire : une photo manquante
+         ne doit pas faire échouer la liste entière. */
       if (url.pathname.startsWith('/storage/v1/')) {
         recues.push({ methode, table: 'storage', parametres: url.searchParams, corps, entetes });
+        const prevu = tables['storage'];
+        if (prevu !== undefined) return json(prevu);
+        const chemins = (corps as { paths?: string[] } | null)?.paths;
+        if (chemins) {
+          return json(
+            chemins.map((p) => ({ path: p, signedUrl: `https://essai/signee/${p}`, error: null }))
+          );
+        }
         return json({ Key: 'album/essai.jpg' });
       }
 
