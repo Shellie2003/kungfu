@@ -24,6 +24,7 @@ téléphone, avec un index à gauche.
 | Adresse | Ce qu'on y trouve |
 |---|---|
 | `/` | **La maquette** — 26 écrans, avec l'outil de commentaires |
+| `/essai` | **L'application**, celle-là même que contient l'APK — rien à installer |
 | `/apercu` | L'aperçu web des premiers écrans (hérité de la version React Native) |
 
 Le site se redéploie à chaque poussée sur la branche : rien à compiler, rien à renvoyer.
@@ -34,9 +35,14 @@ ordinateur, le club scanne avec l'appareil photo, rien à installer. Il est rég
 `npm run qr`, et le script **relit le code produit** pour vérifier qu'il encode bien
 l'adresse — un QR qu'on n'a pas décodé est une image, pas un lien.
 
-Pour voir l'**application**, et non la maquette, deux chemins : `cd app && npm run dev`
-sur votre machine, ou l'APK construit par GitHub. Les deux sont détaillés dans
-`TESTER.md`.
+**`/essai` est la façon de tester sans rien installer.** L'application s'y ouvre dans le
+navigateur du téléphone, connectée à la vraie base, et se redéploie à chaque poussée : le
+club a toujours la dernière version en rafraîchissant la page. Son code QR est dans
+`apercu/qr-app.png`, vérifié par décodage lui aussi.
+
+Ce que le lien ne montre pas, et qui n'existe que dans l'APK : le bouton retour d'Android,
+la barre d'état verte, et le rendu natif. Tout le reste s'y voit à l'identique. Le détail
+des quatre façons de tester est dans `TESTER.md`.
 
 ## Lancer en local
 

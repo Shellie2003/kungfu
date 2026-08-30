@@ -1,12 +1,49 @@
 # Comment tester
 
-Trois façons, de la plus rapide à la plus fidèle. Elles ne répondent pas à la même
-question : la première **contrôle** les écrans sans les regarder, la deuxième montre
-l'**application qui fonctionne**, la troisième montre ce que le **club aura réellement**.
+**Sans rien installer : `…/essai`.** C'est la réponse courte, détaillée juste en dessous.
+
+Quatre façons, qui ne répondent pas à la même question : la première évite d'installer
+quoi que ce soit, la deuxième contrôle les écrans sans les regarder, la troisième sert au
+développement au quotidien, la quatrième montre ce que le club aura réellement.
 
 ---
 
-## 1. Sans téléphone, sans même regarder — le contrôle automatique
+## 1. Le lien public — rien à installer, rien à recompiler
+
+L'application est publiée à côté de la maquette, à l'adresse **`/essai`**. On l'ouvre dans
+le navigateur du téléphone, elle se connecte à la vraie base, on se connecte avec un
+compte d'essai.
+
+Le code QR est dans `apercu/qr-app.png` : à afficher depuis un ordinateur, le club scanne
+avec l'appareil photo. Comme pour celui de l'aperçu, le script **relit le code produit**
+pour vérifier qu'il encode bien l'adresse — un QR qu'on n'a pas décodé est une image, pas
+un lien.
+
+```bash
+node outils/qr.mjs "https://…/essai" app     # régénère qr-app.png et qr-app.svg
+```
+
+Elle se **redéploie à chaque poussée** sur la branche : aucune installation, aucune mise à
+jour à envoyer, le club a toujours la dernière version en rafraîchissant la page. C'est le
+moyen de faire valider un changement en dix minutes plutôt qu'en un aller-retour d'APK.
+
+Vercel construit l'application en même temps que la maquette, et **refuse de déployer si
+TypeScript échoue** : un lien cassé ne peut pas partir au club.
+
+**Ce que le lien ne montre pas**, et qui n'existe que dans l'APK :
+
+- le **bouton retour d'Android** — dans le navigateur, c'est celui du navigateur ;
+- la **barre d'état** en vert avec les icônes en clair ;
+- l'application dans sa propre fenêtre, sans la barre d'adresse ;
+- le rendu **natif** — lissage des polices, défilement à l'inertie.
+
+Tout le reste — les écrans, les données, la connexion, les règles d'accès, la messagerie —
+s'y voit à l'identique. Pour le quotidien, c'est là qu'il faut regarder ; l'APK sert à
+vérifier ce que le club aura, pas à travailler.
+
+---
+
+## 2. Sans téléphone, sans même regarder — le contrôle automatique
 
 ```bash
 npm install                      # une fois, à la racine
@@ -40,7 +77,7 @@ la vraie base — elle a son propre test, dans `supabase/README.md`.
 
 ---
 
-## 2. Dans un navigateur, avec la vraie base — le développement au quotidien
+## 3. Sur votre machine — le rechargement immédiat
 
 ```bash
 cd app
@@ -88,7 +125,7 @@ Les huit rangées de l'écran d'administration ne s'ouvrent pas : ces écrans re
 
 ---
 
-## 3. Un APK, construit par GitHub — ce que le club aura
+## 4. Un APK, construit par GitHub — ce que le club aura
 
 Rien à installer sur votre machine : la construction se fait entièrement sur les serveurs
 de GitHub, et l'APK se télécharge depuis la page de l'exécution.
@@ -103,7 +140,8 @@ Onglet **Actions** → **Construire l'APK** → **Run workflow**. Ou simplement 
 changement dans `app/`, `css/` ou `icones.mjs` : la construction part toute seule. Ces
 trois-là parce que l'application lit la feuille de style et les icônes de la maquette.
 
-Une dizaine de minutes. À la fin, deux pièces jointes en bas de la page :
+**Deux minutes et quart** — c'était treize minutes avec Expo. L'APK fait **4,0 Mo**, contre
+32 Mo. À la fin, deux pièces jointes en bas de la page :
 
 - **`waishi-<n>.apk`** — à télécharger, envoyer par WhatsApp, installer. Android demande
   une fois l'autorisation d'installer depuis cette source.
@@ -179,11 +217,21 @@ bloque. Le code tourne et la base répond aux requêtes SQL, mais l'appel HTTP d
 téléphone, c'est vous qui le verrez en premier. **Le temps réel de la messagerie** est
 dans le même cas : il passe par une WebSocket, que le réseau d'ici bloque également.
 
-**Pas vérifié non plus** : la construction Gradle elle-même. Il n'y a pas de SDK Android
-ici. Tout ce qui la précède est validé ; le `./gradlew assembleDebug` s'exécutera pour la
-première fois sur GitHub. S'il échoue, le journal de l'exécution le dira, et c'est
-réparable.
+**Vérifié sur GitHub** : la construction Gradle passe. Exécution 6, `waishi-6.apk`,
+4 029 529 octets, du premier coup — il n'y a pas de SDK Android sur ma machine, c'est donc
+là que cette étape s'exécute pour la première fois.
+
+**Vérifié aussi** : l'application servie depuis un sous-chemin, comme elle l'est sur
+`/essai`. Le vert du club sort à `rgb(15, 81, 50)`, le rayon des boutons à 12 px, la police
+des titres à Archivo, et aucune erreur de console. Les chemins des ressources sont
+relatifs, ce qui est ce qui permet à `/essai` de fonctionner.
+
+**Pas vérifié** : que l'APK s'installe et démarre sur un vrai téléphone. C'est la dernière
+chose qui manque, et c'est vous qui la verrez en premier. Tant que ce n'est pas fait,
+`mobile/` — la version React Native — reste dans le dépôt : on ne retire pas un chemin qui
+marche avant que le nouveau ait fait ses preuves.
 
 Défauts trouvés en faisant ces vérifications : le filtre par grade affichait « verte » en
-minuscule, et la carte de membre répétait le matricule dans son pied de page à la place
-d'une date de validité qui n'existe pas en base.
+minuscule ; la carte de membre répétait le matricule dans son pied de page à la place d'une
+date de validité qui n'existe pas en base ; et Gradle aurait engendré une clé de signature
+différente à chaque construction, ce qui aurait fait refuser toutes les mises à jour.

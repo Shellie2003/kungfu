@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "buildCommand": "echo 'site statique : rien a construire'",
-  "installCommand": "echo 'site statique : rien a installer'",
+  "buildCommand": "cd app && if [ -n \"$VITE_SUPABASE_URL\" ] && [ -n \"$VITE_SUPABASE_CLE\" ]; then printf 'VITE_SUPABASE_URL=%s\\nVITE_SUPABASE_CLE=%s\\n' \"$VITE_SUPABASE_URL\" \"$VITE_SUPABASE_CLE\" > .env; else cp .env.essai .env; fi && npx tsc --noEmit && npx vite build --outDir ../essai --emptyOutDir",
+  "installCommand": "cd app && npm ci",
   "outputDirectory": ".",
   "cleanUrls": true,
   "trailingSlash": false,
@@ -32,6 +32,12 @@
           "value": "public, max-age=0, must-revalidate"
         }
       ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/essai",
+      "destination": "/essai/index.html"
     }
   ]
 }

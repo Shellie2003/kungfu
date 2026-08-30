@@ -1,10 +1,10 @@
 /* ============================================================
    Produit le code QR qui ouvre l'aperçu sur un téléphone.
 
-     node outils/qr.mjs                    # l'adresse par défaut
-     node outils/qr.mjs https://…/apercu   # une autre adresse
+     node outils/qr.mjs                     # l'aperçu de la maquette
+     node outils/qr.mjs https://…/essai app # l'application, sous un autre nom
 
-   Écrit apercu/qr.png et apercu/qr.svg, puis RELIT le code produit
+   Écrit apercu/qr*.png et apercu/qr*.svg, puis RELIT le code produit
    pour vérifier qu'il encode bien l'adresse voulue. Un QR qu'on
    n'a pas décodé est une image, pas un lien : le club le
    scannerait devant tout le monde pour tomber sur une erreur.
@@ -25,6 +25,10 @@ const DEFAUT =
 
 const adresse = process.argv[2] || DEFAUT;
 
+/* Un suffixe pour ne pas écraser le code de l'aperçu quand on
+   engendre celui de l'application. */
+const nom = process.argv[3] ? `qr-${process.argv[3]}` : 'qr';
+
 mkdirSync('apercu', { recursive: true });
 
 /* Correction d'erreur au niveau M : un QR imprimé, photocopié ou
@@ -36,12 +40,12 @@ const options = {
   color: { dark: '#0F5132', light: '#FFFFFF' }   /* le vert du club */
 };
 
-await QRCode.toFile('apercu/qr.png', adresse, { ...options, width: 720 });
+await QRCode.toFile(`apercu/${nom}.png`, adresse, { ...options, width: 720 });
 const svg = await QRCode.toString(adresse, { ...options, type: 'svg', width: 320 });
-writeFileSync('apercu/qr.svg', svg);
+writeFileSync(`apercu/${nom}.svg`, svg);
 
 /* ---------- La vérification : on relit ce qu'on vient d'écrire ---------- */
-const img = PNG.sync.read(readFileSync('apercu/qr.png'));
+const img = PNG.sync.read(readFileSync(`apercu/${nom}.png`));
 const lu = jsQR(new Uint8ClampedArray(img.data), img.width, img.height);
 
 if (!lu) {
@@ -53,5 +57,5 @@ if (lu.data !== adresse) {
   process.exit(1);
 }
 
-console.log('apercu/qr.png + qr.svg');
+console.log(`apercu/${nom}.png + ${nom}.svg`);
 console.log('vérifié par décodage :', lu.data);
