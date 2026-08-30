@@ -414,3 +414,68 @@ export function useComptes() {
     }
   });
 }
+
+/* ---------------------------------------------- Participations
+
+   Qui vient à une sortie, et ce que le club a REÇU. La nuance
+   compte : l'application ouvre le clavier avec le code MVola, elle
+   ne parle pas à l'opérateur et ne peut pas savoir si le transfert a
+   abouti. Seule l'administration inscrit donc un versement — un
+   membre qui le ferait lui-même se pointerait à crédit, et un test
+   de sécurité avait précisément trouvé ce trou.
+   ------------------------------------------------------------ */
+export type ParticipationVue = {
+  id: string;
+  accompagnants: number;
+  montant_promis: number | null;
+  membre: { nom: string; prenom: string; numero: string } | null;
+  versements: { id: string; montant: number; recu_le: string }[];
+};
+
+type LigneParticipation = Omit<ParticipationVue, 'membre'> & {
+  profils: { nom: string; prenom: string; numero: string } | null;
+};
+
+export function useParticipations(actualiteId: string | undefined) {
+  return useQuery({
+    queryKey: ['participations', actualiteId],
+    enabled: Boolean(actualiteId),
+    queryFn: async (): Promise<ParticipationVue[]> => {
+      const { data, error } = await supabase
+        .from('participations')
+        .select(
+          `id, accompagnants, montant_promis,
+           profils:profil_id ( nom, prenom, numero ),
+           versements ( id, montant, recu_le )`
+        )
+        .eq('actualite_id', actualiteId!)
+        .order('cree_le');
+      if (error) throw error;
+      return (data as unknown as LigneParticipation[]).map(({ profils, ...p }) => ({
+        ...p,
+        membre: profils,
+        versements: [...(p.versements ?? [])].sort((a, b) => a.recu_le.localeCompare(b.recu_le))
+      }));
+    }
+  });
+}
+
+export function usePointerVersement() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      participationId, montant, reference
+    }: { participationId: string; montant: number; reference?: string }) => {
+      if (!Number.isFinite(montant) || montant <= 0) {
+        throw new Error('Le montant doit être un nombre positif.');
+      }
+      const { error } = await supabase.from('versements').insert({
+        participation_id: participationId,
+        montant: Math.round(montant),
+        reference: reference?.trim() || null
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => client.invalidateQueries({ queryKey: ['participations'] })
+  });
+}

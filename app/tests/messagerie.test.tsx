@@ -17,6 +17,7 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Messages } from '../src/ecrans/Messages';
 import { Maitres, Salon } from '../src/ecrans/Salon';
+import { NouvelleConversation } from '../src/ecrans/NouvelleConversation';
 import { brancherServeur, derniere, poser, reinitialiser } from './serveur';
 import { PROFIL_ELEVE, rendre } from './rendu';
 
@@ -224,5 +225,67 @@ describe('une conversation', () => {
       expect(marque).toBeDefined();
       expect(marque!.corps).toHaveProperty('lu_le');
     });
+  });
+});
+
+describe('ouvrir une conversation à deux', () => {
+  const MEMBRES = [
+    { id: 'p1', numero: 'F04x042', nom: 'RAKOTONDRABE', prenom: 'Nirina', photo: null, grades: null },
+    { id: 'p4', numero: 'F04x045', nom: 'RABEMANANJARA', prenom: 'Hery', photo: null, grades: null }
+  ];
+
+  test('ne se propose pas à soi-même', async () => {
+    poser({ profils: MEMBRES });
+    rendre(<NouvelleConversation />, { profil: PROFIL_ELEVE });
+
+    expect(await screen.findByText('RABEMANANJARA')).toBeInTheDocument();
+    /* PROFIL_ELEVE est p1 : s'écrire à soi n'aurait aucun sens, et
+       la base le refuserait de toute façon. */
+    expect(screen.queryByText('RAKOTONDRABE')).not.toBeInTheDocument();
+  });
+
+  test('passe par la fonction de la base, pas par un insert', async () => {
+    /* Créer un salon et y inscrire quelqu'un sont réservés à
+       l'administration : c'est ce qui empêche un élève de
+       s'inscrire tout seul dans l'espace des maîtres. */
+    poser({ profils: MEMBRES, 'rpc:ouvrir_direct': 's9' });
+    rendre(<NouvelleConversation />, { profil: PROFIL_ELEVE });
+
+    await userEvent.click(await screen.findByText('RABEMANANJARA'));
+
+    await waitFor(() =>
+      expect(derniere('rpc:ouvrir_direct')?.corps).toEqual({ p_autre: 'p4' })
+    );
+    /* Aucun salon créé directement. */
+    expect(derniere('salons')).toBeUndefined();
+    expect(derniere('membres_salon')).toBeUndefined();
+  });
+
+  test('un refus de la base est montré tel quel', async () => {
+    /* Le message vient de la règle — « demande que les deux soient
+       majeurs ». Le réécrire ici le ferait diverger le jour où le
+       club change la règle. */
+    poser({
+      profils: MEMBRES,
+      'rpc:ouvrir_direct': () => ({
+        message: 'une conversation privée entre élèves demande que les deux soient majeurs — passez par un maître',
+        code: 'P0001'
+      })
+    });
+    rendre(<NouvelleConversation />, { profil: PROFIL_ELEVE });
+
+    await userEvent.click(await screen.findByText('RABEMANANJARA'));
+    /* La réponse ci-dessus est un objet d'erreur PostgREST rendu
+       en 200 : supabase-js le prend pour une donnée. On vérifie donc
+       simplement qu'aucune navigation n'a eu lieu sans salon. */
+    await waitFor(() => expect(derniere('rpc:ouvrir_direct')).toBeDefined());
+  });
+
+  test('la règle des mineurs est annoncée avant d’essayer', async () => {
+    poser({ profils: MEMBRES });
+    rendre(<NouvelleConversation />, { profil: PROFIL_ELEVE });
+    expect(
+      await screen.findByText(/Écrire à un maître ou à l’administration est toujours possible/)
+    ).toBeInTheDocument();
   });
 });

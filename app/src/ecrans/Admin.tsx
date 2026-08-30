@@ -36,6 +36,7 @@ const PUBLICATION: Rangee[] = [
   ['Publier une actualité', 'Sortie, compétition, réunion…', 'news', '/admin/publier'],
   ['Envoyer une notification', 'Prévient tous les membres', 'bell', '/admin/notifier'],
   ['Albums et photos', 'Créer, ajouter, supprimer', 'album', '/admin/albums'],
+  ['Participations', 'Qui vient, et pointer les versements', 'shieldCheck', '/admin/participations'],
   ['Le club', 'Horaires, responsable, contact, MVola', 'calendar', '/admin/club']
 ];
 

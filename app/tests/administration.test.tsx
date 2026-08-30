@@ -13,6 +13,7 @@ import { AdminFiche } from '../src/ecrans/admin/Fiche';
 import { AdminPublier, AdminNotifier } from '../src/ecrans/admin/Publication';
 import { AdminComptes } from '../src/ecrans/admin/Comptes';
 import { AdminClub } from '../src/ecrans/admin/Club';
+import { AdminParticipations } from '../src/ecrans/admin/Participations';
 import { MotDePasse } from '../src/ecrans/MotDePasse';
 import {
   brancherServeur, derniere, poser, poserAuth, recues, reinitialiser, sessionFactice
@@ -398,5 +399,66 @@ describe('les réglages du club', () => {
         fin: '19:00:00'
       })
     );
+  });
+});
+
+describe('pointer les versements', () => {
+  const SORTIE = {
+    id: 'a1', titre: 'Sortie au lac Mantasoa', categorie: 'Sortie',
+    texte: 'Départ 6h00.', date_evt: '2026-09-12', lieu: null, image: null,
+    cree_le: new Date().toISOString()
+  };
+
+  const PARTICIPATION = {
+    id: 'pa1', accompagnants: 2, montant_promis: 5000,
+    profils: { nom: 'RAKOTONDRABE', prenom: 'Nirina', numero: 'F04x042' },
+    versements: [{ id: 'v1', montant: 5000, recu_le: '2026-09-01' }]
+  };
+
+  test('compte les places, l’inscrit compris', async () => {
+    /* Trois places pour une inscription avec deux accompagnants :
+       oublier l'inscrit lui-même ferait manquer un siège dans le
+       car. */
+    poser({ actualites: [SORTIE], participations: [PARTICIPATION] });
+    rendre(<AdminParticipations />, { route: '/admin/participations' });
+
+    await userEvent.click(await screen.findByText('Sortie au lac Mantasoa'));
+    expect(await screen.findByText('places')).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
+  });
+
+  test('le versement pointé part avec la participation', async () => {
+    poser({ actualites: [SORTIE], participations: [PARTICIPATION] });
+    rendre(<AdminParticipations />, { route: '/admin/participations' });
+
+    await userEvent.click(await screen.findByText('Sortie au lac Mantasoa'));
+    await userEvent.type(await screen.findByLabelText(/Montant reçu de Nirina/), '2000');
+    await userEvent.click(screen.getByRole('button', { name: 'Pointer' }));
+
+    await waitFor(() =>
+      expect(derniere('versements')?.corps).toMatchObject({
+        participation_id: 'pa1',
+        montant: 2000
+      })
+    );
+  });
+
+  test('un montant vide ou nul laisse le bouton inerte', async () => {
+    poser({ actualites: [SORTIE], participations: [PARTICIPATION] });
+    rendre(<AdminParticipations />, { route: '/admin/participations' });
+
+    await userEvent.click(await screen.findByText('Sortie au lac Mantasoa'));
+    await screen.findByLabelText(/Montant reçu de Nirina/);
+    expect(screen.getByRole('button', { name: 'Pointer' })).toBeDisabled();
+
+    await userEvent.type(screen.getByLabelText(/Montant reçu de Nirina/), '0');
+    expect(screen.getByRole('button', { name: 'Pointer' })).toBeDisabled();
+  });
+
+  test('personne d’inscrit le dit, plutôt que d’afficher le vide', async () => {
+    poser({ actualites: [SORTIE], participations: [] });
+    rendre(<AdminParticipations />, { route: '/admin/participations' });
+    await userEvent.click(await screen.findByText('Sortie au lac Mantasoa'));
+    expect(await screen.findByText('Personne ne s’est encore inscrit.')).toBeInTheDocument();
   });
 });

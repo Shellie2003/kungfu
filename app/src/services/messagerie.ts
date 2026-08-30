@@ -150,6 +150,56 @@ export function useEnvoyer(salonId: string | undefined) {
   });
 }
 
+/* ------------------------------------------------------------
+   Ouvrir une conversation à deux.
+
+   Passe par une fonction de la base, et non par un insert : créer
+   un salon et y inscrire quelqu'un sont réservés à
+   l'administration — c'est ce qui empêche un élève de s'inscrire
+   tout seul dans l'espace des maîtres. La fonction ouvre une porte
+   étroite : un salon DIRECT, entre l'appelant et une personne, et
+   elle vérifie tout elle-même.
+
+   Elle est idempotente : rappelée sur quelqu'un à qui l'on écrit
+   déjà, elle rend le salon existant plutôt qu'un doublon.
+   ------------------------------------------------------------ */
+export function useOuvrirDirect() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (autreId: string): Promise<string> => {
+      const { data, error } = await supabase.rpc('ouvrir_direct', { p_autre: autreId });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ['salons'] });
+      client.invalidateQueries({ queryKey: ['directs'] });
+    }
+  });
+}
+
+/* Qui est EN FACE, dans chaque conversation directe. Un salon
+   direct n'a pas de titre en base : il porte le nom de l'autre, qui
+   n'est pas le même pour les deux. */
+export function useDirects() {
+  return useQuery({
+    queryKey: ['directs'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('mes_directs')
+        .select('salon_id, autre_id, autre_nom, autre_prenom, autre_photo');
+      if (error) throw error;
+      const dico: Record<string, { nom: string; prenom: string; photo: string | null }> = {};
+      for (const l of data as {
+        salon_id: string; autre_nom: string; autre_prenom: string; autre_photo: string | null;
+      }[]) {
+        dico[l.salon_id] = { nom: l.autre_nom, prenom: l.autre_prenom, photo: l.autre_photo };
+      }
+      return dico;
+    }
+  });
+}
+
 export function useSalon(salonId: string | undefined) {
   return useQuery({
     queryKey: ['salon', salonId],

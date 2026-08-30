@@ -11,13 +11,13 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icone } from '../ui/Icone';
 import { Carte, Entete, Etat, Portrait, Surtitre } from '../ui/base';
-import { heureCourte, initiales, useSalons } from '../services/messagerie';
+import { heureCourte, initiales, useDirects, useSalons } from '../services/messagerie';
 import type { Salon } from '../services/messagerie';
 import { useSignalementsEnAttente } from '../services/moderation';
 import { estMaitre, useSession } from '../services/session';
 
-function Vignette({ salon }: { salon: Salon }) {
-  if (salon.type === 'direct') return <Portrait taille={44} rayon={22} />;
+function Vignette({ salon, photo }: { salon: Salon; photo?: string | null }) {
+  if (salon.type === 'direct') return <Portrait taille={44} rayon={22} photo={photo ?? null} />;
   const couleur = salon.couleur ?? '#0F5132';
   return (
     <span
@@ -40,13 +40,25 @@ function Vignette({ salon }: { salon: Salon }) {
   );
 }
 
-function Ligne({ salon, onClick }: { salon: Salon; onClick: () => void }) {
+function Ligne({
+  salon, onClick, enFace
+}: {
+  salon: Salon;
+  onClick: () => void;
+  enFace?: { nom: string; prenom: string; photo: string | null };
+}) {
+  /* Un salon direct n'a pas de titre en base : il porte le nom de
+     l'autre personne, qui n'est pas le même pour les deux. */
+  const titre = salon.type === 'direct'
+    ? (enFace ? `${enFace.nom} ${enFace.prenom}` : 'Conversation')
+    : (salon.titre ?? 'Conversation');
+
   return (
     <button className="listrow" onClick={onClick}>
-      <Vignette salon={salon} />
+      <Vignette salon={salon} photo={enFace?.photo} />
       <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
         <span className="convrow__haut">
-          <b className="convrow__nom">{salon.titre ?? 'Conversation'}</b>
+          <b className="convrow__nom">{titre}</b>
           <i className="convrow__heure">{heureCourte(salon.dernier_le)}</i>
         </span>
         <span className="convrow__txt">
@@ -71,37 +83,52 @@ export function Messages() {
   const aller = useNavigate();
   const profil = useSession((e) => e.profil);
   const { data: salons, isPending, error } = useSalons();
+  const { data: directs } = useDirects();
   /* Le décompte n'est demandé qu'à qui peut traiter : un élève ne
      recevrait de toute façon que ses propres signalements, et la
      requête serait du bruit. */
   const { data: enAttente } = useSignalementsEnAttente(estMaitre(profil));
   const [recherche, setRecherche] = useState('');
 
+  const nomDe = (s: Salon) =>
+    s.type === 'direct'
+      ? [directs?.[s.id]?.nom, directs?.[s.id]?.prenom].filter(Boolean).join(' ')
+      : (s.titre ?? '');
+
   const q = recherche.trim().toLowerCase();
-  const liste = (salons ?? []).filter(
-    (s) => !q || (s.titre ?? '').toLowerCase().includes(q)
-  );
+  const liste = (salons ?? []).filter((s) => !q || nomDe(s).toLowerCase().includes(q));
 
   /* L'espace des maîtres est sorti de la liste ordinaire pour être
      mis en tête : il n'a pas la même nature que « Tout le club ». */
   const maitres = liste.filter((s) => s.type === 'maitres');
   const collectifs = liste.filter((s) => s.type !== 'maitres' && s.type !== 'direct');
-  const directs = liste.filter((s) => s.type === 'direct');
+  const aDeux = liste.filter((s) => s.type === 'direct');
 
   return (
     <>
       <Entete
         titre="Messages"
         action={
-          maitres.length > 0 ? (
+          <>
+            {/* La messagerie affichait les conversations existantes
+                sans qu'aucune ne puisse naître. */}
             <button
               className="tapicon"
-              onClick={() => aller('/maitres')}
-              aria-label="Espace des maîtres"
+              onClick={() => aller('/messages/nouvelle')}
+              aria-label="Nouvelle conversation"
             >
-              <Icone nom="key" taille={21} couleur="#0E2119" />
+              <Icone nom="plus" taille={21} couleur="#0E2119" epaisseur={2} />
             </button>
-          ) : undefined
+            {maitres.length > 0 && (
+              <button
+                className="tapicon"
+                onClick={() => aller('/maitres')}
+                aria-label="Espace des maîtres"
+              >
+                <Icone nom="key" taille={21} couleur="#0E2119" />
+              </button>
+            )}
+          </>
         }
       />
 
@@ -162,12 +189,17 @@ export function Messages() {
             </div>
           )}
 
-          {directs.length > 0 && (
+          {aDeux.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <Surtitre>Conversations</Surtitre>
               <div className="list">
-                {directs.map((s) => (
-                  <Ligne key={s.id} salon={s} onClick={() => aller(`/messages/${s.id}`)} />
+                {aDeux.map((s) => (
+                  <Ligne
+                    key={s.id}
+                    salon={s}
+                    enFace={directs?.[s.id]}
+                    onClick={() => aller(`/messages/${s.id}`)}
+                  />
                 ))}
               </div>
             </div>

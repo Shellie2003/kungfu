@@ -13,6 +13,7 @@ import { Carte, Entete, Surtitre } from '../ui/base';
 import {
   initiales,
   marquerLu,
+  useDirects,
   useEnvoyer,
   useMessages,
   useSalon,
@@ -120,6 +121,11 @@ function Conversation({ salonId, sombre }: { salonId: string | undefined; sombre
   const aller = useNavigate();
   const moi = useSession((e) => e.profil);
   const { data: salon } = useSalon(salonId);
+  /* Un salon direct n'a pas de titre en base : il porte le nom de
+     l'autre personne. Sans cela l'en-tête affichait
+     « Conversation », ce qui ne dit pas à qui l'on parle. */
+  const { data: directs } = useDirects();
+  const enFace = salonId ? directs?.[salonId] : undefined;
   const { data: messages, isPending, error } = useMessages(salonId);
   const envoi = useEnvoyer(salonId);
   const signalement = useSignaler();
@@ -146,7 +152,11 @@ function Conversation({ salonId, sombre }: { salonId: string | undefined; sombre
     );
   }
 
-  const titre = sombre ? 'Espace des maîtres' : salon?.titre ?? 'Conversation';
+  const titre = sombre
+    ? 'Espace des maîtres'
+    : salon?.type === 'direct'
+      ? (enFace ? `${enFace.nom} ${enFace.prenom}` : 'Conversation')
+      : (salon?.titre ?? 'Conversation');
 
   return (
     <>
@@ -174,7 +184,7 @@ function Conversation({ salonId, sombre }: { salonId: string | undefined; sombre
               color: salon?.couleur ?? '#0F5132'
             }}
           >
-            {initiales(salon?.titre ?? '??')}
+            {initiales(titre)}
           </span>
         )}
         <span style={{ flexGrow: 1, minWidth: 0, marginLeft: sombre ? 4 : 10 }}>

@@ -104,7 +104,13 @@ export const REPONSES = {
     { id: 'm1', texte: 'Bonsoir à tous.', cree_le: maintenant(), supprime_le: null, auteur_id: 'p2', profils: { nom: 'RABEMANANJARA', prenom: 'Hery' } },
     { id: 'm2', texte: 'Merci pour l’information.', cree_le: maintenant(), supprime_le: null, auteur_id: 'p1', profils: { nom: 'RAKOTONDRABE', prenom: 'Nirina' } }
   ],
-  participations: [],
+  participations: [
+    {
+      id: 'pa1', accompagnants: 2, montant_promis: 5000,
+      profils: { nom: 'RAKOTONDRABE', prenom: 'Nirina', numero: 'F04x042' },
+      versements: [{ id: 'v1', montant: 5000, recu_le: '2026-09-01' }]
+    }
+  ],
   membres_salon: [],
   signalements: [
     {
@@ -123,6 +129,7 @@ export const REPONSES = {
     }
   ],
   versements: [],
+  mes_directs: [],
   tuteurs: []
 };
 

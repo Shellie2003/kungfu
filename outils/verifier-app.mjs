@@ -67,7 +67,11 @@ const ECRANS = [
   ['adm-notifier', '/#/admin/notifier', 'Prévenir tout le club'],
   ['adm-albums', '/#/admin/albums', 'Créer un album'],
   ['adm-club', '/#/admin/club', 'Renseignements'],
-  ['signalements', '/#/signalements', 'Propos déplacés']
+  ['signalements', '/#/signalements', 'Propos déplacés'],
+  ['adm-participations', '/#/admin/participations', 'De quelle sortie'],
+  /* Un texte RENDU, pas une invite de champ : innerText ne contient
+     pas les placeholders, et l'attendre échouerait toujours. */
+  ['nouvelle-conv', '/#/messages/nouvelle', 'Écrire à un maître']
 ];
 
 const plat = (s) =>

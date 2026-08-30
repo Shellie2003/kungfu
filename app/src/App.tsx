@@ -33,6 +33,7 @@ import { Notifications } from './ecrans/Notifications';
 import { Messages } from './ecrans/Messages';
 import { Salon, Maitres } from './ecrans/Salon';
 import { Moderation } from './ecrans/Moderation';
+import { NouvelleConversation } from './ecrans/NouvelleConversation';
 import { Participation } from './ecrans/Participation';
 import { MotDePasse } from './ecrans/MotDePasse';
 import { CarteMembre } from './ecrans/CarteMembre';
@@ -42,6 +43,7 @@ import { AdminChoisirFiche, AdminGrade } from './ecrans/admin/Membres';
 import { AdminAlbums, AdminNotifier, AdminPublier } from './ecrans/admin/Publication';
 import { AdminComptes } from './ecrans/admin/Comptes';
 import { AdminClub } from './ecrans/admin/Club';
+import { AdminParticipations } from './ecrans/admin/Participations';
 
 import { seConnecter } from './services/supabase';
 import { estAdmin, useEcouteSession, useSession } from './services/session';
@@ -131,6 +133,9 @@ function Connectee() {
         <Route path="/etudiants" element={<Etudiants />} />
         <Route path="/etudiants/:id" element={<Profil />} />
         <Route path="/messages" element={<Messages />} />
+        {/* Avant « /messages/:id » : sinon « nouvelle » serait pris
+            pour un identifiant de salon. */}
+        <Route path="/messages/nouvelle" element={<NouvelleConversation />} />
         <Route path="/messages/:id" element={<Salon />} />
         <Route path="/maitres" element={<Maitres />} />
         {/* La modération n'est pas gardée par l'application : un élève
@@ -160,6 +165,9 @@ function Connectee() {
         {estAdmin(profil) && <Route path="/admin/notifier" element={<AdminNotifier />} />}
         {estAdmin(profil) && <Route path="/admin/albums" element={<AdminAlbums />} />}
         {estAdmin(profil) && <Route path="/admin/club" element={<AdminClub />} />}
+        {estAdmin(profil) && (
+          <Route path="/admin/participations" element={<AdminParticipations />} />
+        )}
         <Route path="*" element={<Navigate to="/accueil" replace />} />
       </Routes>
 
