@@ -86,3 +86,38 @@ body {
 .tabbar {
   padding-bottom: calc(14px + env(safe-area-inset-bottom));
 }
+
+/* ------------------------------------------------------------
+   L'impression des cartes.
+
+   La feuille de la maquette a déjà ses règles « @media print » —
+   format A4, marges nulles, aplats de couleur imprimés tels quels.
+   Ce qu'elle ne connaît pas, c'est le décor de l'APPLICATION :
+   l'en-tête, la barre du bas, les explications et les boutons.
+
+   Sans ces trois lignes, une planche de soixante-quatre cartes
+   sortirait avec le menu de l'application imprimé en travers de la
+   première page — et l'on ne s'en apercevrait qu'après avoir usé du
+   papier.
+   ------------------------------------------------------------ */
+@media print {
+  .apphead,
+  .tabbar,
+  .impression-chrome {
+    display: none !important;
+  }
+
+  /* Le cadre de l'écran ne doit rien borner à l'impression : sinon
+     seule la première planche sort et les suivantes sont coupées. */
+  #racine > .phone {
+    min-height: 0;
+    padding: 0;
+    background: #FFF;
+  }
+
+  /* Une carte reste une carte, pas un bouton : le cadre de mise au
+     point du navigateur s'imprimerait autour. */
+  .planche__grille button {
+    outline: none !important;
+  }
+}

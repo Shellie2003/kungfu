@@ -47,6 +47,8 @@ import { AdminParticipations } from './ecrans/admin/Participations';
 import { AdminPresences } from './ecrans/admin/Presences';
 import { AdminGrades } from './ecrans/admin/Grades';
 import { AdminSalons } from './ecrans/admin/Salons';
+import { AdminJournal } from './ecrans/admin/Journal';
+import { AdminImpression } from './ecrans/admin/Impression';
 import { MesPresences } from './ecrans/MesPresences';
 
 import { seConnecter } from './services/supabase';
@@ -180,6 +182,8 @@ function Connectee() {
         {estAdmin(profil) && <Route path="/admin/albums" element={<AdminAlbums />} />}
         {estAdmin(profil) && <Route path="/admin/club" element={<AdminClub />} />}
         {estAdmin(profil) && <Route path="/admin/salons" element={<AdminSalons />} />}
+        {estAdmin(profil) && <Route path="/admin/journal" element={<AdminJournal />} />}
+        {estAdmin(profil) && <Route path="/admin/impression" element={<AdminImpression />} />}
         {estAdmin(profil) && (
           <Route path="/admin/participations" element={<AdminParticipations />} />
         )}

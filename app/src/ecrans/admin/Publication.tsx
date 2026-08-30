@@ -26,6 +26,7 @@ export function AdminPublier() {
   const { data: actus } = useActualites();
   const publier = usePublier();
   const supprimer = useSupprimerActualite();
+  const notifier = useNotifierTous();
 
   const [titre, setTitre] = useState('');
   const [categorie, setCategorie] = useState('');
@@ -44,6 +45,17 @@ export function AdminPublier() {
   const [edite, setEdite] = useState<string | null>(null);
   /* Ce qui attend une confirmation de suppression. */
   const [aSupprimer, setASupprimer] = useState<{ id: string; titre: string } | null>(null);
+  /* Prévenir les membres au moment de publier.
+
+     La liste validée à la livraison ne fait qu'un seul geste des deux
+     — « publier une actualité, ET envoyer la notification ». C'étaient
+     deux écrans sans lien : on publiait, on oubliait de
+     prévenir, et l'annonce dormait au casier.
+
+     Coché par défaut pour une publication, JAMAIS pour un brouillon —
+     prévenir de quelque chose que personne ne peut lire serait le
+     comble. */
+  const [prevenir, setPrevenir] = useState(true);
 
   function vider() {
     setTitre(''); setCategorie(''); setTexte(''); setDate(''); setLieu('');
@@ -61,14 +73,32 @@ export function AdminPublier() {
         date_evt: date || null, lieu: lieu || null, image, publiee },
       {
         onSuccess: () => {
-          setAvis({
-            bon: true,
-            texte: edite
-              ? 'Modifiée. La version corrigée remplace l’ancienne.'
-              : publiee
-                ? 'Publiée. Tout le club la voit.'
-                : 'Enregistrée en brouillon.'
-          });
+          const base = edite
+            ? 'Modifiée. La version corrigée remplace l’ancienne.'
+            : publiee
+              ? 'Publiée. Tout le club la voit.'
+              : 'Enregistrée en brouillon.';
+
+          /* La notification part APRÈS l'enregistrement, et seulement
+             s'il a réussi : prévenir d'une actualité que le serveur a
+             refusée enverrait soixante-quatre membres au casier pour
+             n'y rien trouver. */
+          if (publiee && prevenir) {
+            notifier.mutate(
+              { titre: titre.trim(), texte: '', vers: '/casier' },
+              {
+                onSuccess: () =>
+                  setAvis({ bon: true, texte: `${base} Les membres sont prévenus.` }),
+                onError: (e) =>
+                  setAvis({
+                    bon: false,
+                    texte: `${base} En revanche la notification n’est pas partie : ${(e as Error).message}`
+                  })
+              }
+            );
+          } else {
+            setAvis({ bon: true, texte: base });
+          }
           vider();
         },
         onError: (e) => setAvis({ bon: false, texte: `Refusé : ${(e as Error).message}` })
@@ -169,8 +199,19 @@ export function AdminPublier() {
 
         {avis && <Avis bon={avis.bon}>{avis.texte}</Avis>}
 
+        <label
+          style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5 }}
+        >
+          <input
+            type="checkbox"
+            checked={prevenir}
+            onChange={(e) => setPrevenir(e.target.checked)}
+          />
+          Prévenir les membres — une notification par personne active
+        </label>
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <Bouton onClick={() => envoyer(true)} desactive={publier.isPending}>
+          <Bouton onClick={() => envoyer(true)} desactive={publier.isPending || notifier.isPending}>
             {publier.isPending ? 'Envoi…' : edite ? 'Enregistrer et publier' : 'Publier'}
           </Bouton>
           {/* Un brouillon n'est visible que de l'administration : la

@@ -134,6 +134,17 @@ export const REPONSES = {
   /* Une séance pointée, pour que les deux écrans de présence
      montrent une ligne plutôt que leur message de liste vide : c'est
      la ligne, pas le vide, qui peut casser. */
+  /* Un passage dans le journal : c'est la LIGNE, pas le vide, qui
+     peut casser. */
+  journal_acces: [
+    {
+      id: 1,
+      quoi: 'ouverture de l’espace des maîtres',
+      quand: new Date().toISOString(),
+      profils: { nom: 'RABEMANANJARA', prenom: 'Hery', numero: 'F04x045' },
+      salons: { titre: 'Espace des maîtres', type: 'maitres' }
+    }
+  ],
   presences: [
     {
       id: 'pr1',

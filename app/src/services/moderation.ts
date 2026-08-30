@@ -148,3 +148,70 @@ export function useSignalementsEnAttente(actif: boolean) {
     }
   });
 }
+
+
+/* ------------------------------------------------------------
+   Le journal d'accès.
+
+   La note de sécurité livrée au club annonce le « journal des
+   accès » comme l'un des trois moyens de tenir la confidentialité de
+   l'espace des maîtres — avec le rôle et le filtre en base. Il
+   s'écrit depuis peu ; personne ne pouvait le LIRE. Un journal qu'on
+   ne consulte pas ne répond à aucune question, et donne l'illusion
+   du contraire.
+
+   La règle d'accès le réserve à l'administration, et il n'y a rien à
+   refiltrer ici : c'est le serveur qui décide.
+   ------------------------------------------------------------ */
+export type Passage = {
+  id: number;
+  quoi: string;
+  quand: string;
+  membre: { nom: string; prenom: string; numero: string } | null;
+  salon: { titre: string | null; type: string } | null;
+};
+
+type LignePassage = Omit<Passage, 'membre' | 'salon'> & {
+  profils: Passage['membre'] | Passage['membre'][] | null;
+  salons: Passage['salon'] | Passage['salon'][] | null;
+};
+
+const seul = <T,>(v: T | T[] | null): T | null =>
+  Array.isArray(v) ? (v[0] ?? null) : v;
+
+export function useJournal(limite = 100) {
+  return useQuery({
+    queryKey: ['journal'],
+    queryFn: async (): Promise<Passage[]> => {
+      const { data, error } = await supabase
+        .from('journal_acces')
+        .select(
+          `id, quoi, quand,
+           profils:profil_id ( nom, prenom, numero ),
+           salons:salon_id ( titre, type )`
+        )
+        .order('quand', { ascending: false })
+        .limit(limite);
+      if (error) throw error;
+      return (data as unknown as LignePassage[]).map(({ profils, salons, ...p }) => ({
+        ...p,
+        membre: seul(profils),
+        salon: seul(salons)
+      }));
+    }
+  });
+}
+
+/* « il y a 3 minutes », « hier à 19h04 ». Un horodatage complet sur
+   cent lignes se lit mal ; ce qu'on cherche dans un journal, c'est
+   « quand, par rapport à maintenant ». */
+export function quandLire(iso: string): string {
+  const d = new Date(iso);
+  const minutes = Math.floor((Date.now() - d.getTime()) / 60000);
+  if (minutes < 1) return 'à l’instant';
+  if (minutes < 60) return `il y a ${minutes} min`;
+  if (minutes < 60 * 24) return `il y a ${Math.floor(minutes / 60)} h`;
+  return d.toLocaleDateString('fr-FR', {
+    day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
+  });
+}

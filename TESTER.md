@@ -48,7 +48,7 @@ vérifier ce que le club aura, pas à travailler.
 cd app && npm test
 ```
 
-**204 tests**, unitaires et d'intégration. Ils tournent en une dizaine de secondes et couvrent deux
+**222 tests**, unitaires et d'intégration. Ils tournent en une dizaine de secondes et couvrent deux
 choses que l'œil ne voit pas :
 
 **La logique** — dates, matricules, teintes, codes USSD. Une erreur y est invisible à
@@ -82,7 +82,7 @@ npm run verifier-app
 ```
 
 Ce que cela fait : construit l'application, la sert dans un vrai navigateur, remplace le
-serveur Supabase par des réponses en boîte, **ouvre les trente écrans** et vérifie
+serveur Supabase par des réponses en boîte, **ouvre les trente-quatre écrans** et vérifie
 que chacun affiche ce qu'il doit afficher, sans erreur de console.
 
 ```bash
@@ -398,7 +398,7 @@ sans caméra installe quand même — la saisie du matricule marche sans elle.
 
 ## Ce que j'ai vérifié moi-même, et ce que je n'ai pas pu
 
-**Vérifié** : les trente écrans s'ouvrent dans un vrai navigateur, sans erreur de console,
+**Vérifié** : les trente-quatre écrans s'ouvrent dans un vrai navigateur, sans erreur de console,
 avec des réponses de la forme exacte que rend PostgREST — c'est là que les écrans se
 cassent, sur une jointure rendue en tableau plutôt qu'en objet. TypeScript passe en mode
 strict. Le code QR de la carte se décode et rend le bon matricule. Les migrations

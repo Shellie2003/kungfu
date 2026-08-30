@@ -30,7 +30,8 @@ const MEMBRES: Rangee[] = [
   ['Modifier une fiche', 'Corriger ou compléter', 'edit', '/admin/fiches'],
   ['Changer un grade', 'Après un passage validé', 'edit', '/admin/grades'],
   ['Les grades du club', 'Créer, renommer, recolorer, ordonner', 'martial', '/admin/grades/liste'],
-  ['Comptes et accès', 'Créer, suspendre, réinitialiser', 'lock', '/admin/comptes']
+  ['Comptes et accès', 'Créer, suspendre, réinitialiser', 'lock', '/admin/comptes'],
+  ['Imprimer les cartes', 'Dix par page A4, avec traits de coupe', 'shieldCheck', '/admin/impression']
 ];
 
 const PUBLICATION: Rangee[] = [
@@ -38,6 +39,7 @@ const PUBLICATION: Rangee[] = [
   ['Envoyer une notification', 'Prévient tous les membres', 'bell', '/admin/notifier'],
   ['Albums et photos', 'Créer, ajouter, supprimer', 'album', '/admin/albums'],
   ['Les salons', 'Ouvrir un fil par grade ou par événement', 'chat', '/admin/salons'],
+  ['Journal d’accès', 'Qui est entré dans l’espace des maîtres', 'eyeOff', '/admin/journal'],
   ['Participations', 'Qui vient, et pointer les versements', 'shieldCheck', '/admin/participations'],
   ['Le club', 'Horaires, responsable, contact, MVola', 'calendar', '/admin/club'],
   ['Pointer les présences', 'En scannant les cartes, ou au matricule', 'shield', '/presences/pointer']

@@ -73,7 +73,11 @@ const ECRANS = [
      pas les placeholders, et l'attendre échouerait toujours. */
   ['nouvelle-conv', '/#/messages/nouvelle', 'Écrire à un maître'],
   ['presences', '/#/presences', 'Mon assiduité'],
-  ['adm-presences', '/#/presences/pointer', 'Pointer les présences']
+  ['adm-presences', '/#/presences/pointer', 'Pointer les présences'],
+  ['adm-salons', '/#/admin/salons', 'Ouvrir un salon'],
+  ['adm-journal', '/#/admin/journal', 'Journal d’accès'],
+  ['adm-impression', '/#/admin/impression', 'Planche d’impression'],
+  ['adm-grades-liste', '/#/admin/grades/liste', 'Les grades du club']
 ];
 
 const plat = (s) =>

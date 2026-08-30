@@ -162,9 +162,13 @@ export function CarteMembre() {
 
         {/* La bande de couleur reprend le grade ; elle ne le dit pas
             seule — le nom du grade est écrit juste au-dessus. */}
+        {/* La promesse d'hier est tenue : l'écran d'administration
+            « Imprimer les cartes » édite la planche du club entier,
+            dix par page A4. Laisser « viendront » aurait fait de
+            cette ligne un mensonge de plus. */}
         <p style={{ fontSize: 12.5, lineHeight: '18px', color: '#59685F' }}>
-          Cette carte se lit sur le téléphone. L’impression et l’enregistrement en image
-          viendront avec l’écran d’administration, qui édite la planche de tout le club.
+          Cette carte se lit sur le téléphone. L’administration l’imprime sur carton depuis
+          l’écran « Imprimer les cartes » — dix par page A4, au format d’une carte bancaire.
         </p>
       </div>
     </>

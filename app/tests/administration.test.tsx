@@ -261,6 +261,73 @@ describe('publier une actualité', () => {
   });
 });
 
+describe('prévenir les membres en publiant', () => {
+  /* La liste validée à la livraison ne fait qu'un seul geste des
+     deux : « publier une actualité, et envoyer la notification ».
+     C'étaient deux écrans sans lien — on publiait, on oubliait de
+     prévenir, et l'annonce dormait au casier. */
+  const remplir = async () => {
+    await userEvent.type(await screen.findByLabelText(/^Titre/), 'Sortie au lac');
+    await userEvent.selectOptions(screen.getByLabelText('Catégorie'), 'Sortie');
+    await userEvent.type(screen.getByLabelText('Texte'), 'Départ 6h00.');
+  };
+
+  test('publier envoie une notification par membre ACTIF', async () => {
+    poser({ profils: [{ id: 'p1' }, { id: 'p2' }] });
+    rendre(<AdminPublier />, { route: '/admin/publier' });
+
+    await remplir();
+    await userEvent.click(screen.getByRole('button', { name: 'Publier' }));
+
+    await waitFor(() => {
+      const envoi = derniere('notifications');
+      expect(envoi).toBeDefined();
+      const lignes = envoi!.corps as { profil_id: string; vers: string }[];
+      expect(lignes).toHaveLength(2);
+      expect(lignes[0]).toMatchObject({ vers: '/casier' });
+    });
+    /* Les membres désactivés ne sont pas prévenus : la requête le
+       demande au serveur plutôt que de trier après coup. */
+    const lecture = recues.find((r) => r.table === 'profils' && r.methode === 'GET');
+    expect(lecture?.parametres.get('actif')).toBe('eq.true');
+  });
+
+  test('un BROUILLON ne prévient personne', async () => {
+    /* Prévenir de quelque chose que personne ne peut lire serait le
+       comble. */
+    poser({ profils: [{ id: 'p1' }] });
+    rendre(<AdminPublier />, { route: '/admin/publier' });
+
+    await remplir();
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer en brouillon' }));
+
+    await waitFor(() => expect(derniere('actualites')).toBeDefined());
+    expect(derniere('notifications')).toBeUndefined();
+  });
+
+  test('la case décochée ne prévient personne non plus', async () => {
+    poser({ profils: [{ id: 'p1' }] });
+    rendre(<AdminPublier />, { route: '/admin/publier' });
+
+    await remplir();
+    await userEvent.click(screen.getByLabelText(/Prévenir les membres/));
+    await userEvent.click(screen.getByRole('button', { name: 'Publier' }));
+
+    await waitFor(() => expect(derniere('actualites')).toBeDefined());
+    expect(derniere('notifications')).toBeUndefined();
+  });
+
+  test('la notification ne part QU’APRÈS un enregistrement réussi', async () => {
+    /* Prévenir d'une actualité que le serveur a refusée enverrait
+       soixante-quatre membres au casier pour n'y rien trouver. */
+    rendre(<AdminPublier />, { route: '/admin/publier' });
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Publier' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('obligatoires');
+    expect(derniere('notifications')).toBeUndefined();
+  });
+});
+
 describe('modifier une actualité déjà publiée', () => {
   const AU_CASIER = {
     id: 'a1', titre: 'Sortie au lac', categorie: 'Sortie', texte: 'Départ 6h00.',
