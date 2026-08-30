@@ -9,10 +9,10 @@ import {
 } from '../../ui/base';
 import { useActualites, teinte } from '../../services/casier';
 import { useAlbums } from '../../services/club';
-import { useUrls } from '../../services/stockage';
+import { useUrl, useUrls } from '../../services/stockage';
 import {
-  useAjouterPhotos, useCreerAlbum, useNotifierTous, usePublier,
-  useSupprimerActualite, useSupprimerAlbum, useSupprimerPhoto
+  useAjouterPhotos, useCreerAlbum, useLegender, useNotifierTous, usePublier,
+  useSupprimerActualite, useSupprimerAlbum, useSupprimerPhoto, televerser
 } from '../../services/admin';
 
 /* Les catégories que le club emploie déjà, plus celles qu'il
@@ -32,6 +32,11 @@ export function AdminPublier() {
   const [date, setDate] = useState('');
   const [lieu, setLieu] = useState('');
   const [avis, setAvis] = useState<{ bon: boolean; texte: string } | null>(null);
+  /* Le CHEMIN de l'image dans le seau, pas son adresse : les seaux
+     sont privés et l'adresse signée expire au bout d'une heure. */
+  const [image, setImage] = useState<string | null>(null);
+  const [envoiImage, setEnvoiImage] = useState(false);
+  const apercu = useUrl('album', image);
 
   function envoyer(publiee: boolean) {
     if (!titre.trim() || !categorie.trim() || !texte.trim()) {
@@ -40,11 +45,11 @@ export function AdminPublier() {
     }
     publier.mutate(
       { titre: titre.trim(), categorie: categorie.trim(), texte: texte.trim(),
-        date_evt: date || null, lieu: lieu || null, publiee },
+        date_evt: date || null, lieu: lieu || null, image, publiee },
       {
         onSuccess: () => {
           setAvis({ bon: true, texte: publiee ? 'Publiée. Tout le club la voit.' : 'Enregistrée en brouillon.' });
-          setTitre(''); setCategorie(''); setTexte(''); setDate(''); setLieu('');
+          setTitre(''); setCategorie(''); setTexte(''); setDate(''); setLieu(''); setImage(null);
         },
         onError: (e) => setAvis({ bon: false, texte: `Refusé : ${(e as Error).message}` })
       }
@@ -74,6 +79,55 @@ export function AdminPublier() {
               lignes={6}
               aide="Une ligne vide entre deux paragraphes : ils sont rendus tels quels."
             />
+
+            {/* L'image part TOUT DE SUITE, avant l'enregistrement de
+                l'actualité : l'envoi d'un fichier sur un réseau
+                malgache prend le temps qu'il prend, et le mêler au
+                bouton « Publier » ferait attendre sans rien montrer.
+                Ce qui reste dans le formulaire, c'est son chemin. */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              {apercu ? (
+                <img
+                  src={apercu}
+                  alt=""
+                  style={{ width: 64, height: 64, borderRadius: 12, objectFit: 'cover' }}
+                />
+              ) : (
+                <Tuile icone="album" petite />
+              )}
+              <div style={{ flexGrow: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 13.5, fontWeight: 600 }}>Image</p>
+                <p style={{ fontSize: 12, color: '#59685F' }}>
+                  {image ? 'Jointe à cette actualité.' : 'Facultative.'}
+                </p>
+              </div>
+              {image && (
+                <button className="link" style={{ color: '#B3341A' }} onClick={() => setImage(null)}>
+                  Retirer
+                </button>
+              )}
+              <label className="btn btn--ghost" style={{ width: 'auto', padding: '0 14px' }}>
+                {envoiImage ? 'Envoi…' : image ? 'Changer' : 'Choisir'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    setEnvoiImage(true);
+                    try {
+                      setImage(await televerser('album', f));
+                      setAvis(null);
+                    } catch (err) {
+                      setAvis({ bon: false, texte: `Image refusée : ${(err as Error).message}` });
+                    } finally {
+                      setEnvoiImage(false);
+                    }
+                  }}
+                />
+              </label>
+            </div>
           </div>
         </Carte>
 
@@ -198,8 +252,22 @@ export function AdminAlbums() {
   const [titre, setTitre] = useState('');
   const [categorie, setCategorie] = useState('');
   const ajouter = useAjouterPhotos();
+  const legender = useLegender();
   const photos = useUrls('album', (albums ?? []).flatMap((a) => a.photos.map((p) => p.chemin)));
   const [avis, setAvis] = useState<{ bon: boolean; texte: string } | null>(null);
+
+  /* La légende de l'envoi en cours, par album : le club vide sa
+     carte mémoire album par album, et une seule variable ferait
+     partir la légende des compétitions sur les photos du dojo. */
+  const [legendes, setLegendes] = useState<Record<string, string>>({});
+  /* La photo ouverte, et le texte en cours de correction. */
+  const [choisie, setChoisie] = useState<{ id: string; chemin: string } | null>(null);
+  const [texteLegende, setTexteLegende] = useState('');
+  /* Ce qui attend une confirmation. Une photo retirée ne revient
+     pas — ni de l'album, ni du serveur. */
+  const [aRetirer, setARetirer] = useState<
+    { quoi: 'photo'; id: string; chemin: string } | { quoi: 'album'; id: string; titre: string } | null
+  >(null);
 
   return (
     <>
@@ -255,7 +323,7 @@ export function AdminAlbums() {
                   <button
                     className="tapicon"
                     aria-label={`Supprimer l’album ${a.titre}`}
-                    onClick={() => supprimerAlbum.mutate(a.id)}
+                    onClick={() => setARetirer({ quoi: 'album', id: a.id, titre: a.titre })}
                   >
                     <Icone nom="x" taille={17} couleur="#B3341A" />
                   </button>
@@ -270,8 +338,16 @@ export function AdminAlbums() {
                           key={p.id}
                           className="tilephoto"
                           style={src ? { padding: 0, overflow: 'hidden', position: 'relative' } : undefined}
-                          aria-label={`Retirer la photo ${p.legende ?? ''}`}
-                          onClick={() => supprimerPhoto.mutate({ id: p.id, chemin: p.chemin })}
+                          /* Un appui OUVRE la photo, il ne la détruit
+                             plus. Un doigt qui glisse effaçait jusqu'ici
+                             une photo de compétition, du serveur compris
+                             et sans rien demander. */
+                          aria-label={p.legende ?? 'Photo sans légende'}
+                          onClick={() => {
+                            setChoisie({ id: p.id, chemin: p.chemin });
+                            setTexteLegende(p.legende ?? '');
+                            setARetirer(null);
+                          }}
                         >
                           {src ? (
                             <img src={src} alt="" loading="lazy"
@@ -285,45 +361,158 @@ export function AdminAlbums() {
                   </div>
                 )}
 
-                {/* Plusieurs fichiers d'un coup : le club rentre d'une
-                    compétition avec vingt photos, pas avec une. */}
-                <label className="btn btn--ghost" style={{ marginTop: 14 }}>
-                  <Icone nom="plus" taille={17} couleur="#12613C" epaisseur={2} />
-                  {ajouter.isPending && ajouter.variables?.albumId === a.id
-                    ? 'Envoi…'
-                    : 'Ajouter des photos'}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    hidden
-                    onChange={(e) => {
-                      const fichiers = [...(e.target.files ?? [])];
-                      if (!fichiers.length) return;
-                      ajouter.mutate(
-                        { albumId: a.id, fichiers },
-                        {
-                          onSuccess: () =>
-                            setAvis({ bon: true, texte: `${fichiers.length} photo(s) ajoutée(s).` }),
-                          onError: (err) =>
-                            setAvis({ bon: false, texte: `Refusé : ${(err as Error).message}` })
-                        }
-                      );
+                {/* La photo ouverte : sa légende se corrige, et c'est
+                    d'ici seulement qu'elle se retire. */}
+                {choisie && a.photos.some((p) => p.id === choisie.id) && (
+                  <div
+                    style={{
+                      marginTop: 14,
+                      padding: 14,
+                      borderRadius: 14,
+                      background: 'var(--vert-clair)',
+                      border: '1px solid #C4D9CC',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 12
                     }}
+                  >
+                    <Champ
+                      libelle="Légende de cette photo"
+                      valeur={texteLegende}
+                      poser={setTexteLegende}
+                      invite="Passage de grade de Hery, mars 2026"
+                      aide="Elle s’affiche sous la photo en grand, et se lit à voix haute par un lecteur d’écran."
+                    />
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      <Bouton
+                        desactive={legender.isPending}
+                        onClick={() =>
+                          legender.mutate(
+                            { id: choisie.id, legende: texteLegende },
+                            {
+                              onSuccess: () => {
+                                setAvis({ bon: true, texte: 'Légende enregistrée.' });
+                                setChoisie(null);
+                              },
+                              onError: (err) =>
+                                setAvis({ bon: false, texte: `Refusé : ${(err as Error).message}` })
+                            }
+                          )
+                        }
+                      >
+                        {legender.isPending ? 'Enregistrement…' : 'Enregistrer la légende'}
+                      </Bouton>
+                      <Bouton genre="ghost" onClick={() => setChoisie(null)}>
+                        Fermer
+                      </Bouton>
+                    </div>
+                    <button
+                      className="link"
+                      style={{ color: '#B3341A' }}
+                      onClick={() =>
+                        setARetirer({ quoi: 'photo', id: choisie.id, chemin: choisie.chemin })
+                      }
+                    >
+                      Retirer cette photo
+                    </button>
+                  </div>
+                )}
+
+                {/* Plusieurs fichiers d'un coup : le club rentre d'une
+                    compétition avec vingt photos, pas avec une. Et une
+                    légende commune, parce qu'elles viennent toutes du
+                    même jour — en demander vingt reviendrait à n'en
+                    obtenir aucune. */}
+                <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <Champ
+                    libelle="Légende de cet envoi"
+                    valeur={legendes[a.id] ?? ''}
+                    poser={(v) => setLegendes((p) => ({ ...p, [a.id]: v }))}
+                    invite="Championnat régional, mars 2026"
+                    aide="Facultative, et commune aux photos envoyées ensemble. Chacune se corrige ensuite."
                   />
-                </label>
+                  <label className="btn btn--ghost">
+                    <Icone nom="plus" taille={17} couleur="#12613C" epaisseur={2} />
+                    {ajouter.isPending && ajouter.variables?.albumId === a.id
+                      ? 'Envoi…'
+                      : 'Ajouter des photos'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      hidden
+                      onChange={(e) => {
+                        const fichiers = [...(e.target.files ?? [])];
+                        if (!fichiers.length) return;
+                        ajouter.mutate(
+                          { albumId: a.id, fichiers, legende: legendes[a.id] },
+                          {
+                            onSuccess: () => {
+                              setAvis({ bon: true, texte: `${fichiers.length} photo(s) ajoutée(s).` });
+                              setLegendes((p) => ({ ...p, [a.id]: '' }));
+                            },
+                            onError: (err) =>
+                              setAvis({ bon: false, texte: `Refusé : ${(err as Error).message}` })
+                          }
+                        );
+                      }}
+                    />
+                  </label>
+                </div>
               </Carte>
             ))}
           </Etat>
         </div>
 
-        <div className="warn">
-          <i />
-          <p>
-            Un appui sur une photo la retire, de l’album et du serveur. Il n’y a pas de
-            corbeille : c’est définitif.
-          </p>
-        </div>
+        {/* La confirmation, et non plus un avertissement écrit en bas
+            de page que personne ne lit avant d'appuyer. Elle nomme ce
+            qui va disparaître : « Retirer cette photo ? » ne dit pas
+            laquelle, et l'on confirme alors sans savoir. */}
+        {aRetirer && (
+          <div className="warn">
+            <i />
+            <p>
+              {aRetirer.quoi === 'album' ? (
+                <>
+                  Supprimer l’album <b>{aRetirer.titre}</b> ? Ses photos partent avec lui.
+                </>
+              ) : (
+                <>Retirer cette photo de l’album et du serveur ?</>
+              )}
+              <br />
+              Il n’y a pas de corbeille : c’est définitif.
+            </p>
+            <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+              <Bouton
+                onClick={() => {
+                  if (aRetirer.quoi === 'album') {
+                    supprimerAlbum.mutate(aRetirer.id, {
+                      onSuccess: () => setAvis({ bon: true, texte: 'Album supprimé.' }),
+                      onError: (err) =>
+                        setAvis({ bon: false, texte: `Refusé : ${(err as Error).message}` })
+                    });
+                  } else {
+                    supprimerPhoto.mutate(
+                      { id: aRetirer.id, chemin: aRetirer.chemin },
+                      {
+                        onSuccess: () => setAvis({ bon: true, texte: 'Photo retirée.' }),
+                        onError: (err) =>
+                          setAvis({ bon: false, texte: `Refusé : ${(err as Error).message}` })
+                      }
+                    );
+                    setChoisie(null);
+                  }
+                  setARetirer(null);
+                }}
+              >
+                Oui, supprimer
+              </Bouton>
+              <Bouton genre="ghost" onClick={() => setARetirer(null)}>
+                Annuler
+              </Bouton>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

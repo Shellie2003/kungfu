@@ -73,8 +73,8 @@ describe('les adresses de photos', () => {
        affichés. */
     poser({
       storage: [
-        { path: 'a.jpg', signedUrl: 'https://essai/signee-a', error: null },
-        { path: 'b.jpg', signedUrl: null, error: 'Object not found' }
+        { path: 'a.jpg', signedURL: '/object/sign/portraits/a.jpg?token=essai', error: null },
+        { path: 'b.jpg', signedURL: null, error: 'Object not found' }
       ]
     });
     rendre(<Etudiants />);
@@ -82,5 +82,14 @@ describe('les adresses de photos', () => {
     expect(await screen.findByText('RAKOTONDRABE')).toBeInTheDocument();
     expect(screen.getByText('RASOAMANANA')).toBeInTheDocument();
     expect(screen.getByText(/3 membres/)).toBeInTheDocument();
+
+    /* Et la bonne photo, elle, s'affiche VRAIMENT. Sans cette
+       vérification, le test passait même quand aucune adresse
+       n'aboutissait — ce qui était précisément le cas, mon bouchon
+       rendant une forme que le vrai serveur n'envoie jamais. */
+    await waitFor(() => {
+      const sources = [...document.querySelectorAll('img')].map((i) => i.getAttribute('src'));
+      expect(sources.some((s) => s?.includes('portraits/a.jpg'))).toBe(true);
+    });
   });
 });

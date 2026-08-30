@@ -108,6 +108,37 @@ describe('ajouter un étudiant', () => {
     expect(derniere('profils_prives')).toBeUndefined();
   });
 
+  test('la note de l’encadrement part dans la table PRIVÉE', async () => {
+    /* Elle n'a rien à faire dans « profils » : l'annuaire est
+       visible de tous les membres. */
+    poser({ 'rpc:prochain_numero': 'F04x077', profils: [{ id: 'nouveau' }] });
+    rendre(<AdminFiche />, { route: '/admin/fiche', chemin: '/admin/fiche' });
+
+    await userEvent.type(await screen.findByLabelText(/^Nom/), 'Razafy');
+    await userEvent.type(screen.getByLabelText(/^Prénom/), 'Lalaina');
+    await userEvent.type(screen.getByLabelText('Note de l’encadrement'), 'Rentre à pied.');
+    await userEvent.click(screen.getByRole('button', { name: 'Créer la fiche' }));
+
+    await waitFor(() =>
+      expect(derniere('profils_prives')?.corps).toMatchObject({ notes: 'Rentre à pied.' })
+    );
+    expect(derniere('profils')?.corps).not.toHaveProperty('notes');
+  });
+
+  test('une note seule suffit à créer la ligne privée', async () => {
+    /* Sans quoi la note serait silencieusement perdue sur une fiche
+       sans date de naissance ni téléphone — le cas ordinaire. */
+    poser({ 'rpc:prochain_numero': 'F04x077', profils: [{ id: 'nouveau' }] });
+    rendre(<AdminFiche />, { route: '/admin/fiche', chemin: '/admin/fiche' });
+
+    await userEvent.type(await screen.findByLabelText(/^Nom/), 'Razafy');
+    await userEvent.type(screen.getByLabelText(/^Prénom/), 'Lalaina');
+    await userEvent.type(screen.getByLabelText('Note de l’encadrement'), 'Genou fragile.');
+    await userEvent.click(screen.getByRole('button', { name: 'Créer la fiche' }));
+
+    await waitFor(() => expect(derniere('profils_prives')).toBeDefined());
+  });
+
   test('modifier une fiche n’envoie NI le numéro NI le rôle', async () => {
     /* Un déclencheur de la base les fige : les envoyer ferait
        échouer toute la mise à jour, y compris les champs légitimes. */
@@ -175,6 +206,58 @@ describe('publier une actualité', () => {
     await waitFor(() =>
       expect(derniere('actualites')?.corps).toMatchObject({ date_evt: null, lieu: null })
     );
+  });
+
+  test('l’image part en CHEMIN, jamais en adresse', async () => {
+    /* Les seaux sont privés : l'adresse est signée et expire au bout
+       d'une heure. L'enregistrer donnerait une actualité dont
+       l'image cesse de s'afficher le lendemain. */
+    rendre(<AdminPublier />, { route: '/admin/publier' });
+
+    await userEvent.type(await screen.findByLabelText(/^Titre/), 'Cérémonie');
+    await userEvent.selectOptions(screen.getByLabelText('Catégorie'), 'Cérémonie');
+    await userEvent.type(screen.getByLabelText('Texte'), 'Samedi.');
+    await userEvent.upload(
+      screen.getByLabelText(/Choisir/i),
+      new File(['x'], 'photo.jpg', { type: 'image/jpeg' })
+    );
+    await screen.findByText('Jointe à cette actualité.');
+    await userEvent.click(screen.getByRole('button', { name: 'Publier' }));
+
+    const envoi = await waitFor(() => {
+      const r = derniere('actualites');
+      expect(r).toBeDefined();
+      return r!;
+    });
+    const image = (envoi.corps as { image: string | null }).image;
+    expect(image).toBeTruthy();
+    expect(image).not.toMatch(/^https?:/);
+  });
+
+  test('sans image choisie, la colonne part en null', async () => {
+    rendre(<AdminPublier />, { route: '/admin/publier' });
+
+    await userEvent.type(await screen.findByLabelText(/^Titre/), 'Réunion');
+    await userEvent.selectOptions(screen.getByLabelText('Catégorie'), 'Réunion');
+    await userEvent.type(screen.getByLabelText('Texte'), 'Mardi.');
+    await userEvent.click(screen.getByRole('button', { name: 'Publier' }));
+
+    await waitFor(() => expect(derniere('actualites')?.corps).toMatchObject({ image: null }));
+  });
+
+  test('l’auteur n’est PAS envoyé par le téléphone', async () => {
+    /* C'est un déclencheur de la base qui le pose, et qui écrase ce
+       que l'appelant proposerait. Une valeur envoyée par le
+       téléphone est une valeur qu'on peut choisir. */
+    rendre(<AdminPublier />, { route: '/admin/publier' });
+
+    await userEvent.type(await screen.findByLabelText(/^Titre/), 'Sortie');
+    await userEvent.selectOptions(screen.getByLabelText('Catégorie'), 'Sortie');
+    await userEvent.type(screen.getByLabelText('Texte'), 'Départ.');
+    await userEvent.click(screen.getByRole('button', { name: 'Publier' }));
+
+    await waitFor(() => expect(derniere('actualites')).toBeDefined());
+    expect(derniere('actualites')?.corps).not.toHaveProperty('auteur_id');
   });
 });
 
@@ -399,6 +482,32 @@ describe('les réglages du club', () => {
         fin: '19:00:00'
       })
     );
+  });
+
+  test('le LIEU part avec la séance', async () => {
+    /* Il était affiché par l'écran du club et envoyé par personne :
+       il restait donc éternellement vide, et un créneau au dojo ne
+       se distinguait pas d'un créneau au gymnase. */
+    poser({ reglages: [], horaires: [] });
+    rendre(<AdminClub />, { route: '/admin/club' });
+
+    await userEvent.selectOptions(await screen.findByLabelText('Jour'), '3');
+    await userEvent.type(screen.getByLabelText('Lieu'), 'Gymnase municipal');
+    await userEvent.click(screen.getByRole('button', { name: 'Ajouter cette séance' }));
+
+    await waitFor(() =>
+      expect(derniere('horaires')?.corps).toMatchObject({ jour: 3, lieu: 'Gymnase municipal' })
+    );
+  });
+
+  test('un lieu laissé vide part en null', async () => {
+    poser({ reglages: [], horaires: [] });
+    rendre(<AdminClub />, { route: '/admin/club' });
+
+    await userEvent.selectOptions(await screen.findByLabelText('Jour'), '4');
+    await userEvent.click(screen.getByRole('button', { name: 'Ajouter cette séance' }));
+
+    await waitFor(() => expect(derniere('horaires')?.corps).toMatchObject({ lieu: null }));
   });
 });
 

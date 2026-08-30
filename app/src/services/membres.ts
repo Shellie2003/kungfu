@@ -102,7 +102,15 @@ export type Tuteur = {
 export type Fiche = Membre & {
   debut: string | null;
   biographie: string | null;
-  prive: { date_naissance: string | null; telephone: string | null; adresse: string | null } | null;
+  /* « notes » est la note interne de l'encadrement. Elle arrive par
+     la même table privée, donc sous la même règle d'accès : un élève
+     ne la reçoit pas, pas même la sienne. */
+  prive: {
+    date_naissance: string | null;
+    telephone: string | null;
+    adresse: string | null;
+    notes: string | null;
+  } | null;
   tuteurs: Tuteur[];
 };
 
@@ -116,7 +124,7 @@ export function useFiche(id: string | undefined) {
         .select(
           `id, numero, nom, prenom, photo, debut, biographie,
            grades ( nom, couleur, rang ),
-           profils_prives ( date_naissance, telephone, adresse ),
+           profils_prives ( date_naissance, telephone, adresse, notes ),
            tuteurs ( id, nom, lien, telephone, urgence )`
         )
         .eq('id', id!)

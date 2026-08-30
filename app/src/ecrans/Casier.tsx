@@ -14,6 +14,7 @@ import {
   useActualites,
   useNotifications
 } from '../services/casier';
+import { useUrl } from '../services/stockage';
 
 export function Casier() {
   const aller = useNavigate();
@@ -137,6 +138,9 @@ export function Actualite() {
   const { id } = useParams();
   const aller = useNavigate();
   const { data: a, isPending } = useActualite(id);
+  /* Appelé avant le retour anticipé : un hook ne se saute pas selon
+     l'état du chargement. */
+  const illustration = useUrl('album', a?.image);
 
   if (isPending || !a) {
     return (
@@ -156,10 +160,21 @@ export function Actualite() {
       <Entete titre={a.categorie} retour={() => aller('/casier')} />
 
       <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-        <div className="ph" style={{ height: 190 }}>
-          <Icone nom="album" taille={46} couleur="#8FB3A0" epaisseur={1.3} />
-          <p className="ph__label">Photo à fournir</p>
-        </div>
+        {/* L'image de l'actualité, quand il y en a une. Sinon
+            l'emplacement reste, et le dit : un bandeau vide est plus
+            honnête qu'une image d'illustration prise ailleurs. */}
+        {illustration ? (
+          <img
+            src={illustration}
+            alt=""
+            style={{ height: 190, width: '100%', objectFit: 'cover' }}
+          />
+        ) : (
+          <div className="ph" style={{ height: 190 }}>
+            <Icone nom="album" taille={46} couleur="#8FB3A0" epaisseur={1.3} />
+            <p className="ph__label">Photo à fournir</p>
+          </div>
+        )}
 
         <div
           style={{
@@ -177,8 +192,8 @@ export function Actualite() {
               {a.titre}
             </h1>
             <p style={{ fontSize: 13, color: '#7C8B82', marginTop: 8 }}>
-              Publié le {jourEtMois(a.cree_le).jour} {jourEtMois(a.cree_le).mois} par
-              l’administration
+              Publié le {jourEtMois(a.cree_le).jour} {jourEtMois(a.cree_le).mois} par{' '}
+              {a.auteur ? `${a.auteur.nom} ${a.auteur.prenom}` : 'l’administration'}
             </p>
           </div>
 

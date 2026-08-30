@@ -15,6 +15,11 @@ export type Participation = {
   id: string;
   accompagnants: number;
   montant_promis: number | null;
+  /* Un mot laissé au club en s'inscrivant : « j'arrive après le
+     travail », « je viens avec ma sœur qui n'est pas membre ». La
+     colonne existait et rien ne l'écrivait ; les gens le disaient
+     donc de vive voix, et cela se perdait. */
+  note: string | null;
   versements: { id: string; montant: number; recu_le: string }[];
 };
 
@@ -25,7 +30,7 @@ export function useParticipation(actualiteId: string | undefined, profilId: stri
     queryFn: async (): Promise<Participation | null> => {
       const { data, error } = await supabase
         .from('participations')
-        .select('id, accompagnants, montant_promis, versements ( id, montant, recu_le )')
+        .select('id, accompagnants, montant_promis, note, versements ( id, montant, recu_le )')
         .eq('actualite_id', actualiteId!)
         .eq('profil_id', profilId!)
         .maybeSingle();
@@ -46,18 +51,21 @@ export function useInscrire(actualiteId: string | undefined) {
     mutationFn: async ({
       profilId,
       accompagnants,
-      montantPromis
+      montantPromis,
+      note
     }: {
       profilId: string;
       accompagnants: number;
       montantPromis: number | null;
+      note?: string | null;
     }) => {
       const { error } = await supabase.from('participations').upsert(
         {
           actualite_id: actualiteId,
           profil_id: profilId,
           accompagnants,
-          montant_promis: montantPromis
+          montant_promis: montantPromis,
+          note: note?.trim() || null
         },
         { onConflict: 'actualite_id,profil_id' }
       );

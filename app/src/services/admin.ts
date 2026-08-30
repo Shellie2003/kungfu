@@ -39,6 +39,11 @@ export type SaisieFiche = {
   date_naissance: string | null;
   telephone: string | null;
   adresse: string | null;
+  /* Une note interne, à l'usage de l'encadrement seul : « ne peut
+     pas courir », « rentre à pied ». Elle vit dans la table privée
+     avec le reste, donc sous la même règle d'accès — un élève ne la
+     lit pas, pas même la sienne. */
+  notes: string | null;
 };
 
 /* Le numéro de membre est attribué par la BASE, pas ici : deux
@@ -66,12 +71,13 @@ export function useCreerFiche() {
     /* La vie privée vit dans une table SÉPARÉE : une règle d'accès
        porte sur une ligne, jamais sur une colonne. C'est ainsi que
        la date de naissance d'un mineur reste hors de l'annuaire. */
-    if (s.date_naissance || s.telephone || s.adresse) {
+    if (s.date_naissance || s.telephone || s.adresse || s.notes) {
       const { error: ePrive } = await supabase.from('profils_prives').insert({
         profil_id: (data as { id: string }).id,
         date_naissance: s.date_naissance,
         telephone: s.telephone,
-        adresse: s.adresse
+        adresse: s.adresse,
+        notes: s.notes
       });
       if (ePrive) throw ePrive;
     }
@@ -101,7 +107,8 @@ export function useModifierFiche(id: string | undefined) {
         profil_id: id,
         date_naissance: s.date_naissance,
         telephone: s.telephone,
-        adresse: s.adresse
+        adresse: s.adresse,
+        notes: s.notes
       },
       { onConflict: 'profil_id' }
     );
@@ -161,6 +168,11 @@ export type SaisieActualite = {
   texte: string;
   date_evt: string | null;
   lieu: string | null;
+  /* Le chemin dans le seau « album », pas l'adresse : les seaux sont
+     privés et l'adresse signée expire. Stocker l'adresse donnerait
+     une actualité dont l'image cesse de s'afficher au bout d'une
+     heure. */
+  image: string | null;
   publiee: boolean;
 };
 
@@ -238,16 +250,40 @@ export async function televerser(seau: string, fichier: File): Promise<string> {
    dans la même interaction envoyait les photos dans l'album
    précédent, ou nulle part. */
 export function useAjouterPhotos() {
-  return useEcrire(async ({ albumId, fichiers }: { albumId: string; fichiers: File[] }) => {
-    if (!albumId) throw new Error('Aucun album choisi.');
-    let rang = Date.now();
-    for (const f of fichiers) {
-      const chemin = await televerser('album', f);
-      const { error } = await supabase
-        .from('photos')
-        .insert({ album_id: albumId, chemin, rang: rang++ });
-      if (error) throw error;
+  return useEcrire(
+    async ({
+      albumId, fichiers, legende
+    }: { albumId: string; fichiers: File[]; legende?: string }) => {
+      if (!albumId) throw new Error('Aucun album choisi.');
+      /* La légende est celle de l'ENVOI, donc la même pour les vingt
+         photos qui rentrent d'une compétition — « Championnat
+         régional, mars 2026 ». C'est ce qu'on peut raisonnablement
+         demander à quelqu'un qui vide sa carte mémoire ; en exiger
+         une par photo aurait pour seul effet qu'il n'y en aurait
+         aucune. Chacune se corrige ensuite individuellement. */
+      const commune = legende?.trim() || null;
+      let rang = Date.now();
+      for (const f of fichiers) {
+        const chemin = await televerser('album', f);
+        const { error } = await supabase
+          .from('photos')
+          .insert({ album_id: albumId, chemin, legende: commune, rang: rang++ });
+        if (error) throw error;
+      }
     }
+  );
+}
+
+/* Corriger la légende d'une photo — une faute de frappe, un nom mal
+   orthographié. Vide, elle redevient nulle plutôt que chaîne vide :
+   l'écran affiche alors son texte de repli au lieu d'un blanc. */
+export function useLegender() {
+  return useEcrire(async ({ id, legende }: { id: string; legende: string }) => {
+    const { error } = await supabase
+      .from('photos')
+      .update({ legende: legende.trim() || null })
+      .eq('id', id);
+    if (error) throw error;
   });
 }
 
@@ -293,8 +329,14 @@ export function useEnregistrerReglages() {
 
 export function useAjouterHoraire() {
   return useEcrire(
-    async (h: { jour: number; debut: string; fin: string; niveau: string }) => {
-      const { error } = await supabase.from('horaires').insert(h);
+    /* Le lieu manquait, et il était pourtant AFFICHÉ : l'écran du
+       club le lit depuis la base, si bien qu'il restait
+       éternellement vide. Un créneau au dojo et un créneau au
+       gymnase ne se distinguaient pas. */
+    async (h: { jour: number; debut: string; fin: string; niveau: string; lieu?: string }) => {
+      const { error } = await supabase
+        .from('horaires')
+        .insert({ ...h, lieu: h.lieu?.trim() || null });
       if (error) throw error;
     }
   );
@@ -428,6 +470,10 @@ export type ParticipationVue = {
   id: string;
   accompagnants: number;
   montant_promis: number | null;
+  /* Le mot laissé en s'inscrivant. Le club le lit ici : il ne
+     servirait à rien qu'un membre puisse l'écrire si personne ne le
+     voyait jamais. */
+  note: string | null;
   membre: { nom: string; prenom: string; numero: string } | null;
   versements: { id: string; montant: number; recu_le: string }[];
 };
@@ -444,7 +490,7 @@ export function useParticipations(actualiteId: string | undefined) {
       const { data, error } = await supabase
         .from('participations')
         .select(
-          `id, accompagnants, montant_promis,
+          `id, accompagnants, montant_promis, note,
            profils:profil_id ( nom, prenom, numero ),
            versements ( id, montant, recu_le )`
         )

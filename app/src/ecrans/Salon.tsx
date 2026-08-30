@@ -9,10 +9,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Icone } from '../ui/Icone';
-import { Carte, Entete, Surtitre } from '../ui/base';
+import { Bouton, Carte, Entete, Surtitre } from '../ui/base';
 import {
   initiales,
+  journaliser,
   marquerLu,
+  useCorriger,
+  useRetirerMonMessage,
   useDirects,
   useEnvoyer,
   useMessages,
@@ -27,11 +30,13 @@ import { useSession } from '../services/session';
 function Fil({
   messages,
   moiId,
-  onSignaler
+  onSignaler,
+  onMien
 }: {
   messages: Message[];
   moiId: string | undefined;
   onSignaler: (m: Message) => void;
+  onMien: (m: Message) => void;
 }) {
   const bas = useRef<HTMLDivElement>(null);
 
@@ -63,7 +68,12 @@ function Fil({
                le seul qui n'entre pas en conflit avec le défilement. */
             onContextMenu={(e) => {
               e.preventDefault();
-              if (!mien) onSignaler(m);
+              /* Le même geste, deux issues selon à qui appartient le
+                 message : on signale celui d'un autre, on corrige ou
+                 l'on retire le sien. Signaler son propre message
+                 n'aurait aucun sens. */
+              if (mien) onMien(m);
+              else onSignaler(m);
             }}
           >
             {!mien && m.auteur && (
@@ -77,6 +87,10 @@ function Fil({
                 hour: '2-digit',
                 minute: '2-digit'
               })}
+              {/* Un message corrigé le dit. Sans cette marque, on
+                  pourrait réécrire ce qu'on a dit hier et prétendre
+                  l'avoir toujours dit. */}
+              {m.modifie_le ? ' · modifié' : ''}
             </i>
           </div>
         );
@@ -128,14 +142,31 @@ function Conversation({ salonId, sombre }: { salonId: string | undefined; sombre
   const enFace = salonId ? directs?.[salonId] : undefined;
   const { data: messages, isPending, error } = useMessages(salonId);
   const envoi = useEnvoyer(salonId);
+  const corriger = useCorriger(salonId);
+  const retirer = useRetirerMonMessage(salonId);
   const signalement = useSignaler();
   const [avis, setAvis] = useState<string | null>(null);
+  /* Le message sur lequel on vient d'appuyer longuement, et le texte
+     en cours de correction. « null » = aucun, donc rien d'affiché. */
+  const [mien, setMien] = useState<Message | null>(null);
+  const [correction, setCorrection] = useState<string | null>(null);
 
   /* Le compteur de non-lus se remet à zéro quand on a vraiment
      ouvert le salon, pas quand on l'a survolé dans la liste. */
   useEffect(() => {
     if (salonId && moi) void marquerLu(salonId, moi.id);
   }, [salonId, moi]);
+
+  /* L'ouverture de l'espace des maîtres est consignée — et elle
+     seule. Journaliser chaque salon ferait un registre de la vie de
+     tout le monde, ce qui serait une atteinte à la vie privée
+     déguisée en mesure de sécurité. Ici, en revanche, se discutent
+     les passages de grade et les difficultés d'un élève : savoir qui
+     y est entré est légitime, et la table existait pour cela sans
+     que personne ne l'écrive. */
+  useEffect(() => {
+    if (salonId && sombre) journaliser(salonId, 'ouverture de l’espace des maîtres');
+  }, [salonId, sombre]);
 
   function signaler(m: Message) {
     if (!moi) return;
@@ -258,7 +289,94 @@ function Conversation({ salonId, sombre }: { salonId: string | undefined; sombre
           {isPending ? 'Chargement…' : 'Les messages n’ont pas pu être chargés.'}
         </div>
       ) : (
-        <Fil messages={messages ?? []} moiId={moi?.id} onSignaler={signaler} />
+        <Fil
+          messages={messages ?? []}
+          moiId={moi?.id}
+          onSignaler={signaler}
+          onMien={(m) => {
+            setMien(m);
+            setCorrection(null);
+          }}
+        />
+      )}
+
+      {/* Ce qu'on peut faire de SON propre message. Le choix est
+          proposé après l'appui long, jamais avant : un bouton
+          « corriger » sur chaque bulle encombrerait un fil que l'on
+          lit bien plus souvent qu'on ne le corrige. */}
+      {mien && (
+        <div
+          style={{
+            padding: '12px 20px',
+            borderTop: '1px solid var(--filet)',
+            background: '#F5F8F6',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10
+          }}
+        >
+          {correction === null ? (
+            <>
+              <p style={{ fontSize: 12.5, color: '#59685F' }}>Votre message</p>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <Bouton genre="ghost" onClick={() => setCorrection(mien.texte)}>
+                  Corriger
+                </Bouton>
+                <Bouton
+                  genre="ghost"
+                  desactive={retirer.isPending}
+                  onClick={() =>
+                    retirer.mutate(mien.id, {
+                      onSuccess: () => {
+                        setAvis('Message retiré. La trace du retrait reste dans le fil.');
+                        setMien(null);
+                      },
+                      onError: () => setAvis('Le retrait n’a pas abouti.')
+                    })
+                  }
+                >
+                  Retirer
+                </Bouton>
+                <Bouton genre="ghost" onClick={() => setMien(null)}>
+                  Annuler
+                </Bouton>
+              </div>
+            </>
+          ) : (
+            <>
+              <input
+                className="saisie__champ"
+                value={correction}
+                onChange={(e) => setCorrection(e.target.value)}
+                aria-label="Corriger mon message"
+                maxLength={4000}
+              />
+              <div style={{ display: 'flex', gap: 10 }}>
+                <Bouton
+                  desactive={!correction.trim() || corriger.isPending}
+                  onClick={() =>
+                    corriger.mutate(
+                      { id: mien.id, texte: correction },
+                      {
+                        onSuccess: () => {
+                          setAvis('Message corrigé.');
+                          setMien(null);
+                          setCorrection(null);
+                        },
+                        onError: (e) => setAvis((e as Error).message)
+                      }
+                    )
+                  }
+                >
+                  Enregistrer
+                </Bouton>
+                <Bouton genre="ghost" onClick={() => setCorrection(null)}>
+                  Annuler
+                </Bouton>
+              </div>
+            </>
+          )}
+        </div>
       )}
 
       <Saisie

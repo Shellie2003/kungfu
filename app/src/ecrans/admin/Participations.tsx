@@ -132,6 +132,24 @@ export function AdminParticipations() {
                     </b>
                   </div>
 
+                  {/* Le mot laissé en s'inscrivant. Il ne servirait à
+                      rien que le membre puisse l'écrire si personne
+                      ne le voyait. */}
+                  {p.note && (
+                    <p
+                      style={{
+                        fontSize: 12.5,
+                        lineHeight: '18px',
+                        color: '#3C4A42',
+                        background: '#F5F8F6',
+                        borderRadius: 10,
+                        padding: '8px 10px'
+                      }}
+                    >
+                      « {p.note} »
+                    </p>
+                  )}
+
                   {p.versements.length > 0 && (
                     <p style={{ fontSize: 12, color: '#7C8B82' }}>
                       {p.versements

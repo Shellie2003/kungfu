@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Icone } from '../ui/Icone';
-import { Bouton, Carte, Entete, Surtitre } from '../ui/base';
+import { Bouton, Carte, Entete, Surtitre, Zone } from '../ui/base';
 import { jourEtMois, useActualite } from '../services/casier';
 import { useReglages } from '../services/club';
 import { useSession } from '../services/session';
@@ -22,6 +22,9 @@ export function Participation() {
   const inscrire = useInscrire(id);
 
   const [accompagnants, setAccompagnants] = useState<number | null>(null);
+  /* Le mot laissé au club. « null » tant qu'on n'a rien tapé, pour
+     que la note déjà enregistrée reste celle qui s'affiche. */
+  const [note, setNote] = useState<string | null>(null);
   const [montant, setMontant] = useState<number | null>(5000);
   const [avis, setAvis] = useState<string | null>(null);
 
@@ -235,6 +238,18 @@ export function Participation() {
           </div>
         )}
 
+        {/* Ce que le club ne peut pas deviner : « j'arrive après le
+            travail », « je viens avec ma sœur qui n'est pas membre ».
+            La colonne existait et rien ne l'écrivait — cela se disait
+            donc de vive voix, et se perdait. */}
+        <Zone
+          libelle="Un mot pour le club"
+          valeur={note ?? participation?.note ?? ''}
+          poser={setNote}
+          lignes={3}
+          aide="Facultatif. Lu par l’administration sur la liste des inscrits."
+        />
+
         {avis && (
           <p role="status" style={{ fontSize: 13, color: '#12613C' }}>
             {avis}
@@ -247,7 +262,12 @@ export function Participation() {
           onClick={() =>
             moi &&
             inscrire.mutate(
-              { profilId: moi.id, accompagnants: venus, montantPromis: montant },
+              {
+                profilId: moi.id,
+                accompagnants: venus,
+                montantPromis: montant,
+                note: note ?? participation?.note ?? null
+              },
               {
                 onSuccess: () => setAvis('Votre participation est enregistrée.'),
                 onError: () =>

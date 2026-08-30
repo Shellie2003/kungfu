@@ -40,7 +40,7 @@ import type { SaisieFiche } from '../../services/admin';
 
 const VIDE: SaisieFiche = {
   nom: '', prenom: '', grade_id: null, debut: null, biographie: null,
-  date_naissance: null, telephone: null, adresse: null
+  date_naissance: null, telephone: null, adresse: null, notes: null
 };
 
 export function AdminFiche() {
@@ -75,7 +75,8 @@ export function AdminFiche() {
       biographie: fiche.biographie,
       date_naissance: fiche.prive?.date_naissance ?? null,
       telephone: fiche.prive?.telephone ?? null,
-      adresse: fiche.prive?.adresse ?? null
+      adresse: fiche.prive?.adresse ?? null,
+      notes: fiche.prive?.notes ?? null
     });
   }, [fiche]);
 
@@ -209,6 +210,20 @@ export function AdminFiche() {
                 Visibles seulement par l’intéressé et par l’encadrement. Elles ne figurent pas
                 à l’annuaire.
               </p>
+              <Filet />
+              {/* La note interne. Elle passe par la même table privée
+                  que le reste, donc par la même règle d'accès — mais
+                  l'écran de profil ne l'affiche NULLE PART, pas même
+                  à l'intéressé. C'est une note de l'encadrement sur
+                  quelqu'un, pas une information le concernant qu'on
+                  lui rendrait. */}
+              <Zone
+                libelle="Note de l’encadrement"
+                valeur={s.notes ?? ''}
+                poser={poser('notes')}
+                lignes={3}
+                aide="Interne aux maîtres et à l’administration. Ce que vous écrivez ici, écrivez-le en sachant qu’un parent peut un jour demander à le lire."
+              />
             </div>
           </Carte>
         </div>

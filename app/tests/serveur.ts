@@ -133,8 +133,30 @@ export function brancherServeur() {
         if (prevu !== undefined) return json(prevu);
         const chemins = (corps as { paths?: string[] } | null)?.paths;
         if (chemins) {
+          /* La forme EXACTE du vrai serveur, et j'ai dû l'apprendre
+             à mes dépens : il rend « signedURL » — un CHEMIN relatif,
+             avec un U et un R majuscules — que supabase-js préfixe
+             ensuite de l'adresse du stockage pour composer
+             « signedUrl ».
+
+             Mon premier bouchon rendait directement « signedUrl ».
+             La bibliothèque, ne trouvant pas « signedURL », posait
+             donc « signedUrl: null » PAR-DESSUS, et toutes les
+             adresses valaient null dans les tests. Ils passaient
+             quand même : aucun ne regardait une image, ils
+             regardaient que la liste des membres survive — ce qu'elle
+             fait tout aussi bien avec zéro adresse.
+
+             C'est le danger d'un simulateur : il ne se trompe jamais
+             de la façon dont le vrai serveur se trompe. Celui-ci rend
+             maintenant ce que rend l'autre. */
+          const seau = url.pathname.split('/object/sign/')[1] ?? 'album';
           return json(
-            chemins.map((p) => ({ path: p, signedUrl: `https://essai/signee/${p}`, error: null }))
+            chemins.map((p) => ({
+              path: p,
+              signedURL: `/object/sign/${seau}/${p}?token=essai`,
+              error: null
+            }))
           );
         }
         return json({ Key: 'album/essai.jpg' });

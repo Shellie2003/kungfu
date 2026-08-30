@@ -46,7 +46,9 @@ export function AdminClub() {
 
   const [valeurs, setValeurs] = useState<Record<string, string>>({});
   const [avis, setAvis] = useState<{ bon: boolean; texte: string } | null>(null);
-  const [neuf, setNeuf] = useState({ jour: '', debut: '17:30', fin: '19:00', niveau: 'Tous niveaux' });
+  const [neuf, setNeuf] = useState({
+    jour: '', debut: '17:30', fin: '19:00', niveau: 'Tous niveaux', lieu: ''
+  });
 
   /* Les valeurs arrivent après le premier rendu. Sans cet effet, les
      champs resteraient vides alors que les réglages sont là — et
@@ -82,7 +84,10 @@ export function AdminClub() {
                   <span style={{ flexGrow: 1, fontSize: 14, color: '#3C4A42' }}>
                     {heure(h.debut)} – {heure(h.fin)}
                   </span>
-                  <span style={{ fontSize: 12, color: '#7C8B82' }}>{h.niveau}</span>
+                  <span style={{ fontSize: 12, color: '#7C8B82' }}>
+                    {h.niveau}
+                    {h.lieu ? ` · ${h.lieu}` : ''}
+                  </span>
                   <button
                     className="tapicon"
                     aria-label={`Retirer la séance du ${nomDuJour(h.jour)}`}
@@ -122,6 +127,17 @@ export function AdminClub() {
                 poser={(v) => setNeuf((p) => ({ ...p, niveau: v }))}
                 options={NIVEAUX.map((n) => ({ valeur: n, texte: n }))}
               />
+              {/* Le lieu était AFFICHÉ par l'écran du club et n'était
+                  envoyé par personne : il restait donc vide pour
+                  toujours, et un créneau au dojo ne se distinguait pas
+                  d'un créneau au gymnase. */}
+              <Champ
+                libelle="Lieu"
+                valeur={neuf.lieu}
+                poser={(v) => setNeuf((p) => ({ ...p, lieu: v }))}
+                invite="Dojo d’Analamahitsy"
+                aide="Facultatif. Utile quand le club emploie plusieurs salles."
+              />
               <Bouton
                 genre="ghost"
                 desactive={!neuf.jour || ajouter.isPending}
@@ -131,7 +147,8 @@ export function AdminClub() {
                       jour: Number(neuf.jour),
                       debut: `${neuf.debut}:00`,
                       fin: `${neuf.fin}:00`,
-                      niveau: neuf.niveau
+                      niveau: neuf.niveau,
+                      lieu: neuf.lieu
                     },
                     {
                       onSuccess: () => {

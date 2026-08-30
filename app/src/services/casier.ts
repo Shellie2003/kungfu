@@ -18,6 +18,26 @@ export type Actualite = {
   lieu: string | null;
   image: string | null;
   cree_le: string;
+  /* Qui a publié. La colonne existait depuis le premier jour et
+     restait vide ; l'écran affichait « par l'administration » pour
+     tout le monde. Un déclencheur de la base la pose maintenant —
+     et l'écrase si le téléphone propose autre chose. */
+  auteur: { nom: string; prenom: string } | null;
+};
+
+const CHAMPS =
+  'id, titre, categorie, texte, date_evt, lieu, image, cree_le, profils:auteur_id ( nom, prenom )';
+
+/* PostgREST rend une jointure « un vers un » tantôt en objet, tantôt
+   en tableau d'un élément selon ce qu'il déduit des clés. On accepte
+   les deux plutôt que de parier. */
+type LigneActu = Omit<Actualite, 'auteur'> & {
+  profils: { nom: string; prenom: string } | { nom: string; prenom: string }[] | null;
+};
+
+const enActualite = (l: LigneActu): Actualite => {
+  const { profils, ...reste } = l;
+  return { ...reste, auteur: Array.isArray(profils) ? (profils[0] ?? null) : profils };
 };
 
 export function useActualites() {
@@ -26,10 +46,10 @@ export function useActualites() {
     queryFn: async (): Promise<Actualite[]> => {
       const { data, error } = await supabase
         .from('actualites')
-        .select('id, titre, categorie, texte, date_evt, lieu, image, cree_le')
+        .select(CHAMPS)
         .order('cree_le', { ascending: false });
       if (error) throw error;
-      return data as Actualite[];
+      return (data as unknown as LigneActu[]).map(enActualite);
     }
   });
 }
@@ -41,11 +61,11 @@ export function useActualite(id: string | undefined) {
     queryFn: async (): Promise<Actualite | null> => {
       const { data, error } = await supabase
         .from('actualites')
-        .select('id, titre, categorie, texte, date_evt, lieu, image, cree_le')
+        .select(CHAMPS)
         .eq('id', id!)
         .maybeSingle();
       if (error) throw error;
-      return data as Actualite | null;
+      return data ? enActualite(data as unknown as LigneActu) : null;
     }
   });
 }

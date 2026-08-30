@@ -84,6 +84,12 @@ export type Message = {
   id: string;
   texte: string;
   cree_le: string;
+  /* Posé par la base à chaque correction — le déclencheur
+     « figer_message » s'en charge, et interdit au passage de changer
+     le salon, l'auteur et la date. Un message corrigé le DIT : sans
+     cela, on pourrait réécrire ce qu'on a dit hier et prétendre
+     l'avoir toujours dit. */
+  modifie_le: string | null;
   supprime_le: string | null;
   auteur_id: string;
   auteur: { nom: string; prenom: string } | null;
@@ -121,7 +127,9 @@ export function useMessages(salonId: string | undefined) {
     queryFn: async (): Promise<Message[]> => {
       const { data, error } = await supabase
         .from('messages')
-        .select('id, texte, cree_le, supprime_le, auteur_id, profils:auteur_id ( nom, prenom )')
+        .select(
+          'id, texte, cree_le, modifie_le, supprime_le, auteur_id, profils:auteur_id ( nom, prenom )'
+        )
         .eq('salon_id', salonId!)
         .order('cree_le', { ascending: true })
         .limit(200);
@@ -148,6 +156,83 @@ export function useEnvoyer(salonId: string | undefined) {
       client.invalidateQueries({ queryKey: ['salons'] });
     }
   });
+}
+
+/* Corriger son propre message. La règle d'accès « corriger mon
+   message » existait depuis le premier jour et aucun écran ne s'en
+   servait : une faute de frappe restait pour toujours.
+
+   Ce que l'application n'a PAS à vérifier ici : que c'est bien le
+   sien. La règle de la base le fait, et la refaire ici donnerait
+   l'illusion que c'est l'application qui protège. */
+export function useCorriger(salonId: string | undefined) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, texte }: { id: string; texte: string }) => {
+      const propre = texte.trim();
+      if (!propre) throw new Error('Un message vide se retire, il ne s’enregistre pas.');
+      const { error } = await supabase.from('messages').update({ texte: propre }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => client.invalidateQueries({ queryKey: ['messages', salonId] })
+  });
+}
+
+/* Retirer son propre message. Suppression DOUCE, comme celle de la
+   modération : la ligne reste, seule sa date de retrait est posée.
+   Le fil garde donc la trace du retrait — « Message retiré » —
+   plutôt que de faire disparaître un échange sans laisser d'indice,
+   ce qui permettrait d'effacer la moitié d'une conversation et de
+   rendre l'autre moitié incompréhensible. */
+export function useRetirerMonMessage(salonId: string | undefined) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('messages')
+        .update({ supprime_le: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ['messages', salonId] });
+      client.invalidateQueries({ queryKey: ['salons'] });
+    }
+  });
+}
+
+/* ------------------------------------------------------------
+   Le journal d'accès.
+
+   La table journal_acces et la fonction journaliser_acces()
+   existaient — l'analyseur de sécurité signale même la seconde — et
+   RIEN ne les appelait. Le club s'était donc doté d'un journal
+   vide, ce qui est pire que pas de journal du tout : on croit
+   pouvoir répondre à « qui a lu quoi » et l'on ne peut pas.
+
+   Ce qui est consigné, et rien d'autre : l'OUVERTURE de l'espace
+   des maîtres, là où se discutent les passages de grade et les
+   difficultés d'un élève. Journaliser chaque salon ferait un
+   registre de la vie de tout le monde, ce qui serait une atteinte à
+   la vie privée déguisée en mesure de sécurité.
+
+   L'échec est SILENCIEUX, et c'est voulu : le journal ne doit
+   jamais empêcher un maître d'ouvrir sa messagerie.
+   ------------------------------------------------------------ */
+export function journaliser(salonId: string, quoi: string) {
+  /* Le « .then » n'est pas décoratif, et le test l'a prouvé avant
+     que le club ne s'en aperçoive : le constructeur de requête de
+     supabase-js est PARESSEUX. Tant que personne ne réclame le
+     résultat, rien ne part sur le réseau. Un simple appel, si
+     naturel qu'il paraisse, aurait donc laissé le journal aussi
+     vide qu'avant — en donnant l'illusion du contraire, ce qui est
+     pire.
+
+     L'échec, lui, reste silencieux : le journal ne doit jamais
+     empêcher un maître d'ouvrir sa messagerie. */
+  void supabase
+    .rpc('journaliser_acces', { p_salon: salonId, p_quoi: quoi })
+    .then(() => undefined, () => undefined);
 }
 
 /* ------------------------------------------------------------

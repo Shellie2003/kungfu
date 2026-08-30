@@ -228,6 +228,107 @@ describe('une conversation', () => {
   });
 });
 
+describe('mon propre message', () => {
+  const MIEN = {
+    id: 'm2', texte: 'Merci pour l’information.', cree_le: maintenant,
+    modifie_le: null, supprime_le: null, auteur_id: 'p1',
+    profils: { nom: 'RAKOTONDRABE', prenom: 'Nirina' }
+  };
+
+  /* L'appui long est un « contextmenu » : c'est le geste que la
+     maquette annonce, et le seul qui n'entre pas en conflit avec le
+     défilement du fil. */
+  const appuiLong = async (texte: string) => {
+    const { fireEvent } = await import('@testing-library/react');
+    fireEvent.contextMenu(await screen.findByText(texte));
+  };
+
+  test('la correction n’envoie QUE le texte', async () => {
+    /* Ni le salon, ni l'auteur, ni la date : un déclencheur de la
+       base les fige, et les envoyer ferait échouer la mise à jour
+       entière. */
+    poser({ salons: [SALON_CLUB], messages: [MIEN] });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    await appuiLong('Merci pour l’information.');
+    await userEvent.click(screen.getByText('Corriger'));
+    const champ = screen.getByLabelText('Corriger mon message');
+    await userEvent.clear(champ);
+    await userEvent.type(champ, 'Merci pour la précision.');
+    await userEvent.click(screen.getByText('Enregistrer'));
+
+    await waitFor(() =>
+      expect(derniere('messages', 'PATCH')?.corps).toEqual({ texte: 'Merci pour la précision.' })
+    );
+  });
+
+  test('le retrait est DOUX : la ligne reste, sa date de retrait est posée', async () => {
+    /* Une suppression franche effacerait la moitié d'un échange et
+       rendrait l'autre moitié incompréhensible. */
+    poser({ salons: [SALON_CLUB], messages: [MIEN] });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    await appuiLong('Merci pour l’information.');
+    await userEvent.click(screen.getByText('Retirer'));
+
+    await waitFor(() =>
+      expect(derniere('messages', 'PATCH')?.corps).toHaveProperty('supprime_le')
+    );
+    expect(derniere('messages', 'DELETE')).toBeUndefined();
+  });
+
+  test('un message corrigé le dit', async () => {
+    poser({
+      salons: [SALON_CLUB],
+      messages: [{ ...MIEN, modifie_le: maintenant }]
+    });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    expect(await screen.findByText(/· modifié/)).toBeInTheDocument();
+  });
+
+  test('sur le message d’un AUTRE, l’appui long signale au lieu de corriger', async () => {
+    poser({
+      salons: [SALON_CLUB],
+      messages: [{
+        id: 'm1', texte: 'Bonsoir à tous.', cree_le: maintenant, modifie_le: null,
+        supprime_le: null, auteur_id: 'p4', profils: { nom: 'RABEMANANJARA', prenom: 'Hery' }
+      }]
+    });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    await appuiLong('Bonsoir à tous.');
+    /* Aucune proposition de correction : on ne corrige pas ce qu'on
+       n'a pas écrit. */
+    expect(screen.queryByText('Corriger')).not.toBeInTheDocument();
+  });
+});
+
+describe('le journal d’accès', () => {
+  test('l’ouverture de l’espace des maîtres est consignée', async () => {
+    /* La table et la fonction existaient, et RIEN ne les appelait :
+       le club avait un journal vide, ce qui est pire que pas de
+       journal — on croit pouvoir répondre à « qui a lu quoi ». */
+    poser({ salons: [SALON_CLUB, SALON_MAITRES] });
+    rendre(<Maitres />);
+
+    await waitFor(() =>
+      expect(derniere('rpc:journaliser_acces')?.corps).toMatchObject({ p_salon: 's2' })
+    );
+  });
+
+  test('un salon ordinaire n’est PAS consigné', async () => {
+    /* Journaliser chaque conversation ferait un registre de la vie
+       de tout le monde : une atteinte à la vie privée déguisée en
+       mesure de sécurité. */
+    poser({ salons: [SALON_CLUB], messages: [] });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    await screen.findByLabelText('Écrire un message');
+    expect(derniere('rpc:journaliser_acces')).toBeUndefined();
+  });
+});
+
 describe('ouvrir une conversation à deux', () => {
   const MEMBRES = [
     { id: 'p1', numero: 'F04x042', nom: 'RAKOTONDRABE', prenom: 'Nirina', photo: null, grades: null },
