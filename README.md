@@ -1,19 +1,30 @@
-# Kung-fu Waishi Analamahitsy — Maquette de l'application mobile
+# Kung-fu Waishi Analamahitsy — L'application mobile
 
-**Statut : maquette soumise à validation.** Aucune technologie n'est choisie, rien n'est
-développé. Ces écrans servent à se mettre d'accord sur le contenu, l'agencement et
-l'identité visuelle avant d'écrire la première ligne de l'application.
+**Statut : l'application existe et se construit en APK.** La maquette reste dans ce
+dépôt, et elle n'est pas un souvenir : l'application **lit sa feuille de style et ses
+icônes**, `css/app.css` et `icones.mjs`. Corriger un rembourrage dans la maquette le
+corrige dans l'application. La ressemblance n'est plus mesurée, elle est identique par
+construction.
 
-Ce dépôt contient un site statique qui présente les écrans dans un cadre de téléphone,
-avec un index à gauche. Il s'ouvre dans un navigateur et se publie sur n'importe quel
-hébergeur.
+| | |
+|---|---|
+| `app/` | **L'application** — Vite, React, Tailwind, empaquetée en APK par Capacitor |
+| `supabase/` | La base : 43 règles d'accès, appliquées et testées sur un vrai PostgreSQL |
+| la racine | **La maquette** — 26 écrans, dont la feuille de style sert à l'application |
+
+Dix-neuf écrans sur vingt-six sont portés ; les sept autres sont des planches de travail
+(charte graphique, sécurité, directions graphiques, planche d'impression) qui n'ont pas
+vocation à entrer dans l'application. Les huit écrans d'administration restent à écrire.
+
+La maquette elle-même est un site statique qui présente les écrans dans un cadre de
+téléphone, avec un index à gauche.
 
 ## En ligne
 
 | Adresse | Ce qu'on y trouve |
 |---|---|
 | `/` | **La maquette** — 26 écrans, avec l'outil de commentaires |
-| `/apercu` | **L'application** — les vrais composants React Native, rendus dans le navigateur |
+| `/apercu` | L'aperçu web des premiers écrans (hérité de la version React Native) |
 
 Le site se redéploie à chaque poussée sur la branche : rien à compiler, rien à renvoyer.
 L'adresse exacte est celle du projet Vercel `kungfu_idealy`.
@@ -23,11 +34,9 @@ ordinateur, le club scanne avec l'appareil photo, rien à installer. Il est rég
 `npm run qr`, et le script **relit le code produit** pour vérifier qu'il encode bien
 l'adresse — un QR qu'on n'a pas décodé est une image, pas un lien.
 
-Ce n'est pas le code d'Expo Go : celui-là n'existera que lorsque le projet Expo existera.
-
-L'aperçu n'est pas une capture d'écran : c'est le code de `app/` assemblé avec
-react-native-web. Ce qu'il ne montre pas, c'est le rendu **natif** — lissage des polices,
-ombres, défilement à l'inertie. Pour cela il faut l'APK, ou Expo Go.
+Pour voir l'**application**, et non la maquette, deux chemins : `cd app && npm run dev`
+sur votre machine, ou l'APK construit par GitHub. Les deux sont détaillés dans
+`TESTER.md`.
 
 ## Lancer en local
 
@@ -292,8 +301,11 @@ compte pour un club à Antananarivo, et ce qui évite qu'elle change d'aspect d'
 | `vercel.json` | Configuration d'hébergement, site statique sans étape de build |
 | `ARCHITECTURE.md` | **Le topo de démarrage** : choix technologique, étapes, coûts |
 | `supabase/` | Les migrations et le test de sécurité, exécutés sur un vrai PostgreSQL |
-| `TESTER.md` | **Comment tester** : navigateur, Expo Go, APK |
-| `mobile/` | **L'application** Expo : thème extrait de cette maquette, composants, écrans |
+| `TESTER.md` | **Comment tester** : navigateur, APK |
+| `icones.mjs` | **Le trait des icônes**, lu par la maquette ET par l'application |
+| `app/` | **L'application** : Vite + React + Tailwind + Capacitor |
+| `app/signature/` | La clé de signature de développement, et pourquoi elle est versionnée |
+| `outils/verifier-app.mjs` | Ouvre les seize écrans dans un vrai navigateur et les contrôle |
 | `outils/` | L'extracteur de thème et la comparaison maquette / application |
 
 L'application de gestion de monastère développée précédemment reste consultable dans

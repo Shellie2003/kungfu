@@ -9,7 +9,8 @@
     "qr": "node outils/qr.mjs",
     "apercu": "node outils/extraire-theme.mjs && node outils/qr.mjs && node outils/batir-apercu.mjs",
     "comparer": "node outils/comparer.mjs",
-    "verifier": "node outils/extraire-theme.mjs && node build-screens.mjs && node build.js && node outils/comparer.mjs && node outils/batir-apercu.mjs"
+    "verifier": "node outils/extraire-theme.mjs && node build-screens.mjs && node build.js && node outils/comparer.mjs && node outils/batir-apercu.mjs",
+    "verifier-app": "cd app && npx vite build && cd .. && node outils/verifier-app.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.24.0",
