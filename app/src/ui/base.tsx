@@ -229,3 +229,150 @@ export function Etat({
   }
   return <>{children}</>;
 }
+
+/* ---------------------------------------------- Les formulaires
+
+   Les écrans d'administration sont presque tous des formulaires. Un
+   champ, c'est un libellé en petites capitales et une boîte : c'est
+   « .field » et « .input » de la maquette, et rien d'autre. Les
+   composer ici évite dix écritures légèrement différentes. */
+export function Champ({
+  libelle,
+  valeur,
+  poser,
+  type = 'text',
+  invite,
+  aide,
+  fige = false,
+  obligatoire = false
+}: {
+  libelle: string;
+  valeur: string;
+  poser: (v: string) => void;
+  type?: 'text' | 'date' | 'tel' | 'password' | 'number';
+  invite?: string;
+  aide?: string;
+  fige?: boolean;
+  obligatoire?: boolean;
+}) {
+  return (
+    <label className="field">
+      <span className="field__label">
+        {libelle}
+        {/* L'astérisque n'est pas décorative : sans elle, on découvre
+            qu'un champ était obligatoire au moment où l'envoi
+            échoue. */}
+        {obligatoire && <span style={{ color: 'var(--alerte)' }}> *</span>}
+      </span>
+      <input
+        className={fige ? 'input input--fige' : 'input'}
+        type={type}
+        value={valeur}
+        onChange={(e) => poser(e.target.value)}
+        placeholder={invite}
+        disabled={fige}
+        required={obligatoire}
+      />
+      {aide && <span className="aide">{aide}</span>}
+    </label>
+  );
+}
+
+export function Zone({
+  libelle,
+  valeur,
+  poser,
+  lignes = 5,
+  aide
+}: {
+  libelle: string;
+  valeur: string;
+  poser: (v: string) => void;
+  lignes?: number;
+  aide?: string;
+}) {
+  return (
+    <label className="field">
+      <span className="field__label">{libelle}</span>
+      <textarea
+        className="input"
+        style={{ minHeight: lignes * 22 + 20, padding: '12px 14px', lineHeight: '22px' }}
+        value={valeur}
+        onChange={(e) => poser(e.target.value)}
+        rows={lignes}
+      />
+      {aide && <span className="aide">{aide}</span>}
+    </label>
+  );
+}
+
+export function Choix<T extends string>({
+  libelle,
+  valeur,
+  poser,
+  options,
+  aide
+}: {
+  libelle: string;
+  valeur: T | '';
+  poser: (v: T) => void;
+  options: { valeur: T; texte: string }[];
+  aide?: string;
+}) {
+  return (
+    <label className="field">
+      <span className="field__label">{libelle}</span>
+      {/* Le chevron n'est pas décoratif : sans lui, « appearance:
+          none » donne une boîte identique à un champ de texte vide,
+          et rien ne dit qu'elle s'ouvre. Il est dessiné en fond
+          plutôt qu'en élément, pour rester dans la boîte du champ. */}
+      <span style={{ position: 'relative', display: 'block' }}>
+        <select
+          className="input"
+          value={valeur}
+          onChange={(e) => poser(e.target.value as T)}
+          style={{ appearance: 'none', width: '100%', paddingRight: 40 }}
+        >
+          <option value="">Choisir…</option>
+          {options.map((o) => (
+            <option key={o.valeur} value={o.valeur}>
+              {o.texte}
+            </option>
+          ))}
+        </select>
+        <span
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            right: 14,
+            top: '50%',
+            transform: 'translateY(-50%) rotate(90deg)',
+            pointerEvents: 'none',
+            display: 'flex'
+          }}
+        >
+          <Icone nom="chev" taille={16} couleur="#7C8B82" epaisseur={2} />
+        </span>
+      </span>
+      {aide && <span className="aide">{aide}</span>}
+    </label>
+  );
+}
+
+/* Le retour d'une écriture : ce qui a marché, ce qui a échoué.
+   Annoncé aux lecteurs d'écran — sans « role », un aveugle voit le
+   bouton ne rien faire. */
+export function Avis({ bon, children }: { bon: boolean; children: ReactNode }) {
+  return (
+    <p
+      role={bon ? 'status' : 'alert'}
+      style={{
+        fontSize: 13,
+        lineHeight: '19px',
+        color: bon ? 'var(--vert-texte)' : '#B3341A'
+      }}
+    >
+      {children}
+    </p>
+  );
+}

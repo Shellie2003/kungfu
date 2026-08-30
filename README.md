@@ -14,7 +14,12 @@ construction.
 
 Dix-neuf écrans sur vingt-six sont portés ; les sept autres sont des planches de travail
 (charte graphique, sécurité, directions graphiques, planche d'impression) qui n'ont pas
-vocation à entrer dans l'application. Les huit écrans d'administration restent à écrire.
+vocation à entrer dans l'application. **Les sept écrans d'administration existent** et
+écrivent en base — fiches, grades, comptes, actualités, notifications, albums, photos.
+
+La ressemblance est **mesurée**, pas affirmée : `npm run comparer-app` photographie le même
+écran des deux côtés et compare la géométrie de chaque texte, sans tolérance. Zéro écart,
+entre 0,04 % et 1,20 % de pixels différents.
 
 La maquette elle-même est un site statique qui présente les écrans dans un cadre de
 téléphone, avec un index à gauche.

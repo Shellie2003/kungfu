@@ -52,8 +52,26 @@ npm run verifier-app
 ```
 
 Ce que cela fait : construit l'application, la sert dans un vrai navigateur, remplace le
-serveur Supabase par des réponses en boîte, **ouvre les seize écrans** et vérifie que
-chacun affiche ce qu'il doit afficher, sans erreur de console.
+serveur Supabase par des réponses en boîte, **ouvre les vingt-quatre écrans** et vérifie
+que chacun affiche ce qu'il doit afficher, sans erreur de console.
+
+```bash
+npm run comparer-app
+```
+
+Mesure la **ressemblance à la maquette**, écran par écran : chaque texte doit être au même
+pixel, à la même taille, dans la même graisse et la même couleur, sans aucune tolérance.
+
+```
+✓ connexion    11 textes · 1,18 % de pixels différents
+✓ accueil      27 textes · 0,72 %
+✓ etudiants    27 textes · 0,12 %
+✓ club         18 textes · 1,20 %
+✓ motdepasse   14 textes · 0,04 %
+```
+
+C'est ce qui donne un sens à « ressemble à 100 % ». Les deux côtés lisent la même feuille
+de style : un écart n'est donc plus une approximation tolérable, c'est un défaut.
 
 ```
 ✓ accueil        32 lignes de texte
@@ -126,11 +144,36 @@ liste de l'élève, il n'est pas grisé. Le téléphone ne l'a jamais reçu.
 L'annuaire contient quatre fiches, dont **une sans compte** : l'élève qui n'a pas de
 téléphone. Il doit apparaître comme les autres.
 
-### Ce qui ne marche pas encore
+### L'administration
 
-L'écran d'administration s'ouvre et montre les vrais chiffres du club, mais ses **huit
-rangées ne s'ouvrent pas** : ces écrans restent à écrire. Elles sont volontairement
-inertes plutôt que boutons morts, et l'écran le dit.
+Les sept écrans existent et écrivent réellement en base :
+
+| Écran | Ce qu'il fait |
+|---|---|
+| Ajouter un étudiant | Fiche, informations privées, biographie. Le numéro est attribué par la base |
+| Modifier une fiche | Le même formulaire, plus le portrait, les tuteurs et la désactivation |
+| Changer un grade | Le seul chemin autorisé : un élève ne peut pas se promouvoir |
+| Comptes et accès | Créer un compte, réinitialiser un mot de passe |
+| Publier une actualité | Avec brouillon, et suppression de ce qui est au casier |
+| Envoyer une notification | À tous les membres actifs, une ligne chacun |
+| Albums et photos | Créer, envoyer plusieurs photos d'un coup, supprimer |
+
+**Une seule dépend d'un déploiement à part : « Comptes et accès ».** Créer un compte
+demande la clé `service_role`, qui passe outre toutes les règles d'accès — la mettre dans
+l'APK reviendrait à la publier. Elle vit donc dans une fonction sur le serveur, à déployer
+une fois :
+
+```bash
+npx supabase functions deploy comptes
+```
+
+Tant que ce n'est pas fait, l'écran fonctionne mais chaque action répond « la fonction
+n'est pas déployée ». C'est voulu : mieux vaut le dire que laisser croire qu'un compte a
+été créé. Le détail est dans `supabase/functions/comptes/LISEZ-MOI.md`.
+
+**Ce qui reste à faire** : les notifications poussées sur l'écran verrouillé du téléphone
+— elles demandent un service à part — et l'écran d'édition des horaires et des réglages du
+club, qui se changent pour l'instant depuis le tableau de bord Supabase.
 
 ---
 
@@ -154,10 +197,10 @@ trois-là parce que l'application lit la feuille de style et les icônes de la m
 
 - **`waishi-<n>.apk`** — à télécharger, envoyer par WhatsApp, installer. Android demande
   une fois l'autorisation d'installer depuis cette source.
-- **`ecrans-<n>`** — une capture de chacun des seize écrans, prise pendant la
+- **`ecrans-<n>`** — une capture de chacun des vingt-quatre écrans, prise pendant la
   vérification. Pour regarder cette version **sans l'installer**.
 
-Le workflow vérifie les types et ouvre les seize écrans avant de construire : une erreur
+Le workflow vérifie les types et ouvre les vingt-quatre écrans et mesure l'écart avec la maquette avant de construire : une erreur
 arrête la chaîne plutôt que de produire un APK cassé.
 
 ### La signature

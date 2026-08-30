@@ -1,11 +1,12 @@
 /* ============================================================
    12 · Administration
 
-   L'écran est celui de la maquette, avec les chiffres réels. Les
-   rangées ne sont PAS des boutons : les écrans qu'elles annoncent
-   n'existent pas encore. Un bouton qui ne fait rien se signale au
-   premier essai et fait douter du reste ; une rangée inerte,
-   annoncée comme telle, ne trompe personne.
+   L'écran est celui de la maquette, avec les chiffres réels et les
+   sept écrans qu'il annonce.
+
+   « Créer un album » et « Gérer les photos » n'en font qu'un : on
+   ne crée pas un album pour le laisser vide, et séparer les deux
+   obligeait à revenir en arrière entre chaque geste.
 
    L'accès à cet écran ne dépend pas de ce qui est écrit ici : un
    élève qui atteindrait l'adresse n'obtiendrait rien du serveur.
@@ -18,31 +19,33 @@ import { useActualites } from '../services/casier';
 import { useAlbums, useReglages } from '../services/club';
 import { useSession } from '../services/session';
 
-const MEMBRES: [string, string, string][] = [
-  ['Ajouter un étudiant', 'Fiche, photo, grade, biographie', 'plus'],
-  ['Modifier une fiche', 'Corriger ou compléter', 'edit'],
-  ['Changer un grade', 'Après un passage validé', 'edit'],
-  ['Comptes et accès', 'Créer, suspendre, réinitialiser', 'lock']
+type Rangee = [titre: string, detail: string, icone: string, vers: string];
+
+const MEMBRES: Rangee[] = [
+  ['Ajouter un étudiant', 'Fiche, photo, grade, biographie', 'plus', '/admin/fiche'],
+  ['Modifier une fiche', 'Corriger ou compléter', 'edit', '/admin/fiches'],
+  ['Changer un grade', 'Après un passage validé', 'edit', '/admin/grades'],
+  ['Comptes et accès', 'Créer, suspendre, réinitialiser', 'lock', '/admin/comptes']
 ];
 
-const PUBLICATION: [string, string, string][] = [
-  ['Publier une actualité', 'Sortie, compétition, réunion…', 'news'],
-  ['Envoyer une notification', 'Prévient tous les membres', 'bell'],
-  ['Créer un album', 'Puis y ajouter des photos', 'album'],
-  ['Gérer les photos', 'Ajouter, classer, supprimer', 'album']
+const PUBLICATION: Rangee[] = [
+  ['Publier une actualité', 'Sortie, compétition, réunion…', 'news', '/admin/publier'],
+  ['Envoyer une notification', 'Prévient tous les membres', 'bell', '/admin/notifier'],
+  ['Albums et photos', 'Créer, ajouter, supprimer', 'album', '/admin/albums']
 ];
 
-function Bloc({ titre, lignes }: { titre: string; lignes: [string, string, string][] }) {
+function Bloc({ titre, lignes }: { titre: string; lignes: Rangee[] }) {
+  const aller = useNavigate();
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <Surtitre>{titre}</Surtitre>
       <div className="list">
-        {lignes.map(([t, d, ic]) => (
-          <div key={t} className="listrow">
+        {lignes.map(([t, d, ic, vers]) => (
+          <button key={t} className="listrow" onClick={() => aller(vers)}>
             <span className="tile tile--sm">
               <Icone nom={ic} taille={18} couleur="#0F5132" />
             </span>
-            <span style={{ flexGrow: 1, minWidth: 0 }}>
+            <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
               <b style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>{t}</b>
               <span
                 style={{ display: 'block', fontSize: 12, color: '#59685F', marginTop: 1 }}
@@ -51,7 +54,7 @@ function Bloc({ titre, lignes }: { titre: string; lignes: [string, string, strin
               </span>
             </span>
             <Icone nom="chev" taille={17} couleur="#A8B6AE" epaisseur={2} />
-          </div>
+          </button>
         ))}
       </div>
     </div>
@@ -138,10 +141,9 @@ export function Admin() {
         <div className="warn">
           <i />
           <p>
-            Ces huit écrans restent à construire : les rangées ci-dessus ne s’ouvrent pas
-            encore. Ce qu’elles feront est déjà permis en base — l’administration est le seul
-            rôle autorisé à modifier une fiche, les membres consultent sans jamais pouvoir
-            écrire.
+            L’administration est le seul rôle autorisé à écrire ; les membres consultent. Ce
+            n’est pas cet écran qui le décide — c’est la base, et elle refuserait les mêmes
+            gestes depuis n’importe quelle autre application.
           </p>
         </div>
       </div>

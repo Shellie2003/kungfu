@@ -53,7 +53,19 @@ const ECRANS = [
   /* L'écran d'administration, et surtout la PORTE qui y mène : la
      route existait sans que rien n'y conduise, et un compte
      d'administration ne montrait alors rien de plus qu'un élève. */
-  ['admin', '/#/admin', 'Publication']
+  ['admin', '/#/admin', 'Publication'],
+  /* Les sept écrans d'administration. Ils écrivent, donc ils
+     comptent double : un formulaire qui ne s'affiche pas se voit,
+     un formulaire qui s'affiche mais n'envoie rien ne se voit pas.
+     Ce contrôle-ci ne dit que le premier — l'envoi, c'est la base
+     qui l'autorise, et elle a son propre test. */
+  ['adm-fiche', '/#/admin/fiche', 'État civil'],
+  ['adm-fiches', '/#/admin/fiches', 'Modifier une fiche'],
+  ['adm-grades', '/#/admin/grades', 'Changer un grade'],
+  ['adm-comptes', '/#/admin/comptes', 'Comptes et accès'],
+  ['adm-publier', '/#/admin/publier', 'Publier une actualité'],
+  ['adm-notifier', '/#/admin/notifier', 'Prévenir tout le club'],
+  ['adm-albums', '/#/admin/albums', 'Créer un album']
 ];
 
 const plat = (s) =>

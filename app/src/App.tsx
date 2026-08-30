@@ -36,6 +36,10 @@ import { Participation } from './ecrans/Participation';
 import { MotDePasse } from './ecrans/MotDePasse';
 import { CarteMembre } from './ecrans/CarteMembre';
 import { Admin } from './ecrans/Admin';
+import { AdminFiche } from './ecrans/admin/Fiche';
+import { AdminChoisirFiche, AdminGrade } from './ecrans/admin/Membres';
+import { AdminAlbums, AdminNotifier, AdminPublier } from './ecrans/admin/Publication';
+import { AdminComptes } from './ecrans/admin/Comptes';
 
 import { seConnecter } from './services/supabase';
 import { estAdmin, useEcouteSession, useSession } from './services/session';
@@ -111,8 +115,9 @@ function Connectee() {
 
   /* Les écrans qui occupent tout l'écran n'ont pas la barre du bas :
      une photo en plein cadre et l'administration ne sont pas des
-     onglets. */
-  const pleinEcran = pathname.startsWith('/album/') || pathname === '/admin';
+     onglets, et la barre y volerait de la place à des formulaires
+     déjà longs. */
+  const pleinEcran = pathname.startsWith('/album/') || pathname.startsWith('/admin');
 
   return (
     <div className="phone">
@@ -140,6 +145,14 @@ function Connectee() {
             que le rôle n'autorise pas. La route est masquée pour ne
             pas encombrer, pas pour protéger. */}
         {estAdmin(profil) && <Route path="/admin" element={<Admin />} />}
+        {estAdmin(profil) && <Route path="/admin/fiche" element={<AdminFiche />} />}
+        {estAdmin(profil) && <Route path="/admin/fiche/:id" element={<AdminFiche />} />}
+        {estAdmin(profil) && <Route path="/admin/fiches" element={<AdminChoisirFiche />} />}
+        {estAdmin(profil) && <Route path="/admin/grades" element={<AdminGrade />} />}
+        {estAdmin(profil) && <Route path="/admin/comptes" element={<AdminComptes />} />}
+        {estAdmin(profil) && <Route path="/admin/publier" element={<AdminPublier />} />}
+        {estAdmin(profil) && <Route path="/admin/notifier" element={<AdminNotifier />} />}
+        {estAdmin(profil) && <Route path="/admin/albums" element={<AdminAlbums />} />}
         <Route path="*" element={<Navigate to="/accueil" replace />} />
       </Routes>
 
