@@ -35,15 +35,9 @@ téléphone, avec un index à gauche.
 |---|---|
 | `/` | **La maquette** — 26 écrans, avec l'outil de commentaires |
 | `/essai` | **L'application**, celle-là même que contient l'APK — rien à installer |
-| `/apercu` | L'aperçu web des premiers écrans (hérité de la version React Native) |
 
 Le site se redéploie à chaque poussée sur la branche : rien à compiler, rien à renvoyer.
 L'adresse exacte est celle du projet Vercel `kungfu_idealy`.
-
-**Le code QR** de la page d'aperçu ouvre celle-ci sur un téléphone : à montrer depuis un
-ordinateur, le club scanne avec l'appareil photo, rien à installer. Il est régénéré par
-`npm run qr`, et le script **relit le code produit** pour vérifier qu'il encode bien
-l'adresse — un QR qu'on n'a pas décodé est une image, pas un lien.
 
 **`/essai` est la façon de tester sans rien installer.** L'application s'y ouvre dans le
 navigateur du téléphone, connectée à la vraie base, et se redéploie à chaque poussée : le
@@ -57,8 +51,8 @@ des quatre façons de tester est dans `TESTER.md`.
 ## Lancer en local
 
 ```bash
-python3 -m http.server 8000     # puis ouvrir http://localhost:8000
-npm run apercu                  # reconstruit /apercu après un changement dans app/
+python3 -m http.server 8000     # la maquette, sur http://localhost:8000
+cd app && npm run dev           # l'application, avec rechargement immédiat
 ```
 
 - **Colonne de gauche** : les 26 écrans.
@@ -324,7 +318,13 @@ compte pour un club à Antananarivo, et ce qui évite qu'elle change d'aspect d'
 | `app/` | **L'application** : Vite + React + Tailwind + Capacitor |
 | `app/signature/` | La clé de signature de développement, et pourquoi elle est versionnée |
 | `outils/verifier-app.mjs` | Ouvre les seize écrans dans un vrai navigateur et les contrôle |
-| `outils/` | L'extracteur de thème et la comparaison maquette / application |
+| `outils/comparer-app.mjs` | Mesure l'écart avec la maquette, texte par texte |
+| `outils/bouchon.mjs` | Le serveur Supabase en boîte, partagé par les deux bancs |
 
-L'application de gestion de monastère développée précédemment reste consultable dans
-l'historique du dépôt : elle répondait à un autre cahier des charges.
+La première version de l'application, écrite en React Native puis abandonnée au profit de
+Vite et Capacitor, reste consultable dans l'historique du dépôt. Elle a été retirée le jour
+où l'APK Capacitor a été installé et vérifié sur un vrai téléphone — pas avant : on ne
+retire pas un chemin qui marche avant que le nouveau ait fait ses preuves.
+
+L'application de gestion de monastère développée encore avant est également dans
+l'historique : elle répondait à un autre cahier des charges.

@@ -15,9 +15,8 @@ le navigateur du téléphone, elle se connecte à la vraie base, on se connecte 
 compte d'essai.
 
 Le code QR est dans `apercu/qr-app.png` : à afficher depuis un ordinateur, le club scanne
-avec l'appareil photo. Comme pour celui de l'aperçu, le script **relit le code produit**
-pour vérifier qu'il encode bien l'adresse — un QR qu'on n'a pas décodé est une image, pas
-un lien.
+avec l'appareil photo. Le script **relit le code produit** pour vérifier qu'il encode bien
+l'adresse — un QR qu'on n'a pas décodé est une image, pas un lien.
 
 ```bash
 node outils/qr.mjs "https://…/essai" app     # régénère qr-app.png et qr-app.svg
@@ -346,10 +345,15 @@ là que cette étape s'exécute pour la première fois.
 des titres à Archivo, et aucune erreur de console. Les chemins des ressources sont
 relatifs, ce qui est ce qui permet à `/essai` de fonctionner.
 
-**Pas vérifié** : que l'APK s'installe et démarre sur un vrai téléphone. C'est la dernière
-chose qui manque, et c'est vous qui la verrez en premier. Tant que ce n'est pas fait,
-`mobile/` — la version React Native — reste dans le dépôt : on ne retire pas un chemin qui
-marche avant que le nouveau ait fait ses preuves.
+**Vérifié par vous** : l'APK s'installe et démarre sur un vrai téléphone. C'est ce qui a
+permis de retirer `mobile/`, la version React Native — on ne retire pas un chemin qui marche
+avant que le nouveau ait fait ses preuves. Elle reste dans l'historique du dépôt.
+
+**Pas vérifié** : que l'application joigne Supabase depuis un téléphone, et que le temps
+réel de la messagerie s'ouvre. Mon environnement ne peut joindre ni `supabase.co` en HTTP
+depuis le navigateur, ni une WebSocket. Les migrations s'appliquent et la base répond aux
+requêtes SQL — je l'ai fait pour `ouvrir_direct` — mais l'appel depuis le téléphone, c'est
+vous qui le verrez.
 
 Défauts trouvés en faisant ces vérifications : **aucune porte ne menait à l'écran
 d'administration, à la carte de membre ni à sa propre fiche** — les routes existaient, rien
