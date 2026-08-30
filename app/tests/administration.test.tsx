@@ -12,6 +12,7 @@ import userEvent from '@testing-library/user-event';
 import { AdminFiche } from '../src/ecrans/admin/Fiche';
 import { AdminPublier, AdminNotifier } from '../src/ecrans/admin/Publication';
 import { AdminComptes } from '../src/ecrans/admin/Comptes';
+import { AdminClub } from '../src/ecrans/admin/Club';
 import { MotDePasse } from '../src/ecrans/MotDePasse';
 import {
   brancherServeur, derniere, poser, poserAuth, recues, reinitialiser, sessionFactice
@@ -316,5 +317,86 @@ describe('changer son mot de passe', () => {
       })
     );
     expect(await screen.findByRole('status')).toHaveTextContent('Mot de passe changé.');
+  });
+});
+
+describe('les réglages du club', () => {
+  test('l’upsert porte le libellé lisible, jamais la clé technique', async () => {
+    /* Sans libellé, l'insertion d'un réglage neuf échouerait — la
+       colonne est obligatoire. Avec la clé technique, chaque
+       enregistrement écraserait « Numéro MVola » par
+       « mvola_numero » dans le tableau de bord. */
+    poser({
+      reglages: [
+        { cle: 'responsable', valeur: 'Idealy Itoerantsoa Santatra' },
+        { cle: 'mvola_numero', valeur: '0388010853' }
+      ],
+      horaires: []
+    });
+    rendre(<AdminClub />, { route: '/admin/club' });
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Enregistrer les renseignements' })
+    );
+
+    const envoi = await waitFor(() => {
+      const r = derniere('reglages');
+      expect(r).toBeDefined();
+      return r!;
+    });
+    const lignes = envoi.corps as { cle: string; libelle: string; valeur: string | null }[];
+    const mvola = lignes.find((l) => l.cle === 'mvola_numero');
+    expect(mvola?.libelle).toBe('Numéro MVola');
+    expect(mvola?.valeur).toBe('0388010853');
+  });
+
+  test('un réglage laissé vide part en null, pas en chaîne vide', async () => {
+    poser({ reglages: [], horaires: [] });
+    rendre(<AdminClub />, { route: '/admin/club' });
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Enregistrer les renseignements' })
+    );
+
+    const lignes = (await waitFor(() => {
+      const r = derniere('reglages');
+      expect(r).toBeDefined();
+      return r!;
+    })).corps as { valeur: string | null }[];
+    expect(lignes.every((l) => l.valeur === null)).toBe(true);
+  });
+
+  test('retirer une séance la DÉSACTIVE, sans la supprimer', async () => {
+    /* Un créneau retiré pour les travaux revient souvent : le
+       retrouver vaut mieux que de le ressaisir. */
+    poser({
+      reglages: [],
+      horaires: [{ id: 'h1', jour: 2, debut: '17:30:00', fin: '19:00:00', niveau: 'Tous niveaux', lieu: null }]
+    });
+    rendre(<AdminClub />, { route: '/admin/club' });
+
+    await userEvent.click(await screen.findByLabelText('Retirer la séance du Mardi'));
+
+    await waitFor(() => {
+      const r = recues.find((x) => x.table === 'horaires' && x.methode === 'PATCH');
+      expect(r?.corps).toMatchObject({ actif: false });
+    });
+    expect(recues.find((x) => x.table === 'horaires' && x.methode === 'DELETE')).toBeUndefined();
+  });
+
+  test('une séance s’ajoute avec ses secondes, comme l’attend Postgres', async () => {
+    poser({ reglages: [], horaires: [] });
+    rendre(<AdminClub />, { route: '/admin/club' });
+
+    await userEvent.selectOptions(await screen.findByLabelText('Jour'), '6');
+    await userEvent.click(screen.getByRole('button', { name: 'Ajouter cette séance' }));
+
+    await waitFor(() =>
+      expect(derniere('horaires')?.corps).toMatchObject({
+        jour: 6,
+        debut: '17:30:00',
+        fin: '19:00:00'
+      })
+    );
   });
 });

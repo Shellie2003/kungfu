@@ -8,6 +8,10 @@
    ne crée pas un album pour le laisser vide, et séparer les deux
    obligeait à revenir en arrière entre chaque geste.
 
+   « Le club » n'était pas dans la maquette et s'est imposé : sans
+   lui, changer un horaire ou le numéro MVola passait par le tableau
+   de bord Supabase, c'est-à-dire par le développeur.
+
    L'accès à cet écran ne dépend pas de ce qui est écrit ici : un
    élève qui atteindrait l'adresse n'obtiendrait rien du serveur.
    ============================================================ */
@@ -31,7 +35,8 @@ const MEMBRES: Rangee[] = [
 const PUBLICATION: Rangee[] = [
   ['Publier une actualité', 'Sortie, compétition, réunion…', 'news', '/admin/publier'],
   ['Envoyer une notification', 'Prévient tous les membres', 'bell', '/admin/notifier'],
-  ['Albums et photos', 'Créer, ajouter, supprimer', 'album', '/admin/albums']
+  ['Albums et photos', 'Créer, ajouter, supprimer', 'album', '/admin/albums'],
+  ['Le club', 'Horaires, responsable, contact, MVola', 'calendar', '/admin/club']
 ];
 
 function Bloc({ titre, lignes }: { titre: string; lignes: Rangee[] }) {

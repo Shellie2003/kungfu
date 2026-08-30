@@ -106,7 +106,22 @@ export const REPONSES = {
   ],
   participations: [],
   membres_salon: [],
-  signalements: [],
+  signalements: [
+    {
+      id: 'sg1',
+      motif: 'Propos déplacés envers un plus jeune',
+      cree_le: maintenant(),
+      traite_le: null,
+      suite: null,
+      profils: { nom: 'RAKOTONDRABE', prenom: 'Nirina' },
+      messages: {
+        id: 'm9',
+        texte: 'Ce message pose problème.',
+        supprime_le: null,
+        profils: { nom: 'ANDRIANJAFY', prenom: 'Tokiniaina' }
+      }
+    }
+  ],
   versements: [],
   tuteurs: []
 };

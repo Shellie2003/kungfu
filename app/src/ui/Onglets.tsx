@@ -34,7 +34,8 @@ const RATTACHEMENT: [RegExp, string][] = [
   [/^\/notifications/, '/accueil'],
   [/^\/carte/, '/accueil'],
   [/^\/motdepasse/, '/etudiants'],
-  [/^\/maitres/, '/messages']
+  [/^\/maitres/, '/messages'],
+  [/^\/signalements/, '/messages']
 ];
 
 export function ongletDe(chemin: string): string {

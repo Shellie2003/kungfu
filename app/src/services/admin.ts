@@ -270,9 +270,42 @@ export function useChangerPortrait() {
 }
 
 /* ---------------------------------------------- Réglages et horaires */
-export function useEnregistrerReglage() {
-  return useEcrire(async ({ cle, valeur }: { cle: string; valeur: string }) => {
-    const { error } = await supabase.from('reglages').update({ valeur }).eq('cle', cle);
+
+/* Tous les réglages d'un coup, pas un par un : l'écran présente un
+   formulaire, et l'enregistrer champ par champ laisserait la moitié
+   des valeurs à jour et l'autre pas si le réseau lâche au milieu.
+
+   « upsert » plutôt que « update » : un réglage que le club n'avait
+   jamais posé n'existe pas encore en base, et un update ne créerait
+   rien — le champ paraîtrait s'enregistrer sans effet. */
+export type Reglage = { cle: string; valeur: string; libelle: string };
+
+export function useEnregistrerReglages() {
+  return useEcrire(async (lignes: Reglage[]) => {
+    if (!lignes.length) return;
+    const { error } = await supabase.from('reglages').upsert(
+      lignes.map((l) => ({ cle: l.cle, valeur: l.valeur.trim() || null, libelle: l.libelle })),
+      { onConflict: 'cle' }
+    );
+    if (error) throw error;
+  });
+}
+
+export function useAjouterHoraire() {
+  return useEcrire(
+    async (h: { jour: number; debut: string; fin: string; niveau: string }) => {
+      const { error } = await supabase.from('horaires').insert(h);
+      if (error) throw error;
+    }
+  );
+}
+
+export function useRetirerHoraire() {
+  return useEcrire(async (id: string) => {
+    /* On désactive plutôt que de supprimer : un créneau retiré pour
+       les travaux revient souvent, et le retrouver vaut mieux que de
+       le ressaisir. */
+    const { error } = await supabase.from('horaires').update({ actif: false }).eq('id', id);
     if (error) throw error;
   });
 }

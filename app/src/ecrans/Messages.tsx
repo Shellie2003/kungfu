@@ -13,6 +13,8 @@ import { Icone } from '../ui/Icone';
 import { Carte, Entete, Etat, Portrait, Surtitre } from '../ui/base';
 import { heureCourte, initiales, useSalons } from '../services/messagerie';
 import type { Salon } from '../services/messagerie';
+import { useSignalementsEnAttente } from '../services/moderation';
+import { estMaitre, useSession } from '../services/session';
 
 function Vignette({ salon }: { salon: Salon }) {
   if (salon.type === 'direct') return <Portrait taille={44} rayon={22} />;
@@ -67,7 +69,12 @@ function Ligne({ salon, onClick }: { salon: Salon; onClick: () => void }) {
 
 export function Messages() {
   const aller = useNavigate();
+  const profil = useSession((e) => e.profil);
   const { data: salons, isPending, error } = useSalons();
+  /* Le décompte n'est demandé qu'à qui peut traiter : un élève ne
+     recevrait de toute façon que ses propres signalements, et la
+     requête serait du bruit. */
+  const { data: enAttente } = useSignalementsEnAttente(estMaitre(profil));
   const [recherche, setRecherche] = useState('');
 
   const q = recherche.trim().toLowerCase();
@@ -167,16 +174,48 @@ export function Messages() {
           )}
         </Etat>
 
-        <Carte style={{ display: 'flex', gap: 12, alignItems: 'flex-start', background: '#FFF7F2', borderColor: '#F2D8C6' }}>
-          <Icone nom="flag" taille={20} couleur="#B0530F" />
-          <div>
-            <p style={{ fontSize: 13, fontWeight: 700, lineHeight: '18px' }}>Signaler un message</p>
-            <p style={{ fontSize: 12.5, lineHeight: '18px', color: '#59685F', marginTop: 4 }}>
-              Un appui long sur un message le signale à l’administration. Le club compte des
-              mineurs : la modération n’est pas une option.
-            </p>
-          </div>
-        </Carte>
+        {/* Pour un maître, la carte devient une PORTE : le
+            signalement s'enregistrait déjà et personne ne le lisait,
+            ce qui promettait une modération qui n'existait pas. */}
+        {estMaitre(profil) ? (
+          <button
+            className="card"
+            style={{
+              display: 'flex', gap: 12, alignItems: 'flex-start', width: '100%',
+              background: '#FFF7F2', borderColor: '#F2D8C6', textAlign: 'left'
+            }}
+            onClick={() => aller('/signalements')}
+          >
+            <Icone nom="flag" taille={20} couleur="#B0530F" />
+            <span style={{ flexGrow: 1, minWidth: 0 }}>
+              <span style={{ display: 'block', fontSize: 13, fontWeight: 700, lineHeight: '18px' }}>
+                Signalements
+              </span>
+              <span
+                style={{
+                  display: 'block', fontSize: 12.5, lineHeight: '18px',
+                  color: '#59685F', marginTop: 4
+                }}
+              >
+                {enAttente
+                  ? `${enAttente} message${enAttente > 1 ? 's' : ''} en attente de traitement.`
+                  : 'Rien en attente. Le club compte des mineurs : la modération n’est pas une option.'}
+              </span>
+            </span>
+            {enAttente ? <span className="pastille">{enAttente}</span> : null}
+          </button>
+        ) : (
+          <Carte style={{ display: 'flex', gap: 12, alignItems: 'flex-start', background: '#FFF7F2', borderColor: '#F2D8C6' }}>
+            <Icone nom="flag" taille={20} couleur="#B0530F" />
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 700, lineHeight: '18px' }}>Signaler un message</p>
+              <p style={{ fontSize: 12.5, lineHeight: '18px', color: '#59685F', marginTop: 4 }}>
+                Un appui long sur un message le signale à l’administration. Le club compte des
+                mineurs : la modération n’est pas une option.
+              </p>
+            </div>
+          </Carte>
+        )}
       </div>
     </>
   );

@@ -32,6 +32,7 @@ import { Club } from './ecrans/Club';
 import { Notifications } from './ecrans/Notifications';
 import { Messages } from './ecrans/Messages';
 import { Salon, Maitres } from './ecrans/Salon';
+import { Moderation } from './ecrans/Moderation';
 import { Participation } from './ecrans/Participation';
 import { MotDePasse } from './ecrans/MotDePasse';
 import { CarteMembre } from './ecrans/CarteMembre';
@@ -40,6 +41,7 @@ import { AdminFiche } from './ecrans/admin/Fiche';
 import { AdminChoisirFiche, AdminGrade } from './ecrans/admin/Membres';
 import { AdminAlbums, AdminNotifier, AdminPublier } from './ecrans/admin/Publication';
 import { AdminComptes } from './ecrans/admin/Comptes';
+import { AdminClub } from './ecrans/admin/Club';
 
 import { seConnecter } from './services/supabase';
 import { estAdmin, useEcouteSession, useSession } from './services/session';
@@ -131,6 +133,10 @@ function Connectee() {
         <Route path="/messages" element={<Messages />} />
         <Route path="/messages/:id" element={<Salon />} />
         <Route path="/maitres" element={<Maitres />} />
+        {/* La modération n'est pas gardée par l'application : un élève
+            qui l'atteindrait ne verrait que SES propres signalements,
+            ce que la base lui accorde déjà. */}
+        <Route path="/signalements" element={<Moderation />} />
         <Route path="/casier" element={<Casier />} />
         <Route path="/casier/:id" element={<Actualite />} />
         <Route path="/casier/:id/participer" element={<Participation />} />
@@ -153,6 +159,7 @@ function Connectee() {
         {estAdmin(profil) && <Route path="/admin/publier" element={<AdminPublier />} />}
         {estAdmin(profil) && <Route path="/admin/notifier" element={<AdminNotifier />} />}
         {estAdmin(profil) && <Route path="/admin/albums" element={<AdminAlbums />} />}
+        {estAdmin(profil) && <Route path="/admin/club" element={<AdminClub />} />}
         <Route path="*" element={<Navigate to="/accueil" replace />} />
       </Routes>
 
