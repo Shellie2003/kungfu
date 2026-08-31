@@ -21,12 +21,45 @@
 import { chromium } from 'playwright';
 import jsQR from 'jsqr';
 import { PNG } from 'pngjs';
-import { readFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, mkdirSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { MOI, brancher, poserSession, servir } from './bouchon.mjs';
 
 const RACINE = new URL('../app/dist/', import.meta.url).pathname;
 const SORTIE = new URL('../outils/comparaisons/app/', import.meta.url).pathname;
+
+/* ---------------------------------------------- Le piège du dist périmé
+
+   Cet outil sert app/dist, PAS les sources. Il ne construit rien.
+   On peut donc corriger un défaut, lancer la vérification, la voir
+   verte — et n'avoir vérifié que l'ancienne version, celle d'avant
+   la correction. C'est arrivé : la correction de la lecture du
+   profil est passée « verte » ici et a fait tomber seize écrans dans
+   l'intégration continue, qui construit, elle.
+
+   Un rapport vert sur du code périmé est pire qu'un rapport rouge :
+   il ferme la question. On refuse donc de démarrer, plutôt que de
+   rassurer à tort. */
+const plusRecent = (dossier) => {
+  let t = 0;
+  for (const e of readdirSync(dossier, { withFileTypes: true })) {
+    const chemin = join(dossier, e.name);
+    t = Math.max(t, e.isDirectory() ? plusRecent(chemin) : statSync(chemin).mtimeMs);
+  }
+  return t;
+};
+
+const SOURCES = new URL('../app/src/', import.meta.url).pathname;
+let construit = 0;
+try { construit = plusRecent(RACINE); } catch { construit = 0; }
+if (construit < plusRecent(SOURCES)) {
+  console.error(
+    'app/dist est plus ancien que app/src : cet outil vérifierait une\n' +
+    'version périmée et la déclarerait conforme. Construisez d’abord :\n' +
+    '\n    cd app && npx vite build\n'
+  );
+  process.exit(1);
+}
 
 mkdirSync(SORTIE, { recursive: true });
 const site = await servir(RACINE);

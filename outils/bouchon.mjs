@@ -59,7 +59,11 @@ export const PROFILS = [
    celui qui en exerce le plus. */
 export const MOI = {
   id: 'p0', numero: 'F04x001', nom: 'IDEALY', prenom: 'Santatra',
-  role: 'admin', grade_id: 'gn', photo: null, debut: '2014-02-01', biographie: null
+  role: 'admin', grade_id: 'gn', photo: null, debut: '2014-02-01', biographie: null,
+  /* Le COMPTE rattaché à cette fiche, et il doit valoir ce que rend
+     « /auth/v1 » plus bas : c'est par ce lien que l'application
+     retrouve sa propre fiche dans un annuaire de soixante-quatre. */
+  compte_id: 'u1'
 };
 
 const avecGrade = (p) => ({ ...p, grades: GRADES.find((g) => g.id === p.grade_id) ?? null });
@@ -222,11 +226,25 @@ export async function brancher(page, inconnues = []) {
 
     const seul = (route.request().headers()['accept'] ?? '').includes('vnd.pgrst.object');
 
-    /* La requête de session est la seule à demander « role » sur une
-       ligne unique : c'est ainsi qu'on rend MA fiche, et non celle
-       du premier venu de la liste. */
-    if (table === 'profils' && seul && (url.searchParams.get('select') ?? '').includes('role')) {
-      return route.fulfill({ json: avecGrade(MOI) });
+    /* La requête de session se reconnaît à son FILTRE, et non plus à
+       son en-tête.
+
+       Elle se reconnaissait jusqu'ici à « Accept: vnd.pgrst.object »,
+       que « .single() » envoie. Le jour où l'application est passée à
+       « .maybeSingle() » — parce que zéro fiche est un cas normal —
+       supabase-js a cessé d'envoyer cet en-tête : il demande la liste
+       et prend la première ligne lui-même. Le bouchon rendait donc
+       l'annuaire entier, la fiche du connecté devenait « null », et
+       SEIZE écrans d'administration disparaissaient d'un coup — les
+       routes n'existent que pour qui a le rôle.
+
+       Le filtre, lui, ne dépend pas de la version de la bibliothèque :
+       c'est l'application qui l'écrit, et c'est justement lui qu'on
+       veut vérifier présent. */
+    const compte = url.searchParams.get('compte_id')?.replace('eq.', '');
+    if (table === 'profils' && compte) {
+      const fiche = compte === MOI.compte_id ? avecGrade(MOI) : null;
+      return route.fulfill({ json: seul ? fiche : fiche ? [fiche] : [] });
     }
 
     let donnees = corps;
