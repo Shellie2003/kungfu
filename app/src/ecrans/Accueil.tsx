@@ -3,6 +3,7 @@
    ============================================================ */
 import { useNavigate } from 'react-router-dom';
 import { Icone } from '../ui/Icone';
+import { Emblem } from '../ui/Emblem';
 import { Carte, Surtitre } from '../ui/base';
 import { useActualites, useNotifications, jourEtMois, teinte } from '../services/casier';
 import { useMembres } from '../services/membres';
@@ -38,18 +39,25 @@ export function Accueil() {
     <>
       <div className="hero">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div className="emblem">
-            <Icone nom="shieldCheck" taille={26} couleur="#0F5132" />
-          </div>
+          <Emblem taille={26} />
           <div style={{ flexGrow: 1, minWidth: 0 }}>
+            {/* Le nom du club vient du RÉGLAGE, comme sur la carte
+                de membre — il était écrit ici en dur, et le corriger
+                dans l'administration changeait la carte plus bas
+                sans changer l'en-tête. Deux noms différents sur le
+                même écran.
+
+                Le repli est le texte de la maquette, mot pour mot :
+                tant que le club n'a rien saisi, l'écran est celui
+                qu'il a validé. */}
             <p
               className="display"
               style={{ fontSize: 17, color: '#FFF', letterSpacing: '.02em', lineHeight: '20px' }}
             >
-              KUNG-FU WAISHI
+              {(reglages?.nom_club ?? 'Kung-fu Waishi').toUpperCase()}
             </p>
             <p style={{ fontSize: 13, color: 'var(--sur-vert)', marginTop: 2 }}>
-              Analamahitsy · Antananarivo
+              {reglages?.lieu_club ?? 'Analamahitsy · Antananarivo'}
             </p>
           </div>
           <button
@@ -99,6 +107,25 @@ export function Accueil() {
               alt=""
               style={{ height: 168, width: '100%', objectFit: 'cover', display: 'block' }}
             />
+          ) : estAdmin(profil) ? (
+            /* L'emplacement vide DEVIENT le bouton, et c'est tout
+               l'intérêt : le club cherchait « la possibilité
+               d'ajouter une photo » et la photo manquante était sous
+               ses yeux, muette. On l'ajoute là où l'on constate
+               qu'elle manque, plutôt qu'à trois appuis de là.
+
+               Même boîte, même icône, même texte : la géométrie de
+               la maquette est intacte. Seul le nom accessible et le
+               curseur changent. */
+            <button
+              className="ph"
+              style={{ height: 168, width: '100%', cursor: 'pointer' }}
+              onClick={() => aller('/admin/club')}
+              aria-label="Ajouter la photo du club"
+            >
+              <Icone nom="martial" taille={52} couleur="#8FB3A0" epaisseur={1.4} />
+              <p className="ph__label">Photo du club à fournir</p>
+            </button>
           ) : (
             <div className="ph" style={{ height: 168 }}>
               <Icone nom="martial" taille={52} couleur="#8FB3A0" epaisseur={1.4} />
@@ -190,11 +217,31 @@ export function Accueil() {
             );
           })}
 
+          {/* Le casier vide, et — pour l'administration — de quoi
+              le remplir. « C'est pareil pour les dernières
+              actualités » : la photo du club et l'actualité se
+              constatent manquantes au même endroit, sur cet écran,
+              et se posaient toutes deux ailleurs.
+
+              Le raccourci n'est PAS une permission : le serveur
+              refuse déjà ce que le rôle n'autorise pas. Il n'apparaît
+              qu'à qui peut s'en servir, ce qui est une question
+              d'encombrement. */}
           {actus && actus.length === 0 && (
             <Carte>
               <p style={{ fontSize: 13.5, lineHeight: '20px', color: '#59685F' }}>
                 Aucune actualité pour le moment.
               </p>
+              {estAdmin(profil) && (
+                <button
+                  className="linkrow"
+                  onClick={() => aller('/admin/publier')}
+                  style={{ marginTop: 4 }}
+                >
+                  Publier la première
+                  <Icone nom="chev" taille={16} couleur="#12613C" epaisseur={2} />
+                </button>
+              )}
             </Carte>
           )}
         </div>

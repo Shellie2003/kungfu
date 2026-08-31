@@ -15,7 +15,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import QRCode from 'qrcode';
 import { Entete, Grade, Portrait } from '../ui/base';
-import { Icone } from '../ui/Icone';
+import { Emblem } from '../ui/Emblem';
 import { dateFr, useFiche } from '../services/membres';
 import { useUrl } from '../services/stockage';
 import { useSession } from '../services/session';
@@ -82,9 +82,7 @@ export function CarteMembre() {
           </span>
 
           <div className="carte__head">
-            <span className="emblem" style={{ width: 36, height: 36, borderRadius: 10 }}>
-              <Icone nom="shieldCheck" taille={20} couleur="#0F5132" />
-            </span>
+            <Emblem taille={20} style={{ width: 36, height: 36, borderRadius: 10 }} />
             <span style={{ flexGrow: 1 }}>
               {/* Le nom du club vient d'un réglage : « le nom
                   officiel » est une décision que le club n'a pas

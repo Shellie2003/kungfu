@@ -9,7 +9,7 @@
    ============================================================ */
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { Icone } from '../ui/Icone';
+import { Emblem } from '../ui/Emblem';
 import type { ResultatConnexion } from '../services/supabase';
 
 export function Connexion({
@@ -58,9 +58,7 @@ export function Connexion({
             textAlign: 'center'
           }}
         >
-          <div className="emblem emblem--lg">
-            <Icone nom="shieldCheck" taille={38} couleur="#0F5132" />
-          </div>
+          <Emblem grand taille={38} />
           <div>
             <p className="display" style={{ fontSize: 21, color: '#FFF', lineHeight: '26px' }}>
               Kung-fu Waishi

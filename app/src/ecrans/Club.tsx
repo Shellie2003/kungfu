@@ -11,7 +11,7 @@
    pour rien.
    ============================================================ */
 import { useNavigate } from 'react-router-dom';
-import { Icone } from '../ui/Icone';
+import { Emblem } from '../ui/Emblem';
 import { Carte, Entete, Surtitre, Tuile, Filet } from '../ui/base';
 import { heure, nomDuJour, useHoraires, useReglages } from '../services/club';
 
@@ -57,9 +57,7 @@ export function Club() {
             textAlign: 'center'
           }}
         >
-          <div className="emblem emblem--lg">
-            <Icone nom="shield" taille={34} couleur="#0F5132" />
-          </div>
+          <Emblem grand taille={34} icone="shield" />
           <div>
             <p className="display" style={{ fontSize: 20, color: '#FFF', lineHeight: '25px' }}>
               Kung-fu Waishi

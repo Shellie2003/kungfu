@@ -29,6 +29,13 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  /* La maquette vit à la racine du dépôt, hors de app/, et
+     l'application la LIT — css/app.css, icones.mjs, et le logo du
+     club dans img/. vite.config.ts l'autorise déjà ; il fallait le
+     dire ici aussi, sinon le serveur de test refuse le fichier
+     (« Denied ID …/img/logo.jpg ») et le test échoue là où la
+     construction, elle, réussit. */
+  server: { fs: { allow: [new URL('..', import.meta.url).pathname] } },
   test: {
     environment: 'jsdom',
     globals: true,
