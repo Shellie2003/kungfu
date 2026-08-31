@@ -108,22 +108,8 @@ jobs:
       # Ce contrôle-ci ne remplace pas Vercel, il le devance : il
       # échoue là où l'on regarde, plutôt que sur un tableau de bord
       # qu'on n'ouvre pas.
-      - name: Vérifier vercel.json
-        run: |
-          node -e '
-            const v = require("./vercel.json");
-            for (const [champ, max] of [["buildCommand", 256], ["installCommand", 256]]) {
-              const n = (v[champ] ?? "").length;
-              if (n > max) {
-                console.error(`vercel.json : ${champ} fait ${n} caractères, le maximum est ${max}.`);
-                console.error("Vercel refusera le déploiement sans construire. Déplacez la");
-                console.error("commande dans un script, comme outils/vercel-build.sh.");
-                process.exit(1);
-              }
-              console.log(`${champ} : ${n}/${max} caractères`);
-            }
-          '
-          test -f outils/vercel-build.sh
+      - name: Vérifier la configuration web
+        run: node outils/verifier-vercel.mjs
 
       # Une erreur de typage arrête la chaîne ici, plutôt que de
       # produire un APK cassé qu'on installerait pour rien.

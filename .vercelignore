@@ -1,13 +1,45 @@
-# Ce qui n'a rien à faire sur l'hébergement : seuls la maquette et
-# l'aperçu sont servis.
+# Ce qui n'a rien à faire sur l'hébergement.
+#
+# ⚠ Ce fichier retire les fichiers AVANT la construction, pas
+# seulement de ce qui est servi. Il a donc cessé d'être un simple
+# ménage le jour où Vercel s'est mis à CONSTRUIRE l'application, et
+# non plus seulement à servir la maquette.
+#
+# Trois motifs écrits pour la maquette retiraient exactement ce dont
+# la construction a besoin :
+#
+#   package.json / package-lock.json — un motif sans barre oblique
+#     s'applique à TOUTE profondeur. app/package-lock.json partait
+#     avec, et « npm ci » répondait « can only install with an
+#     existing package-lock.json ».
+#   outils — le script de construction vit là.
+#   *.mjs — icones.mjs, à la racine, est lu par l'application : c'est
+#     le trait de ses icônes, partagé avec la maquette.
+#
+# D'où la barre oblique initiale partout ci-dessous : elle ancre le
+# motif à la racine et l'empêche de descendre dans app/.
+
 node_modules
-outils
-mobile
-supabase
-scripts
-*.mjs
-build.js
-build-screens.mjs
-build-logo.mjs
-package.json
-package-lock.json
+
+# Racine seulement.
+/supabase
+/scripts
+/mobile
+/build.js
+/build-screens.mjs
+/build-logo.mjs
+/package.json
+/package-lock.json
+
+# outils/ garde le script de construction, et rien d'autre.
+/outils/comparaisons
+/outils/bouchon.mjs
+/outils/verifier-app.mjs
+/outils/comparer-app.mjs
+/outils/qr.mjs
+
+# Le projet Android et sa clé de signature n'ont rien à faire sur un
+# hébergement web. app/tests reste : tsconfig.json l'inclut, et
+# « tsc --noEmit » tourne pendant la construction.
+/app/android
+/app/signature
