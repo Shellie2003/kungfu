@@ -17,7 +17,7 @@
    c'est là que les écrans se cassent.
    ============================================================ */
 import { createServer } from 'node:http';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, statSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 
 export const PROJET = 'znotzkfwukvvtaqfrozn';
@@ -169,18 +169,34 @@ const TYPES = {
   '.woff2': 'font/woff2'
 };
 
-export function servir(racine, port = 4173) {
-  if (!existsSync(join(racine, 'index.html'))) {
+/* « racineObligatoire » vaut faux quand on sert le DÉPÔT plutôt que
+   app/dist : la page vit alors sous /essai, et il n'y a pas
+   d'index.html à la racine. */
+export function servir(racine, port = 4173, racineObligatoire = true) {
+  if (racineObligatoire && !existsSync(join(racine, 'index.html'))) {
     console.error('app/dist est vide. Lancez d’abord : cd app && npx vite build');
     process.exit(1);
   }
   const serveur = createServer((req, res) => {
     const chemin = normalize(decodeURI((req.url ?? '/').split('?')[0]));
-    const fichier = join(racine, chemin === '/' ? 'index.html' : chemin);
-    if (!fichier.startsWith(racine) || !existsSync(fichier)) {
+    const demande = join(racine, chemin === '/' ? 'index.html' : chemin);
+    if (!demande.startsWith(racine)) {
       res.writeHead(404).end('non trouvé');
       return;
     }
+
+    /* Comme Vercel : « cleanUrls » fait répondre /essai avec
+       essai/index.html. Sans cette reprise, la demande tombait sur un
+       DOSSIER et le serveur mourait — « EISDIR: illegal operation on
+       a directory ». C'est aussi le seul moyen de reproduire ici le
+       chemin exact que sert le site publié. */
+    const candidats = [demande, join(demande, 'index.html'), `${demande}.html`];
+    const fichier = candidats.find((c) => existsSync(c) && !statSync(c).isDirectory());
+    if (!fichier) {
+      res.writeHead(404).end('non trouvé');
+      return;
+    }
+
     res.writeHead(200, { 'content-type': TYPES[extname(fichier)] ?? 'application/octet-stream' });
     res.end(readFileSync(fichier));
   });

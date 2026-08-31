@@ -168,6 +168,23 @@ jobs:
       - name: Faire tourner le carrousel
         run: node outils/verifier-carrousel.mjs
 
+      # Les deux versions doivent être JUMELLES.
+      #
+      # Exigence du club, mot pour mot : « tout ce qui est présent
+      # dans la version web doit être strictement identique à celle
+      # de l'application ».
+      #
+      # Elles viennent des mêmes sources mais de DEUX commandes —
+      # l'APK veut des chemins relatifs, le web des chemins absolus
+      # sous /essai. Deux commandes, c'est deux occasions de
+      # diverger, et personne ne s'en apercevrait avant le club.
+      #
+      # On ne compare pas les paquets : le chemin de base change
+      # l'ordre des modules, donc les noms que le minificateur
+      # invente. On compare CE QUI EST AFFICHÉ, au pixel près.
+      - name: Web et application, au pixel près
+        run: node outils/verifier-jumeaux.mjs
+
       # La version WEB, ouverte au chemin où elle est publiée.
       #
       # Les étapes ci-dessus servent app/dist à la RACINE d'un
