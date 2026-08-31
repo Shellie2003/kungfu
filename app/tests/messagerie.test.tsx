@@ -388,6 +388,24 @@ describe('quand l’envoi échoue', () => {
     await waitFor(() => expect(derniere('messages')).toBeDefined());
   });
 
+  /* Le SECOND silence, et le vrai coupable du « j'écris un message
+     et il ne s'affiche pas ». L'écran disait « moi && envoi.mutate(…) » :
+     sans fiche chargée — ce que la lecture du profil rendait à tout
+     le monde — aucune requête ne partait, aucune erreur n'était levée,
+     et le champ se vidait comme après un succès. */
+  test('sans fiche chargée, il le DIT au lieu de n’envoyer rien', async () => {
+    poser({ salons: [SALON_CLUB], messages: [] });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: null });
+
+    await userEvent.type(await screen.findByLabelText('Écrire un message'), 'Bonsoir');
+    await userEvent.click(screen.getByLabelText('Envoyer'));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/fiche n’est pas chargée/);
+    /* Et surtout : rien n'est parti. Un avis qui accompagnerait un
+       envoi réussi serait une fausse alerte, pas une correction. */
+    expect(derniere('messages')).toBeUndefined();
+  });
+
   test('un envoi réussi n’affiche aucun avis', async () => {
     poser({ salons: [SALON_CLUB], messages: [] });
     rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });

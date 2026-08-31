@@ -243,10 +243,18 @@ export function useEnvoyer(salonId: string | undefined) {
     mutationFn: async ({
       texte, auteurId, piece = null
     }: { texte: string; auteurId: string; piece?: string | null }) => {
-      const { error } = await supabase
+      if (!salonId) throw new Error('Aucune conversation ouverte.');
+      /* Le « .select() » pour la même raison qu'ailleurs : il donne
+         la ligne écrite, et l'absence de ligne devient une erreur
+         qu'on peut nommer plutôt qu'un succès imaginaire. */
+      const { data, error } = await supabase
         .from('messages')
-        .insert({ salon_id: salonId, auteur_id: auteurId, texte, piece });
+        .insert({ salon_id: salonId, auteur_id: auteurId, texte, piece })
+        .select('id');
       if (error) throw error;
+      if (!data?.length) {
+        throw new Error('Le serveur a accepté sans rien écrire — réessayez.');
+      }
     },
     onSuccess: () => {
       client.invalidateQueries({ queryKey: ['messages', salonId] });

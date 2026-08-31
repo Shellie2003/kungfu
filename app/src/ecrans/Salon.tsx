@@ -553,8 +553,26 @@ function Conversation({ salonId, sombre }: { salonId: string | undefined; sombre
           Le message vient du serveur : le réécrire ici le ferait
           diverger de la règle le jour où le club la change. */}
       <Saisie
-        envoyer={(texte, piece) =>
-          moi &&
+        envoyer={(texte, piece) => {
+          /* ⚠ Le second silence, et le vrai coupable de « j'écris un
+             message et il ne s'affiche pas ».
+
+             Ce code disait « moi && envoi.mutate(…) ». Sans fiche
+             chargée, l'expression valait « null » : AUCUNE requête ne
+             partait, aucune erreur n'était levée, aucun message ne
+             s'affichait — et le champ se vidait quand même. Le
+             téléphone du club n'a rien envoyé pendant des jours, et
+             l'application n'avait pas un mot à dire à ce sujet.
+
+             La cause première est corrigée ailleurs (lireProfil ne
+             rend plus « null » à tout le monde), mais un « et si »
+             muet reste un piège : on le remplace par une phrase. */
+          if (!moi) {
+            setAvis(
+              'Le message n’est pas parti : votre fiche n’est pas chargée. Fermez et rouvrez l’application, ou reconnectez-vous.'
+            );
+            return;
+          }
           envoi.mutate(
             { texte, auteurId: moi.id, piece },
             {
@@ -562,8 +580,8 @@ function Conversation({ salonId, sombre }: { salonId: string | undefined; sombre
               onError: (e) =>
                 setAvis(`Le message n’est pas parti : ${(e as Error).message}`)
             }
-          )
-        }
+          );
+        }}
         occupe={envoi.isPending}
         joindreFichier={salonId ? (f) => joindre(salonId, f) : null}
       />

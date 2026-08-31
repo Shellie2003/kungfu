@@ -425,6 +425,7 @@ export function ChoisirFichier({
   onFichier,
   multiple = false,
   desactive = false,
+  appareil = false,
   nomAccessible,
   style
 }: {
@@ -432,6 +433,13 @@ export function ChoisirFichier({
   onFichier: (fichiers: File[]) => void;
   multiple?: boolean;
   desactive?: boolean;
+  /* « Prendre une photo » plutôt que « en choisir une ».
+     « capture » demande à Android d'ouvrir l'appareil photo au lieu
+     du sélecteur de documents. Sur un navigateur de bureau
+     l'attribut est ignoré et l'on retombe sur le sélecteur : c'est
+     pour cela que les deux boutons coexistent, plutôt qu'un seul
+     qui ne marcherait qu'à moitié selon l'appareil. */
+  appareil?: boolean;
   /* Obligatoire quand l'étiquette ne porte qu'une icône : sans lui,
      le champ n'a aucun nom, et un lecteur d'écran annonce
      « bouton ». C'est le cas du trombone de la messagerie. */
@@ -461,7 +469,8 @@ export function ChoisirFichier({
         ref={champ}
         type="file"
         accept="image/jpeg,image/png,image/webp"
-        multiple={multiple}
+        capture={appareil ? 'environment' : undefined}
+        multiple={multiple && !appareil}
         disabled={desactive}
         aria-label={nomAccessible}
         /* Invisible, mais TOUJOURS dans la mise en page : c'est ce

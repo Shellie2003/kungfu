@@ -15,9 +15,11 @@ import {
   useNotifications
 } from '../services/casier';
 import { useUrl } from '../services/stockage';
+import { estAdmin, useSession } from '../services/session';
 
 export function Casier() {
   const aller = useNavigate();
+  const moi = useSession((e) => e.profil);
   const { data: actus, isPending, error } = useActualites();
   const { data: notifs } = useNotifications();
   const [filtre, setFiltre] = useState<string | null>(null);
@@ -30,15 +32,36 @@ export function Casier() {
       <Entete
         titre="Casier"
         action={
-          <button
-            className="tapicon"
-            onClick={() => aller('/notifications')}
-            aria-label="Notifications"
-            style={{ position: 'relative' }}
-          >
-            <Icone nom="bell" taille={22} couleur="#0E2119" />
-            {nonlues > 0 && <span className="dot dot--plain" />}
-          </button>
+          <>
+            {/* Publier là où l'on regarde. Le club a cherché ce
+                bouton ici : le casier est l'endroit où l'on constate
+                qu'une annonce manque, et il fallait jusqu'ici
+                ressortir, ouvrir l'administration et retrouver
+                l'écran de publication.
+
+                Ce n'est pas une permission de plus — le serveur
+                refuse déjà ce que le rôle n'autorise pas — c'est un
+                raccourci, et il n'apparaît qu'à qui peut s'en
+                servir. */}
+            {estAdmin(moi) && (
+              <button
+                className="tapicon"
+                onClick={() => aller('/admin/publier')}
+                aria-label="Publier une actualité"
+              >
+                <Icone nom="plus" taille={22} couleur="#0E2119" epaisseur={2} />
+              </button>
+            )}
+            <button
+              className="tapicon"
+              onClick={() => aller('/notifications')}
+              aria-label="Notifications"
+              style={{ position: 'relative' }}
+            >
+              <Icone nom="bell" taille={22} couleur="#0E2119" />
+              {nonlues > 0 && <span className="dot dot--plain" />}
+            </button>
+          </>
         }
       />
 

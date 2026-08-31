@@ -71,12 +71,27 @@ Deno.serve(async (requete) => {
     global: { headers: { Authorization: autorisation } }
   });
 
+  /* Le MÊME défaut que dans l'application, et il aurait rendu cette
+     fonction inutilisable : « .single() » sans filtre exige une
+     ligne, et la règle « annuaire visible des membres » en rend
+     autant qu'il y a de membres actifs. Toute création de compte
+     aurait répondu « Jeton invalide » — y compris à
+     l'administration.
+
+     On demande donc explicitement la fiche rattachée à ce compte.
+     Toujours avec la clé PUBLIABLE : c'est la base qui dit qui
+     appelle, pas nous. */
+  const { data: qui } = await commeAppelant.auth.getUser();
+  const compte = qui.user?.id;
+  if (!compte) return repondre({ message: 'Jeton invalide.' }, 401);
+
   const { data: moi, error: eMoi } = await commeAppelant
     .from('profils')
     .select('id, role')
-    .single();
+    .eq('compte_id', compte)
+    .maybeSingle();
 
-  if (eMoi || !moi) return repondre({ message: 'Jeton invalide.' }, 401);
+  if (eMoi || !moi) return repondre({ message: 'Aucune fiche pour ce compte.' }, 401);
   if (moi.role !== 'admin') {
     return repondre({ message: 'Réservé à l’administration.' }, 403);
   }

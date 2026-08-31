@@ -14,7 +14,7 @@ import { Icone } from '../ui/Icone';
 import { Carte, Entete, Grade, Portrait, Surtitre, Filet, Tuile } from '../ui/base';
 import { dateFr, useFiche } from '../services/membres';
 import { useUrl } from '../services/stockage';
-import { useSession } from '../services/session';
+import { estAdmin, estMaitre, useSession } from '../services/session';
 
 const MASQUES = [
   'Date de naissance',
@@ -57,8 +57,32 @@ export function Profil() {
     );
   }
 
-  const ouverte = Boolean(fiche.prive || fiche.tuteurs.length > 0 || fiche.biographie);
   const estMoi = moi?.id === fiche.id;
+
+  /* ⚠ Ce qui décide de montrer le VERROU, et pourquoi le premier
+     jet était faux.
+
+     Il regardait si des informations privées étaient arrivées : « si
+     le serveur m'a rendu quelque chose, j'ouvre ». L'intention était
+     bonne — ne pas laisser l'application décider de ce qu'elle a le
+     droit de voir — mais elle confondait deux choses très
+     différentes :
+
+       « on ne me les a pas données »   → le verrou a du sens
+       « il n'y en a pas »              → le verrou est un mensonge
+
+     Une administration qui ouvrait la fiche d'un élève sans date de
+     naissance, sans tuteur et sans biographie — le cas ORDINAIRE
+     d'une fiche qu'on vient de créer — lisait « informations
+     réservées ». Elle y avait accès. Il n'y avait rien.
+
+     Le rôle sert donc à choisir le TEXTE, jamais à décider ce qui
+     s'affiche : l'écran ne montre toujours que ce que le serveur a
+     rendu. Un élève qui modifierait l'application pour se déclarer
+     maître verrait la même chose — c'est-à-dire rien de plus. */
+  const aDroit = estMoi || estMaitre(moi);
+  const aQuelqueChose = Boolean(fiche.prive || fiche.tuteurs.length > 0 || fiche.biographie);
+  const ouverte = aDroit || aQuelqueChose;
 
   /* ---------------------------------------------- Verrouillé */
   if (!ouverte) {
@@ -155,6 +179,11 @@ export function Profil() {
         titre="Profil"
         retour={() => aller('/etudiants')}
         action={
+          /* Depuis sa propre fiche, on change son mot de passe.
+             Depuis celle d'un autre, l'administration la corrige —
+             sans quoi il fallait ressortir, ouvrir l'écran
+             d'administration et retrouver la personne dans une
+             seconde liste. */
           estMoi ? (
             <button
               className="tapicon"
@@ -162,6 +191,14 @@ export function Profil() {
               aria-label="Changer le mot de passe"
             >
               <Icone nom="key" taille={21} couleur="#0E2119" />
+            </button>
+          ) : estAdmin(moi) ? (
+            <button
+              className="tapicon"
+              onClick={() => aller(`/admin/fiche/${fiche.id}`)}
+              aria-label="Modifier cette fiche"
+            >
+              <Icone nom="edit" taille={21} couleur="#0E2119" />
             </button>
           ) : undefined
         }
@@ -200,6 +237,16 @@ export function Profil() {
           <div className="banner">
             <Icone nom="lock" taille={16} couleur="#0F5132" />
             <span>Fiche ouverte · session de {fiche.prenom}</span>
+          </div>
+        )}
+
+        {/* Le cas « j'ai le droit, mais il n'y a rien » : le dire,
+            plutôt que de laisser une carte à moitié vide dont on ne
+            sait pas si elle est cachée ou incomplète. */}
+        {aDroit && !aQuelqueChose && (
+          <div className="banner">
+            <Icone nom="edit" taille={16} couleur="#0F5132" />
+            <span>Aucune information privée n’a encore été saisie sur cette fiche.</span>
           </div>
         )}
 

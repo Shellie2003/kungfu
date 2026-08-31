@@ -12,7 +12,7 @@ import userEvent from '@testing-library/user-event';
 import { Etudiants } from '../src/ecrans/Etudiants';
 import { Profil } from '../src/ecrans/Profil';
 import { brancherServeur, poser, reinitialiser } from './serveur';
-import { PROFIL_ELEVE, rendre } from './rendu';
+import { PROFIL_ADMIN, PROFIL_ELEVE, rendre } from './rendu';
 
 const GRADES = [
   { id: 'gv', nom: 'Ceinture verte', couleur: '#4E9C57', rang: 4, actif: true },
@@ -106,17 +106,40 @@ describe('la fiche', () => {
   test('sans informations privées, elle montre le verrou', async () => {
     /* Et c'est le SERVEUR qui l'a décidé : il n'a rien rendu de
        privé. L'écran ne teste aucun rôle — s'il le faisait, on
-       croirait que c'est l'application qui protège. */
+       croirait que c'est l'application qui protège.
+
+       La fiche regardée est celle d'un AUTRE (p4). Sur la sienne
+       propre, le verrou n'aurait aucun sens : il annoncerait
+       « réservé à l'intéressé » à l'intéressé lui-même, alors que
+       la vraie nouvelle est qu'il n'a rien de rempli. */
     poser({
-      profils: [{ ...MEMBRES[0], debut: null, biographie: null, profils_prives: null, tuteurs: [] }]
+      profils: [{ ...MEMBRES[1], debut: null, biographie: null, profils_prives: null, tuteurs: [] }]
     });
-    rendre(<Profil />, { route: '/etudiants/p1', chemin: '/etudiants/:id', profil: PROFIL_ELEVE });
+    rendre(<Profil />, { route: '/etudiants/p4', chemin: '/etudiants/:id', profil: PROFIL_ELEVE });
 
     expect(await screen.findByText('Informations réservées')).toBeInTheDocument();
     expect(screen.getByText('Date de naissance')).toBeInTheDocument();
     /* Les champs sont NOMMÉS mais vides : on sait ce qu'on
        obtiendrait, plutôt qu'un mur nu. */
     expect(screen.queryByText('14 mars 2006')).not.toBeInTheDocument();
+  });
+
+  /* « Je suis déjà admin mais je ne peux pas voir les infos d'un
+     élève. » Le verrou ne regardait QUE le contenu rendu : une fiche
+     dont rien n'est encore rempli s'affichait comme fermée, y compris
+     à l'encadrement, qui en concluait que ses droits ne marchaient
+     pas. Une fiche vide et une fiche interdite se ressemblaient. */
+  test('pour l’encadrement, une fiche vide s’ouvre — et se dit vide', async () => {
+    poser({
+      profils: [{ ...MEMBRES[0], debut: null, biographie: null, profils_prives: null, tuteurs: [] }]
+    });
+    rendre(<Profil />, { route: '/etudiants/p1', chemin: '/etudiants/:id', profil: PROFIL_ADMIN });
+
+    /* Pas de verrou : la fiche est ouverte. */
+    expect(await screen.findAllByText('RAKOTONDRABE')).not.toHaveLength(0);
+    expect(screen.queryByText('Informations réservées')).not.toBeInTheDocument();
+    /* Et le raccourci de correction, là où l'on constate le manque. */
+    expect(screen.getByLabelText('Modifier cette fiche')).toBeInTheDocument();
   });
 
   test('avec les informations privées, elle les montre', async () => {

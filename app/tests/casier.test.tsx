@@ -10,10 +10,10 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Actualite } from '../src/ecrans/Casier';
+import { Actualite, Casier } from '../src/ecrans/Casier';
 import { Participation } from '../src/ecrans/Participation';
 import { brancherServeur, derniere, poser, reinitialiser } from './serveur';
-import { PROFIL_ELEVE, rendre } from './rendu';
+import { PROFIL_ADMIN, PROFIL_ELEVE, rendre } from './rendu';
 
 const SORTIE = {
   id: 'a1',
@@ -127,5 +127,34 @@ describe('je participe', () => {
     await waitFor(() =>
       expect(screen.getByLabelText('Un mot pour le club')).toHaveValue('Je viens avec ma sœur.')
     );
+  });
+});
+
+/* ============================================================
+   Les raccourcis de publication.
+
+   « Pour le casier on doit ajouter un bouton pour ajouter un
+   événement avec toutes les infos nécessaires » : le formulaire
+   existait — titre, catégorie, date, lieu, texte, image — mais il
+   vivait à trois appuis de là, dans l'écran d'administration. On
+   publie là où l'on constate qu'une annonce manque.
+
+   Ce n'est PAS une permission de plus : la route et le serveur
+   refusent déjà ce que le rôle n'autorise pas. Le bouton n'apparaît
+   qu'à qui peut s'en servir, ce qui est une question d'encombrement,
+   pas de sécurité — d'où les deux tests.
+   ============================================================ */
+describe('publier depuis le casier', () => {
+  test('l’administration a le raccourci', async () => {
+    poser({ actualites: [SORTIE], notifications: [] });
+    rendre(<Casier />, { route: '/casier', profil: PROFIL_ADMIN });
+    expect(await screen.findByLabelText('Publier une actualité')).toBeInTheDocument();
+  });
+
+  test('un élève ne l’a pas — il n’aurait rien à en faire', async () => {
+    poser({ actualites: [SORTIE], notifications: [] });
+    rendre(<Casier />, { route: '/casier', profil: PROFIL_ELEVE });
+    await screen.findByText('Sortie au lac Mantasoa');
+    expect(screen.queryByLabelText('Publier une actualité')).not.toBeInTheDocument();
   });
 });

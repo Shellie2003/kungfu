@@ -179,7 +179,38 @@ export function brancherServeur() {
          que la règle d'accès écarte ne touche aucune ligne et rend un
          tableau vide, là où le GET de la même table rend les
          messages. Sans cela, on ne peut pas simuler un refus. */
-      const reponse = tables[`${table}:${methode}`] ?? tables[table];
+      /* Un INSERT ne rend pas la table, il rend LA LIGNE CRÉÉE.
+
+         Le simulateur rendait jusqu'ici la valeur posée pour la
+         table — c'est-à-dire, pour un test qui pose « messages: [] »
+         afin de partir d'un fil vide, un tableau vide. Le vrai
+         PostgREST, lui, renvoie la ligne écrite dès qu'on demande
+         « .select() ». Un code qui distingue « accepté » de « refusé
+         en silence » sur ce retour aurait donc échoué ici tout en
+         marchant sur le serveur, et — le piège inverse, celui des
+         adresses signées — un code faux aurait pu passer.
+
+         On écho donc le corps envoyé, ce que fait le vrai serveur à
+         ceci près qu'il y ajoute l'identifiant et les valeurs par
+         défaut. Un test qui veut simuler un insert REFUSÉ pose
+         explicitement « <table>:POST », qui garde la priorité. */
+      const explicite = tables[`${table}:${methode}`];
+      const reponse =
+        explicite ??
+        (methode === 'POST' && corps !== undefined && !table.startsWith('rpc:')
+          ? [corps].flat().map((ligne) => {
+              /* C'est le SERVEUR qui pose l'identifiant, pas celui
+                 qui écrit. Un test qui a besoin de le connaître à
+                 l'avance — pour vérifier qu'une seconde écriture s'y
+                 rattache bien — pose la table avec la ligne voulue,
+                 et l'identifiant en est repris ici. */
+              const attendue = (tables[table] as { id?: string }[] | undefined)?.[0];
+              const l = ligne as Record<string, unknown>;
+              return l && typeof l === 'object' && l.id === undefined && attendue?.id
+                ? { ...l, id: attendue.id }
+                : l;
+            })
+          : tables[table]);
       if (reponse === undefined) {
         /* Une table non prévue rend un tableau vide plutôt qu'une
            erreur : un test qui ne s'intéresse pas aux notifications

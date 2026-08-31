@@ -7,9 +7,11 @@ import { Icone } from '../ui/Icone';
 import { Entete, Etat, Puce, Surtitre } from '../ui/base';
 import { useAlbums } from '../services/club';
 import { useUrls } from '../services/stockage';
+import { estAdmin, useSession } from '../services/session';
 
 export function Album() {
   const aller = useNavigate();
+  const moi = useSession((e) => e.profil);
   const { data: albums, isPending, error } = useAlbums();
   /* Toutes les photos de tous les albums en UN appel : les adresses
      sont signées, et une par une ferait autant d'allers-retours que
@@ -25,7 +27,29 @@ export function Album() {
 
   return (
     <>
-      <Entete titre="Album photo" />
+      <Entete
+        titre="Album photo"
+        /* Le club a cherché ce bouton ici, et il n'y était pas : la
+           gestion des albums vivait uniquement dans l'écran
+           d'administration, à trois appuis de distance. On ajoute
+           des photos là où on les regarde.
+
+           Ce n'est pas une permission de plus : la route et le
+           serveur refusent déjà tout ce que le rôle n'autorise pas.
+           C'est un raccourci, et il n'apparaît qu'à qui peut s'en
+           servir. */
+        action={
+          estAdmin(moi) ? (
+            <button
+              className="tapicon"
+              onClick={() => aller('/admin/albums')}
+              aria-label="Ajouter des photos"
+            >
+              <Icone nom="plus" taille={22} couleur="#0E2119" epaisseur={2} />
+            </button>
+          ) : undefined
+        }
+      />
 
       <div className="chips">
         <Puce texte="Tout" actif={filtre === null} onClick={() => setFiltre(null)} />

@@ -637,28 +637,65 @@ export function AdminAlbums() {
                     invite="Championnat régional, mars 2026"
                     aide="Facultative, et commune aux photos envoyées ensemble. Chacune se corrige ensuite."
                   />
-                  <ChoisirFichier
-                    multiple
-                    libelle={
-                      ajouter.isPending && ajouter.variables?.albumId === a.id
-                        ? 'Envoi…'
-                        : 'Ajouter des photos'
-                    }
-                    desactive={ajouter.isPending}
-                    onFichier={(fichiers) =>
-                      ajouter.mutate(
-                        { albumId: a.id, fichiers, legende: legendes[a.id] },
-                        {
-                          onSuccess: () => {
-                            setAvis({ bon: true, texte: `${fichiers.length} photo(s) ajoutée(s).` });
-                            setLegendes((p) => ({ ...p, [a.id]: '' }));
-                          },
-                          onError: (err) =>
-                            setAvis({ bon: false, texte: `Refusé : ${(err as Error).message}` })
-                        }
-                      )
-                    }
-                  />
+                  {/* DEUX boutons, et non un seul.
+
+                      Le club a cherché « prendre ou importer une
+                      photo » et n'a trouvé qu'« Ajouter des photos »,
+                      qui ouvre le sélecteur de fichiers : pour une
+                      photo qu'on vient de prendre, il fallait sortir,
+                      ouvrir l'appareil photo, revenir, retrouver
+                      l'album et ressortir la photo de la galerie.
+
+                      Un seul bouton ne pouvait pas faire les deux :
+                      « capture » ouvre l'appareil photo ET ferme la
+                      porte à la galerie. Les deux chemins existent
+                      donc côte à côte, nommés par ce qu'ils font. */}
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <ChoisirFichier
+                      appareil
+                      libelle={
+                        ajouter.isPending && ajouter.variables?.albumId === a.id
+                          ? 'Envoi…'
+                          : 'Prendre une photo'
+                      }
+                      desactive={ajouter.isPending}
+                      onFichier={(fichiers) =>
+                        ajouter.mutate(
+                          { albumId: a.id, fichiers, legende: legendes[a.id] },
+                          {
+                            onSuccess: () => {
+                              setAvis({ bon: true, texte: 'Photo ajoutée.' });
+                              setLegendes((p) => ({ ...p, [a.id]: '' }));
+                            },
+                            onError: (err) =>
+                              setAvis({ bon: false, texte: `Refusé : ${(err as Error).message}` })
+                          }
+                        )
+                      }
+                    />
+                    <ChoisirFichier
+                      multiple
+                      libelle={
+                        ajouter.isPending && ajouter.variables?.albumId === a.id
+                          ? 'Envoi…'
+                          : 'Importer des photos'
+                      }
+                      desactive={ajouter.isPending}
+                      onFichier={(fichiers) =>
+                        ajouter.mutate(
+                          { albumId: a.id, fichiers, legende: legendes[a.id] },
+                          {
+                            onSuccess: () => {
+                              setAvis({ bon: true, texte: `${fichiers.length} photo(s) ajoutée(s).` });
+                              setLegendes((p) => ({ ...p, [a.id]: '' }));
+                            },
+                            onError: (err) =>
+                              setAvis({ bon: false, texte: `Refusé : ${(err as Error).message}` })
+                          }
+                        )
+                      }
+                    />
+                  </div>
                 </div>
               </Carte>
             ))}

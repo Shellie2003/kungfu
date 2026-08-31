@@ -42,15 +42,47 @@ export const useSession = create<Etat>((set) => ({
 }));
 
 async function lireProfil(): Promise<Profil | null> {
+  /* ⚠ LE FILTRE SUR « compte_id » N'EST PAS FACULTATIF, et son
+     absence a été la panne la plus coûteuse du projet.
+
+     Ce code disait, en commentaire : « les règles d'accès limitent
+     déjà la réponse à ma propre fiche via compte_id ». C'était vrai
+     au tout début, et c'est devenu FAUX le jour où l'annuaire est
+     apparu : la règle « annuaire visible des membres » rend
+     désormais TOUTES les fiches actives à tout membre connecté.
+
+     « .single() » exige exactement une ligne. Elle en recevait
+     quatre, rendait une erreur, et cette fonction rendait « null ».
+     Le profil du connecté valait donc null POUR TOUT LE MONDE.
+
+     Ce que cela cassait, sans le moindre message d'erreur :
+
+       — envoyer un message. L'écran écrit « moi && envoi.mutate(…) » :
+         sans profil, il n'envoie rien du tout et ne se plaint pas.
+         C'est le « j'écris un message et il ne s'affiche pas » du
+         club — le message n'était jamais parti.
+       — le rôle. estAdmin(null) est faux : une administration ne se
+         voyait pas comme telle, et l'application se comportait avec
+         elle comme avec un inconnu.
+       — la carte de membre, « Mon espace », l'assiduité, l'ouverture
+         d'une conversation : tout ce qui a besoin de savoir QUI est
+         connecté.
+
+     Une seule cause, une dizaine de symptômes sans rapport apparent.
+     Le filtre est donc explicite, et « maybeSingle » remplace
+     « single » : zéro ligne est un cas normal — un compte créé dont
+     la fiche n'est pas encore rattachée — pas une erreur. */
+  const { data: session } = await supabase.auth.getUser();
+  const compte = session.user?.id;
+  if (!compte) return null;
+
   const { data, error } = await supabase
     .from('profils')
     .select('id, numero, nom, prenom, role, grade_id, photo')
-    .single();
-  /* Les règles d'accès limitent déjà la réponse à ma propre fiche
-     via compte_id : inutile de refiltrer ici, et le faire donnerait
-     l'illusion que c'est l'application qui protège. */
+    .eq('compte_id', compte)
+    .maybeSingle();
   if (error) return null;
-  return data as Profil;
+  return (data as Profil) ?? null;
 }
 
 /* Branché une fois, à la racine. Écoute les changements de session

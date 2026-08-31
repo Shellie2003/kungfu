@@ -15,9 +15,10 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Album } from '../src/ecrans/Album';
 import { AdminAlbums } from '../src/ecrans/admin/Publication';
 import { brancherServeur, derniere, poser, recues, reinitialiser } from './serveur';
-import { rendre } from './rendu';
+import { PROFIL_ADMIN, PROFIL_ELEVE, rendre } from './rendu';
 
 const ALBUM = {
   id: 'a1',
@@ -53,7 +54,7 @@ describe('la légende d’une photo', () => {
       screen.getByLabelText('Légende de cet envoi'),
       'Finale par équipe, mars 2026'
     );
-    await userEvent.upload(screen.getByLabelText(/Ajouter des photos/i), fichier());
+    await userEvent.upload(screen.getByLabelText(/Importer des photos/i), fichier());
 
     await waitFor(() =>
       expect(derniere('photos')?.corps).toMatchObject({
@@ -71,7 +72,7 @@ describe('la légende d’une photo', () => {
     await screen.findByText('Championnat régional');
 
     await userEvent.type(screen.getByLabelText('Légende de cet envoi'), 'Kata, juin');
-    await userEvent.upload(screen.getByLabelText(/Ajouter des photos/i), [fichier(), fichier()]);
+    await userEvent.upload(screen.getByLabelText(/Importer des photos/i), [fichier(), fichier()]);
 
     await waitFor(() => {
       const envois = recues.filter((r) => r.table === 'photos' && r.methode === 'POST');
@@ -89,7 +90,7 @@ describe('la légende d’une photo', () => {
     rendre(<AdminAlbums />);
     await screen.findByText('Championnat régional');
 
-    await userEvent.upload(screen.getByLabelText(/Ajouter des photos/i), fichier());
+    await userEvent.upload(screen.getByLabelText(/Importer des photos/i), fichier());
 
     await waitFor(() => expect(derniere('photos')?.corps).toMatchObject({ legende: null }));
   });
@@ -215,5 +216,67 @@ describe('la couverture et l’ordre', () => {
     await userEvent.click(await screen.findByLabelText('Première'));
     expect(screen.getByRole('button', { name: 'Avancer' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Reculer' })).not.toBeDisabled();
+  });
+});
+
+/* ============================================================
+   Prendre une photo, ou en importer une.
+
+   « Dans l'album il n'y a pas de boutons pour prendre ou importer
+   une photo, où sont-ils ? » Il n'y en avait qu'un — « Ajouter des
+   photos » — et il ouvrait le sélecteur de documents. Pour une photo
+   qu'on vient de prendre, il fallait sortir de l'application.
+
+   Un seul bouton ne pouvait pas faire les deux : « capture » ouvre
+   l'appareil photo ET ferme la porte à la galerie. Les deux chemins
+   existent donc côte à côte, nommés par ce qu'ils font.
+   ============================================================ */
+describe('les deux chemins vers une photo', () => {
+  test('l’album propose de prendre ET d’importer', async () => {
+    poser({ albums: [ALBUM] });
+    rendre(<AdminAlbums />);
+    await screen.findByText('Championnat régional');
+
+    const prendre = screen.getByLabelText(/Prendre une photo/i);
+    const importer = screen.getByLabelText(/Importer des photos/i);
+
+    /* « capture » est ce qui distingue les deux : sans lui, Android
+       ouvre le sélecteur de documents dans les deux cas, et le
+       premier bouton ment sur ce qu'il fait. */
+    expect(prendre).toHaveAttribute('capture', 'environment');
+    expect(importer).not.toHaveAttribute('capture');
+    /* Une seule photo à la fois quand on la prend : l'appareil n'en
+       rend qu'une, et « multiple » n'aurait rien changé sinon
+       promettre le contraire. */
+    expect(prendre).not.toHaveAttribute('multiple');
+    expect(importer).toHaveAttribute('multiple');
+  });
+
+  test('la photo prise part dans le bon album', async () => {
+    poser({ albums: [ALBUM] });
+    rendre(<AdminAlbums />);
+    await screen.findByText('Championnat régional');
+
+    await userEvent.upload(screen.getByLabelText(/Prendre une photo/i), fichier());
+
+    await waitFor(() => expect(derniere('photos')?.corps).toMatchObject({ album_id: 'a1' }));
+  });
+});
+
+describe('le raccourci depuis l’album', () => {
+  /* Le club a cherché ce bouton dans l'album, et il n'y était pas :
+     la gestion des photos vivait uniquement dans l'écran
+     d'administration. On ajoute des photos là où on les regarde.
+
+     Comme au casier, ce n'est pas une permission de plus — la route
+     et le serveur refusent déjà ce que le rôle n'autorise pas. */
+  test('l’administration l’a, l’élève non', async () => {
+    poser({ albums: [ALBUM] });
+    rendre(<Album />, { route: '/album', profil: PROFIL_ADMIN });
+    expect(await screen.findByLabelText('Ajouter des photos')).toBeInTheDocument();
+
+    rendre(<Album />, { route: '/album', profil: PROFIL_ELEVE });
+    await screen.findAllByText('Championnat régional');
+    expect(screen.queryByLabelText('Ajouter des photos')).not.toBeInTheDocument();
   });
 });
