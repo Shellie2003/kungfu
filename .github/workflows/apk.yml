@@ -41,6 +41,13 @@ on:
       - 'css/**'
       - 'icones.mjs'
       - '.github/workflows/apk.yml'
+      # Et outils/, qui manquait. Les étapes « Ouvrir tous les
+      # écrans » et « Comparer à la maquette » sont ce qui décide de
+      # construire ou non l'APK, et elles vivent ici. Sans ce chemin,
+      # corriger le vérificateur ou son bouchon ne relançait PAS la
+      # vérification qu'ils font : on poussait la correction d'un
+      # contrôle rouge, et rien ne se passait.
+      - 'outils/**'
 
 jobs:
   apk:
