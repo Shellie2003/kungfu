@@ -197,12 +197,43 @@ export function Accueil() {
                  dans le flux. */
               <button
                 className="ph"
-                style={{ height: 168, width: '100%', cursor: 'pointer' }}
+                style={{ height: 168, width: '100%', cursor: 'pointer', position: 'relative' }}
                 onClick={() => setChoix(true)}
                 aria-label="Ajouter la photo du club"
               >
                 <Icone nom="martial" taille={52} couleur="#8FB3A0" epaisseur={1.4} />
                 <p className="ph__label">Photo du club à fournir</p>
+                {/* La pastille « + ».
+
+                    Sans elle, rien ne disait que cet emplacement se
+                    touche : il avait exactement l'aspect qu'il avait
+                    avant de devenir un bouton, et le club a signalé
+                    TROIS FOIS ne pas trouver comment ajouter une
+                    image. Un bouton qui ne se voit pas n'est pas un
+                    bouton.
+
+                    Elle est posée en ABSOLU et ne porte AUCUN texte,
+                    et les deux tiennent à la même raison : la mesure
+                    de conformité à la maquette refuse un décalage de
+                    géométrie comme un texte de plus. Hors du flux et
+                    muette, elle n'est ni l'un ni l'autre. */}
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    top: 12,
+                    right: 12,
+                    width: 34,
+                    height: 34,
+                    borderRadius: 17,
+                    background: 'var(--vert)',
+                    display: 'grid',
+                    placeItems: 'center',
+                    boxShadow: '0 2px 8px rgba(6, 20, 13, .22)'
+                  }}
+                >
+                  <Icone nom="plus" taille={19} couleur="#FFF" epaisseur={2.2} />
+                </span>
               </button>
             ) : (
               <div className="ph" style={{ height: 168 }}>

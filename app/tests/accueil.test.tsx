@@ -93,6 +93,28 @@ describe('la photo du club', () => {
     expect(screen.getByLabelText(/Importer depuis la galerie/)).toBeInTheDocument();
   });
 
+  test('le bouton SE VOIT — une pastille « + » sur l’emplacement', async () => {
+    /* Sans elle, l'emplacement avait exactement l'aspect qu'il avait
+       avant de devenir un bouton, et le club a signalé TROIS FOIS ne
+       pas trouver comment ajouter une image. Un bouton qui ne se
+       voit pas n'est pas un bouton.
+
+       Elle est en absolu et sans texte : la mesure de conformité à
+       la maquette refuse un décalage comme un texte de plus. */
+    rendre(<Accueil />, { route: '/accueil', profil: PROFIL_ADMIN });
+    const bouton = await screen.findByLabelText('Ajouter la photo du club');
+    /* On vise le SPAN, pas n'importe quoi de « aria-hidden » : les
+       icônes elles-mêmes le portent, et le premier essai attrapait
+       le pictogramme du fond. */
+    const pastille = bouton.querySelector<HTMLElement>('span[aria-hidden="true"]');
+    expect(pastille).not.toBeNull();
+    expect(pastille?.querySelector('svg')).not.toBeNull();
+    /* Hors du flux : c'est ce qui laisse la géométrie intacte. */
+    expect(pastille?.style.position).toBe('absolute');
+    /* Et muette : un texte de plus serait refusé par la mesure. */
+    expect(pastille?.textContent).toBe('');
+  });
+
   test('au repos, rien ne s’ajoute à l’écran de la maquette', async () => {
     /* La feuille n'existe dans le document qu'une fois ouverte. Une
        première version posait les deux boutons À MÊME
