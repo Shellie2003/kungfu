@@ -44,11 +44,40 @@ npx tsc --noEmit
 
 # La sortie s'appelle « essai/ » à la racine du dépôt : c'est ce qui
 # donne l'adresse /essai, à côté de la maquette.
-npx vite build --outDir ../essai --emptyOutDir
+#
+# --- « --base » n'est PAS un détail, c'est une page blanche ---
+#
+# vite.config.ts pose « base: '' », donc des chemins RELATIFS :
+# « ./assets/index.js ». C'est ce qu'il faut à l'APK, où Capacitor
+# sert les fichiers depuis le disque et où rien d'absolu ne
+# résoudrait.
+#
+# Sur le web, la même page est servie à /essai — SANS barre oblique
+# finale, vercel.json posant « trailingSlash: false ». Le navigateur
+# résout alors « ./assets/… » par rapport à la RACINE et demande
+# /assets/…, qui n'existe pas : les fichiers sont dans /essai/assets/.
+#
+# Le script ne charge donc jamais, la page reste vide, et il n'y a
+# aucun message d'erreur — un module absent ne dit rien à l'écran.
+# C'est exactement ce que le club a constaté : « j'ai ouvert le lien
+# mais n'affiche rien, ni de message d'erreur ».
+#
+# On force donc la base ICI, pour le web seulement. L'APK garde les
+# chemins relatifs, dont il a besoin.
+npx vite build --outDir ../essai --emptyOutDir --base=/essai/
 
 # Une construction qui « réussit » sans produire de page est un piège
 # connu : le site répondrait 404 sans que rien n'ait échoué.
 test -f ../essai/index.html
+
+# Et la page doit vraiment pointer vers /essai/assets/. Sans ce
+# contrôle, la panne précédente serait repassée inaperçue : tout
+# « réussissait », et seul un navigateur montrait le vide.
+if ! grep -q 'src="/essai/assets/' ../essai/index.html; then
+  echo "index.html ne pointe pas vers /essai/assets/ : la page serait blanche." >&2
+  grep -o '<script[^>]*>' ../essai/index.html >&2
+  exit 1
+fi
 
 # La version publiée, lisible depuis un téléphone : sans elle, on ne
 # peut pas savoir si l'écran qu'on regarde porte la correction qu'on
