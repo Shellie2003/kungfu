@@ -157,6 +157,17 @@ jobs:
           node build.js
           node outils/comparer-app.mjs
 
+      # Le carrousel de l'accueil, dans un vrai navigateur.
+      #
+      # jsdom ne défile pas : les tests d'intégration comptent les
+      # vues, ils ne peuvent pas dire si l'animation part, si elle
+      # s'arrête sous le doigt, ni si « moins d'animation » est
+      # respecté. Et « Ouvrir tous les écrans » tourne SANS photos,
+      # parce que la maquette n'en a aucune — le carrousel y est
+      # donc toujours vide.
+      - name: Faire tourner le carrousel
+        run: node outils/verifier-carrousel.mjs
+
       # La version WEB, ouverte au chemin où elle est publiée.
       #
       # Les étapes ci-dessus servent app/dist à la RACINE d'un

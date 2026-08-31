@@ -5,6 +5,13 @@ import { useNavigate } from 'react-router-dom';
 import { Icone } from '../ui/Icone';
 import { Emblem } from '../ui/Emblem';
 import { Carte, Surtitre } from '../ui/base';
+import { useMemo, useState } from 'react';
+import { Carrousel } from '../ui/Carrousel';
+import type { Vue } from '../ui/Carrousel';
+import { ChoisirFichier } from '../ui/base';
+import { useAlbums } from '../services/club';
+import { useUrls } from '../services/stockage';
+import { televerser, useEnregistrerReglages } from '../services/admin';
 import { useActualites, useNotifications, jourEtMois, teinte } from '../services/casier';
 import { useMembres } from '../services/membres';
 import { useHoraires, useReglages } from '../services/club';
@@ -22,6 +29,70 @@ export function Accueil() {
   /* La photo du club vient d'un réglage : c'est un CHEMIN dans le
      seau, dont il faut une adresse signée. */
   const photoClub = useUrl('album', reglages?.photo_club ?? null);
+
+  /* ---- Le carrousel ----
+     « Plus de visionnage de l'info et d'image » : l'accueil ne
+     montrait QU'UNE photo, celle du club, pendant que les dizaines
+     de photos de l'album dormaient à deux écrans de là. On les
+     amène ici.
+
+     L'ordre n'est pas neutre : la photo du club d'abord — c'est le
+     visage du club, pas une photo parmi d'autres — puis les plus
+     récentes de l'album. Huit au plus : au-delà, on ne regarde plus,
+     et chaque vue est une adresse signée à demander. */
+  const { data: albums } = useAlbums();
+  const derniersCliches = useMemo(
+    () =>
+      (albums ?? [])
+        .flatMap((a) => a.photos.map((p) => ({ ...p, album: a.titre })))
+        .slice(0, 8),
+    [albums]
+  );
+  const urlsAlbum = useUrls('album', derniersCliches.map((p) => p.chemin));
+
+  const vues: Vue[] = [
+    ...(photoClub
+      ? [{ cle: 'club', src: photoClub, legende: reglages?.nom_club ?? 'Kung-fu Waishi' }]
+      : []),
+    ...derniersCliches
+      .filter((p) => urlsAlbum[p.chemin])
+      .map((p) => ({
+        cle: p.id,
+        src: urlsAlbum[p.chemin] ?? null,
+        legende: p.legende ?? p.album,
+        onClick: () => aller('/album')
+      }))
+  ];
+
+  /* ---- Ajouter la photo du club, SANS quitter l'accueil ----
+     Elle se posait dans l'écran d'administration, tout en bas,
+     après les horaires et dix champs de texte. « On ne peut pas
+     ajouter une photo de club » : le contrôle existait, il était
+     introuvable. Ici, il est là où l'on constate le manque. */
+  const enregistrer = useEnregistrerReglages();
+  const [envoi, setEnvoi] = useState<string | null>(null);
+  /* La feuille de choix. Fermée, elle n'existe pas dans le document :
+     c'est ce qui laisse l'accueil identique à la maquette. */
+  const [choix, setChoix] = useState(false);
+
+  const poserPhoto = async (fichier: File) => {
+    setEnvoi('Envoi de la photo…');
+    try {
+      setChoix(false);
+      const chemin = await televerser('album', fichier);
+      await new Promise<void>((ok, non) =>
+        enregistrer.mutate([{ cle: 'photo_club', libelle: 'Photo du club', valeur: chemin }], {
+          onSuccess: () => ok(),
+          onError: (e) => non(e as Error)
+        })
+      );
+      setEnvoi(null);
+    } catch (e) {
+      /* Le refus se LIT. Un envoi avalé en silence est le défaut que
+         ce projet a déjà payé trois fois. */
+      setEnvoi(`Refusé : ${(e as Error).message}`);
+    }
+  };
 
   const nonlues = (notifs ?? []).filter((n) => !n.lue_le).length;
   const derniere = (actus ?? [])[0];
@@ -101,13 +172,10 @@ export function Accueil() {
           {/* La photo du club, quand il l'a fournie. L'emplacement
               vide reste sinon, et le DIT : une image d'illustration
               prise ailleurs ferait plus joli et serait un mensonge. */}
-          {photoClub ? (
-            <img
-              src={photoClub}
-              alt=""
-              style={{ height: 168, width: '100%', objectFit: 'cover', display: 'block' }}
-            />
-          ) : estAdmin(profil) ? (
+          <Carrousel
+            vues={vues}
+            nomAccessible="Photos du club"
+            vide={estAdmin(profil) ? (
             /* L'emplacement vide DEVIENT le bouton, et c'est tout
                l'intérêt : le club cherchait « la possibilité
                d'ajouter une photo » et la photo manquante était sous
@@ -117,20 +185,84 @@ export function Accueil() {
                Même boîte, même icône, même texte : la géométrie de
                la maquette est intacte. Seul le nom accessible et le
                curseur changent. */
-            <button
-              className="ph"
-              style={{ height: 168, width: '100%', cursor: 'pointer' }}
-              onClick={() => aller('/admin/club')}
-              aria-label="Ajouter la photo du club"
+              /* ⚠ Le contenu est celui de la MAQUETTE, au pixel près :
+                 même icône, même texte, aucun bouton de plus. Une
+                 première version posait ici « Prendre » et
+                 « Importer », et la mesure l'a refusée — « Photo du
+                 club à fournir » remontait de 30 px et deux textes
+                 apparaissaient qui n'existent pas dans la maquette.
+
+                 Le choix s'ouvre donc PAR-DESSUS, après un appui :
+                 une feuille ne décale rien, puisqu'elle n'est pas
+                 dans le flux. */
+              <button
+                className="ph"
+                style={{ height: 168, width: '100%', cursor: 'pointer' }}
+                onClick={() => setChoix(true)}
+                aria-label="Ajouter la photo du club"
+              >
+                <Icone nom="martial" taille={52} couleur="#8FB3A0" epaisseur={1.4} />
+                <p className="ph__label">Photo du club à fournir</p>
+              </button>
+            ) : (
+              <div className="ph" style={{ height: 168 }}>
+                <Icone nom="martial" taille={52} couleur="#8FB3A0" epaisseur={1.4} />
+                <p className="ph__label">Photo du club à fournir</p>
+              </div>
+            )}
+          />
+          {/* La feuille de choix, PAR-DESSUS l'écran.
+
+              Deux chemins et non un seul, comme dans les albums :
+              « capture » ouvre l'appareil photo ET ferme la porte à
+              la galerie, donc un bouton unique ne peut pas faire les
+              deux. Elle n'existe dans le document qu'une fois
+              ouverte — l'accueil au repos reste celui de la
+              maquette. */}
+          {choix && (
+            <div
+              className="voile"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Photo du club"
+              onClick={() => setChoix(false)}
             >
-              <Icone nom="martial" taille={52} couleur="#8FB3A0" epaisseur={1.4} />
-              <p className="ph__label">Photo du club à fournir</p>
-            </button>
-          ) : (
-            <div className="ph" style={{ height: 168 }}>
-              <Icone nom="martial" taille={52} couleur="#8FB3A0" epaisseur={1.4} />
-              <p className="ph__label">Photo du club à fournir</p>
+              <div className="feuille" onClick={(e) => e.stopPropagation()}>
+                <span className="feuille__poignee" />
+                <p className="feuille__sur">Accueil</p>
+                <p className="feuille__titre">Photo du club</p>
+                <p style={{ fontSize: 13, lineHeight: '19px', color: '#59685F' }}>
+                  Elle s’affiche en grand sur l’accueil, avant les photos de l’album.
+                </p>
+                <ChoisirFichier
+                  appareil
+                  libelle="Prendre une photo"
+                  desactive={envoi === 'Envoi de la photo…'}
+                  onFichier={([f]) => f && void poserPhoto(f)}
+                />
+                <ChoisirFichier
+                  libelle="Importer depuis la galerie"
+                  desactive={envoi === 'Envoi de la photo…'}
+                  onFichier={([f]) => f && void poserPhoto(f)}
+                />
+                <button className="link" onClick={() => setChoix(false)}>
+                  Annuler
+                </button>
+              </div>
             </div>
+          )}
+
+          {envoi && (
+            <p
+              role={envoi.startsWith('Refusé') ? 'alert' : 'status'}
+              style={{
+                padding: '8px 18px 0',
+                fontSize: 12.5,
+                color: envoi.startsWith('Refusé') ? '#B3341A' : '#59685F'
+              }}
+            >
+              {envoi}
+            </p>
           )}
           <div style={{ padding: 18 }}>
             <p className="display" style={{ fontSize: 19, lineHeight: '24px' }}>

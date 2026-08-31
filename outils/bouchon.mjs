@@ -210,11 +210,55 @@ export async function brancher(page, inconnues = []) {
        montrer son marque-place, ce qui est justement ce qu'on veut
        voir tant que le club n'a rien fourni. */
     if (url.pathname.startsWith('/storage/v1/')) {
+      /* Les images d'essai.
+
+         Elles doivent être servies ICI, et le banc du carrousel l'a
+         prouvé en rendant « 0 chargée sur 5 ». supabase-js ne rend
+         pas « signedURL » tel quel : il le PRÉFIXE de l'adresse du
+         stockage. « /essai-image/0 » devient donc
+         « /storage/v1/essai-image/0 », que la branche du stockage
+         attrapait avant tout le reste et à quoi elle répondait du
+         JSON. Le carrousel affichait cinq cadres vides.
+
+         C'est exactement la classe de défaut que ce bouchon a déjà
+         eue avec « signedUrl » contre « signedURL » : une fiction
+         qui laisse tout passer au vert. */
+      if (url.pathname.includes('/essai-image/')) {
+        const teintes = ['#0F5132', '#8FB3A0', '#E4572E', '#1E2320', '#4E9C57'];
+        const i = Number(url.pathname.split('/').pop()) || 0;
+        return route.fulfill({
+          contentType: 'image/svg+xml',
+          body:
+            `<svg xmlns="http://www.w3.org/2000/svg" width="390" height="168">` +
+            `<rect width="390" height="168" fill="${teintes[i % teintes.length]}"/></svg>`
+        });
+      }
+
       let corps = null;
       try { corps = JSON.parse(route.request().postData() ?? 'null'); } catch { /* pas du JSON */ }
       const chemins = corps?.paths ?? [];
+      /* ⚠ La clé est « signedURL », avec URL en capitales. C'est ce
+         que rend le vrai serveur ; supabase-js la lit et compose
+         « signedUrl » par-dessus. Écrire « signedUrl » ici — ce que
+         faisait ce bouchon — donnait un objet que la bibliothèque
+         écrasait par « signedUrl: null ». Le même défaut a existé
+         dans le serveur simulé des tests, où il a fait passer toute
+         une série de vérifications sur une fiction.
+
+         AVEC_PHOTOS rend de vraies images. Il est éteint par défaut :
+         la maquette n'a aucune photo, et en fabriquer ici ferait
+         échouer la comparaison pour de mauvaises raisons. */
+      if (process.env.AVEC_PHOTOS === '1') {
+        return route.fulfill({
+          json: chemins.map((p, i) => ({
+            path: p,
+            signedURL: `/essai-image/${i}`,
+            error: null
+          }))
+        });
+      }
       return route.fulfill({
-        json: chemins.map((p) => ({ path: p, signedUrl: null, error: 'Object not found' }))
+        json: chemins.map((p) => ({ path: p, signedURL: null, error: 'Object not found' }))
       });
     }
     const table = url.pathname.replace('/rest/v1/', '');
