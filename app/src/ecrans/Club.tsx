@@ -12,6 +12,7 @@
    ============================================================ */
 import { useNavigate } from 'react-router-dom';
 import { Emblem } from '../ui/Emblem';
+import { VERSION, versionCourte } from '../services/version';
 import { Carte, Entete, Surtitre, Tuile, Filet } from '../ui/base';
 import { heure, nomDuJour, useHoraires, useReglages } from '../services/club';
 
@@ -167,6 +168,21 @@ export function Club() {
             </div>
           </Carte>
         </div>
+
+        {/* La version que l'on regarde, en bas de l'écran du club.
+
+            Elle sert à UNE question, et le club se l'est posée :
+            « est-ce que ce que je vois est bien la dernière mise à
+            jour ? » Sans repère, un écran inchangé ne distingue pas
+            « la publication n'est pas encore arrivée » — elle prend
+            une à deux minutes — de « la correction ne marche pas ».
+
+            Discrète et en dernier : ce n'est pas une information
+            pour les soixante-quatre membres, c'est un repère pour
+            qui essaie. */}
+        <p style={{ fontSize: 11, color: '#A8B6AE', textAlign: 'center', marginTop: 4 }}>
+          Version {versionCourte(VERSION)}
+        </p>
       </div>
     </>
   );

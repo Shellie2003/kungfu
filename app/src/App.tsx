@@ -53,6 +53,7 @@ import { MesPresences } from './ecrans/MesPresences';
 
 import { seConnecter } from './services/supabase';
 import { estAdmin, estMaitre, useEcouteSession, useSession } from './services/session';
+import { VERSION, useMiseAJour, versionCourte } from './services/version';
 
 /* Un réessai suffit : sur un réseau qui coupe, insister trois fois
    fait attendre une minute pour le même échec. Les données ne
@@ -208,6 +209,38 @@ function Racine() {
   return <Connectee />;
 }
 
+/* ---------------------------------------------- Une version plus récente
+
+   « Je veux voir chaque mise à jour en rafraîchissant le
+   navigateur. » Le rafraîchissement suffit — la page n'est pas mise
+   en cache, les fichiers portent une empreinte, il n'y a pas de
+   service worker qui retiendrait l'ancienne. Ce qui manquait était
+   de SAVOIR : la publication prend une à deux minutes, et pendant
+   ce temps un écran inchangé ne dit pas s'il est vieux ou à jour.
+
+   Ce bandeau ne rafraîchit RIEN tout seul, et c'est délibéré :
+   recharger la page sous les doigts de quelqu'un qui écrit un
+   message lui ferait perdre ce qu'il tape. Il propose, on décide. */
+function Nouveaute() {
+  const neuve = useMiseAJour();
+  if (!neuve) return null;
+
+  return (
+    <div
+      role="status"
+      className="banner"
+      style={{ margin: '8px 12px 0', gap: 10 }}
+    >
+      <span style={{ flexGrow: 1 }}>
+        Version {versionCourte(neuve)} publiée — vous avez {versionCourte(VERSION)}.
+      </span>
+      <button className="link" onClick={() => window.location.reload()}>
+        Rafraîchir
+      </button>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={client}>
@@ -215,6 +248,7 @@ export default function App() {
           disque de l'application, où une adresse « propre » comme
           /etudiants ne correspond à aucun fichier et rend 404. */}
       <HashRouter>
+        <Nouveaute />
         <Racine />
       </HashRouter>
     </QueryClientProvider>

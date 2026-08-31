@@ -92,6 +92,26 @@ for (const [nom, url] of [
   await page.goto(url, { waitUntil: 'networkidle' });
 
   const texte = (await page.locator('body').innerText()).trim();
+
+  /* Une page qu'on VIENT de construire ne peut pas être en retard
+     sur elle-même. Si le bandeau « une version plus récente est
+     publiée » apparaît ici, c'est que la version inscrite dans le
+     paquet et celle de version.txt ne viennent pas de la même
+     source — et le club verrait ce bandeau pour toujours, sans
+     qu'aucun rafraîchissement ne le fasse partir.
+
+     Le défaut a existé : la construction lisait
+     VERCEL_GIT_COMMIT_SHA pour le fichier et VERSION_CONSTRUITE
+     pour le paquet, d'où « Version inconnu publiée — vous avez
+     essai00000 ». */
+  if (/publiée — vous avez/.test(texte)) {
+    ennuis.push(
+      `${nom} : la page annonce une mise à jour d'elle-même.\n` +
+      `    « ${(texte.match(/Version .*publiée[^\n]*/) ?? [''])[0]} »\n` +
+      '    Le paquet et version.txt ne portent pas la même version.'
+    );
+  }
+
   if (!texte) {
     ennuis.push(
       `${nom} : la page est VIDE.\n` +

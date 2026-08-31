@@ -38,6 +38,22 @@ else
   echo "Serveur : le projet d'essai (.env.essai)."
 fi
 
+# --- La version, décidée UNE FOIS ---
+#
+# Elle est inscrite à deux endroits : dans le paquet, par Vite, et
+# dans version.txt, par ce script. L'application compare les deux
+# pour dire « une version plus récente est publiée ».
+#
+# Ils DOIVENT donc venir de la même source. Deux chaînes de repli
+# distinctes — l'une lisant VERCEL_GIT_COMMIT_SHA, l'autre
+# VERSION_CONSTRUITE — se seraient contredites hors de Vercel, et le
+# bandeau « rafraîchir » se serait affiché pour toujours, sur tous
+# les téléphones, sans qu'aucun rafraîchissement ne le fasse partir.
+# Constaté en essayant : « Version inconnu publiée — vous avez
+# essai00000 ».
+VERSION="${VERCEL_GIT_COMMIT_SHA:-${VERSION_CONSTRUITE:-}}"
+export VERSION_CONSTRUITE="$VERSION"
+
 # Le typage AVANT la construction : Vite construit sans se plaindre
 # d'une erreur de type, et l'on publierait un écran cassé.
 npx tsc --noEmit
@@ -82,7 +98,11 @@ fi
 # La version publiée, lisible depuis un téléphone : sans elle, on ne
 # peut pas savoir si l'écran qu'on regarde porte la correction qu'on
 # vient de pousser.
-printf '%s\n' "${VERCEL_GIT_COMMIT_SHA:-inconnu}" > ../essai/version.txt
+#
+# « developpement » quand il n'y a pas de commit à nommer : c'est le
+# mot que l'application traite comme « pas de version », et elle se
+# tait alors au lieu d'annoncer une mise à jour imaginaire.
+printf '%s\n' "${VERSION:-developpement}" > ../essai/version.txt
 
 echo "essai/ prêt :"
 ls ../essai
