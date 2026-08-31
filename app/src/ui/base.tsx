@@ -6,6 +6,7 @@
    Les classes CSS sont celles de css/app.css, qui est lu tel quel :
    la mise en forme n'est donc pas réécrite, seulement appelée.
    ============================================================ */
+import { useRef } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { Icone } from './Icone';
 
@@ -384,5 +385,106 @@ export function Avis({ bon, children }: { bon: boolean; children: ReactNode }) {
     >
       {children}
     </p>
+  );
+}
+
+
+/* ============================================================
+   Choisir un fichier.
+
+   Il y avait cinq « <input type="file" hidden> » dans des <label>
+   à travers l'application, et le club a signalé que rien ne
+   s'ouvrait : « l'import de fichier ne marche pas ».
+
+   Ce qui reste, et ce qui change. L'ÉTIQUETTE reste : c'est elle
+   qui donne son nom au champ, pour un lecteur d'écran comme pour un
+   test. Ce qui change, c'est trois choses :
+
+   1. « hidden » disparaît. Il vaut « display: none », et un champ
+      qui n'est pas dans la mise en page ne se laisse pas toujours
+      activer par un clic sur son étiquette — c'est le cas de
+      certaines WebView d'Android, où le pont natif ne voit alors
+      passer aucune demande d'ouverture. Le champ est maintenant
+      invisible SANS sortir de la mise en page.
+
+   2. Un clic explicite en second rideau. Si l'étiquette ne
+      transmet rien, on ouvre le sélecteur nous-mêmes. Deux chemins
+      valent mieux qu'un quand on ne peut pas essayer sur l'appareil.
+
+   3. « accept="image/*" » envoie certaines WebView droit sur
+      l'appareil photo, sans proposer la galerie. La liste explicite
+      — les mêmes types que le seau accepte — ramène le sélecteur de
+      documents.
+
+   Et un quatrième cas, plus bête, qui ne se voyait nulle part :
+   choisir DEUX FOIS la même photo ne déclenchait rien, la valeur du
+   champ n'ayant pas changé. On la remet à zéro après chaque choix.
+   ============================================================ */
+export function ChoisirFichier({
+  libelle,
+  onFichier,
+  multiple = false,
+  desactive = false,
+  nomAccessible,
+  style
+}: {
+  libelle: ReactNode;
+  onFichier: (fichiers: File[]) => void;
+  multiple?: boolean;
+  desactive?: boolean;
+  /* Obligatoire quand l'étiquette ne porte qu'une icône : sans lui,
+     le champ n'a aucun nom, et un lecteur d'écran annonce
+     « bouton ». C'est le cas du trombone de la messagerie. */
+  nomAccessible?: string;
+  style?: CSSProperties;
+}) {
+  const champ = useRef<HTMLInputElement>(null);
+
+  return (
+    <label
+      className="btn btn--ghost"
+      style={{ cursor: desactive ? 'default' : 'pointer', ...style }}
+      /* Le second rideau : sur une WebView qui ne relaie pas le clic
+         de l'étiquette, on ouvre le sélecteur à la main. « detail »
+         distingue un vrai clic de celui que nous provoquons — sans
+         quoi les deux chemins se rappelleraient l'un l'autre. */
+      onClick={(e) => {
+        if (desactive) {
+          e.preventDefault();
+          return;
+        }
+        if (e.detail !== 0 && e.target === e.currentTarget) champ.current?.click();
+      }}
+    >
+      {libelle}
+      <input
+        ref={champ}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        multiple={multiple}
+        disabled={desactive}
+        aria-label={nomAccessible}
+        /* Invisible, mais TOUJOURS dans la mise en page : c'est ce
+           qui le distingue de « hidden », et c'est tout le point. */
+        style={{
+          position: 'absolute',
+          width: 1,
+          height: 1,
+          padding: 0,
+          margin: -1,
+          overflow: 'hidden',
+          clip: 'rect(0 0 0 0)',
+          whiteSpace: 'nowrap',
+          border: 0
+        }}
+        onChange={(e) => {
+          const fichiers = [...(e.target.files ?? [])];
+          /* Remis à zéro pour que rechoisir le même fichier
+             redéclenche l'événement. */
+          e.target.value = '';
+          if (fichiers.length) onFichier(fichiers);
+        }}
+      />
+    </label>
   );
 }

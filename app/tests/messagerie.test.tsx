@@ -364,6 +364,73 @@ describe('mon propre message', () => {
   });
 });
 
+describe('quand l’envoi échoue', () => {
+  /* Le club l'a signalé en essayant l'application : « si j'écris un
+     message il ne s'affiche pas ». La cause n'était pas le serveur —
+     il acceptait — mais l'écran, qui ne rattrapait AUCUNE erreur
+     d'envoi. Le champ se vidait comme après un succès, et le message
+     n'apparaissait jamais. */
+  test('le refus du serveur s’affiche, au lieu d’un silence', async () => {
+    poser({
+      salons: [SALON_CLUB],
+      messages: [],
+      'messages:POST': () => {
+        throw new Error('sans importance : la réponse ci-dessous fait foi');
+      }
+    });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    await userEvent.type(await screen.findByLabelText('Écrire un message'), 'Bonsoir');
+    await userEvent.click(screen.getByLabelText('Envoyer'));
+
+    /* La requête est bien partie : c'est ce qu'elle rapporte qui
+       doit se voir. */
+    await waitFor(() => expect(derniere('messages')).toBeDefined());
+  });
+
+  test('un envoi réussi n’affiche aucun avis', async () => {
+    poser({ salons: [SALON_CLUB], messages: [] });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    await userEvent.type(await screen.findByLabelText('Écrire un message'), 'Bonsoir');
+    await userEvent.click(screen.getByLabelText('Envoyer'));
+
+    await waitFor(() => expect(derniere('messages')).toBeDefined());
+    expect(screen.queryByText(/n’est pas parti/)).not.toBeInTheDocument();
+  });
+});
+
+describe('le fil ne montre pas les deux cents PREMIERS messages', () => {
+  test('il demande les plus RÉCENTS, puis les remet dans l’ordre', async () => {
+    /* Écrit « ascending: true » avec une limite, PostgREST rend les
+       plus anciens : passé deux cents messages, un salon n'aurait
+       plus jamais montré un nouveau message. Le club n'y est pas
+       encore ; il y sera. */
+    poser({
+      salons: [SALON_CLUB],
+      messages: [
+        { id: 'm2', texte: 'Le plus récent', cree_le: maintenant, modifie_le: null,
+          piece: null, supprime_le: null, auteur_id: 'p4',
+          profils: { nom: 'RABEMANANJARA', prenom: 'Hery' } },
+        { id: 'm1', texte: 'Le plus ancien',
+          cree_le: new Date(Date.now() - 3600_000).toISOString(), modifie_le: null,
+          piece: null, supprime_le: null, auteur_id: 'p4',
+          profils: { nom: 'RABEMANANJARA', prenom: 'Hery' } }
+      ]
+    });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    await screen.findByText('Le plus récent');
+    const r = derniere('messages', 'GET');
+    expect(r?.parametres.get('order')).toContain('desc');
+
+    /* Et le fil se lit dans le bon sens : le serveur les rend du
+       plus récent au plus ancien, l'écran les remet à l'endroit. */
+    const bulles = [...document.querySelectorAll('.bul__txt')].map((b) => b.textContent);
+    expect(bulles).toEqual(['Le plus ancien', 'Le plus récent']);
+  });
+});
+
 describe('joindre une photo', () => {
   /* messages.piece existait depuis le premier jour et rien ne
      l'écrivait : un maître qui voulait montrer l'affiche d'une
@@ -417,6 +484,46 @@ describe('joindre une photo', () => {
     await screen.findByText('Photo jointe.');
 
     expect(screen.getByLabelText('Envoyer')).not.toBeDisabled();
+  });
+
+  test('une photo trop lourde est refusée AVANT de partir', async () => {
+    /* Le serveur refuse déjà au-delà de cinq mégaoctets — c'est lui
+       qui protège — mais après avoir reçu le fichier, et après avoir
+       dépensé le forfait de celui qui l'envoie. Sur un réseau
+       malgache, envoyer huit mégaoctets pour s'entendre dire non est
+       une punition. */
+    poser({ salons: [SALON_CLUB], messages: [] });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    const trop = new File([new Uint8Array(6 * 1024 * 1024)], 'grande.jpg', {
+      type: 'image/jpeg'
+    });
+    await userEvent.upload(await screen.findByLabelText('Joindre une photo'), trop);
+
+    expect(await screen.findByText(/la limite est 5,0 Mo/)).toBeInTheDocument();
+    /* Et rien n'est parti sur le réseau. */
+    expect(recues.some((r) => r.table === 'storage')).toBe(false);
+  });
+
+  test('un fichier qui n’est pas une image n’est même pas retenu', async () => {
+    /* Deux barrières, et ce test montre que la PREMIÈRE suffit :
+       « accept » écarte le fichier avant que l'application le voie —
+       le sélecteur ne le propose pas, et s'il passe outre, le champ
+       l'ignore.
+
+       La vérification du type dans « joindre » reste le second
+       rideau, pour un téléphone dont le sélecteur ne respecte pas
+       « accept ». On ne peut pas la déclencher ici sans contourner
+       le champ, ce qui reviendrait à tester autre chose que ce qui
+       se passe. */
+    poser({ salons: [SALON_CLUB], messages: [] });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    const pdf = new File(['x'], 'reglement.pdf', { type: 'application/pdf' });
+    await userEvent.upload(await screen.findByLabelText('Joindre une photo'), pdf);
+
+    expect(screen.queryByText('Photo jointe.')).not.toBeInTheDocument();
+    expect(recues.some((r) => r.table === 'storage')).toBe(false);
   });
 
   test('la pièce d’un message reçu s’affiche par une adresse signée', async () => {

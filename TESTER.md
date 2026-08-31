@@ -48,7 +48,7 @@ vérifier ce que le club aura, pas à travailler.
 cd app && npm test
 ```
 
-**222 tests**, unitaires et d'intégration. Ils tournent en une dizaine de secondes et couvrent deux
+**227 tests**, unitaires et d'intégration. Ils tournent en une dizaine de secondes et couvrent deux
 choses que l'œil ne voit pas :
 
 **La logique** — dates, matricules, teintes, codes USSD. Une erreur y est invisible à

@@ -13,7 +13,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icone } from '../../ui/Icone';
-import { Avis, Bouton, Carte, Champ, Choix, Entete, Etat, Surtitre, Tuile } from '../../ui/base';
+import {
+  Avis, Bouton, Carte, Champ, ChoisirFichier, Choix, Entete, Etat, Surtitre, Tuile
+} from '../../ui/base';
 import { heure, nomDuJour, useHoraires, useReglages } from '../../services/club';
 import {
   televerser, useAjouterHoraire, useEnregistrerReglages, useRetirerHoraire
@@ -231,31 +233,27 @@ export function AdminClub() {
                     Retirer
                   </button>
                 )}
-                <label className="btn btn--ghost" style={{ width: 'auto', padding: '0 14px' }}>
-                  {envoiPhoto ? 'Envoi…' : valeurs.photo_club ? 'Changer' : 'Choisir'}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    hidden
-                    onChange={async (e) => {
-                      const f = e.target.files?.[0];
-                      if (!f) return;
-                      setEnvoiPhoto(true);
-                      try {
-                        const chemin = await televerser('album', f);
-                        setValeurs((p) => ({ ...p, photo_club: chemin }));
-                        setAvis({
-                          bon: true,
-                          texte: 'Photo envoyée. Enregistrez pour qu’elle apparaisse.'
-                        });
-                      } catch (err) {
-                        setAvis({ bon: false, texte: `Photo refusée : ${(err as Error).message}` });
-                      } finally {
-                        setEnvoiPhoto(false);
-                      }
-                    }}
-                  />
-                </label>
+                <ChoisirFichier
+                  libelle={envoiPhoto ? 'Envoi…' : valeurs.photo_club ? 'Changer' : 'Choisir'}
+                  desactive={envoiPhoto}
+                  style={{ width: 'auto', padding: '0 14px' }}
+                  onFichier={async ([f]) => {
+                    if (!f) return;
+                    setEnvoiPhoto(true);
+                    try {
+                      const chemin = await televerser('album', f);
+                      setValeurs((p) => ({ ...p, photo_club: chemin }));
+                      setAvis({
+                        bon: true,
+                        texte: 'Photo envoyée. Enregistrez pour qu’elle apparaisse.'
+                      });
+                    } catch (err) {
+                      setAvis({ bon: false, texte: `Photo refusée : ${(err as Error).message}` });
+                    } finally {
+                      setEnvoiPhoto(false);
+                    }
+                  }}
+                />
               </div>
             </div>
           </Carte>

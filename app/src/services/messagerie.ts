@@ -164,13 +164,23 @@ export function useMessages(salonId: string | undefined) {
             'profils:auteur_id ( nom, prenom )'
         )
         .eq('salon_id', salonId!)
-        .order('cree_le', { ascending: true })
+        /* Les DEUX CENTS DERNIERS, et non les deux cents premiers.
+
+           Écrit « ascending: true » avec une limite, PostgREST rend
+           les plus ANCIENS : passé deux cents messages, un salon
+           n'aurait plus jamais montré un nouveau message — il serait
+           tombé hors de la fenêtre à l'instant même où il est écrit.
+           Le club n'y est pas encore ; il y sera, et le défaut aurait
+           alors été incompréhensible.
+
+           On demande donc les plus récents, puis on remet le fil dans
+           l'ordre de lecture. */
+        .order('cree_le', { ascending: false })
         .limit(200);
       if (error) throw error;
-      return (data as unknown as LigneMessage[]).map(({ profils, ...m }) => ({
-        ...m,
-        auteur: profils
-      }));
+      return (data as unknown as LigneMessage[])
+        .map(({ profils, ...m }) => ({ ...m, auteur: profils }))
+        .reverse();
     }
   });
 }
@@ -186,7 +196,37 @@ export function useMessages(salonId: string | undefined) {
 
    Le nom est tiré au sort : deux téléphones qui envoient tous deux
    « IMG_0001.jpg » écraseraient sinon la photo l'un de l'autre. */
+/* Ce que le seau accepte, répété ici pour le DIRE avant d'envoyer.
+
+   Le serveur refuse déjà au-delà — c'est lui qui protège — mais il
+   refuse APRÈS avoir reçu le fichier, avec un message que personne
+   ne comprend, et après avoir dépensé le forfait de celui qui
+   l'envoie. Sur un réseau malgache, envoyer huit mégaoctets pour
+   s'entendre dire non est une punition.
+
+   Si les deux divergent un jour, l'écran refusera ce que le serveur
+   aurait accepté : un défaut visible, jamais une protection
+   contournée. */
+export const TAILLE_MAX = 5 * 1024 * 1024;
+export const TYPES_ACCEPTES = ['image/jpeg', 'image/png', 'image/webp'];
+
+/* « 5 Mo », « 340 ko » — un nombre d'octets ne dit rien à personne. */
+export function poids(octets: number): string {
+  if (octets >= 1024 * 1024) return `${(octets / (1024 * 1024)).toFixed(1).replace('.', ',')} Mo`;
+  return `${Math.round(octets / 1024)} ko`;
+}
+
 export async function joindre(salonId: string, fichier: File): Promise<string> {
+  if (!TYPES_ACCEPTES.includes(fichier.type)) {
+    throw new Error(
+      `Seules les photos sont acceptées (JPEG, PNG ou WebP). Ce fichier est un « ${fichier.type || 'type inconnu'} ».`
+    );
+  }
+  if (fichier.size > TAILLE_MAX) {
+    throw new Error(
+      `Cette photo pèse ${poids(fichier.size)} ; la limite est ${poids(TAILLE_MAX)}. Reprenez-la en qualité moindre, ou recadrez-la.`
+    );
+  }
   const ext = fichier.name.split('.').pop()?.toLowerCase() ?? 'jpg';
   const chemin = `${salonId}/${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage.from('pieces').upload(chemin, fichier, {

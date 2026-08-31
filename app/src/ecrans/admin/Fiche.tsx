@@ -23,6 +23,7 @@ import {
   Filet,
   Portrait,
   Surtitre,
+  ChoisirFichier,
   Tuile,
   Zone
 } from '../../ui/base';
@@ -133,19 +134,14 @@ export function AdminFiche() {
               </div>
               {/* Le portrait s'envoie séparément du reste : une photo
                   part tout de suite, le formulaire attend le bouton. */}
-              <label className="btn btn--ghost" style={{ width: 'auto', padding: '0 14px' }}>
-                <Icone nom="album" taille={17} couleur="#12613C" />
-                {portrait.isPending ? 'Envoi…' : 'Photo'}
-                <input
-                  type="file"
-                  accept="image/*"
-                  hidden
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f && id) portrait.mutate({ profilId: id, fichier: f });
-                  }}
-                />
-              </label>
+              <ChoisirFichier
+                libelle={portrait.isPending ? 'Envoi…' : 'Photo'}
+                desactive={portrait.isPending}
+                style={{ width: 'auto', padding: '0 14px' }}
+                onFichier={([f]) => {
+                  if (f && id) portrait.mutate({ profilId: id, fichier: f });
+                }}
+              />
             </div>
           </Carte>
         )}

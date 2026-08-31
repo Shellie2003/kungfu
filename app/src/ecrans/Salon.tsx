@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Icone } from '../ui/Icone';
-import { Bouton, Carte, Entete, Surtitre } from '../ui/base';
+import { Bouton, Carte, ChoisirFichier, Entete, Surtitre } from '../ui/base';
 import {
   MINUTES_CORRECTION,
   corrigible,
@@ -185,31 +185,24 @@ function Saisie({
       )}
 
       {joindreFichier && (
-        <label
-          className="tapicon"
-          aria-label="Joindre une photo"
-          style={{ cursor: 'pointer', display: 'grid', placeItems: 'center' }}
-        >
-          <Icone nom="plus" taille={20} couleur="#0F5132" epaisseur={2} />
-          <input
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={async (e) => {
-              const f = e.target.files?.[0];
-              if (!f) return;
-              setEnvoiPiece(true);
-              setSouci(null);
-              try {
-                setPiece(await joindreFichier(f));
-              } catch (err) {
-                setSouci(`Photo refusée : ${(err as Error).message}`);
-              } finally {
-                setEnvoiPiece(false);
-              }
-            }}
-          />
-        </label>
+        <ChoisirFichier
+          nomAccessible="Joindre une photo"
+          libelle={<Icone nom="plus" taille={20} couleur="#0F5132" epaisseur={2} />}
+          desactive={envoiPiece || occupe}
+          style={{ width: 44, flex: 'none', padding: 0 }}
+          onFichier={async ([f]) => {
+            if (!f) return;
+            setEnvoiPiece(true);
+            setSouci(null);
+            try {
+              setPiece(await joindreFichier(f));
+            } catch (err) {
+              setSouci(`Photo refusée : ${(err as Error).message}`);
+            } finally {
+              setEnvoiPiece(false);
+            }
+          }}
+        />
       )}
       <input
         className="saisie__champ"
@@ -401,10 +394,18 @@ function Conversation({ salonId, sombre }: { salonId: string | undefined; sombre
         </div>
       )}
 
+      {/* Un refus se lit en rouge, et à voix haute pour un lecteur
+          d'écran : annoncer un échec sur le ton d'une réussite est
+          une façon de le cacher. */}
       {avis && (
         <p
-          role="status"
-          style={{ padding: '10px 20px 0', fontSize: 12.5, color: '#12613C' }}
+          role={/pas parti|refusé|échou/i.test(avis) ? 'alert' : 'status'}
+          style={{
+            padding: '10px 20px 0',
+            fontSize: 12.5,
+            lineHeight: '18px',
+            color: /pas parti|refusé|échou/i.test(avis) ? '#B3341A' : '#12613C'
+          }}
         >
           {avis}
         </p>
@@ -538,8 +539,31 @@ function Conversation({ salonId, sombre }: { salonId: string | undefined; sombre
         </div>
       )}
 
+      {/* ⚠ « onError » n'est pas décoratif, et son absence était le
+          défaut que le club a signalé : « si j'écris un message il ne
+          s'affiche pas ».
+
+          Un envoi refusé par le serveur levait une erreur que
+          PERSONNE ne rattrapait. React Query la garde pour lui,
+          l'écran ne montrait rien, le champ se vidait comme après un
+          envoi réussi — et le message n'apparaissait jamais. Du point
+          de vue de celui qui écrit, l'application avait avalé son
+          message sans un mot.
+
+          Le message vient du serveur : le réécrire ici le ferait
+          diverger de la règle le jour où le club la change. */}
       <Saisie
-        envoyer={(texte, piece) => moi && envoi.mutate({ texte, auteurId: moi.id, piece })}
+        envoyer={(texte, piece) =>
+          moi &&
+          envoi.mutate(
+            { texte, auteurId: moi.id, piece },
+            {
+              onSuccess: () => setAvis(null),
+              onError: (e) =>
+                setAvis(`Le message n’est pas parti : ${(e as Error).message}`)
+            }
+          )
+        }
         occupe={envoi.isPending}
         joindreFichier={salonId ? (f) => joindre(salonId, f) : null}
       />

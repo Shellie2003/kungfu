@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icone } from '../../ui/Icone';
 import {
-  Avis, Bouton, Carte, Champ, Choix, Entete, Etat, Surtitre, Tuile, Zone
+  Avis, Bouton, Carte, Champ, ChoisirFichier, Choix, Entete, Etat, Surtitre, Tuile, Zone
 } from '../../ui/base';
 import { useActualites, teinte } from '../../services/casier';
 import { useAlbums } from '../../services/club';
@@ -172,27 +172,23 @@ export function AdminPublier() {
                   Retirer
                 </button>
               )}
-              <label className="btn btn--ghost" style={{ width: 'auto', padding: '0 14px' }}>
-                {envoiImage ? 'Envoi…' : image ? 'Changer' : 'Choisir'}
-                <input
-                  type="file"
-                  accept="image/*"
-                  hidden
-                  onChange={async (e) => {
-                    const f = e.target.files?.[0];
-                    if (!f) return;
-                    setEnvoiImage(true);
-                    try {
-                      setImage(await televerser('album', f));
-                      setAvis(null);
-                    } catch (err) {
-                      setAvis({ bon: false, texte: `Image refusée : ${(err as Error).message}` });
-                    } finally {
-                      setEnvoiImage(false);
-                    }
-                  }}
-                />
-              </label>
+              <ChoisirFichier
+                libelle={envoiImage ? 'Envoi…' : image ? 'Changer' : 'Choisir'}
+                desactive={envoiImage}
+                style={{ width: 'auto', padding: '0 14px' }}
+                onFichier={async ([f]) => {
+                  if (!f) return;
+                  setEnvoiImage(true);
+                  try {
+                    setImage(await televerser('album', f));
+                    setAvis(null);
+                  } catch (err) {
+                    setAvis({ bon: false, texte: `Image refusée : ${(err as Error).message}` });
+                  } finally {
+                    setEnvoiImage(false);
+                  }
+                }}
+              />
             </div>
           </div>
         </Carte>
@@ -641,33 +637,28 @@ export function AdminAlbums() {
                     invite="Championnat régional, mars 2026"
                     aide="Facultative, et commune aux photos envoyées ensemble. Chacune se corrige ensuite."
                   />
-                  <label className="btn btn--ghost">
-                    <Icone nom="plus" taille={17} couleur="#12613C" epaisseur={2} />
-                    {ajouter.isPending && ajouter.variables?.albumId === a.id
-                      ? 'Envoi…'
-                      : 'Ajouter des photos'}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      hidden
-                      onChange={(e) => {
-                        const fichiers = [...(e.target.files ?? [])];
-                        if (!fichiers.length) return;
-                        ajouter.mutate(
-                          { albumId: a.id, fichiers, legende: legendes[a.id] },
-                          {
-                            onSuccess: () => {
-                              setAvis({ bon: true, texte: `${fichiers.length} photo(s) ajoutée(s).` });
-                              setLegendes((p) => ({ ...p, [a.id]: '' }));
-                            },
-                            onError: (err) =>
-                              setAvis({ bon: false, texte: `Refusé : ${(err as Error).message}` })
-                          }
-                        );
-                      }}
-                    />
-                  </label>
+                  <ChoisirFichier
+                    multiple
+                    libelle={
+                      ajouter.isPending && ajouter.variables?.albumId === a.id
+                        ? 'Envoi…'
+                        : 'Ajouter des photos'
+                    }
+                    desactive={ajouter.isPending}
+                    onFichier={(fichiers) =>
+                      ajouter.mutate(
+                        { albumId: a.id, fichiers, legende: legendes[a.id] },
+                        {
+                          onSuccess: () => {
+                            setAvis({ bon: true, texte: `${fichiers.length} photo(s) ajoutée(s).` });
+                            setLegendes((p) => ({ ...p, [a.id]: '' }));
+                          },
+                          onError: (err) =>
+                            setAvis({ bon: false, texte: `Refusé : ${(err as Error).message}` })
+                        }
+                      )
+                    }
+                  />
                 </div>
               </Carte>
             ))}
