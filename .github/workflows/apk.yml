@@ -48,6 +48,9 @@ on:
       # vérification qu'ils font : on poussait la correction d'un
       # contrôle rouge, et rien ne se passait.
       - 'outils/**'
+      # vercel.json décide de la version WEB. Il n'était surveillé
+      # nulle part : une erreur y est passée inaperçue deux jours.
+      - 'vercel.json'
 
 jobs:
   apk:
@@ -95,6 +98,32 @@ jobs:
           fi
           # On montre l'adresse, jamais la clé.
           grep VITE_SUPABASE_URL .env
+
+      # Vercel plafonne « buildCommand » à 256 caractères et REFUSE
+      # le déploiement au-delà — avant de construire, donc sans
+      # journal de construction. La version web a ainsi cessé d'être
+      # mise à jour pendant deux jours sans qu'aucun contrôle ne
+      # devienne rouge : rien ici ne regardait vercel.json.
+      #
+      # Ce contrôle-ci ne remplace pas Vercel, il le devance : il
+      # échoue là où l'on regarde, plutôt que sur un tableau de bord
+      # qu'on n'ouvre pas.
+      - name: Vérifier vercel.json
+        run: |
+          node -e '
+            const v = require("./vercel.json");
+            for (const [champ, max] of [["buildCommand", 256], ["installCommand", 256]]) {
+              const n = (v[champ] ?? "").length;
+              if (n > max) {
+                console.error(`vercel.json : ${champ} fait ${n} caractères, le maximum est ${max}.`);
+                console.error("Vercel refusera le déploiement sans construire. Déplacez la");
+                console.error("commande dans un script, comme outils/vercel-build.sh.");
+                process.exit(1);
+              }
+              console.log(`${champ} : ${n}/${max} caractères`);
+            }
+          '
+          test -f outils/vercel-build.sh
 
       # Une erreur de typage arrête la chaîne ici, plutôt que de
       # produire un APK cassé qu'on installerait pour rien.
