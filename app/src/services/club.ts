@@ -97,3 +97,49 @@ export function useAlbums() {
    privés et il faut une adresse SIGNÉE, que seul le serveur délivre.
    Voir services/stockage.ts — et surtout useUrls(), qui les demande
    en lot plutôt qu'une par une. */
+
+/* ---------------------------------------------- Les valeurs du club
+
+   Elles étaient ÉCRITES DANS L'ÉCRAN, avec ce commentaire : « elles
+   ne changent pas, et les mettre en base aurait donné un écran
+   d'administration de plus pour rien ».
+
+   Le club a demandé de pouvoir les changer. Ce n'est pas un caprice :
+   ces trois lignes sont ce que le club dit de lui-même, et c'est
+   justement le genre de texte qu'on veut retoucher après l'avoir vu
+   en vrai sur un téléphone. Ce que la remarque d'origine visait —
+   ne pas ajouter un écran pour si peu — reste vrai, et c'est
+   pourquoi elles s'éditent SUR l'écran du Club, sans en ouvrir un
+   autre.
+
+   Un réglage, pas une table : trois lignes de texte ne justifient ni
+   une migration, ni des rangs, ni un ordre à maintenir. Une valeur
+   par ligne, « Titre : description ». L'ordre est celui des lignes.
+
+   Vide ou absent, on retombe sur les trois d'origine — l'écran ne
+   doit jamais afficher une section vide parce que personne n'a
+   encore ouvert le formulaire. */
+export const VALEURS_PAR_DEFAUT: [string, string][] = [
+  ['Respect', 'Du maître, des partenaires, du lieu.'],
+  ['Constance', 'La progression vient de la régularité.'],
+  ['Entraide', 'Les anciens accompagnent les nouveaux.']
+];
+
+export function lireValeurs(texte: string | undefined | null): [string, string][] {
+  const lignes = (texte ?? '')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (!lignes.length) return VALEURS_PAR_DEFAUT;
+
+  return lignes.map((ligne) => {
+    /* Le premier deux-points sépare, les suivants appartiennent à la
+       description — « Respect : du maître, du lieu : partout ». */
+    const coupe = ligne.indexOf(':');
+    if (coupe === -1) return [ligne, ''] as [string, string];
+    return [ligne.slice(0, coupe).trim(), ligne.slice(coupe + 1).trim()] as [string, string];
+  });
+}
+
+export const ecrireValeurs = (valeurs: [string, string][]) =>
+  valeurs.map(([t, d]) => (d ? `${t} : ${d}` : t)).join('\n');

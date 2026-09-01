@@ -83,7 +83,19 @@ const PAIRES = [
     exemples: [
       'Fondé en', 'Le club enseigne|Un club ouvert',
       '^(Mardi|Jeudi|Vendredi|Samedi)$', '\\d+h\\d+', '^(Tous niveaux|Débutants|Gradés)$',
-      'Idealy|NUMÉRO À FOURNIR|ADRESSE EXACTE|034 22|Analamahitsy$'
+      'Idealy|NUMÉRO À FOURNIR|ADRESSE EXACTE|034 22|Analamahitsy$',
+      /* « Modifier » n'est pas une donnée d'exemple : c'est un
+         contrôle que le club a demandé APRÈS la maquette, pour
+         changer la présentation, les valeurs et le contact depuis
+         l'écran où il les lit. La maquette ne peut donc pas le
+         montrer.
+
+         Il est écarté ici, et lui seul : le bloc n'excuse que ce
+         mot. Le reste de l'écran continue d'être mesuré au pixel,
+         et l'a prouvé — la première version de ce bouton poussait
+         tout l'écran de quarante-trois pixels, et c'est ce contrôle
+         qui l'a dit. */
+      '^Modifier$'
     ]
   },
   {

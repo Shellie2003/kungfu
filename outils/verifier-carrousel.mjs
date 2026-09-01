@@ -89,16 +89,40 @@ const position = (page) =>
   await page.close();
 }
 
-/* ---------------------------------------------- 2. L'animation part */
+/* ---------------------------------------------- 2. L'animation part, au bon rythme
+
+   On attendait ici cinq secondes, puis on constatait « ça a bougé ».
+   C'était suffisant tant que la durée n'était l'affaire de personne ;
+   le club a maintenant demandé TROIS secondes, et une attente unique
+   de cinq secondes aurait dit « vert » pour n'importe quelle durée
+   entre une et cinq. La demande ne serait plus tenue par rien.
+
+   On encadre donc : à deux secondes, la première vue est encore là ;
+   à quatre, la deuxième. Seule une durée située entre les deux passe.
+   La marge est large des deux côtés — un ordinateur d'intégration
+   chargé décale les minuteries de quelques dizaines de millisecondes,
+   pas d'une seconde. */
+const DELAI_ATTENDU = 3000;
 {
   const page = await ouvrir();
   const depart = await position(page);
-  await page.waitForTimeout(5200);
+  await page.waitForTimeout(DELAI_ATTENDU - 1000);
+  const avantLHeure = await position(page);
+  await page.waitForTimeout(2000);
   const apres = await position(page);
-  if (depart === 0 && apres === 1) {
-    console.log('✓ animation      elle avance toute seule');
+
+  if (depart === 0 && avantLHeure === 0 && apres === 1) {
+    console.log(`✓ animation      elle avance toute seule, toutes les ${DELAI_ATTENDU / 1000} s`);
+  } else if (avantLHeure !== 0) {
+    ennuis.push(
+      `animation : déjà à la vue ${avantLHeure} après ${(DELAI_ATTENDU - 1000) / 1000} s — ` +
+      `elle défile plus vite que les ${DELAI_ATTENDU / 1000} s demandées`
+    );
   } else {
-    ennuis.push(`animation : partie de ${depart}, arrivée à ${apres} — attendu 0 puis 1`);
+    ennuis.push(
+      `animation : encore à la vue ${apres} après ${(DELAI_ATTENDU + 1000) / 1000} s — ` +
+      `attendu la vue 1, le club a demandé ${DELAI_ATTENDU / 1000} s par vue`
+    );
   }
   await page.close();
 }

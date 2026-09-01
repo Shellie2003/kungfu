@@ -611,11 +611,33 @@ export type Reglage = { cle: string; valeur: string; libelle: string };
 export function useEnregistrerReglages() {
   return useEcrire(async (lignes: Reglage[]) => {
     if (!lignes.length) return;
-    const { error } = await supabase.from('reglages').upsert(
-      lignes.map((l) => ({ cle: l.cle, valeur: l.valeur.trim() || null, libelle: l.libelle })),
-      { onConflict: 'cle' }
-    );
+    /* ⚠ « .select() » N'EST PAS DÉCORATIF.
+
+       Sans lui, une écriture que les règles du serveur refusent
+       revient SANS erreur et sans rien avoir écrit : l'écran
+       annonce « Enregistré », et le club découvre des semaines plus
+       tard que le numéro de téléphone n'a jamais changé. Ce projet
+       a déjà payé trois fois ce défaut exact, ailleurs.
+
+       Il compte double depuis que ces réglages s'écrivent aussi
+       depuis l'écran du Club : un maître y pose la photo du club —
+       la migration 0013 le lui permet — mais PAS la présentation ni
+       le contact. Le refus est donc un cas normal, pas une
+       hypothèse, et il doit se voir. */
+    const { data, error } = await supabase
+      .from('reglages')
+      .upsert(
+        lignes.map((l) => ({ cle: l.cle, valeur: l.valeur.trim() || null, libelle: l.libelle })),
+        { onConflict: 'cle' }
+      )
+      .select('cle');
     if (error) throw error;
+    if (!data || data.length < lignes.length) {
+      throw new Error(
+        'Le serveur n’a pas accepté cette modification — votre rôle ne permet ' +
+          'peut-être pas de la faire. Rien n’a été changé.'
+      );
+    }
   });
 }
 

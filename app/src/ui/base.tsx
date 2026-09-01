@@ -511,3 +511,86 @@ export function ChoisirFichier({
     </label>
   );
 }
+
+/* ---------------------------------------------- Feuille
+
+   Le panneau qui monte du bas de l'écran, par-dessus le reste.
+
+   Il existait déjà, écrit à la main dans l'accueil pour la photo du
+   club. L'écran du Club en demande cinq de plus — présentation,
+   valeurs, contact… — et cinq copies du même balisage auraient
+   dérivé l'une de l'autre à la première correction.
+
+   FERMÉE, ELLE N'EXISTE PAS DANS LE DOCUMENT. Ce n'est pas une
+   optimisation : c'est ce qui laisse les écrans au repos identiques
+   à la maquette, et donc ce qui permet à la comparaison au pixel de
+   rester exigeante. Un panneau simplement caché en CSS s'y verrait.
+
+   Le clic sur le voile ferme ; le clic DANS la feuille ne remonte
+   pas jusqu'à lui, sans quoi taper dans un champ refermerait le
+   panneau qu'on est en train de remplir. */
+export function Feuille({
+  sur,
+  titre,
+  fermer,
+  children
+}: {
+  /* Le surtitre : d'où l'on vient. « Le Club », « Accueil ». */
+  sur: string;
+  titre: string;
+  fermer: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className="voile"
+      role="dialog"
+      aria-modal="true"
+      aria-label={titre}
+      onClick={fermer}
+    >
+      <div className="feuille" onClick={(e) => e.stopPropagation()}>
+        <span className="feuille__poignee" />
+        <p className="feuille__sur">{sur}</p>
+        <p className="feuille__titre">{titre}</p>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------- Modifier
+
+   Le crayon posé au bout d'un titre de section.
+
+   Il ne s'affiche qu'à qui peut réellement écrire. Montrer un
+   crayon qui mène à un refus du serveur est pire que ne rien
+   montrer : la personne essaie, échoue, et ne sait pas si c'est
+   elle ou l'application. */
+export function Modifier({ quoi, onClick }: { quoi: string; onClick: () => void }) {
+  /* « modif » et non « link » : c'est la classe que porte déjà
+     « Modifiable par l'administration », au bout du même titre de
+     section, et que la maquette a mesurée.
+
+     « link » fait 13 pixels contre 11 : la ligne de titre grandissait
+     de deux pixels, et tout l'écran descendait d'autant — « Valeurs »
+     en (20, 555) au lieu de (20, 553). Deux pixels ne se voient pas ;
+     c'est précisément pour cela qu'on les mesure, parce que la
+     ressemblance se perd deux pixels à la fois. */
+  return (
+    <button
+      className="modif"
+      aria-label={`Modifier ${quoi}`}
+      onClick={onClick}
+      style={{
+        background: 'none',
+        border: 'none',
+        padding: 0,
+        cursor: 'pointer',
+        textDecoration: 'underline'
+      }}
+    >
+      Modifier
+    </button>
+  );
+}

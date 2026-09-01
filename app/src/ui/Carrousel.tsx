@@ -38,7 +38,8 @@ export type Vue = {
   cle: string;
 };
 
-const DELAI = 4500;
+/* Trois secondes par vue — demandé par le club. */
+const DELAI = 3000;
 
 export function Carrousel({
   vues,
