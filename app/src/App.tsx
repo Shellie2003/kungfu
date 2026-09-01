@@ -180,7 +180,13 @@ function Connectee() {
         {estAdmin(profil) && <Route path="/admin/comptes" element={<AdminComptes />} />}
         {estAdmin(profil) && <Route path="/admin/publier" element={<AdminPublier />} />}
         {estAdmin(profil) && <Route path="/admin/notifier" element={<AdminNotifier />} />}
-        {estAdmin(profil) && <Route path="/admin/albums" element={<AdminAlbums />} />}
+        {/* La route suit la PERMISSION, pas le nom du dossier : les
+            albums sont ouverts à l'encadrement depuis la migration
+            0013, et laisser la route en « admin seul » aurait envoyé
+            un maître sur une adresse inexistante après avoir cliqué
+            un bouton qu'on venait de lui montrer. La moitié d'une
+            permission est une panne. */}
+        {estMaitre(profil) && <Route path="/admin/albums" element={<AdminAlbums />} />}
         {estAdmin(profil) && <Route path="/admin/club" element={<AdminClub />} />}
         {estAdmin(profil) && <Route path="/admin/salons" element={<AdminSalons />} />}
         {estAdmin(profil) && <Route path="/admin/journal" element={<AdminJournal />} />}

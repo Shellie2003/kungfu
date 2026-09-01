@@ -18,7 +18,7 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Accueil } from '../src/ecrans/Accueil';
 import { brancherServeur, derniere, poser, recues, reinitialiser } from './serveur';
-import { PROFIL_ADMIN, PROFIL_ELEVE, rendre } from './rendu';
+import { PROFIL_ADMIN, PROFIL_ELEVE, PROFIL_MAITRE, rendre } from './rendu';
 
 const SORTIE = {
   id: 'a1',
@@ -155,6 +155,16 @@ describe('la photo du club', () => {
     expect(derniere('reglages')?.corps).toMatchObject([
       { cle: 'photo_club', libelle: 'Photo du club' }
     ]);
+  });
+
+  test('un MAÎTRE l’a aussi — l’encadrement tient l’image du club', async () => {
+    /* Décision du club, et la règle d'accès a suivi (migration
+       0013) : montrer ce bouton sans élargir le serveur aurait
+       affiché un bouton que le serveur refuse. Vérifié dans la base
+       en se faisant passer pour le maître : il écrit la photo du
+       club, et le numéro MVola lui reste fermé. */
+    rendre(<Accueil />, { route: '/accueil', profil: PROFIL_MAITRE });
+    expect(await screen.findByLabelText('Ajouter la photo du club')).toBeInTheDocument();
   });
 
   test('un élève voit l’emplacement, sans aucun bouton', async () => {

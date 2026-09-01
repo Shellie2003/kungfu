@@ -38,6 +38,14 @@ export const PROFIL_ADMIN: Profil = {
   role: 'admin', grade_id: 'gn', photo: null
 };
 
+/* Le maître : ni élève ni administration. C'est le rôle qui a le
+   plus servi à départager, depuis que l'encadrement tient l'image du
+   club sans avoir la main sur les réglages d'argent. */
+export const PROFIL_MAITRE: Profil = {
+  id: 'p4', numero: 'F04x045', nom: 'RABEMANANJARA', prenom: 'Hery',
+  role: 'maitre', grade_id: 'gn', photo: null
+};
+
 export function poserProfil(profil: Profil | null) {
   useSession.setState({
     session: profil ? ({ access_token: 'x' } as never) : null,

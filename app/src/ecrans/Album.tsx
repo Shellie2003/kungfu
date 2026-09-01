@@ -7,7 +7,7 @@ import { Icone } from '../ui/Icone';
 import { Entete, Etat, Puce, Surtitre } from '../ui/base';
 import { useAlbums } from '../services/club';
 import { useUrls } from '../services/stockage';
-import { estAdmin, useSession } from '../services/session';
+import { estMaitre, useSession } from '../services/session';
 
 export function Album() {
   const aller = useNavigate();
@@ -39,7 +39,7 @@ export function Album() {
            C'est un raccourci, et il n'apparaît qu'à qui peut s'en
            servir. */
         action={
-          estAdmin(moi) ? (
+          estMaitre(moi) ? (
             <button
               className="tapicon"
               onClick={() => aller('/admin/albums')}

@@ -175,7 +175,17 @@ export function Accueil() {
           <Carrousel
             vues={vues}
             nomAccessible="Photos du club"
-            vide={estAdmin(profil) ? (
+            /* L'ENCADREMENT, et non la seule administration : décision
+               du club, et la règle d'accès a été élargie en même
+               temps (migration 0013). Montrer ce bouton à un maître
+               sans élargir le serveur aurait affiché un bouton que
+               le serveur refuse — la moitié d'une permission est une
+               panne, pas une protection.
+
+               Ce qui N'A PAS été élargi, et qui est vérifié dans la
+               base : le numéro MVola qui reçoit les participations
+               reste à l'administration seule. */
+            vide={estMaitre(profil) ? (
             /* L'emplacement vide DEVIENT le bouton, et c'est tout
                l'intérêt : le club cherchait « la possibilité
                d'ajouter une photo » et la photo manquante était sous
