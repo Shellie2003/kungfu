@@ -16,6 +16,7 @@
    ============================================================ */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from './supabase';
+import { enParallele, reduire } from './images';
 import type { Role } from './session';
 
 /* Après une écriture, les listes en mémoire sont périmées. On les
@@ -321,11 +322,25 @@ export function useSupprimerAlbum() {
    Le nom est tiré au sort : deux téléphones qui envoient tous deux
    « IMG_0001.jpg » écraseraient sinon la photo l'un de l'autre. */
 export async function televerser(seau: string, fichier: File): Promise<string> {
-  const ext = fichier.name.split('.').pop()?.toLowerCase() ?? 'jpg';
+  /* ⚠ La RÉDUCTION, qui manquait ici.
+
+     Elle n'existait que dans la messagerie. Les albums, les portraits
+     et la photo du club envoyaient donc les fichiers TELS QUELS —
+     trois à cinq mégaoctets par cliché sortant d'un téléphone récent.
+     Le club a signalé un import « horriblement lent » : c'en est la
+     moitié de la cause.
+
+     Mesuré dans un navigateur sur un cliché 4032x3024 :
+     7436 ko → 1086 ko. Presque sept fois moins à transporter, pour
+     celui qui envoie comme pour chacun des soixante-quatre qui
+     regardent ensuite. */
+  const envoye = await reduire(fichier);
+  const ext = envoye.name.split('.').pop()?.toLowerCase() ?? 'jpg';
   const chemin = `${crypto.randomUUID()}.${ext}`;
-  const { error } = await supabase.storage.from(seau).upload(chemin, fichier, {
+  const { error } = await supabase.storage.from(seau).upload(chemin, envoye, {
     cacheControl: '3600',
-    upsert: false
+    upsert: false,
+    contentType: envoye.type
   });
   if (error) throw error;
   return chemin;
@@ -348,13 +363,62 @@ export function useAjouterPhotos() {
          une par photo aurait pour seul effet qu'il n'y en aurait
          aucune. Chacune se corrige ensuite individuellement. */
       const commune = legende?.trim() || null;
-      let rang = Date.now();
-      for (const f of fichiers) {
-        const chemin = await televerser('album', f);
-        const { error } = await supabase
-          .from('photos')
-          .insert({ album_id: albumId, chemin, legende: commune, rang: rang++ });
-        if (error) throw error;
+
+      /* ⚠ LE RANG N'EST PAS UN HORODATAGE.
+
+         Il valait « Date.now() » : un nombre de treize chiffres dans
+         une colonne « integer », dont le maximum est 2 147 483 647.
+         Le serveur refusait donc TOUT ajout de photo, avec un message
+         que personne ne pouvait relier à l'album :
+
+             value "1788248967396" is out of range for type integer
+
+         L'intention était bonne — poser la nouvelle photo APRÈS les
+         autres — mais un compteur qui déborde n'ordonne rien du tout.
+         On demande donc à la base où elle en est. Un seul appel, et
+         la réponse est un vrai rang. */
+      const { data: dernier, error: eRang } = await supabase
+        .from('photos')
+        .select('rang')
+        .eq('album_id', albumId)
+        .order('rang', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (eRang) throw eRang;
+      const depart = (dernier?.rang ?? 0) + 1;
+
+      /* Les envois de FRONT, et l'insertion en UN SEUL appel.
+
+         Vingt photos faisaient quarante allers-retours enchaînés :
+         envoyer, écrire, envoyer, écrire… Sur un réseau malgache,
+         c'est là que passait l'essentiel de l'attente.
+
+         Trois envois de front — pas vingt, qui satureraient la
+         connexion et les feraient toutes échouer au lieu d'une — puis
+         une seule insertion pour toutes les lignes. L'ordre des
+         résultats est conservé : il porte le rang. */
+      const chemins = await enParallele(fichiers, 3, (f) => televerser('album', f));
+
+      const { data, error } = await supabase
+        .from('photos')
+        .insert(
+          chemins.map((chemin, i) => ({
+            album_id: albumId,
+            chemin,
+            legende: commune,
+            rang: depart + i
+          }))
+        )
+        .select('id');
+      if (error) throw error;
+      /* Zéro ligne écrite alors que le serveur n'a rien signalé :
+         c'est le refus silencieux que ce projet a déjà payé trois
+         fois. Les fichiers seraient dans le seau et l'album resterait
+         vide. */
+      if (!data?.length) {
+        throw new Error(
+          'Les photos sont sur le serveur mais aucune ligne n’a été écrite — réessayez.'
+        );
       }
     }
   );

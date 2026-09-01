@@ -14,6 +14,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from './supabase';
+import { TYPES_IMAGE, reduire } from './images';
 
 export type TypeSalon = 'club' | 'grade' | 'evenement' | 'direct' | 'maitres';
 
@@ -209,7 +210,10 @@ export function useMessages(salonId: string | undefined) {
    contournée. */
 export const TAILLE_MAX = 5 * 1024 * 1024;
 
-export const TYPES_IMAGE = ['image/jpeg', 'image/png', 'image/webp'];
+/* Réexporté pour les appelants qui l'importaient d'ici. La source
+   est images.ts : deux listes de types d'images auraient fini par
+   diverger, et l'écran aurait alors refusé ce que le seau accepte. */
+export { TYPES_IMAGE } from './images';
 
 /* Les documents que le club échange réellement : une convocation en
    PDF, une liste d'inscrits, un règlement. On ne prend PAS tout —
@@ -274,54 +278,6 @@ export function nomDeLaPiece(chemin: string): string | null {
 
 export const estImage = (chemin: string): boolean =>
   /\.(jpe?g|png|webp)$/i.test(chemin);
-
-/* ------------------------------------------------------------
-   Réduire une photo AVANT de l'envoyer.
-
-   Le club : « la lecture de l'image est trop lente ». Elle l'est,
-   et pour une raison simple : un téléphone récent produit des
-   photos de trois à cinq mégaoctets. Les envoyer coûte cher à qui
-   les envoie, et les LIRE coûte autant à chacun des soixante-quatre
-   membres, à chaque ouverture du fil.
-
-   Mille six cents pixels de côté suffisent très largement à un
-   écran de téléphone, et ramènent une photo de quatre mégaoctets
-   sous les trois cents kilooctets — plus de dix fois moins à
-   transporter.
-
-   En cas d'échec, on envoie l'ORIGINAL : mieux vaut une photo lourde
-   qu'une photo perdue. C'est aussi ce qui se passe dans les tests,
-   où jsdom ne sait pas dessiner.
-   ------------------------------------------------------------ */
-const COTE_MAX = 1600;
-const QUALITE = 0.82;
-
-export async function reduire(fichier: File): Promise<File> {
-  if (!TYPES_IMAGE.includes(fichier.type)) return fichier;
-  try {
-    const bitmap = await createImageBitmap(fichier);
-    const facteur = Math.min(1, COTE_MAX / Math.max(bitmap.width, bitmap.height));
-    /* Déjà petite : la réencoder ne ferait que la dégrader. */
-    if (facteur === 1 && fichier.size < 600 * 1024) return fichier;
-
-    const toile = document.createElement('canvas');
-    toile.width = Math.round(bitmap.width * facteur);
-    toile.height = Math.round(bitmap.height * facteur);
-    const pinceau = toile.getContext('2d');
-    if (!pinceau) return fichier;
-    pinceau.drawImage(bitmap, 0, 0, toile.width, toile.height);
-
-    const blob = await new Promise<Blob | null>((ok) =>
-      toile.toBlob(ok, 'image/jpeg', QUALITE)
-    );
-    if (!blob || blob.size >= fichier.size) return fichier;
-
-    const base = fichier.name.replace(/\.[^.]+$/, '');
-    return new File([blob], `${base}.jpg`, { type: 'image/jpeg' });
-  } catch {
-    return fichier;
-  }
-}
 
 export async function joindre(salonId: string, fichier: File): Promise<string> {
   if (!TYPES_ACCEPTES.includes(fichier.type)) {

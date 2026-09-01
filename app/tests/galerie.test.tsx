@@ -56,11 +56,13 @@ describe('la légende d’une photo', () => {
     );
     await userEvent.upload(screen.getByLabelText(/Importer des photos/i), fichier());
 
+    /* Le corps est un TABLEAU depuis que les photos partent en une
+       seule écriture : vingt photos faisaient sinon vingt
+       allers-retours enchaînés. */
     await waitFor(() =>
-      expect(derniere('photos')?.corps).toMatchObject({
-        album_id: 'a1',
-        legende: 'Finale par équipe, mars 2026'
-      })
+      expect(derniere('photos')?.corps).toMatchObject([
+        { album_id: 'a1', legende: 'Finale par équipe, mars 2026' }
+      ])
     );
   });
 
@@ -76,10 +78,11 @@ describe('la légende d’une photo', () => {
 
     await waitFor(() => {
       const envois = recues.filter((r) => r.table === 'photos' && r.methode === 'POST');
-      expect(envois).toHaveLength(2);
-      expect(envois.every((e) => (e.corps as { legende: string }).legende === 'Kata, juin')).toBe(
-        true
-      );
+      /* UNE écriture, DEUX lignes — et la même légende sur les deux. */
+      expect(envois).toHaveLength(1);
+      const lignes = envois[0]?.corps as { legende: string }[];
+      expect(lignes).toHaveLength(2);
+      expect(lignes.every((l) => l.legende === 'Kata, juin')).toBe(true);
     });
   });
 
@@ -92,7 +95,7 @@ describe('la légende d’une photo', () => {
 
     await userEvent.upload(screen.getByLabelText(/Importer des photos/i), fichier());
 
-    await waitFor(() => expect(derniere('photos')?.corps).toMatchObject({ legende: null }));
+    await waitFor(() => expect(derniere('photos')?.corps).toMatchObject([{ legende: null }]));
   });
 
   test('se corrige ensuite, photo par photo', async () => {
@@ -259,7 +262,7 @@ describe('les deux chemins vers une photo', () => {
 
     await userEvent.upload(screen.getByLabelText(/Prendre une photo/i), fichier());
 
-    await waitFor(() => expect(derniere('photos')?.corps).toMatchObject({ album_id: 'a1' }));
+    await waitFor(() => expect(derniere('photos')?.corps).toMatchObject([{ album_id: 'a1' }]));
   });
 });
 
@@ -278,5 +281,77 @@ describe('le raccourci depuis l’album', () => {
     rendre(<Album />, { route: '/album', profil: PROFIL_ELEVE });
     await screen.findAllByText('Championnat régional');
     expect(screen.queryByLabelText('Ajouter des photos')).not.toBeInTheDocument();
+  });
+});
+
+/* ============================================================
+   « Refusé : value "1788248967396" is out of range for type integer »
+
+   Le rang d'une photo valait « Date.now() » : un nombre de treize
+   chiffres dans une colonne « integer », dont le maximum est
+   2 147 483 647. Le serveur refusait donc TOUT ajout de photo, avec
+   un message que personne ne pouvait relier à l'album.
+
+   L'intention était bonne — poser la nouvelle photo après les
+   autres — mais un compteur qui déborde n'ordonne rien du tout.
+   ============================================================ */
+describe('le rang des photos ajoutées', () => {
+  test('tient dans un entier, et suit celui de l’album', async () => {
+    poser({
+      albums: [ALBUM],
+      /* La base répond « le plus haut rang est 7 ». */
+      photos: [{ rang: 7 }]
+    });
+    rendre(<AdminAlbums />);
+    await screen.findByText('Championnat régional');
+
+    await userEvent.upload(
+      screen.getByLabelText(/Importer des photos/i),
+      [fichier(), fichier()]
+    );
+
+    await waitFor(() => expect(derniere('photos')).toBeDefined());
+    const lignes = derniere('photos')?.corps as { rang: number }[];
+
+    /* Les deux photos se suivent, APRÈS la dernière de l'album. */
+    expect(lignes.map((l) => l.rang)).toEqual([8, 9]);
+
+    /* Et le contrôle qui aurait attrapé le défaut : un entier de
+       PostgreSQL s'arrête à 2 147 483 647. « Date.now() » vaut mille
+       fois plus. */
+    for (const l of lignes) {
+      expect(Number.isInteger(l.rang)).toBe(true);
+      expect(l.rang).toBeLessThan(2_147_483_647);
+    }
+  });
+
+  test('un album vide commence à 1', async () => {
+    poser({ albums: [ALBUM], photos: [] });
+    rendre(<AdminAlbums />);
+    await screen.findByText('Championnat régional');
+
+    await userEvent.upload(screen.getByLabelText(/Importer des photos/i), fichier());
+
+    await waitFor(() => expect(derniere('photos')).toBeDefined());
+    expect((derniere('photos')?.corps as { rang: number }[])[0]?.rang).toBe(1);
+  });
+
+  test('les photos partent en UNE seule écriture, pas une par photo', async () => {
+    /* Vingt photos faisaient quarante allers-retours enchaînés :
+       envoyer, écrire, envoyer, écrire… Sur un réseau malgache,
+       c'est là que passait l'essentiel de l'attente. */
+    poser({ albums: [ALBUM], photos: [] });
+    rendre(<AdminAlbums />);
+    await screen.findByText('Championnat régional');
+
+    await userEvent.upload(
+      screen.getByLabelText(/Importer des photos/i),
+      [fichier(), fichier(), fichier()]
+    );
+
+    await waitFor(() => expect(derniere('photos')).toBeDefined());
+    const ecritures = recues.filter((r) => r.table === 'photos' && r.methode === 'POST');
+    expect(ecritures).toHaveLength(1);
+    expect((ecritures[0]?.corps as unknown[]).length).toBe(3);
   });
 });
