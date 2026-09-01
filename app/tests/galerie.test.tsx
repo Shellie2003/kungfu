@@ -18,7 +18,7 @@ import userEvent from '@testing-library/user-event';
 import { Album } from '../src/ecrans/Album';
 import { AdminAlbums } from '../src/ecrans/admin/Publication';
 import { brancherServeur, derniere, poser, recues, reinitialiser } from './serveur';
-import { PROFIL_ADMIN, PROFIL_ELEVE, rendre } from './rendu';
+import { PROFIL_ADMIN, PROFIL_ELEVE, PROFIL_MAITRE, rendre } from './rendu';
 
 const ALBUM = {
   id: 'a1',
@@ -274,13 +274,18 @@ describe('le raccourci depuis l’album', () => {
      Comme au casier, ce n'est pas une permission de plus — la route
      et le serveur refusent déjà ce que le rôle n'autorise pas. */
   test('l’administration l’a, l’élève non', async () => {
+    /* Le bouton d'en-tête s'appelait « Ajouter des photos » et menait
+       à l'écran d'administration, où il fallait encore retrouver
+       l'album. Il porte maintenant ce qu'il fait vraiment — créer un
+       album — et l'ajout de photos se fait sur la vignette « + » de
+       l'album concerné. */
     poser({ albums: [ALBUM] });
     rendre(<Album />, { route: '/album', profil: PROFIL_ADMIN });
-    expect(await screen.findByLabelText('Ajouter des photos')).toBeInTheDocument();
+    expect(await screen.findByLabelText('Créer un album')).toBeInTheDocument();
 
     rendre(<Album />, { route: '/album', profil: PROFIL_ELEVE });
     await screen.findAllByText('Championnat régional');
-    expect(screen.queryByLabelText('Ajouter des photos')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Créer un album')).not.toBeInTheDocument();
   });
 });
 
@@ -353,5 +358,88 @@ describe('le rang des photos ajoutées', () => {
     const ecritures = recues.filter((r) => r.table === 'photos' && r.methode === 'POST');
     expect(ecritures).toHaveLength(1);
     expect((ecritures[0]?.corps as unknown[]).length).toBe(3);
+  });
+});
+
+describe('ajouter une photo là où on la regarde', () => {
+  /* « Dans l'album, il n'y a pas de fonctionnalité d'ajout (capture
+     ou import de l'image) comme prévu. »
+
+     Elle existait — dans l'écran d'administration, à trois appuis de
+     distance : ouvrir l'administration, ouvrir les albums, retrouver
+     l'album. Le bouton de l'écran Album n'y menait que, tout en
+     s'appelant « Ajouter des photos » : le club a conclu que l'ajout
+     n'existait pas, et c'était une conclusion raisonnable. */
+  const DEUX = {
+    ...ALBUM,
+    photos: [{ id: 'ph1', chemin: 'une.jpg', legende: null, rang: 3 }]
+  };
+
+  test('la vignette « + » est là pour l’encadrement', async () => {
+    poser({ albums: [DEUX] });
+    rendre(<Album />, { profil: PROFIL_MAITRE });
+
+    expect(
+      await screen.findByLabelText('Ajouter des photos à Championnat régional')
+    ).toBeInTheDocument();
+  });
+
+  test('un élève ne la voit pas — le serveur la lui refuserait', async () => {
+    poser({ albums: [DEUX] });
+    rendre(<Album />, { profil: PROFIL_ELEVE });
+
+    await screen.findByText('Championnat régional');
+    expect(
+      screen.queryByLabelText('Ajouter des photos à Championnat régional')
+    ).not.toBeInTheDocument();
+  });
+
+  test('la photo part dans le BON album, avec sa légende', async () => {
+    /* « photos » est posé À PART de « albums » : le service lit le
+       rang le plus élevé dans la TABLE, pas dans l'album déjà en
+       mémoire. C'est ce qui évite deux photos au même rang, donc un
+       ordre tiré au sort à chaque lecture. */
+    poser({ albums: [DEUX], photos: [{ rang: 3 }] });
+    rendre(<Album />, { profil: PROFIL_MAITRE });
+
+    await userEvent.click(
+      await screen.findByLabelText('Ajouter des photos à Championnat régional')
+    );
+    await userEvent.type(
+      await screen.findByLabelText('Légende (facultative)'),
+      'Finale par équipe'
+    );
+    await userEvent.upload(screen.getByLabelText('Importer depuis la galerie'), fichier());
+
+    const lignes = (await waitFor(() => {
+      const r = derniere('photos');
+      expect(r).toBeDefined();
+      return r!;
+    })).corps as { album_id: string; legende: string | null; rang: number }[];
+
+    expect(lignes[0]!.album_id).toBe('a1');
+    expect(lignes[0]!.legende).toBe('Finale par équipe');
+    /* Le rang suit le dernier de l'album, il ne repart pas de zéro —
+       sinon deux photos porteraient le même et l'ordre serait tiré au
+       sort à chaque lecture. */
+    expect(lignes[0]!.rang).toBe(4);
+  });
+
+  test('l’appareil photo est proposé, pas seulement la galerie', async () => {
+    /* « capture » ouvre l'appareil photo ET ferme la porte à la
+       galerie : un bouton unique ne peut pas faire les deux. Le club
+       a demandé « capture OU import », il faut donc bien deux
+       chemins. */
+    poser({ albums: [DEUX] });
+    rendre(<Album />, { profil: PROFIL_MAITRE });
+
+    await userEvent.click(
+      await screen.findByLabelText('Ajouter des photos à Championnat régional')
+    );
+    expect(await screen.findByLabelText('Prendre une photo')).toHaveAttribute(
+      'capture',
+      'environment'
+    );
+    expect(screen.getByLabelText('Importer depuis la galerie')).not.toHaveAttribute('capture');
   });
 });

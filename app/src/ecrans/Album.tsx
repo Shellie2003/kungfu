@@ -4,9 +4,10 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Icone } from '../ui/Icone';
-import { Entete, Etat, Puce, Surtitre } from '../ui/base';
+import { Avis, ChoisirFichier, Entete, Etat, Feuille, Puce, Surtitre, Zone } from '../ui/base';
 import { useAlbums } from '../services/club';
 import { useUrls } from '../services/stockage';
+import { useAjouterPhotos } from '../services/admin';
 import { estMaitre, useSession } from '../services/session';
 
 export function Album() {
@@ -25,14 +26,63 @@ export function Album() {
   );
   const liste = (albums ?? []).filter((a) => !filtre || a.categorie === filtre);
 
+  /* ---- Ajouter des photos SANS quitter l'album ----
+
+     « Dans l'album, il n'y a pas de fonctionnalité d'ajout (capture
+     ou import de l'image) comme prévu. »
+
+     Elle existait — dans l'écran d'administration, à trois appuis
+     d'ici : ouvrir l'administration, ouvrir les albums, choisir
+     l'album. Le bouton de cet écran n'y menait que. C'est la même
+     remarque que pour la photo du club, et elle a la même réponse :
+     on ajoute une photo là où on la regarde.
+
+     La légende est celle de l'ENVOI, commune aux vingt photos qui
+     rentrent d'une compétition. En exiger une par photo aurait pour
+     seul effet qu'il n'y en aurait aucune ; chacune se corrige
+     ensuite dans l'écran d'administration. */
+  const ajouter = useAjouterPhotos();
+  const [cible, setCible] = useState<{ id: string; titre: string } | null>(null);
+  const [legende, setLegende] = useState('');
+  const [avis, setAvis] = useState<{ bon: boolean; texte: string } | null>(null);
+
+  const envoyer = (fichiers: File[]) => {
+    if (!cible || !fichiers.length) return;
+    setAvis(null);
+    ajouter.mutate(
+      { albumId: cible.id, fichiers, legende },
+      {
+        onSuccess: () => {
+          setCible(null);
+          setLegende('');
+          setAvis({
+            bon: true,
+            texte: `${fichiers.length} photo${fichiers.length > 1 ? 's' : ''} ajoutée${fichiers.length > 1 ? 's' : ''}.`
+          });
+        },
+        /* La feuille RESTE ouverte sur un refus : la refermer
+           emporterait la légende qui vient d'être écrite, et
+           laisserait croire que c'est passé. */
+        onError: (e) => setAvis({ bon: false, texte: `Refusé : ${(e as Error).message}` })
+      }
+    );
+  };
+
   return (
     <>
       <Entete
         titre="Album photo"
-        /* Le club a cherché ce bouton ici, et il n'y était pas : la
-           gestion des albums vivait uniquement dans l'écran
-           d'administration, à trois appuis de distance. On ajoute
-           des photos là où on les regarde.
+        /* CRÉER un album — pas y ajouter des photos.
+
+           Ce bouton s'appelait « Ajouter des photos » et menait à
+           l'écran d'administration : il fallait ensuite y retrouver
+           l'album, et le club a conclu, à juste titre, que l'ajout
+           n'existait pas. Ajouter une photo se fait maintenant sur
+           la vignette « + » de l'album concerné, plus bas.
+
+           Reste ici ce que cet écran ne sait pas faire : créer un
+           album neuf, avec son titre et sa catégorie. Le libellé le
+           dit désormais.
 
            Ce n'est pas une permission de plus : la route et le
            serveur refusent déjà tout ce que le rôle n'autorise pas.
@@ -43,7 +93,7 @@ export function Album() {
             <button
               className="tapicon"
               onClick={() => aller('/admin/albums')}
-              aria-label="Ajouter des photos"
+              aria-label="Créer un album"
             >
               <Icone nom="plus" taille={22} couleur="#0E2119" epaisseur={2} />
             </button>
@@ -131,11 +181,75 @@ export function Album() {
                     </button>
                   );
                 })}
+
+                {/* LA TUILE « + », À LA FIN DE LA GRILLE.
+
+                    À la fin et non en tête : la grille commence par
+                    ce que le club a déjà mis, et l'ajout se propose
+                    après. Elle a la taille d'une vignette et prend
+                    la place d'une case vide — l'écran ne se décale
+                    pas, et la comparaison à la maquette le vérifie.
+
+                    Elle n'apparaît qu'à l'encadrement, parce que
+                    c'est ce que permet la migration 0013. Un « + »
+                    montré à un élève mènerait à un refus du serveur,
+                    et il ne saurait pas si le fautif est lui. */}
+                {estMaitre(moi) && (
+                  <button
+                    className="tilephoto"
+                    aria-label={`Ajouter des photos à ${album.titre}`}
+                    onClick={() => {
+                      setCible({ id: album.id, titre: album.titre });
+                      setLegende('');
+                      setAvis(null);
+                    }}
+                  >
+                    <Icone nom="plus" taille={24} couleur="#12613C" epaisseur={2} />
+                  </button>
+                )}
               </div>
             </div>
           ))}
         </Etat>
+
+        {avis && !cible && <Avis bon={avis.bon}>{avis.texte}</Avis>}
       </div>
+
+      {cible && (
+        <Feuille sur={cible.titre} titre="Ajouter des photos" fermer={() => setCible(null)}>
+          <Zone
+            libelle="Légende (facultative)"
+            lignes={2}
+            aide="La même pour toutes les photos de cet envoi. Chacune se corrige ensuite."
+            valeur={legende}
+            poser={setLegende}
+          />
+          {/* Deux chemins et non un seul : « capture » ouvre
+              l'appareil photo ET ferme la porte à la galerie. Un
+              bouton unique ne peut pas faire les deux. */}
+          <ChoisirFichier
+            appareil
+            libelle="Prendre une photo"
+            desactive={ajouter.isPending}
+            onFichier={envoyer}
+          />
+          <ChoisirFichier
+            multiple
+            libelle="Importer depuis la galerie"
+            desactive={ajouter.isPending}
+            onFichier={envoyer}
+          />
+          {ajouter.isPending && (
+            <p role="status" style={{ fontSize: 12.5, color: '#59685F' }}>
+              Envoi en cours…
+            </p>
+          )}
+          {avis && !avis.bon && <Avis bon={false}>{avis.texte}</Avis>}
+          <button className="link" onClick={() => setCible(null)}>
+            Annuler
+          </button>
+        </Feuille>
+      )}
     </>
   );
 }
