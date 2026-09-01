@@ -142,7 +142,13 @@ if (ennuis.length) {
     '\n  Les deux se construisent depuis app/src. Si elles diffèrent, la cause\n' +
     '  est dans les DEUX commandes de construction : vite.config.ts pour l’APK,\n' +
     '  outils/vercel-build.sh pour le web. Toute option qui change le rendu doit\n' +
-    '  être posée dans vite.config.ts, que les deux emploient.\n'
+    '  être posée dans vite.config.ts, que les deux emploient.\n' +
+    '\n  Si SEUL « club » diffère, et de très peu : regardez d’abord la VERSION.\n' +
+    '  Cet écran l’affiche en toutes lettres, et c’est la seule chose que les\n' +
+    '  deux constructions reçoivent du DEHORS. Les deux doivent donc être\n' +
+    '  lancées avec la même VERSION_CONSTRUITE — sinon elles écrivent deux\n' +
+    '  textes différents au même endroit, et ce contrôle le signale à juste\n' +
+    '  titre, pour une divergence que la chaîne a elle-même fabriquée.\n'
   );
   process.exit(1);
 }

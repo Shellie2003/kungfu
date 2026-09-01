@@ -193,7 +193,23 @@ jobs:
       # Cette étape construit avec le même script que Vercel, puis
       # l'ouvre. Elle vient APRÈS les comparaisons : le script pose
       # app/.env, et l'écraser avant elles fausserait leur serveur.
+      #
+      # VERSION_CONSTRUITE : la MÊME que celle de « Construire la
+      # partie web », et pour la même raison qu'elle y est. Sur
+      # Vercel, le script lit VERCEL_GIT_COMMIT_SHA ; ici cette
+      # variable n'existe pas, et sans repli le paquet web portait
+      # « developpement » quand l'APK portait l'empreinte du commit.
+      #
+      # L'écran du club affiche cette ligne. Les deux versions
+      # écrivaient donc un texte différent au même endroit, et
+      # l'étape suivante — celle qui les compare au pixel — le
+      # voyait : « club : 0.05 % de pixels différents ». Elle avait
+      # raison ; c'était bien une divergence, mais fabriquée par
+      # cette chaîne, pas par le code. Les constructions 43 et 44
+      # s'y sont arrêtées, et n'ont produit aucun APK.
       - name: Ouvrir la version web
+        env:
+          VERSION_CONSTRUITE: ${{ github.sha }}
         run: |
           bash outils/vercel-build.sh
           node outils/verifier-web.mjs
