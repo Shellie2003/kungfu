@@ -57,6 +57,30 @@ html {
 }
 
 /* ------------------------------------------------------------
+   « .overline » : une COLLISION DE NOMS, pas une décision de
+   design.
+
+   La maquette nomme ainsi ses titres de section — « VAOVAO
+   FARANY », « MON ESPACE » — en petites capitales grises. Tailwind,
+   lui, engendre une classe utilitaire du même nom qui vaut
+   « text-decoration-line: overline » : un trait AU-DESSUS du texte.
+
+   Les deux règles se retrouvaient donc dans la feuille construite,
+   celle de Tailwind en dernier, et chaque titre de section portait
+   une ligne que personne n'avait demandée. Le club l'a vue avant
+   nous.
+
+   Pourquoi la mesure de conformité ne l'a pas attrapée : elle
+   compare la position et la taille des textes, plus une part de
+   pixels différents. Un trait d'un pixel sur deux mots courts pèse
+   moins que le seuil, et ne déplace aucun texte. Une leçon à
+   retenir : un contrôle automatique ne remplace pas un œil.
+   ------------------------------------------------------------ */
+.overline {
+  text-decoration-line: none;
+}
+
+/* ------------------------------------------------------------
    Ce qui ne concerne QUE l'application, jamais la maquette.
    La maquette se regarde dans un cadre de téléphone sur un
    ordinateur ; l'application occupe un vrai téléphone.

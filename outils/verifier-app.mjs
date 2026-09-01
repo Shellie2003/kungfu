@@ -169,6 +169,49 @@ for (const [nom, adresse, attendu] of ECRANS) {
   }
 }
 
+/* ---------------------------------------------- Les collisions de classes
+
+   La maquette et Tailwind se partagent l'espace des noms de classes,
+   et rien ne les empêche de choisir le même. C'est arrivé :
+   « .overline » nomme les titres de section de la maquette
+   — « VAOVAO FARANY » — et vaut chez Tailwind
+   « text-decoration-line: overline ». Chaque titre portait donc un
+   trait au-dessus, que le club a vu avant nous.
+
+   Pourquoi la comparaison d'images ne l'a pas attrapé : elle mesure
+   la POSITION et la TAILLE des textes, plus une part de pixels
+   différents. Un trait d'un pixel sur deux mots courts pèse moins
+   que le seuil et ne déplace aucun texte.
+
+   Ce contrôle-ci regarde la décoration elle-même. Il ne remplace pas
+   la comparaison : il couvre ce qu'elle ne voit pas. */
+{
+  const page3 = await navigateur.newPage({ viewport: { width: 390, height: 780 } });
+  await brancher(page3);
+  await poserSession(page3);
+  await page3.goto(`${site.adresse}/#/accueil`, { waitUntil: 'networkidle' });
+  const decores = await page3.evaluate(() =>
+    [...document.querySelectorAll('.overline, .display, .apphead__title')]
+      .map((n) => ({
+        texte: (n.textContent ?? '').trim().slice(0, 24),
+        classe: n.className,
+        decoration: getComputedStyle(n).textDecorationLine
+      }))
+      .filter((x) => x.decoration && x.decoration !== 'none')
+  );
+  await page3.close();
+
+  if (decores.length === 0) {
+    console.log('✓ classes        aucune décoration inattendue sur les titres');
+  } else {
+    echecs++;
+    console.log('✗ classes        décoration inattendue — collision avec un utilitaire Tailwind :');
+    for (const d of decores) {
+      console.log(`                 « ${d.texte} » (${d.classe}) → ${d.decoration}`);
+    }
+  }
+}
+
 /* ---------------------------------------------- Le code QR
 
    Un QR qu'on n'a pas décodé est une image, pas un code. Celui de
