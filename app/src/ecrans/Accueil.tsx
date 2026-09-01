@@ -12,7 +12,8 @@ import { ChoisirFichier } from '../ui/base';
 import { useAlbums } from '../services/club';
 import { useUrls } from '../services/stockage';
 import { televerser, useEnregistrerReglages } from '../services/admin';
-import { useActualites, useNotifications, jourEtMois, teinte } from '../services/casier';
+import { useActualites, useNotifications, jourEtMois } from '../services/casier';
+import { teinter, useCategories } from '../services/categories';
 import { useMembres } from '../services/membres';
 import { useHoraires, useReglages } from '../services/club';
 import { useUrl } from '../services/stockage';
@@ -51,6 +52,7 @@ export function Accueil() {
   const aller = useNavigate();
   const profil = useSession((e) => e.profil);
   const { data: actus } = useActualites();
+  const { data: cats } = useCategories();
   const { data: notifs } = useNotifications();
   const { data: membres } = useMembres();
   const { data: horaires } = useHoraires();
@@ -377,7 +379,7 @@ export function Accueil() {
 
           {deux.map((a) => {
             const { jour, mois } = jourEtMois(a.date_evt ?? a.cree_le);
-            const [cc, cb] = teinte(a.categorie);
+            const [cc, cb] = teinter(cats, a.categorie);
             return (
               <button
                 key={a.id}

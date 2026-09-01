@@ -71,8 +71,33 @@ export function poserAuth(nouvelles: Record<string, Reponse>) {
   auth = { ...auth, ...nouvelles };
 }
 
+/* Les CATÉGORIES sont posées par défaut, comme la migration les
+   sème dans une base neuve.
+
+   Elles étaient écrites dans l'écran de publication ; elles vivent
+   maintenant en base, et les listes de choix les lisent. Sans elles
+   ici, huit tests qui choisissaient « Sortie » ou « Réunion » se
+   retrouvaient devant une liste vide — un échec qui n'aurait rien
+   dit du code, seulement du bouchon.
+
+   Un test qui veut une base SANS catégorie pose « categories: [] » :
+   « poser » écrase, il ne complète pas. */
+const CATEGORIES_SEMEES = [
+  { id: 'c1', genre: 'actualite', nom: 'Sortie', couleur: '#12613C', rang: 1, actif: true },
+  { id: 'c2', genre: 'actualite', nom: 'Compétition', couleur: '#12613C', rang: 2, actif: true },
+  { id: 'c3', genre: 'actualite', nom: 'Réunion', couleur: '#12613C', rang: 3, actif: true },
+  { id: 'c4', genre: 'actualite', nom: 'Cérémonie', couleur: '#12613C', rang: 4, actif: true },
+  {
+    id: 'c5', genre: 'actualite', nom: 'Changement d\u2019horaire',
+    couleur: '#B0530F', rang: 5, actif: true
+  },
+  { id: 'c6', genre: 'album', nom: 'Compétitions', couleur: '#12613C', rang: 1, actif: true },
+  { id: 'c7', genre: 'album', nom: 'Entraînements', couleur: '#12613C', rang: 2, actif: true },
+  { id: 'c8', genre: 'album', nom: 'Cérémonies', couleur: '#12613C', rang: 3, actif: true }
+];
+
 export function reinitialiser() {
-  tables = {};
+  tables = { categories: CATEGORIES_SEMEES };
   auth = {};
   recues.length = 0;
 }

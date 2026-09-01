@@ -9,11 +9,11 @@ import {
   categories,
   dateLongue,
   jourEtMois,
-  teinte,
   useActualite,
   useActualites,
   useNotifications
 } from '../services/casier';
+import { teinter, useCategories } from '../services/categories';
 import { useUrl } from '../services/stockage';
 import { estAdmin, useSession } from '../services/session';
 
@@ -22,6 +22,10 @@ export function Casier() {
   const moi = useSession((e) => e.profil);
   const { data: actus, isPending, error } = useActualites();
   const { data: notifs } = useNotifications();
+  /* Les couleurs viennent de la base, comme les catégories
+     elles-mêmes : elles étaient écrites dans le code, et une seule
+     l'était vraiment — tout le reste tombait sur le vert du club. */
+  const { data: cats } = useCategories();
   const [filtre, setFiltre] = useState<string | null>(null);
 
   const nonlues = (notifs ?? []).filter((n) => !n.lue_le).length;
@@ -93,7 +97,7 @@ export function Casier() {
           messageVide="Rien dans le casier pour le moment."
         >
           {liste.map((a, i) => {
-            const [cc, cb] = teinte(a.categorie);
+            const [cc, cb] = teinter(cats, a.categorie);
             const { jour, mois } = jourEtMois(a.date_evt ?? a.cree_le);
             /* « Nouveau » se mérite : moins de sept jours. Marquer la
                première de la liste l'aurait toujours marquée, même un
@@ -161,6 +165,7 @@ export function Actualite() {
   const { id } = useParams();
   const aller = useNavigate();
   const { data: a, isPending } = useActualite(id);
+  const { data: cats } = useCategories();
   /* Appelé avant le retour anticipé : un hook ne se saute pas selon
      l'état du chargement. */
   const illustration = useUrl('album', a?.image);
@@ -176,7 +181,7 @@ export function Actualite() {
     );
   }
 
-  const [cc, cb] = teinte(a.categorie);
+  const [cc, cb] = teinter(cats, a.categorie);
 
   return (
     <>

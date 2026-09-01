@@ -141,21 +141,3 @@ export function depuis(iso: string): string {
   if (jours < 8) return `Il y a ${jours} j`;
   return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 }
-
-/* ------------------------------------------------------------
-   La teinte d'une catégorie.
-
-   Ici, et non dans un écran : l'accueil et le casier montrent les
-   mêmes actualités, et une couleur définie deux fois finit par
-   différer — ce qui était le cas, vert à l'accueil et orange au
-   casier pour la même ligne.
-
-   Les catégories que le club invente tombent sur le vert du club :
-   mieux qu'une couleur tirée au hasard, et toujours lisible.
-   ------------------------------------------------------------ */
-const TEINTES: Record<string, [string, string]> = {
-  'Changement d\u2019horaire': ['#B0530F', '#FBEEE2']
-};
-
-export const teinte = (categorie: string): [string, string] =>
-  TEINTES[categorie] ?? ['#12613C', '#E8F1EC'];

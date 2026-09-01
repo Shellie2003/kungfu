@@ -7,7 +7,8 @@ import { Icone } from '../../ui/Icone';
 import {
   Avis, Bouton, Carte, Champ, ChoisirFichier, Choix, Entete, Etat, Surtitre, Tuile, Zone
 } from '../../ui/base';
-import { useActualites, teinte } from '../../services/casier';
+import { useActualites } from '../../services/casier';
+import { proposees, teinter, useCategories } from '../../services/categories';
 import { useAlbums } from '../../services/club';
 import { useUrl, useUrls } from '../../services/stockage';
 import {
@@ -16,14 +17,17 @@ import {
   useSupprimerPhoto, televerser
 } from '../../services/admin';
 
-/* Les catégories que le club emploie déjà, plus celles qu'il
-   inventera : le champ est libre, la liste n'est qu'un raccourci. */
-const CATEGORIES = ['Sortie', 'Compétition', 'Réunion', 'Cérémonie', 'Changement d’horaire'];
+/* La liste des catégories vivait ICI, écrite dans le code :
+   « Sortie, Compétition, Réunion, Cérémonie, Changement d'horaire ».
+   En ajouter une demandait une nouvelle version de l'APK, donc une
+   construction, donc moi. Le club les tient maintenant lui-même —
+   voir services/categories.ts et l'écran /admin/categories. */
 
 /* ---------------------------------------------- Publier une actualité */
 export function AdminPublier() {
   const aller = useNavigate();
   const { data: actus } = useActualites();
+  const { data: cats } = useCategories();
   const publier = usePublier();
   const supprimer = useSupprimerActualite();
   const notifier = useNotifierTous();
@@ -133,8 +137,8 @@ export function AdminPublier() {
               libelle="Catégorie"
               valeur={categorie}
               poser={setCategorie}
-              options={CATEGORIES.map((c) => ({ valeur: c, texte: c }))}
-              aide="Elle donne la couleur de l’étiquette dans le casier."
+              options={proposees(cats, 'actualite').map((c) => ({ valeur: c.nom, texte: c.nom }))}
+              aide="Elle donne la couleur de l’étiquette dans le casier. La liste se modifie dans « Catégories »."
             />
             <Champ libelle="Date de l’événement" type="date" valeur={date} poser={setDate} />
             <Champ libelle="Lieu" valeur={lieu} poser={setLieu} invite="Devant la salle" />
@@ -224,7 +228,7 @@ export function AdminPublier() {
           <Surtitre>Déjà au casier</Surtitre>
           <div className="list">
             {(actus ?? []).map((a) => {
-              const [cc, cb] = teinte(a.categorie);
+              const [cc, cb] = teinter(cats, a.categorie);
               return (
                 <div key={a.id} className="listrow">
                   {/* Un appui charge l'actualité dans le formulaire.
@@ -383,6 +387,7 @@ export function AdminNotifier() {
 export function AdminAlbums() {
   const aller = useNavigate();
   const { data: albums, isPending, error } = useAlbums();
+  const { data: cats } = useCategories();
   const creer = useCreerAlbum();
   const supprimerAlbum = useSupprimerAlbum();
   const supprimerPhoto = useSupprimerPhoto();
@@ -418,11 +423,21 @@ export function AdminAlbums() {
           <Carte pad={16}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <Champ libelle="Titre" valeur={titre} poser={setTitre} obligatoire />
-              <Champ
+              {/* UNE LISTE, ET NON PLUS UN CHAMP LIBRE.
+
+                  La catégorie se tapait à la main à chaque création,
+                  avec pour seule aide un exemple dans l'invite.
+                  « Compétition » et « Compétitions » devenaient donc
+                  deux rubriques distinctes, et le filtre du haut de
+                  l'écran Album en montrait autant que de fautes de
+                  frappe — sans qu'aucune ne puisse être corrigée
+                  ensuite, puisque rien ne les listait. */}
+              <Choix
                 libelle="Catégorie"
                 valeur={categorie}
                 poser={setCategorie}
-                invite="Compétitions, Entraînements, Cérémonies…"
+                options={proposees(cats, 'album').map((c) => ({ valeur: c.nom, texte: c.nom }))}
+                aide="La liste se modifie dans « Catégories »."
               />
               <Bouton
                 genre="ghost"

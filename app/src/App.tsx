@@ -89,6 +89,9 @@ const AdminParticipations = lazy(() =>
 const AdminPresences = lazy(() =>
   import('./ecrans/admin/Presences').then((m) => ({ default: m.AdminPresences }))
 );
+const AdminCategories = lazy(() =>
+  import('./ecrans/admin/Categories').then((m) => ({ default: m.AdminCategories }))
+);
 const AdminGrades = lazy(() =>
   import('./ecrans/admin/Grades').then((m) => ({ default: m.AdminGrades }))
 );
@@ -246,6 +249,9 @@ function Connectee() {
             permission est une panne. */}
         {estMaitre(profil) && <Route path="/admin/albums" element={<AdminAlbums />} />}
         {estAdmin(profil) && <Route path="/admin/club" element={<AdminClub />} />}
+        {estAdmin(profil) && (
+          <Route path="/admin/categories" element={<AdminCategories />} />
+        )}
         {estAdmin(profil) && <Route path="/admin/salons" element={<AdminSalons />} />}
         {estAdmin(profil) && <Route path="/admin/journal" element={<AdminJournal />} />}
         {estAdmin(profil) && <Route path="/admin/impression" element={<AdminImpression />} />}

@@ -72,6 +72,21 @@ const maintenant = () => new Date().toISOString();
 
 export const REPONSES = {
   grades: GRADES,
+  /* Les catégories, avec leurs couleurs. Elles étaient écrites dans
+     l'application ; le club les tient maintenant, et le bouchon doit
+     les servir comme le vrai serveur — sinon les étiquettes du
+     casier repartiraient toutes en vert, et la comparaison à la
+     maquette dirait vrai sur un écran faux. */
+  categories: [
+    { id: 'c1', genre: 'actualite', nom: 'Sortie', couleur: '#12613C', rang: 1, actif: true },
+    { id: 'c2', genre: 'actualite', nom: 'Compétition', couleur: '#12613C', rang: 2, actif: true },
+    { id: 'c3', genre: 'actualite', nom: 'Réunion', couleur: '#12613C', rang: 3, actif: true },
+    { id: 'c4', genre: 'actualite', nom: 'Cérémonie', couleur: '#12613C', rang: 4, actif: true },
+    { id: 'c5', genre: 'actualite', nom: 'Changement d’horaire', couleur: '#B0530F', rang: 5, actif: true },
+    { id: 'c6', genre: 'album', nom: 'Compétitions', couleur: '#12613C', rang: 1, actif: true },
+    { id: 'c7', genre: 'album', nom: 'Entraînements', couleur: '#12613C', rang: 2, actif: true },
+    { id: 'c8', genre: 'album', nom: 'Cérémonies', couleur: '#12613C', rang: 3, actif: true }
+  ],
   profils: PROFILS.map(avecGrade),
   actualites: [
     { id: 'a1', titre: 'Sortie au lac Mantasoa', categorie: 'Sortie', texte: 'Départ 6h00 devant la salle.\n\nPrévoir le repas de midi.', date_evt: '2026-09-12', lieu: 'Devant la salle', image: null, cree_le: maintenant() },

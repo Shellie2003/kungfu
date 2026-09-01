@@ -878,3 +878,64 @@ export function usePointerVersement() {
     onSuccess: () => client.invalidateQueries({ queryKey: ['participations'] })
   });
 }
+
+/* ---------------------------------------------- Les catégories
+
+   Elles étaient écrites dans le code pour les actualités, et tapées
+   à la main pour les albums. Le club les tient maintenant lui-même.
+
+   Comme les grades, une catégorie ne se SUPPRIME pas quand le club
+   cesse de l'employer : des actualités la portent, et l'effacer
+   laisserait leur rubrique sans couleur ni place dans le filtre. On
+   la désactive — elle cesse d'être proposée, ce qui est ce qu'on
+   voulait dire. */
+export type SaisieCategorie = {
+  genre: 'actualite' | 'album';
+  nom: string;
+  couleur: string;
+  rang: number;
+};
+
+export function useCreerCategorie() {
+  return useEcrire(async (c: SaisieCategorie) => {
+    const { data, error } = await supabase
+      .from('categories')
+      .insert({ ...c, nom: c.nom.trim() })
+      .select('id');
+    if (error) throw error;
+    if (!data?.length) {
+      throw new Error('Le serveur a refusé cette catégorie — êtes-vous administrateur ?');
+    }
+  }, ['categories']);
+}
+
+export function useModifierCategorie() {
+  return useEcrire(async ({ id, ...c }: SaisieCategorie & { id: string }) => {
+    const { data, error } = await supabase
+      .from('categories')
+      .update({ nom: c.nom.trim(), couleur: c.couleur, rang: c.rang })
+      .eq('id', id)
+      .select('id');
+    if (error) throw error;
+    /* ⚠ Sans « .select() », une modification que les règles écartent
+       revient sans erreur et l'écran annonce un succès qui n'a pas
+       eu lieu. Ce projet a payé ce défaut quatre fois. */
+    if (!data?.length) {
+      throw new Error('Le serveur a refusé cette modification — êtes-vous administrateur ?');
+    }
+  }, ['categories']);
+}
+
+export function useActiverCategorie() {
+  return useEcrire(async ({ id, actif }: { id: string; actif: boolean }) => {
+    const { data, error } = await supabase
+      .from('categories')
+      .update({ actif })
+      .eq('id', id)
+      .select('id');
+    if (error) throw error;
+    if (!data?.length) {
+      throw new Error('Le serveur a refusé — êtes-vous administrateur ?');
+    }
+  }, ['categories']);
+}

@@ -10,7 +10,8 @@
    deux sans raison compréhensible.
    ============================================================ */
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { dateLongue, depuis, jourEtMois, teinte } from '../src/services/casier';
+import { dateLongue, depuis, jourEtMois } from '../src/services/casier';
+import { eclaircir, teinter } from '../src/services/categories';
 import { heure, nomDuJour } from '../src/services/club';
 import { dateFr } from '../src/services/membres';
 import { ariary, codeMvola } from '../src/services/participation';
@@ -113,17 +114,54 @@ describe('nomDuJour et heure', () => {
   });
 });
 
-describe('teinte', () => {
-  test('un changement d’horaire est orange', () => {
-    expect(teinte('Changement d’horaire')).toEqual(['#B0530F', '#FBEEE2']);
+describe('la teinte d’une catégorie vient de la base', () => {
+  /* CE QUE CE BLOC DISAIT AVANT, et pourquoi c'était le défaut.
+
+     Il vérifiait un tableau de couleurs écrit dans le code. Ce
+     tableau n'avait qu'UNE entrée : « Changement d'horaire » en
+     orange. Les quatre autres catégories, et toutes celles que le
+     club inventerait, tombaient sur le vert du club — cinq pastilles
+     vertes qui ne distinguent rien.
+
+     Les couleurs vivent maintenant dans la table « categories », que
+     le club tient lui-même. */
+  const CATS = [
+    { id: 'c1', genre: 'actualite' as const, nom: 'Changement d’horaire',
+      couleur: '#B0530F', rang: 1, actif: true },
+    { id: 'c2', genre: 'actualite' as const, nom: 'Sortie',
+      couleur: '#1F5C8B', rang: 2, actif: true },
+    { id: 'c3', genre: 'album' as const, nom: 'Sortie',
+      couleur: '#A33A2A', rang: 1, actif: true }
+  ];
+
+  test('chaque catégorie porte SA couleur, pas celle du club', () => {
+    expect(teinter(CATS, 'Changement d’horaire')[0]).toBe('#B0530F');
+    expect(teinter(CATS, 'Sortie')[0]).toBe('#1F5C8B');
   });
 
-  test('une catégorie inventée par le club tombe sur le vert', () => {
-    /* Le club invente des catégories — « Cérémonie » n'était pas
-       prévue et existe. Elles doivent rester lisibles, pas prendre
-       une couleur au hasard. */
-    expect(teinte('Cérémonie')).toEqual(['#12613C', '#E8F1EC']);
-    expect(teinte('n’importe quoi')).toEqual(['#12613C', '#E8F1EC']);
+  test('le genre départage deux catégories de même nom', () => {
+    /* Le casier et l'album ont chacun une « Sortie », et rien
+       n'oblige le club à leur donner la même couleur. */
+    expect(teinter(CATS, 'Sortie', 'actualite')[0]).toBe('#1F5C8B');
+    expect(teinter(CATS, 'Sortie', 'album')[0]).toBe('#A33A2A');
+  });
+
+  test('une catégorie inconnue reste LISIBLE, en vert du club', () => {
+    /* Ce n'est pas une anomalie : une actualité publiée sous une
+       rubrique ensuite retirée garde son nom, et doit s'afficher. */
+    expect(teinter(CATS, 'n’importe quoi')).toEqual(['#12613C', '#E3ECE8']);
+    expect(teinter(undefined, 'Sortie')).toEqual(['#12613C', '#E3ECE8']);
+  });
+
+  test('le fond se DÉDUIT du trait, on ne le demande pas au club', () => {
+    /* Réclamer deux couleurs qui s'accordent, c'est le meilleur
+       moyen d'obtenir du rouge vif sur du bleu vif. */
+    expect(eclaircir('#B0530F')).toBe('#F6EAE2');
+    /* Le noir éclairci à 88 % n'est pas noir : c'est un gris très
+       clair, donc un fond sur lequel du noir se lit. */
+    expect(eclaircir('#000000')).toBe('#E0E0E0');
+    /* Et une couleur illisible ne casse pas l'écran. */
+    expect(eclaircir('pas une couleur')).toBe('#E8F1EC');
   });
 });
 

@@ -317,13 +317,18 @@ export function Choix<T extends string>({
   valeur,
   poser,
   options,
-  aide
+  aide,
+  fige = false
 }: {
   libelle: string;
   valeur: T | '';
   poser: (v: T) => void;
   options: { valeur: T; texte: string }[];
   aide?: string;
+  /* Montré mais non modifiable, comme « Champ » sait déjà le faire.
+     Le cacher serait pire : on veut voir à quoi la ligne est
+     rattachée, sans pouvoir la déplacer. */
+  fige?: boolean;
 }) {
   return (
     <label className="field">
@@ -338,9 +343,10 @@ export function Choix<T extends string>({
             les options — un lecteur d'écran annonçait « Catégorie
             Choisir… Sortie Compétition Réunion… ». */}
         <select
-          className="input"
+          className={fige ? 'input input--fige' : 'input'}
           aria-label={libelle}
           value={valeur}
+          disabled={fige}
           onChange={(e) => poser(e.target.value as T)}
           style={{ appearance: 'none', width: '100%', paddingRight: 40 }}
         >

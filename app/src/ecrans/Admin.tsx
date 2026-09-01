@@ -38,6 +38,7 @@ const PUBLICATION: Rangee[] = [
   ['Publier une actualité', 'Sortie, compétition, réunion…', 'news', '/admin/publier'],
   ['Envoyer une notification', 'Prévient tous les membres', 'bell', '/admin/notifier'],
   ['Albums et photos', 'Créer, ajouter, supprimer', 'album', '/admin/albums'],
+  ['Les catégories', 'Rubriques du casier et des albums, et leurs couleurs', 'flag', '/admin/categories'],
   ['Les salons', 'Ouvrir un fil par grade ou par événement', 'chat', '/admin/salons'],
   ['Journal d’accès', 'Qui est entré dans l’espace des maîtres', 'eyeOff', '/admin/journal'],
   ['Participations', 'Qui vient, et pointer les versements', 'shieldCheck', '/admin/participations'],

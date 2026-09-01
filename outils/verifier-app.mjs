@@ -98,6 +98,7 @@ const ECRANS = [
   ['adm-comptes', '/#/admin/comptes', 'Comptes et accès'],
   ['adm-publier', '/#/admin/publier', 'Publier une actualité'],
   ['adm-notifier', '/#/admin/notifier', 'Prévenir tout le club'],
+  ['adm-categories', '/#/admin/categories', 'Les catégories'],
   ['adm-albums', '/#/admin/albums', 'Créer un album'],
   ['adm-club', '/#/admin/club', 'Renseignements'],
   ['signalements', '/#/signalements', 'Propos déplacés'],
