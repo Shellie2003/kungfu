@@ -10,7 +10,7 @@
    instant. Sans lui, l'application afficherait la connexion à
    chaque démarrage, avant de sauter à l'accueil.
    ============================================================ */
-import { useEffect } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import {
   HashRouter,
   Navigate,
@@ -37,19 +37,70 @@ import { NouvelleConversation } from './ecrans/NouvelleConversation';
 import { Participation } from './ecrans/Participation';
 import { MotDePasse } from './ecrans/MotDePasse';
 import { CarteMembre } from './ecrans/CarteMembre';
-import { Admin } from './ecrans/Admin';
-import { AdminFiche } from './ecrans/admin/Fiche';
-import { AdminChoisirFiche, AdminGrade } from './ecrans/admin/Membres';
-import { AdminAlbums, AdminNotifier, AdminPublier } from './ecrans/admin/Publication';
-import { AdminComptes } from './ecrans/admin/Comptes';
-import { AdminClub } from './ecrans/admin/Club';
-import { AdminParticipations } from './ecrans/admin/Participations';
-import { AdminPresences } from './ecrans/admin/Presences';
-import { AdminGrades } from './ecrans/admin/Grades';
-import { AdminSalons } from './ecrans/admin/Salons';
-import { AdminJournal } from './ecrans/admin/Journal';
-import { AdminImpression } from './ecrans/admin/Impression';
 import { MesPresences } from './ecrans/MesPresences';
+
+/* ------------------------------------------------------------
+   Les écrans d'encadrement arrivent SÉPARÉMENT.
+
+   Ils étaient chargés avec le reste : le paquet unique pesait
+   633 ko, et il était téléchargé EN ENTIER avant que l'écran de
+   connexion s'affiche — par les soixante-quatre membres, dont
+   soixante et un sont élèves et n'ouvriront jamais aucun de ces
+   douze écrans. La planche d'impression et son générateur de codes
+   QR, la gestion des comptes, le journal d'accès : tout cela
+   attendait sur la ligne d'Antananarivo avant le premier mot.
+
+   « import() » les met dans des fichiers à part, demandés le jour
+   où l'on ouvre l'écran. Ce qui reste dans le premier paquet est ce
+   dont TOUT LE MONDE a besoin.
+
+   Un élève ne les demande jamais : les routes n'existent pas pour
+   lui, et un fichier qu'aucune route ne mène nulle part n'est
+   jamais téléchargé.
+   ------------------------------------------------------------ */
+const Admin = lazy(() => import('./ecrans/Admin').then((m) => ({ default: m.Admin })));
+const AdminFiche = lazy(() =>
+  import('./ecrans/admin/Fiche').then((m) => ({ default: m.AdminFiche }))
+);
+const AdminChoisirFiche = lazy(() =>
+  import('./ecrans/admin/Membres').then((m) => ({ default: m.AdminChoisirFiche }))
+);
+const AdminGrade = lazy(() =>
+  import('./ecrans/admin/Membres').then((m) => ({ default: m.AdminGrade }))
+);
+const AdminAlbums = lazy(() =>
+  import('./ecrans/admin/Publication').then((m) => ({ default: m.AdminAlbums }))
+);
+const AdminNotifier = lazy(() =>
+  import('./ecrans/admin/Publication').then((m) => ({ default: m.AdminNotifier }))
+);
+const AdminPublier = lazy(() =>
+  import('./ecrans/admin/Publication').then((m) => ({ default: m.AdminPublier }))
+);
+const AdminComptes = lazy(() =>
+  import('./ecrans/admin/Comptes').then((m) => ({ default: m.AdminComptes }))
+);
+const AdminClub = lazy(() =>
+  import('./ecrans/admin/Club').then((m) => ({ default: m.AdminClub }))
+);
+const AdminParticipations = lazy(() =>
+  import('./ecrans/admin/Participations').then((m) => ({ default: m.AdminParticipations }))
+);
+const AdminPresences = lazy(() =>
+  import('./ecrans/admin/Presences').then((m) => ({ default: m.AdminPresences }))
+);
+const AdminGrades = lazy(() =>
+  import('./ecrans/admin/Grades').then((m) => ({ default: m.AdminGrades }))
+);
+const AdminSalons = lazy(() =>
+  import('./ecrans/admin/Salons').then((m) => ({ default: m.AdminSalons }))
+);
+const AdminJournal = lazy(() =>
+  import('./ecrans/admin/Journal').then((m) => ({ default: m.AdminJournal }))
+);
+const AdminImpression = lazy(() =>
+  import('./ecrans/admin/Impression').then((m) => ({ default: m.AdminImpression }))
+);
 
 import { seConnecter } from './services/supabase';
 import { estAdmin, estMaitre, useEcouteSession, useSession } from './services/session';
@@ -135,6 +186,13 @@ function Connectee() {
       <RetourAndroid />
       <RemonterEnHaut />
 
+      {/* Le temps d'aller chercher un écran d'encadrement, on ne
+          montre rien plutôt qu'un mot qui clignote : le fichier vient
+          du disque du téléphone, l'attente se compte en millisecondes,
+          et un « Chargement… » qui apparaît puis disparaît aussitôt
+          est plus dérangeant que le silence. Les écrans du quotidien,
+          eux, sont déjà là et ne passent jamais par ici. */}
+      <Suspense fallback={null}>
       <Routes>
         <Route path="/accueil" element={<Accueil />} />
         <Route path="/etudiants" element={<Etudiants />} />
@@ -196,6 +254,7 @@ function Connectee() {
         )}
         <Route path="*" element={<Navigate to="/accueil" replace />} />
       </Routes>
+      </Suspense>
 
       {!pleinEcran && <Onglets />}
     </div>

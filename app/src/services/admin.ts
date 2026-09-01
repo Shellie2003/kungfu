@@ -19,15 +19,41 @@ import { supabase } from './supabase';
 import { enParallele, reduire } from './images';
 import type { Role } from './session';
 
-/* Après une écriture, les listes en mémoire sont périmées. On les
-   invalide toutes plutôt que de choisir : se tromper de clé donne
-   un écran qui montre l'ancienne valeur, et c'est le genre de
-   défaut qu'on met des heures à comprendre. */
-function useEcrire<T>(faire: (v: T) => Promise<void>) {
+/* Après une écriture, les listes en mémoire sont périmées.
+
+   ⚠ CE QUI ÉTAIT ÉCRIT ICI, ET POURQUOI C'ÉTAIT FAUX
+
+   « On les invalide toutes plutôt que de choisir : se tromper de clé
+   donne un écran qui montre l'ancienne valeur, et c'est le genre de
+   défaut qu'on met des heures à comprendre. »
+
+   Le raisonnement se tient, la conclusion coûte cher. Sans clé,
+   « invalidateQueries() » refait TOUTES les requêtes ouvertes de
+   l'application : les soixante-quatre membres avec leurs grades, les
+   albums avec toutes leurs photos, les salons, les messages, les
+   notifications, les présences, le journal d'accès. Une légende de
+   photo corrigée redemandait l'annuaire entier.
+
+   Sur la connexion d'Antananarivo, c'est la moitié de la lenteur que
+   le club décrit. Et cela se voit à l'écran : chaque liste repasse
+   par son état de chargement, donc l'application « clignote » après
+   chaque geste.
+
+   La prudence d'origine reste, mais autrement : chaque écriture
+   NOMME ce qu'elle périme, et l'oubli d'une clé est un défaut de
+   cette liste-là, visible et corrigeable — pas une raison de tout
+   refaire à chaque fois.
+
+   Les clés sont des PRÉFIXES : « messages » périme
+   ['messages', <salon>] pour tous les salons, ce qui est bien ce
+   qu'on veut d'un message supprimé par la modération. */
+function useEcrire<T>(faire: (v: T) => Promise<void>, cles: string[]) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: faire,
-    onSuccess: () => client.invalidateQueries()
+    onSuccess: () => {
+      for (const cle of cles) void client.invalidateQueries({ queryKey: [cle] });
+    }
   });
 }
 
@@ -83,7 +109,7 @@ export function useCreerFiche() {
       });
       if (ePrive) throw ePrive;
     }
-  });
+  }, ['membres','fiche','comptes']);
 }
 
 export function useModifierFiche(id: string | undefined) {
@@ -115,7 +141,7 @@ export function useModifierFiche(id: string | undefined) {
       { onConflict: 'profil_id' }
     );
     if (ePrive) throw ePrive;
-  });
+  }, ['membres','fiche']);
 }
 
 /* Le grade passe par l'administration seule, et jamais par la fiche :
@@ -129,7 +155,7 @@ export function useChangerGrade() {
       .update({ grade_id: gradeId })
       .eq('id', profilId);
     if (error) throw error;
-  });
+  }, ['membres','fiche']);
 }
 
 /* ---------------------------------------------- Les grades
@@ -150,7 +176,7 @@ export function useCreerGrade() {
       .from('grades')
       .insert({ nom: g.nom.trim(), couleur: g.couleur, rang: g.rang });
     if (error) throw error;
-  });
+  }, ['grades','membres','fiche']);
 }
 
 export function useModifierGrade() {
@@ -160,14 +186,14 @@ export function useModifierGrade() {
       .update({ nom: g.nom.trim(), couleur: g.couleur, rang: g.rang })
       .eq('id', id);
     if (error) throw error;
-  });
+  }, ['grades','membres','fiche']);
 }
 
 export function useActiverGrade() {
   return useEcrire(async ({ id, actif }: { id: string; actif: boolean }) => {
     const { error } = await supabase.from('grades').update({ actif }).eq('id', id);
     if (error) throw error;
-  });
+  }, ['grades']);
 }
 
 /* ---------------------------------------------- Le rôle
@@ -205,7 +231,7 @@ export function useChangerRole() {
     if (!data?.length) {
       throw new Error('Le serveur a refusé ce changement de rôle.');
     }
-  });
+  }, ['membres','fiche','comptes']);
 }
 
 export function useDesactiver() {
@@ -214,7 +240,7 @@ export function useDesactiver() {
        retrouve son numéro, son grade et son historique. */
     const { error } = await supabase.from('profils').update({ actif }).eq('id', profilId);
     if (error) throw error;
-  });
+  }, ['membres','fiche','comptes']);
 }
 
 /* ---------------------------------------------- Les tuteurs */
@@ -229,14 +255,14 @@ export function useAjouterTuteur(profilId: string | undefined) {
   return useEcrire(async (t: SaisieTuteur) => {
     const { error } = await supabase.from('tuteurs').insert({ profil_id: profilId, ...t });
     if (error) throw error;
-  });
+  }, ['fiche']);
 }
 
 export function useRetirerTuteur() {
   return useEcrire(async (id: string) => {
     const { error } = await supabase.from('tuteurs').delete().eq('id', id);
     if (error) throw error;
-  });
+  }, ['fiche']);
 }
 
 /* ---------------------------------------------- Publication */
@@ -272,14 +298,14 @@ export function usePublier() {
     }
     const { error } = await supabase.from('actualites').insert(s);
     if (error) throw error;
-  });
+  }, ['actualites','actualite','notifications']);
 }
 
 export function useSupprimerActualite() {
   return useEcrire(async (id: string) => {
     const { error } = await supabase.from('actualites').delete().eq('id', id);
     if (error) throw error;
-  });
+  }, ['actualites','actualite']);
 }
 
 /* Une notification est une ligne PAR membre : la table porte
@@ -299,7 +325,8 @@ export function useNotifierTous() {
       if (!lignes.length) throw new Error('Aucun membre actif à prévenir.');
       const { error: eIns } = await supabase.from('notifications').insert(lignes);
       if (eIns) throw eIns;
-    }
+    },
+    ['notifications']
   );
 }
 
@@ -308,14 +335,14 @@ export function useCreerAlbum() {
   return useEcrire(async ({ titre, categorie }: { titre: string; categorie: string }) => {
     const { error } = await supabase.from('albums').insert({ titre, categorie });
     if (error) throw error;
-  });
+  }, ['albums']);
 }
 
 export function useSupprimerAlbum() {
   return useEcrire(async (id: string) => {
     const { error } = await supabase.from('albums').delete().eq('id', id);
     if (error) throw error;
-  });
+  }, ['albums']);
 }
 
 /* Le fichier part dans un seau, la base n'en garde que le chemin.
@@ -420,7 +447,8 @@ export function useAjouterPhotos() {
           'Les photos sont sur le serveur mais aucune ligne n’a été écrite — réessayez.'
         );
       }
-    }
+    },
+    ['albums']
   );
 }
 
@@ -434,7 +462,7 @@ export function useLegender() {
       .update({ legende: legende.trim() || null })
       .eq('id', id);
     if (error) throw error;
-  });
+  }, ['albums']);
 }
 
 /* La photo qui représente l'album. On enregistre son CHEMIN et non
@@ -448,7 +476,7 @@ export function useCouverture() {
       .update({ couverture: chemin })
       .eq('id', albumId);
     if (error) throw error;
-  });
+  }, ['albums']);
 }
 
 /* Déplacer une photo dans l'album.
@@ -475,7 +503,8 @@ export function useDeplacerPhoto() {
       if (error) throw error;
       const { error: e2 } = await supabase.from('photos').update({ rang: a.rang }).eq('id', b.id);
       if (e2) throw e2;
-    }
+    },
+    ['albums']
   );
 }
 
@@ -486,7 +515,7 @@ export function useSupprimerPhoto() {
     /* Le fichier part après la ligne : si l'inverse échouait à
        mi-chemin, la base montrerait une photo qui n'existe plus. */
     await supabase.storage.from('album').remove([chemin]);
-  });
+  }, ['albums']);
 }
 
 export function useChangerPortrait() {
@@ -494,7 +523,7 @@ export function useChangerPortrait() {
     const chemin = await televerser('portraits', fichier);
     const { error } = await supabase.from('profils').update({ photo: chemin }).eq('id', profilId);
     if (error) throw error;
-  });
+  }, ['membres','fiche','urls']);
 }
 
 /* ---------------------------------------------- Les salons
@@ -537,7 +566,8 @@ export function useCreerSalon() {
         .from('membres_salon')
         .insert(membres.map((profil_id) => ({ salon_id: salonId, profil_id })));
       if (eMembres) throw eMembres;
-    }
+    },
+    ['salons','membres-salon']
   );
 }
 
@@ -583,7 +613,7 @@ export function useInscrireAuSalon() {
         { onConflict: 'salon_id,profil_id', ignoreDuplicates: true }
       );
     if (error) throw error;
-  });
+  }, ['membres-salon','salons']);
 }
 
 export function useRetirerDuSalon() {
@@ -594,7 +624,7 @@ export function useRetirerDuSalon() {
       .eq('salon_id', salonId)
       .eq('profil_id', profilId);
     if (error) throw error;
-  });
+  }, ['membres-salon','salons']);
 }
 
 /* ---------------------------------------------- Réglages et horaires */
@@ -638,7 +668,7 @@ export function useEnregistrerReglages() {
           'peut-être pas de la faire. Rien n’a été changé.'
       );
     }
-  });
+  }, ['reglages','urls']);
 }
 
 export function useAjouterHoraire() {
@@ -652,7 +682,8 @@ export function useAjouterHoraire() {
         .from('horaires')
         .insert({ ...h, lieu: h.lieu?.trim() || null });
       if (error) throw error;
-    }
+    },
+    ['horaires']
   );
 }
 
@@ -663,7 +694,7 @@ export function useRetirerHoraire() {
        le ressaisir. */
     const { error } = await supabase.from('horaires').update({ actif: false }).eq('id', id);
     if (error) throw error;
-  });
+  }, ['horaires']);
 }
 
 /* ---------------------------------------------- Comptes et accès
@@ -727,7 +758,12 @@ export function useCreerCompte() {
   return useMutation({
     mutationFn: ({ profilId }: { profilId: string }): Promise<ResultatCompte> =>
       appelerFonction('creer', { profilId }),
-    onSuccess: () => client.invalidateQueries()
+    /* Un compte neuf change QUI a un compte, et le rôle affiché dans
+       l'annuaire. Rien d'autre : ni les albums, ni les messages. */
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ['comptes'] });
+      void client.invalidateQueries({ queryKey: ['membres'] });
+    }
   });
 }
 
@@ -743,7 +779,10 @@ export function useSuspendre() {
   return useMutation({
     mutationFn: ({ profilId, suspendu }: { profilId: string; suspendu: boolean }): Promise<ResultatCompte> =>
       appelerFonction('suspendre', { profilId, suspendu }),
-    onSuccess: () => client.invalidateQueries()
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ['comptes'] });
+      void client.invalidateQueries({ queryKey: ['membres'] });
+    }
   });
 }
 
