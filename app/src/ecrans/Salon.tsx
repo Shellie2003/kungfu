@@ -33,6 +33,7 @@ import {
 } from '../services/messagerie';
 import type { Message } from '../services/messagerie';
 import { estAdmin, useSession } from '../services/session';
+import { enregistrer } from '../services/telechargement';
 import { useUrls } from '../services/stockage';
 
 /* ---------------------------------------------- Le fil */
@@ -51,6 +52,25 @@ function Fil({
   /* Les pièces jointes du fil en UN appel : une adresse signée par
      image ferait autant d'allers-retours que de photos. */
   const pieces = useUrls('pieces', messages.map((m) => m.piece));
+
+  /* Où en est le téléchargement d'un document, par pièce. Le fil
+     peut en contenir plusieurs, et deux téléchargements simultanés
+     ne doivent pas s'écraser l'un l'autre dans l'affichage. */
+  const [enCours, setEnCours] = useState<Record<string, string>>({});
+
+  const prendre = async (chemin: string, nom: string, url: string) => {
+    setEnCours((p) => ({ ...p, [chemin]: 'Enregistrement…' }));
+    const r = await enregistrer(url, nom);
+    setEnCours((p) => ({
+      ...p,
+      [chemin]:
+        r.fait === 'enregistre'
+          ? `Enregistré dans « ${r.ou} »`
+          : r.fait === 'ouvert'
+            ? 'Ouvert dans un onglet'
+            : `Échec : ${r.pourquoi}`
+    }));
+  };
 
   /* On arrive en bas du fil, comme dans toute messagerie : lire les
      messages d'il y a trois semaines n'intéresse personne. */
@@ -124,20 +144,39 @@ function Fil({
                   }}
                 />
               ) : (
-                <a
-                  href={pieces[m.piece]}
-                  download={nomDeLaPiece(m.piece) ?? 'document'}
-                  target="_blank"
-                  rel="noreferrer"
+                /* UN BOUTON, ET NON UN LIEN.
+
+                   C'était un lien, avec « download » et
+                   « target=_blank ». Dans un navigateur cela marche ;
+                   dans l'APK cela ne fait RIEN, et rien veut dire
+                   rien — pas de message, pas d'erreur, le doigt tape
+                   et l'écran ne bouge pas. « download » ne vaut que
+                   pour une adresse de même origine, et la nôtre est
+                   signée sur le serveur Supabase ; et une WebView
+                   Android ne télécharge rien d'elle-même.
+
+                   Le bouton rapatrie le fichier, l'écrit dans les
+                   documents du téléphone et propose de l'ouvrir. Et
+                   il DIT ce qui s'est passé : un téléchargement muet
+                   est ce qu'on avait déjà. */
+                <button
                   className="piece"
+                  onClick={() =>
+                    void prendre(
+                      m.piece!,
+                      nomDeLaPiece(m.piece!) ?? 'document',
+                      pieces[m.piece!]!
+                    )
+                  }
+                  disabled={enCours[m.piece] === 'Enregistrement…'}
                 >
                   <Icone nom="news" taille={20} couleur="#0F5132" />
                   <span style={{ flexGrow: 1, minWidth: 0 }}>
                     <b>{nomDeLaPiece(m.piece) ?? 'Document'}</b>
-                    <i>Toucher pour ouvrir ou enregistrer</i>
+                    <i>{enCours[m.piece] || 'Toucher pour enregistrer'}</i>
                   </span>
                   <Icone nom="chev" taille={16} couleur="#12613C" epaisseur={2} />
-                </a>
+                </button>
               )
             )}
             <p className="bul__txt">{m.texte}</p>

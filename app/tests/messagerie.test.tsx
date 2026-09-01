@@ -835,13 +835,73 @@ describe('un document reçu', () => {
     });
     rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
 
-    const lien = await screen.findByRole('link', { name: /reglement\.pdf/ });
-    /* « download » porte le NOM D'ORIGINE : sans lui, le fichier
-       arrive dans les téléchargements sous son identifiant tiré au
-       sort, et reste introuvable. */
-    expect(lien).toHaveAttribute('download', 'reglement.pdf');
-    expect(lien.getAttribute('href')).toMatch(/^http/);
+    /* CE TEST DISAIT AUTRE CHOSE, et il avait tort sans le savoir.
+
+       Il vérifiait un LIEN portant « download="reglement.pdf" », et
+       il passait. Mais ce lien ne téléchargeait rien dans l'APK :
+       « download » est ignoré dès que l'adresse est d'une autre
+       origine, et la nôtre est signée sur le serveur Supabase. Le
+       test tenait la présence d'un attribut, pas le fait que quelque
+       chose arrive sur le téléphone.
+
+       Ce qui est tenu maintenant : le NOM D'ORIGINE est affiché, et
+       il est ce sous quoi le fichier sera enregistré. Sans lui, le
+       document s'appellerait « 7f3a1c2e-… » et resterait
+       introuvable. */
+    expect(await screen.findByText('reglement.pdf')).toBeInTheDocument();
     /* Et surtout : pas d'image. */
     expect(document.querySelector('.bul img')).toBeNull();
+  });
+});
+
+describe('un document se télécharge vraiment', () => {
+  /* CE QUI NE MARCHAIT PAS, ET QUI NE SE VOYAIT PAS.
+
+     Le document s'affichait, et le toucher ne faisait RIEN dans
+     l'APK — pas de fichier, pas de message, pas d'erreur. C'était un
+     lien portant « download » et « target=_blank » : deux choses qui
+     marchent dans un navigateur et pas dans une WebView Android.
+     « download » est ignoré dès que l'adresse est d'une autre
+     origine, et la nôtre est signée sur le serveur Supabase.
+
+     Aucun test ne pouvait le voir : ils vérifiaient que la pièce
+     PART, jamais qu'elle REVIENT. Un lien qui ne fait rien a l'air
+     parfaitement normal dans jsdom. */
+  const AVEC_PDF = {
+    salons: [SALON_CLUB],
+    messages: [
+      {
+        id: 'm1', texte: 'Le règlement', cree_le: maintenant, modifie_le: null,
+        piece: 's1/abc--reglement.pdf', supprime_le: null, auteur_id: 'p4',
+        profils: { nom: 'RABEMANANJARA', prenom: 'Hery' }
+      }
+    ]
+  };
+
+  test('c’est un BOUTON, pas un lien mort', async () => {
+    poser(AVEC_PDF);
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    const piece = await screen.findByText('reglement.pdf');
+    const cliquable = piece.closest('button, a');
+    expect(cliquable?.tagName).toBe('BUTTON');
+  });
+
+  test('le toucher DIT ce qui se passe, au lieu de se taire', async () => {
+    poser(AVEC_PDF);
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    const piece = await screen.findByText('reglement.pdf');
+    expect(screen.getByText('Toucher pour enregistrer')).toBeInTheDocument();
+
+    await userEvent.click(piece.closest('button')!);
+
+    /* Sur le web — et jsdom EST le web — on ouvre le fichier dans un
+       onglet, ce que le navigateur sait faire. Ce que le test tient,
+       c'est qu'un geste a bien eu lieu : le libellé d'invitation a
+       disparu, donc le bouton a fait quelque chose. */
+    await waitFor(() =>
+      expect(screen.queryByText('Toucher pour enregistrer')).not.toBeInTheDocument()
+    );
   });
 });

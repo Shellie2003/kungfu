@@ -243,6 +243,15 @@ body {
   border: 1px solid var(--bord);
   text-decoration: none;
   color: var(--encre);
+  /* La pièce était un lien ; c'est maintenant un bouton, parce
+     qu'un lien de téléchargement ne fait rien dans une WebView
+     Android. Un bouton n'hérite ni de la largeur, ni de
+     l'alignement, ni de la police : sans ces trois lignes, la
+     pastille se rétrécit sur son texte et se centre. */
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
   max-width: 260px;
 }
 .piece b {

@@ -285,6 +285,35 @@ jobs:
             || { echo "::error::L'écriture de la permission caméra a échoué."; exit 1; }
           echo "caméra déclarée"
 
+      # Enregistrer un document reçu dans une conversation.
+      #
+      # Le fichier est écrit dans le dossier « Documents » du
+      # téléphone — celui qu'on retrouve depuis un gestionnaire de
+      # fichiers. Depuis Android 10 (API 29), y écrire ne demande
+      # aucune permission : chaque application a son propre espace.
+      # AVANT, il en fallait une.
+      #
+      # « maxSdkVersion=28 » est donc l'inverse d'un élargissement :
+      # la permission n'existe QUE sur les téléphones qui ne peuvent
+      # pas s'en passer, et disparaît des autres. Sans elle, le
+      # téléchargement échouerait en silence sur un Android 8 ou 9 —
+      # et il y en a dans le club.
+      - name: Autoriser l’enregistrement des documents
+        working-directory: app/android/app/src/main
+        run: |
+          if grep -q 'WRITE_EXTERNAL_STORAGE' AndroidManifest.xml; then
+            echo "déjà déclarée"
+            exit 0
+          fi
+          if ! grep -q '</manifest>' AndroidManifest.xml; then
+            echo "::error::Le manifeste engendré n'a pas la forme attendue : les documents reçus ne pourraient pas être enregistrés sur les Android antérieurs à 10."
+            exit 1
+          fi
+          sed -i 's|</manifest>|    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />\n</manifest>|' AndroidManifest.xml
+          grep -q 'WRITE_EXTERNAL_STORAGE' AndroidManifest.xml \
+            || { echo "::error::L'écriture de la permission de stockage a échoué."; exit 1; }
+          echo "enregistrement des documents déclaré"
+
       # Le numéro de version de l'APK.
       #
       # Capacitor engendre « versionCode 1 » et « versionName 1.0 »,
