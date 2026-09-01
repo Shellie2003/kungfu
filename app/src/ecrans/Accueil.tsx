@@ -18,6 +18,35 @@ import { useHoraires, useReglages } from '../services/club';
 import { useUrl } from '../services/stockage';
 import { estAdmin, estMaitre, useSession } from '../services/session';
 
+/* ------------------------------------------------------------
+   Les teintes de « Mon espace ».
+
+   Les cinq lignes portaient le MÊME vert : cinq pastilles
+   identiques, et l'œil devait lire le libellé pour retrouver la
+   bonne. Une couleur par destination les rend reconnaissables du
+   coin de l'œil, ce qui est exactement ce qu'on demande à une liste
+   qu'on parcourt vingt fois par semaine.
+
+   La convention est celle du projet : [trait, fond teinté], comme
+   « teinte() » pour les catégories du casier. Ici et nulle part
+   ailleurs — une couleur définie deux fois finit par différer, ce
+   qui est déjà arrivé entre l'accueil et le casier.
+
+   La couleur ne porte JAMAIS l'information : chaque ligne est
+   écrite en toutes lettres à côté. C'est un repère, pas un code —
+   un daltonien lit la liste exactement aussi bien.
+
+   Contrastes mesurés sur le fond de chaque pastille, seuil WCAG de
+   3:1 pour un élément graphique : 6,51 · 6,03 · 4,51 · 6,61 · 5,55.
+   ------------------------------------------------------------ */
+const ESPACE: Record<string, [trait: string, fond: string]> = {
+  carte: ['#12613C', '#E8F1EC'],
+  fiche: ['#1F5C8B', '#E4EEF6'],
+  assiduite: ['#B0530F', '#FBEEE2'],
+  pointer: ['#6A3D8F', '#F0E9F7'],
+  administration: ['#A33A2A', '#FAE8E4']
+};
+
 export function Accueil() {
   const aller = useNavigate();
   const profil = useSession((e) => e.profil);
@@ -440,8 +469,8 @@ export function Accueil() {
             <Surtitre>Mon espace</Surtitre>
             <div className="list">
               <button className="listrow" onClick={() => aller('/carte')}>
-                <span className="tile tile--sm">
-                  <Icone nom="shieldCheck" taille={18} couleur="#0F5132" />
+                <span className="tile tile--sm" style={{ background: ESPACE.carte![1] }}>
+                  <Icone nom="shieldCheck" taille={18} couleur={ESPACE.carte![0]} />
                 </span>
                 <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
                   <b style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>
@@ -457,8 +486,8 @@ export function Accueil() {
               </button>
 
               <button className="listrow" onClick={() => aller(`/etudiants/${profil.id}`)}>
-                <span className="tile tile--sm">
-                  <Icone nom="users" taille={18} couleur="#0F5132" />
+                <span className="tile tile--sm" style={{ background: ESPACE.fiche![1] }}>
+                  <Icone nom="users" taille={18} couleur={ESPACE.fiche![0]} />
                 </span>
                 <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
                   <b style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>Ma fiche</b>
@@ -472,8 +501,8 @@ export function Accueil() {
               </button>
 
               <button className="listrow" onClick={() => aller('/presences')}>
-                <span className="tile tile--sm">
-                  <Icone nom="calendar" taille={18} couleur="#0F5132" />
+                <span className="tile tile--sm" style={{ background: ESPACE.assiduite![1] }}>
+                  <Icone nom="calendar" taille={18} couleur={ESPACE.assiduite![0]} />
                 </span>
                 <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
                   <b style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>
@@ -492,8 +521,8 @@ export function Accueil() {
                   l'administration : c'est lui qui tient la salle. */}
               {estMaitre(profil) && (
                 <button className="listrow" onClick={() => aller('/presences/pointer')}>
-                  <span className="tile tile--sm">
-                    <Icone nom="shield" taille={18} couleur="#0F5132" />
+                  <span className="tile tile--sm" style={{ background: ESPACE.pointer![1] }}>
+                    <Icone nom="shield" taille={18} couleur={ESPACE.pointer![0]} />
                   </span>
                   <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
                     <b style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>
@@ -511,8 +540,8 @@ export function Accueil() {
 
               {estAdmin(profil) && (
                 <button className="listrow" onClick={() => aller('/admin')}>
-                  <span className="tile tile--sm">
-                    <Icone nom="lock" taille={18} couleur="#0F5132" />
+                  <span className="tile tile--sm" style={{ background: ESPACE.administration![1] }}>
+                    <Icone nom="lock" taille={18} couleur={ESPACE.administration![0]} />
                   </span>
                   <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
                     <b style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>

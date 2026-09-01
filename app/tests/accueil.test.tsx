@@ -364,3 +364,67 @@ describe('le carrousel, pour chaque rôle', () => {
     }
   });
 });
+
+/* ============================================================
+   Les teintes de « Mon espace ».
+
+   Les cinq lignes portaient le même vert : cinq pastilles
+   identiques, et l'œil devait lire le libellé pour retrouver la
+   bonne. Une couleur par destination les rend reconnaissables du
+   coin de l'œil.
+
+   Ce que ces tests protègent, et qui compte plus que le goût : que
+   les couleurs restent DISTINCTES, et que la couleur ne porte
+   jamais l'information — chaque ligne est écrite en toutes lettres,
+   un daltonien lit la liste aussi bien.
+   ============================================================ */
+describe('les teintes de Mon espace', () => {
+  const pastilles = () =>
+    [...document.querySelectorAll<HTMLElement>('.tile--sm')].map((n) => ({
+      fond: n.style.background,
+      trait: n.querySelector('svg')?.getAttribute('stroke') ?? ''
+    }));
+
+  test('chaque ligne a sa couleur, et aucune ne se répète', async () => {
+    rendre(<Accueil />, { route: '/accueil', profil: PROFIL_ADMIN });
+    await screen.findByText('Ma carte de membre');
+
+    const vues = pastilles();
+    /* Cinq lignes pour l'administration : carte, fiche, assiduité,
+       pointage, administration. */
+    expect(vues).toHaveLength(5);
+    expect(new Set(vues.map((v) => v.trait)).size).toBe(5);
+    expect(new Set(vues.map((v) => v.fond)).size).toBe(5);
+  });
+
+  test('aucune ne reste au vert unique d’avant', async () => {
+    rendre(<Accueil />, { route: '/accueil', profil: PROFIL_ADMIN });
+    await screen.findByText('Ma carte de membre');
+    /* #0F5132 était la couleur des CINQ. Si elle revient partout,
+       c'est que la palette n'est plus appliquée. */
+    expect(pastilles().filter((v) => v.trait === '#0F5132')).toHaveLength(0);
+  });
+
+  test('la couleur ne porte pas l’information : chaque ligne est nommée', async () => {
+    rendre(<Accueil />, { route: '/accueil', profil: PROFIL_ADMIN });
+    for (const libelle of [
+      'Ma carte de membre',
+      'Ma fiche',
+      'Mon assiduité',
+      'Pointer les présences',
+      'Administration'
+    ]) {
+      expect(await screen.findByText(libelle)).toBeInTheDocument();
+    }
+  });
+
+  test('un élève n’a que ses trois lignes, colorées aussi', async () => {
+    rendre(<Accueil />, { route: '/accueil', profil: PROFIL_ELEVE });
+    await screen.findByText('Ma carte de membre');
+
+    const vues = pastilles();
+    expect(vues).toHaveLength(3);
+    expect(new Set(vues.map((v) => v.trait)).size).toBe(3);
+    expect(screen.queryByText('Administration')).not.toBeInTheDocument();
+  });
+});
