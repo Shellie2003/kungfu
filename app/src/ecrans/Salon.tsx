@@ -10,9 +10,13 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Icone } from '../ui/Icone';
 import { Bouton, Carte, ChoisirFichier, Entete, Surtitre } from '../ui/base';
+import { ChoixEmoji } from '../ui/Emoji';
 import {
   MINUTES_CORRECTION,
   corrigible,
+  enAttente,
+  estImage,
+  nomDeLaPiece,
   initiales,
   joindre,
   journaliser,
@@ -90,27 +94,65 @@ function Fil({
               </b>
             )}
             {/* La pièce jointe avant le texte : c'est elle qu'on
-                regarde, le texte la commente. */}
+                regarde, le texte la commente.
+
+                Une PHOTO se montre ; un DOCUMENT se télécharge. Les
+                confondre donnait un cadre vide à la place d'un PDF —
+                la version précédente n'acceptait que des images et
+                rendait une balise « img » quoi qu'il arrive. */}
             {m.piece && pieces[m.piece] && (
-              <img
-                src={pieces[m.piece]}
-                alt={m.texte}
-                loading="lazy"
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  maxWidth: 240,
-                  borderRadius: 12,
-                  marginBottom: 6
-                }}
-              />
+              estImage(m.piece) ? (
+                <img
+                  src={pieces[m.piece]}
+                  alt={m.texte}
+                  loading="lazy"
+                  /* Les proportions réservent la place AVANT que
+                     l'image n'arrive : sans elles, le fil sursaute à
+                     chaque photo chargée et l'on perd sa lecture. */
+                  width={240}
+                  height={180}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    maxWidth: 240,
+                    height: 'auto',
+                    aspectRatio: '4 / 3',
+                    objectFit: 'cover',
+                    background: 'rgba(0,0,0,.06)',
+                    borderRadius: 12,
+                    marginBottom: 6
+                  }}
+                />
+              ) : (
+                <a
+                  href={pieces[m.piece]}
+                  download={nomDeLaPiece(m.piece) ?? 'document'}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="piece"
+                >
+                  <Icone nom="news" taille={20} couleur="#0F5132" />
+                  <span style={{ flexGrow: 1, minWidth: 0 }}>
+                    <b>{nomDeLaPiece(m.piece) ?? 'Document'}</b>
+                    <i>Toucher pour ouvrir ou enregistrer</i>
+                  </span>
+                  <Icone nom="chev" taille={16} couleur="#12613C" epaisseur={2} />
+                </a>
+              )
             )}
             <p className="bul__txt">{m.texte}</p>
             <i className="bul__h">
-              {new Date(m.cree_le).toLocaleTimeString('fr-FR', {
-                hour: '2-digit',
-                minute: '2-digit'
-              })}
+              {/* « Envoi… » plutôt que l'heure tant que le serveur
+                  n'a pas confirmé. Le message est déjà à l'écran —
+                  c'est ce qui le rend instantané — mais prétendre
+                  qu'il est arrivé serait le mensonge que ce projet a
+                  déjà payé trois fois. */}
+              {enAttente(m)
+                ? 'Envoi…'
+                : new Date(m.cree_le).toLocaleTimeString('fr-FR', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
               {/* Un message corrigé le dit. Sans cette marque, on
                   pourrait réécrire ce qu'on a dit hier et prétendre
                   l'avoir toujours dit. */}
@@ -138,6 +180,10 @@ function Saisie({
   const [piece, setPiece] = useState<string | null>(null);
   const [envoiPiece, setEnvoiPiece] = useState(false);
   const [souci, setSouci] = useState<string | null>(null);
+  const [emoji, setEmoji] = useState(false);
+  /* Pour rendre le clavier après un choix : sans cela, le champ perd
+     le curseur et il faut le retoucher pour continuer à écrire. */
+  const champ = useRef<HTMLInputElement>(null);
   /* Une pièce jointe SEULE suffit : « regarde » n'ajoute rien à une
      photo, et exiger un texte ferait taper « photo » vingt fois. */
   const propre = texte.trim();
@@ -146,7 +192,10 @@ function Saisie({
   return (
     <form
       className="saisie"
-      style={{ flexWrap: 'wrap' }}
+      /* « relative » : c'est l'ancrage du choix d'emoji, qui se pose
+         AU-DESSUS de la saisie sans entrer dans le flux — il ne
+         décale donc jamais le fil. */
+      style={{ flexWrap: 'wrap', position: 'relative' }}
       onSubmit={(e) => {
         e.preventDefault();
         if (!envoyable || occupe) return;
@@ -186,7 +235,8 @@ function Saisie({
 
       {joindreFichier && (
         <ChoisirFichier
-          nomAccessible="Joindre une photo"
+          documents
+          nomAccessible="Joindre une photo ou un document"
           libelle={<Icone nom="plus" taille={20} couleur="#0F5132" epaisseur={2} />}
           desactive={envoiPiece || occupe}
           style={{ width: 44, flex: 'none', padding: 0 }}
@@ -204,7 +254,34 @@ function Saisie({
           }}
         />
       )}
+      {emoji && (
+        <ChoixEmoji
+          onFermer={() => setEmoji(false)}
+          onChoisir={(e) => {
+            /* On AJOUTE à la fin plutôt que d'insérer au curseur :
+               insérer demanderait de suivre la position dans un champ
+               que le clavier d'Android réécrit à sa guise, et se
+               tromperait de place une fois sur trois. */
+            setTexte((t) => (t + e).slice(0, 4000));
+            setEmoji(false);
+            champ.current?.focus();
+          }}
+        />
+      )}
+
+      <button
+        type="button"
+        className="tapicon"
+        aria-label="Choisir un emoji"
+        aria-expanded={emoji}
+        style={{ width: 40, flex: 'none', fontSize: 20 }}
+        onClick={() => setEmoji((v) => !v)}
+      >
+        <span aria-hidden="true">🙂</span>
+      </button>
+
       <input
+        ref={champ}
         className="saisie__champ"
         value={texte}
         onChange={(e) => setTexte(e.target.value)}
@@ -574,7 +651,11 @@ function Conversation({ salonId, sombre }: { salonId: string | undefined; sombre
             return;
           }
           envoi.mutate(
-            { texte, auteurId: moi.id, piece },
+            /* L'auteur part avec : le message provisoire s'affiche
+               AVANT la réponse du serveur, et sans nom il apparaîtrait
+               anonyme une seconde puis se corrigerait — un
+               clignotement pour rien. */
+            { texte, auteurId: moi.id, piece, auteur: { nom: moi.nom, prenom: moi.prenom } },
             {
               onSuccess: () => setAvis(null),
               onError: (e) =>

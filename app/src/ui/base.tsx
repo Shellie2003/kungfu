@@ -426,6 +426,7 @@ export function ChoisirFichier({
   multiple = false,
   desactive = false,
   appareil = false,
+  documents = false,
   nomAccessible,
   style
 }: {
@@ -433,6 +434,11 @@ export function ChoisirFichier({
   onFichier: (fichiers: File[]) => void;
   multiple?: boolean;
   desactive?: boolean;
+  /* Élargit le choix aux documents — PDF, texte, Word, Excel. Éteint
+     par défaut : partout ailleurs (portrait, album, photo du club),
+     un PDF n'aurait aucun sens et le proposer inviterait à une
+     erreur que le serveur refuserait ensuite. */
+  documents?: boolean;
   /* « Prendre une photo » plutôt que « en choisir une ».
      « capture » demande à Android d'ouvrir l'appareil photo au lieu
      du sélecteur de documents. Sur un navigateur de bureau
@@ -468,7 +474,15 @@ export function ChoisirFichier({
       <input
         ref={champ}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept={
+          documents
+            ? 'image/jpeg,image/png,image/webp,application/pdf,text/plain,text/csv,' +
+              'application/msword,' +
+              'application/vnd.openxmlformats-officedocument.wordprocessingml.document,' +
+              'application/vnd.ms-excel,' +
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            : 'image/jpeg,image/png,image/webp'
+        }
         capture={appareil ? 'environment' : undefined}
         multiple={multiple && !appareil}
         disabled={desactive}

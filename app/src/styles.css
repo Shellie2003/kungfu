@@ -199,3 +199,39 @@ body {
   .carrousel { scroll-behavior: auto; }
   .carrousel__point { transition: none; }
 }
+
+/* ------------------------------------------------------------
+   Une pièce jointe qui n'est pas une image.
+
+   Un PDF n'a pas d'aperçu : ce qui compte est son NOM et le fait
+   qu'on puisse l'ouvrir. La ligne le dit, plutôt que d'afficher un
+   cadre vide — ce que faisait la version précédente, qui rendait une
+   balise « img » quel que soit le type.
+   ------------------------------------------------------------ */
+.piece {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .82);
+  border: 1px solid var(--bord);
+  text-decoration: none;
+  color: var(--encre);
+  max-width: 260px;
+}
+.piece b {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+.piece i {
+  display: block;
+  font-size: 11.5px;
+  font-style: normal;
+  color: #59685F;
+  margin-top: 1px;
+}

@@ -219,9 +219,18 @@ export function brancherServeur() {
         return json([]);
       }
 
-      const valeur = typeof reponse === 'function'
+      /* « await » : une réponse posée peut être une PROMESSE, et
+         c'est ce qui permet de simuler un serveur LENT — ou un
+         serveur qui ne répond jamais.
+
+         Sans lui, une promesse était passée telle quelle à
+         JSON.stringify, qui en fait « {} » : le test croyait mesurer
+         une attente et mesurait une réponse instantanée et vide. On
+         ne pouvait donc pas éprouver l'affichage immédiat d'un
+         message, qui est justement ce qui rend l'envoi rapide. */
+      const valeur = await (typeof reponse === 'function'
         ? (reponse as (r: Requete) => unknown)(requete)
-        : reponse;
+        : reponse);
 
       /* .single() et .maybeSingle() demandent un OBJET, pas un
          tableau. C'est la distinction que fait PostgREST par

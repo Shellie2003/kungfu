@@ -462,7 +462,7 @@ describe('joindre une photo', () => {
     poser({ salons: [SALON_CLUB], messages: [] });
     rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
 
-    await userEvent.upload(await screen.findByLabelText('Joindre une photo'), photo());
+    await userEvent.upload(await screen.findByLabelText('Joindre une photo ou un document'), photo());
 
     await waitFor(() => {
       const envoi = recues.find((r) => r.table === 'storage' && r.methode === 'POST');
@@ -478,7 +478,7 @@ describe('joindre une photo', () => {
     poser({ salons: [SALON_CLUB], messages: [] });
     rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
 
-    await userEvent.upload(await screen.findByLabelText('Joindre une photo'), photo());
+    await userEvent.upload(await screen.findByLabelText('Joindre une photo ou un document'), photo());
     await screen.findByText('Photo jointe.');
     await userEvent.type(screen.getByLabelText('Écrire un message'), 'Voici l’affiche.');
     await userEvent.click(screen.getByLabelText('Envoyer'));
@@ -498,7 +498,7 @@ describe('joindre une photo', () => {
     rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
 
     expect(await screen.findByLabelText('Envoyer')).toBeDisabled();
-    await userEvent.upload(screen.getByLabelText('Joindre une photo'), photo());
+    await userEvent.upload(screen.getByLabelText('Joindre une photo ou un document'), photo());
     await screen.findByText('Photo jointe.');
 
     expect(screen.getByLabelText('Envoyer')).not.toBeDisabled();
@@ -516,32 +516,39 @@ describe('joindre une photo', () => {
     const trop = new File([new Uint8Array(6 * 1024 * 1024)], 'grande.jpg', {
       type: 'image/jpeg'
     });
-    await userEvent.upload(await screen.findByLabelText('Joindre une photo'), trop);
+    await userEvent.upload(await screen.findByLabelText('Joindre une photo ou un document'), trop);
 
     expect(await screen.findByText(/la limite est 5,0 Mo/)).toBeInTheDocument();
     /* Et rien n'est parti sur le réseau. */
     expect(recues.some((r) => r.table === 'storage')).toBe(false);
   });
 
-  test('un fichier qui n’est pas une image n’est même pas retenu', async () => {
-    /* Deux barrières, et ce test montre que la PREMIÈRE suffit :
-       « accept » écarte le fichier avant que l'application le voie —
-       le sélecteur ne le propose pas, et s'il passe outre, le champ
-       l'ignore.
+  test('un DOCUMENT est accepté, et porte son nom', async () => {
+    /* Ce test disait l'inverse : « un fichier qui n'est pas une image
+       n'est même pas retenu ». Le club a demandé de pouvoir
+       télécharger des documents dans les conversations — une
+       convocation, un règlement — et la restriction aux seules
+       photos n'avait plus lieu d'être.
 
-       La vérification du type dans « joindre » reste le second
-       rideau, pour un téléphone dont le sélecteur ne respecte pas
-       « accept ». On ne peut pas la déclencher ici sans contourner
-       le champ, ce qui reviendrait à tester autre chose que ce qui
-       se passe. */
+       Ce qui compte ici est le NOM : le chemin valait
+       « <salon>/<hasard>.pdf », si bien qu'un document téléchargé
+       s'appelait « 7f3a1c2e-….pdf » dans le dossier des
+       téléchargements — introuvable. Il porte maintenant son nom
+       d'origine, après un double tiret. */
     poser({ salons: [SALON_CLUB], messages: [] });
     rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
 
-    const pdf = new File(['x'], 'reglement.pdf', { type: 'application/pdf' });
-    await userEvent.upload(await screen.findByLabelText('Joindre une photo'), pdf);
+    const pdf = new File(['x'], 'reglement interieur.pdf', { type: 'application/pdf' });
+    await userEvent.upload(await screen.findByLabelText('Joindre une photo ou un document'), pdf);
 
-    expect(screen.queryByText('Photo jointe.')).not.toBeInTheDocument();
-    expect(recues.some((r) => r.table === 'storage')).toBe(false);
+    await waitFor(() => expect(screen.getByText(/jointe|joint/i)).toBeInTheDocument());
+
+    const envoi = [...recues].reverse().find((r) => r.chemin?.includes('/object/pieces/'));
+    expect(envoi).toBeDefined();
+    /* Le salon reste le PREMIER segment : c'est lui que lit la règle
+       d'accès. Le nom vient après, et ne la gêne pas. */
+    expect(envoi?.chemin).toMatch(/\/object\/pieces\/s1\//);
+    expect(envoi?.chemin).toMatch(/--reglement-interieur\.pdf$/);
   });
 
   test('la pièce d’un message reçu s’affiche par une adresse signée', async () => {
@@ -739,5 +746,102 @@ describe('ouvrir une conversation à deux', () => {
     expect(
       await screen.findByText(/Écrire à un maître ou à l’administration est toujours possible/)
     ).toBeInTheDocument();
+  });
+});
+
+/* ============================================================
+   « L'envoi d'un message est trop lent. »
+
+   Il ne l'était pas au sens où le serveur tarderait : l'écran
+   attendait DEUX allers-retours avant de montrer quoi que ce soit —
+   l'écriture, puis la relecture complète du fil. Sur un réseau
+   malgache cela fait deux à quatre secondes sans rien de visible,
+   et l'on retape.
+   ============================================================ */
+describe('l’envoi instantané', () => {
+  test('le message paraît AVANT la réponse du serveur', async () => {
+    /* Le serveur ne répondra jamais : c'est tout l'intérêt. Si le
+       message s'affiche quand même, c'est qu'on ne l'attend plus. */
+    poser({
+      salons: [SALON_CLUB],
+      messages: [],
+      'messages:POST': () => new Promise(() => {})
+    });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    await userEvent.type(await screen.findByLabelText('Écrire un message'), 'Bonsoir');
+    await userEvent.click(screen.getByLabelText('Envoyer'));
+
+    expect(await screen.findByText('Bonsoir')).toBeInTheDocument();
+    /* Mais il ne PRÉTEND pas être arrivé : « Envoi… » à la place de
+       l'heure. Annoncer un succès qui n'a pas eu lieu est le défaut
+       que ce projet a déjà payé trois fois. */
+    expect(screen.getByText('Envoi…')).toBeInTheDocument();
+  });
+
+  test('un refus le RETIRE du fil, au lieu de le laisser croire parti', async () => {
+    poser({
+      salons: [SALON_CLUB],
+      messages: [],
+      'messages:POST': () => []
+    });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    await userEvent.type(await screen.findByLabelText('Écrire un message'), 'Bonsoir');
+    await userEvent.click(screen.getByLabelText('Envoyer'));
+
+    /* Le refus se lit, et le message a disparu du fil : le laisser
+       en place serait pire que la lenteur d'origine. */
+    expect(await screen.findByRole('alert')).toHaveTextContent(/n’est pas parti/);
+    await waitFor(() => expect(screen.queryByText('Envoi…')).not.toBeInTheDocument());
+  });
+});
+
+describe('les emoji', () => {
+  test('le choix s’ouvre et ajoute au message', async () => {
+    poser({ salons: [SALON_CLUB], messages: [] });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    const champ = await screen.findByLabelText('Écrire un message');
+    await userEvent.type(champ, 'Bravo');
+    await userEvent.click(screen.getByLabelText('Choisir un emoji'));
+    await userEvent.click(screen.getByRole('button', { name: '👏' }));
+
+    expect(champ).toHaveValue('Bravo👏');
+    /* Le choix se referme : le laisser ouvert cacherait le fil sous
+       une grille de vingt-quatre boutons. */
+    expect(screen.queryByRole('button', { name: '👏' })).not.toBeInTheDocument();
+  });
+
+  test('au repos, la grille n’existe pas dans la page', async () => {
+    poser({ salons: [SALON_CLUB], messages: [] });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+    await screen.findByLabelText('Écrire un message');
+    expect(screen.queryByRole('dialog', { name: 'Choisir un emoji' })).not.toBeInTheDocument();
+  });
+});
+
+describe('un document reçu', () => {
+  test('se télécharge sous son nom, au lieu d’un cadre vide', async () => {
+    /* La version précédente rendait une balise « img » quel que soit
+       le type : un PDF donnait un cadre vide, sans rien à faire. */
+    poser({
+      salons: [SALON_CLUB],
+      messages: [{
+        id: 'm1', texte: 'Le règlement.', cree_le: maintenant, modifie_le: null,
+        piece: 's1/7f3a1c2e--reglement.pdf', supprime_le: null, auteur_id: 'p4',
+        profils: { nom: 'RABEMANANJARA', prenom: 'Hery' }
+      }]
+    });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    const lien = await screen.findByRole('link', { name: /reglement\.pdf/ });
+    /* « download » porte le NOM D'ORIGINE : sans lui, le fichier
+       arrive dans les téléchargements sous son identifiant tiré au
+       sort, et reste introuvable. */
+    expect(lien).toHaveAttribute('download', 'reglement.pdf');
+    expect(lien.getAttribute('href')).toMatch(/^http/);
+    /* Et surtout : pas d'image. */
+    expect(document.querySelector('.bul img')).toBeNull();
   });
 });

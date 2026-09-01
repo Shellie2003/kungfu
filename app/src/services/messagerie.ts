@@ -208,7 +208,24 @@ export function useMessages(salonId: string | undefined) {
    aurait accepté : un défaut visible, jamais une protection
    contournée. */
 export const TAILLE_MAX = 5 * 1024 * 1024;
-export const TYPES_ACCEPTES = ['image/jpeg', 'image/png', 'image/webp'];
+
+export const TYPES_IMAGE = ['image/jpeg', 'image/png', 'image/webp'];
+
+/* Les documents que le club échange réellement : une convocation en
+   PDF, une liste d'inscrits, un règlement. On ne prend PAS tout —
+   un exécutable ou une archive n'ont rien à faire dans une
+   conversation d'élèves, et le seau n'est pas un disque partagé. */
+export const TYPES_DOCUMENT = [
+  'application/pdf',
+  'text/plain',
+  'text/csv',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+];
+
+export const TYPES_ACCEPTES = [...TYPES_IMAGE, ...TYPES_DOCUMENT];
 
 /* « 5 Mo », « 340 ko » — un nombre d'octets ne dit rien à personne. */
 export function poids(octets: number): string {
@@ -216,33 +233,158 @@ export function poids(octets: number): string {
   return `${Math.round(octets / 1024)} ko`;
 }
 
+/* ------------------------------------------------------------
+   Le nom du fichier, conservé DANS le chemin.
+
+   Le chemin valait « <salon>/<hasard>.pdf » : le nom d'origine était
+   perdu, et un document téléchargé s'appelait
+   « 7f3a1c2e-….pdf ». Illisible, et impossible à retrouver dans le
+   dossier des téléchargements.
+
+   On le garde donc après un double tiret. La règle d'accès n'en
+   souffre pas : prive.salon_du_chemin ne lit que le PREMIER segment
+   du chemin et vérifie que c'est un identifiant de salon — vérifié
+   dans la base avant d'écrire ceci.
+   ------------------------------------------------------------ */
+const SEPARATEUR = '--';
+
+/* Un nom de fichier sûr : ni barre oblique, ni accent douteux, ni
+   longueur déraisonnable. Le seau n'accepte pas n'importe quoi, et
+   un nom qui voyage jusqu'au dossier de téléchargement d'un
+   téléphone doit rester simple. */
+function nomSur(nom: string): string {
+  const sans = nom
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z0-9._-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^[-.]+/, '');
+  return sans.slice(0, 60) || 'document';
+}
+
+/* Le nom lisible d'une pièce, à partir de son chemin. Rend « null »
+   pour les pièces d'avant ce changement, qui n'en portent pas : on
+   affichera alors « Document » plutôt qu'un identifiant. */
+export function nomDeLaPiece(chemin: string): string | null {
+  const dernier = chemin.split('/').pop() ?? '';
+  const coupe = dernier.indexOf(SEPARATEUR);
+  if (coupe < 0) return null;
+  return dernier.slice(coupe + SEPARATEUR.length) || null;
+}
+
+export const estImage = (chemin: string): boolean =>
+  /\.(jpe?g|png|webp)$/i.test(chemin);
+
+/* ------------------------------------------------------------
+   Réduire une photo AVANT de l'envoyer.
+
+   Le club : « la lecture de l'image est trop lente ». Elle l'est,
+   et pour une raison simple : un téléphone récent produit des
+   photos de trois à cinq mégaoctets. Les envoyer coûte cher à qui
+   les envoie, et les LIRE coûte autant à chacun des soixante-quatre
+   membres, à chaque ouverture du fil.
+
+   Mille six cents pixels de côté suffisent très largement à un
+   écran de téléphone, et ramènent une photo de quatre mégaoctets
+   sous les trois cents kilooctets — plus de dix fois moins à
+   transporter.
+
+   En cas d'échec, on envoie l'ORIGINAL : mieux vaut une photo lourde
+   qu'une photo perdue. C'est aussi ce qui se passe dans les tests,
+   où jsdom ne sait pas dessiner.
+   ------------------------------------------------------------ */
+const COTE_MAX = 1600;
+const QUALITE = 0.82;
+
+export async function reduire(fichier: File): Promise<File> {
+  if (!TYPES_IMAGE.includes(fichier.type)) return fichier;
+  try {
+    const bitmap = await createImageBitmap(fichier);
+    const facteur = Math.min(1, COTE_MAX / Math.max(bitmap.width, bitmap.height));
+    /* Déjà petite : la réencoder ne ferait que la dégrader. */
+    if (facteur === 1 && fichier.size < 600 * 1024) return fichier;
+
+    const toile = document.createElement('canvas');
+    toile.width = Math.round(bitmap.width * facteur);
+    toile.height = Math.round(bitmap.height * facteur);
+    const pinceau = toile.getContext('2d');
+    if (!pinceau) return fichier;
+    pinceau.drawImage(bitmap, 0, 0, toile.width, toile.height);
+
+    const blob = await new Promise<Blob | null>((ok) =>
+      toile.toBlob(ok, 'image/jpeg', QUALITE)
+    );
+    if (!blob || blob.size >= fichier.size) return fichier;
+
+    const base = fichier.name.replace(/\.[^.]+$/, '');
+    return new File([blob], `${base}.jpg`, { type: 'image/jpeg' });
+  } catch {
+    return fichier;
+  }
+}
+
 export async function joindre(salonId: string, fichier: File): Promise<string> {
   if (!TYPES_ACCEPTES.includes(fichier.type)) {
     throw new Error(
-      `Seules les photos sont acceptées (JPEG, PNG ou WebP). Ce fichier est un « ${fichier.type || 'type inconnu'} ».`
+      `Ce type de fichier n’est pas accepté : « ${fichier.type || 'type inconnu'} ». ` +
+        'Photos (JPEG, PNG, WebP), PDF, texte, Word et Excel.'
     );
   }
   if (fichier.size > TAILLE_MAX) {
     throw new Error(
-      `Cette photo pèse ${poids(fichier.size)} ; la limite est ${poids(TAILLE_MAX)}. Reprenez-la en qualité moindre, ou recadrez-la.`
+      `Ce fichier pèse ${poids(fichier.size)} ; la limite est ${poids(TAILLE_MAX)}.`
     );
   }
-  const ext = fichier.name.split('.').pop()?.toLowerCase() ?? 'jpg';
-  const chemin = `${salonId}/${crypto.randomUUID()}.${ext}`;
-  const { error } = await supabase.storage.from('pieces').upload(chemin, fichier, {
+
+  /* La réduction vient APRÈS le contrôle de taille : un fichier de
+     vingt mégaoctets doit être refusé, pas rattrapé en douce. Ce
+     serait promettre une limite qu'on n'applique pas. */
+  const envoye = await reduire(fichier);
+
+  /* L'extension n'est plus calculée à part : le nom conservé la
+     porte déjà, et c'est elle que lit « estImage ». */
+  const chemin = `${salonId}/${crypto.randomUUID()}${SEPARATEUR}${nomSur(envoye.name)}`;
+  const { error } = await supabase.storage.from('pieces').upload(chemin, envoye, {
     cacheControl: '3600',
-    upsert: false
+    upsert: false,
+    contentType: envoye.type
   });
   if (error) throw error;
   return chemin;
 }
 
+/* Le préfixe d'un message pas encore confirmé. L'écran s'en sert
+   pour le montrer en attente ; il disparaît quand le serveur rend le
+   vrai. */
+export const PROVISOIRE = 'en-attente:';
+
+export const enAttente = (m: Message) => m.id.startsWith(PROVISOIRE);
+
+/* Envoyer, et le voir TOUT DE SUITE.
+
+   Le club : « l'envoi d'un message est trop lent ». Il ne l'était
+   pas au sens où le serveur tarderait — il l'était parce que
+   l'écran attendait DEUX allers-retours avant de montrer quoi que
+   ce soit : l'écriture, puis la relecture complète du fil. Sur un
+   réseau malgache, cela fait deux à quatre secondes pendant
+   lesquelles il ne se passe rien de visible, et l'on retape.
+
+   Le message est donc posé dans le fil AVANT d'être envoyé, et
+   marqué « en attente ». C'est ce que fait toute messagerie, et ce
+   n'est pas un mensonge tant que l'échec le retire.
+
+   Ce que cela n'est PAS : une prétention de réussite. « onError »
+   remet le fil exactement comme il était, et l'écran dit pourquoi.
+   Le défaut inverse — annoncer un succès qui n'a pas eu lieu — a
+   déjà coûté trois corrections à ce projet. */
 export function useEnvoyer(salonId: string | undefined) {
   const client = useQueryClient();
+  const cle = ['messages', salonId];
+
   return useMutation({
     mutationFn: async ({
       texte, auteurId, piece = null
-    }: { texte: string; auteurId: string; piece?: string | null }) => {
+    }: { texte: string; auteurId: string; piece?: string | null; auteur?: Message['auteur'] }) => {
       if (!salonId) throw new Error('Aucune conversation ouverte.');
       /* Le « .select() » pour la même raison qu'ailleurs : il donne
          la ligne écrite, et l'absence de ligne devient une erreur
@@ -256,8 +398,37 @@ export function useEnvoyer(salonId: string | undefined) {
         throw new Error('Le serveur a accepté sans rien écrire — réessayez.');
       }
     },
-    onSuccess: () => {
-      client.invalidateQueries({ queryKey: ['messages', salonId] });
+
+    onMutate: async ({ texte, auteurId, piece = null, auteur = null }) => {
+      /* On arrête les relectures en cours : l'une d'elles pourrait
+         revenir APRÈS notre ajout et l'écraser, faisant clignoter le
+         message puis disparaître. */
+      await client.cancelQueries({ queryKey: cle });
+      const avant = client.getQueryData<Message[]>(cle);
+
+      const provisoire: Message = {
+        id: `${PROVISOIRE}${crypto.randomUUID()}`,
+        texte,
+        cree_le: new Date().toISOString(),
+        modifie_le: null,
+        piece,
+        supprime_le: null,
+        auteur_id: auteurId,
+        auteur
+      };
+      client.setQueryData<Message[]>(cle, [...(avant ?? []), provisoire]);
+      return { avant };
+    },
+
+    onError: (_e, _v, contexte) => {
+      /* Remettre le fil tel qu'il était. Laisser le message en place
+         donnerait à croire qu'il est parti. */
+      if (contexte?.avant) client.setQueryData(cle, contexte.avant);
+      else client.invalidateQueries({ queryKey: cle });
+    },
+
+    onSettled: () => {
+      client.invalidateQueries({ queryKey: cle });
       client.invalidateQueries({ queryKey: ['salons'] });
     }
   });
