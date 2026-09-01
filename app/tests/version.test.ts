@@ -114,6 +114,31 @@ describe('ce qui ne doit JAMAIS passer pour une mise à jour', () => {
   });
 });
 
+describe('dans l’APK', () => {
+  test('rien n’est demandé : le fichier ne peut pas exister', async () => {
+    /* Le silence en cas d'échec ne suffisait pas — la requête
+       partait quand même et échouait en 404. Le banc d'essai l'a vue
+       (« accueil : Failed to load resource: 404 ») avant le club.
+       Sur un téléphone c'est un aller-retour réseau à chaque
+       démarrage, sur un forfait malgache, pour une information qui
+       ne peut pas exister : l'APK ne se rafraîchit pas, il se
+       réinstalle. */
+    vi.stubGlobal('__VERSION__', COURANTE);
+    vi.doMock('@capacitor/core', () => ({
+      Capacitor: { isNativePlatform: () => true }
+    }));
+    const appels = vi.fn(async () => texte(PUBLIEE));
+    vi.stubGlobal('fetch', appels);
+    vi.resetModules();
+    const { useMiseAJour } = await import('../src/services/version');
+
+    const vue = renderHook(() => useMiseAJour());
+    expect(vue.result.current).toBeNull();
+    expect(appels).not.toHaveBeenCalled();
+    vi.doUnmock('@capacitor/core');
+  });
+});
+
 describe('en développement', () => {
   test('rien n’est demandé du tout', async () => {
     /* Sur un poste, il n'y a pas de commit à nommer et pas de

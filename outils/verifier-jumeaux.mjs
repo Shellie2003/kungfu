@@ -28,7 +28,7 @@
 import { chromium } from 'playwright';
 import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { brancher, poserSession, servir } from './bouchon.mjs';
 
@@ -69,6 +69,31 @@ async function capturer(racine, prefixe, port) {
 }
 
 const RACINE = new URL('..', import.meta.url).pathname;
+
+/* ⚠ Les DEUX constructions doivent exister avant de comparer.
+
+   Sans ce garde-fou, l'absence de essai/ ne se voyait pas comme une
+   absence : le serveur rendait 404 partout, les pages étaient vides,
+   et l'outil annonçait « dimensions différentes » et « 3,67 % de
+   pixels différents ». Il accusait donc le CODE d'avoir divergé
+   alors que la construction web n'avait simplement pas eu lieu.
+
+   C'est exactement ce qui a fait échouer l'exécution 37 : dans
+   l'intégration continue, cette étape passait AVANT celle qui
+   construit essai/. Un contrôle qui se trompe de coupable est pire
+   qu'un contrôle absent — on cherche le défaut là où il n'est pas. */
+for (const [quoi, ou, comment] of [
+  ['l’application', join(RACINE, 'app/dist/index.html'), 'cd app && npx vite build'],
+  ['la version web', join(RACINE, 'essai/index.html'), 'bash outils/vercel-build.sh']
+]) {
+  if (!existsSync(ou)) {
+    console.error(
+      `\n${quoi} n’est pas construite : ${ou} n’existe pas.\n\n` +
+      `Rien à comparer. Construisez-la d’abord :\n\n    ${comment}\n`
+    );
+    process.exit(1);
+  }
+}
 
 /* L'APK sert app/dist à la racine ; le web sert le dépôt entier, et
    la page vit sous /essai. On reproduit exactement les deux. */

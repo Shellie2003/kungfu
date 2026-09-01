@@ -193,6 +193,24 @@ export function servir(racine, port = 4173, racineObligatoire = true) {
     const candidats = [demande, join(demande, 'index.html'), `${demande}.html`];
     const fichier = candidats.find((c) => existsSync(c) && !statSync(c).isDirectory());
     if (!fichier) {
+      /* version.txt sans fichier : on répond « developpement », que
+         l'application traite comme « pas de version » et ignore.
+
+         Pourquoi pas un 404 : ce banc sert app/dist — le paquet de
+         l'APK — dans un NAVIGATEUR. Sur un vrai téléphone,
+         l'application ne demande rien du tout (Capacitor le dit), et
+         le fichier n'a pas à exister. Un 404 ici serait donc une
+         fausse alerte, signalée par « verifier-app » comme une
+         erreur de console.
+
+         Ce qui reste vérifié ailleurs, et pour de bon : la version
+         web, elle, DOIT avoir son version.txt — c'est
+         verifier-web.mjs qui sert le vrai dépôt et le constaterait
+         manquant. */
+      if (chemin.endsWith('/version.txt')) {
+        res.writeHead(200, { 'content-type': 'text/plain' }).end('developpement\n');
+        return;
+      }
       res.writeHead(404).end('non trouvé');
       return;
     }

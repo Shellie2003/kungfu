@@ -24,6 +24,7 @@
    on le dit, avec de quoi la prendre.
    ============================================================ */
 import { useEffect, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 
 /* Injectée par Vite à la construction. Le repli couvre le mode
    développement, où il n'y a pas de commit à nommer. */
@@ -35,9 +36,25 @@ export const versionCourte = (v: string) =>
 
 /* version.txt vit À CÔTÉ de la page, et on le demande par un chemin
    relatif à la base : c'est la même adresse que l'application soit
-   servie à /essai ou ailleurs. Dans l'APK il n'existe pas — d'où le
-   silence en cas d'échec, plus bas. */
+   servie à /essai ou ailleurs. */
 const OU = `${import.meta.env.BASE_URL}version.txt`;
+
+/* ⚠ Dans l'APK, ce fichier N'EXISTE PAS.
+
+   Le silence en cas d'échec ne suffisait pas : la requête partait
+   quand même, échouait en 404, et le banc d'essai l'a vue —
+   « accueil : Failed to load resource: 404 ». Sur un téléphone
+   c'est pire qu'inélégant : c'est un aller-retour réseau à chaque
+   démarrage, sur un forfait malgache, pour une information qui ne
+   peut pas exister.
+
+   Et l'APK n'a de toute façon rien à faire d'une mise à jour du
+   web : il ne se rafraîchit pas, il se réinstalle.
+
+   « isNativePlatform » est la question posée à Capacitor lui-même,
+   plutôt que devinée d'une adresse ou d'un drapeau de construction —
+   les deux paquets restent ainsi rigoureusement identiques. */
+const SUR_TELEPHONE = Capacitor.isNativePlatform();
 
 async function versionPubliee(): Promise<string | null> {
   try {
@@ -79,7 +96,7 @@ export function useMiseAJour(): string | null {
   const [neuve, setNeuve] = useState<string | null>(null);
 
   useEffect(() => {
-    if (VERSION === 'developpement') return;
+    if (VERSION === 'developpement' || SUR_TELEPHONE) return;
     let vivant = true;
 
     const regarder = async () => {

@@ -129,8 +129,16 @@ jobs:
         working-directory: app
         run: npm test
 
+      # VERSION_CONSTRUITE inscrit le commit DANS le paquet, comme le
+      # fait outils/vercel-build.sh pour le web. Sans cela l'APK
+      # affichait « Version developpement » en bas de l'écran du
+      # club, là où la version web affiche son empreinte : les deux
+      # ne disaient pas la même chose, alors qu'elles doivent être
+      # jumelles.
       - name: Construire la partie web
         working-directory: app
+        env:
+          VERSION_CONSTRUITE: ${{ github.sha }}
         run: npx vite build
 
       # Ouvre chaque écran dans un vrai navigateur, avec un serveur
@@ -168,23 +176,6 @@ jobs:
       - name: Faire tourner le carrousel
         run: node outils/verifier-carrousel.mjs
 
-      # Les deux versions doivent être JUMELLES.
-      #
-      # Exigence du club, mot pour mot : « tout ce qui est présent
-      # dans la version web doit être strictement identique à celle
-      # de l'application ».
-      #
-      # Elles viennent des mêmes sources mais de DEUX commandes —
-      # l'APK veut des chemins relatifs, le web des chemins absolus
-      # sous /essai. Deux commandes, c'est deux occasions de
-      # diverger, et personne ne s'en apercevrait avant le club.
-      #
-      # On ne compare pas les paquets : le chemin de base change
-      # l'ordre des modules, donc les noms que le minificateur
-      # invente. On compare CE QUI EST AFFICHÉ, au pixel près.
-      - name: Web et application, au pixel près
-        run: node outils/verifier-jumeaux.mjs
-
       # La version WEB, ouverte au chemin où elle est publiée.
       #
       # Les étapes ci-dessus servent app/dist à la RACINE d'un
@@ -206,6 +197,29 @@ jobs:
         run: |
           bash outils/vercel-build.sh
           node outils/verifier-web.mjs
+
+      # Les deux versions doivent être JUMELLES.
+      #
+      # Exigence du club, mot pour mot : « tout ce qui est présent
+      # dans la version web doit être strictement identique à celle
+      # de l'application ».
+      #
+      # Elles viennent des mêmes sources mais de DEUX commandes —
+      # l'APK veut des chemins relatifs, le web des chemins absolus
+      # sous /essai. Deux commandes, c'est deux occasions de
+      # diverger, et personne ne s'en apercevrait avant le club.
+      #
+      # On ne compare pas les paquets : le chemin de base change
+      # l'ordre des modules, donc les noms que le minificateur
+      # invente. On compare CE QUI EST AFFICHÉ, au pixel près.
+      #
+      # ⚠ APRÈS l'étape ci-dessus, et non avant : c'est elle qui
+      # construit essai/. Placée avant, la comparaison ne trouvait
+      # aucune page web, rendait des écrans vides, et accusait le
+      # code d'avoir divergé — c'est ce qui a fait échouer
+      # l'exécution 37.
+      - name: Web et application, au pixel près
+        run: node outils/verifier-jumeaux.mjs
 
       # Le dossier android/ n'est pas dans le dépôt : il se régénère
       # à partir de capacitor.config.ts. Un dossier natif commité
@@ -247,6 +261,41 @@ jobs:
           grep -q 'android.permission.CAMERA' AndroidManifest.xml \
             || { echo "::error::L'écriture de la permission caméra a échoué."; exit 1; }
           echo "caméra déclarée"
+
+      # Le numéro de version de l'APK.
+      #
+      # Capacitor engendre « versionCode 1 » et « versionName 1.0 »,
+      # et rien ne les changeait : les trente-sept constructions se
+      # présentaient donc à Android comme la MÊME version. Deux
+      # conséquences, dont le club a constaté la seconde :
+      #
+      #   — dans les paramètres du téléphone, toutes les versions
+      #     s'appellent « 1.0 ». Impossible de savoir laquelle on a.
+      #   — installer par-dessus n'est pas une MISE À JOUR mais une
+      #     réinstallation de la même version. Plusieurs surcouches
+      #     Android (MIUI, ColorOS…) affichent alors « L'application
+      #     n'a pas été installée » tout en menant l'installation à
+      #     son terme — exactement le message signalé.
+      #
+      # Le numéro d'exécution est monotone : la 38 est postérieure à
+      # la 37, et Android le comprend comme une vraie mise à jour.
+      # Le nom de version porte en plus l'empreinte du commit, pour
+      # que la version affichée par le téléphone soit rattachable au
+      # code.
+      #
+      # L'étape ÉCHOUE si l'ancre a disparu, plutôt que de produire
+      # un APK qui se réinstallerait éternellement en version 1.0.
+      - name: Numéroter la version
+        working-directory: app/android/app
+        run: |
+          COURT=$(echo "${{ github.sha }}" | cut -c1-7)
+          if ! grep -qE 'versionCode [0-9]+' build.gradle; then
+            echo "::error::build.gradle n'a pas la forme attendue : la version resterait 1.0 et chaque installation se ferait passer pour une réinstallation."
+            exit 1
+          fi
+          sed -i "s/versionCode .*/versionCode ${{ github.run_number }}/" build.gradle
+          sed -i "s/versionName .*/versionName \"${{ github.run_number }}.0 ($COURT)\"/" build.gradle
+          grep -E 'versionCode|versionName' build.gradle
 
       # La clé de débogage du projet remplace celle que Gradle
       # fabriquerait tout seul sur cette machine neuve. Sans cela la
