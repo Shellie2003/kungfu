@@ -9,12 +9,14 @@
    croire que c'est l'application qui protège. Elle ne protège rien :
    elle affiche ce qu'elle a reçu, et elle n'a rien reçu d'autre.
    ============================================================ */
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Icone } from '../ui/Icone';
-import { Carte, Entete, Grade, Portrait, Surtitre, Filet, Tuile } from '../ui/base';
+import { Bouton, Carte, Entete, Grade, Portrait, Surtitre, Filet, Tuile } from '../ui/base';
 import { dateFr, useFiche } from '../services/membres';
 import { useUrl } from '../services/stockage';
 import { estAdmin, estMaitre, useSession } from '../services/session';
+import { seDeconnecter } from '../services/supabase';
 
 const MASQUES = [
   'Date de naissance',
@@ -30,6 +32,10 @@ export function Profil() {
   const { data: fiche, isPending } = useFiche(id);
   const moi = useSession((e) => e.profil);
   const portraitUrl = useUrl('portraits', fiche?.photo);
+  /* Déclaré AVANT les retours anticipés : un hook ne se saute pas
+     selon l'état du chargement — React compte les appels, et en
+     sauter un décale tous les suivants. */
+  const [partir, setPartir] = useState(false);
 
   if (isPending) {
     return (
@@ -326,6 +332,60 @@ export function Profil() {
                 {fiche.biographie}
               </p>
             </Carte>
+          </div>
+        )}
+
+        {/* ---------------------------------------------- Se déconnecter
+
+            « seDeconnecter » existait dans le code depuis le premier
+            jour et RIEN ne l'appelait : il n'y avait aucun moyen de
+            quitter sa session. Sur un téléphone partagé — et le club
+            en a — cela veut dire que le suivant hérite du compte du
+            précédent, avec ses conversations et, pour un maître, son
+            espace confidentiel.
+
+            Sur SA propre fiche, et nulle part ailleurs : c'est là
+            qu'on va pour ce qui nous concerne, et le mot de passe s'y
+            change déjà.
+
+            La confirmation n'est pas une politesse : sur un réseau
+            malgache, se reconnecter demande de retrouver son
+            matricule et son mot de passe, et un appui malheureux
+            coûterait une séance entière. */}
+        {estMoi && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Surtitre>Cette session</Surtitre>
+            {partir ? (
+              <div className="warn">
+                <i />
+                <p>
+                  Se déconnecter de ce téléphone ? Il faudra le matricule{' '}
+                  <b>{fiche.numero}</b> et le mot de passe pour revenir.
+                </p>
+                <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+                  <Bouton
+                    onClick={() => {
+                      /* On ne redirige pas à la main : la racine
+                         regarde la session, et l'écran de connexion
+                         reprend la place dès qu'elle disparaît. Une
+                         redirection en plus laisserait un écran de
+                         profil vide s'afficher une fraction de
+                         seconde. */
+                      void seDeconnecter();
+                    }}
+                  >
+                    Oui, me déconnecter
+                  </Bouton>
+                  <Bouton genre="ghost" onClick={() => setPartir(false)}>
+                    Annuler
+                  </Bouton>
+                </div>
+              </div>
+            ) : (
+              <Bouton genre="ghost" onClick={() => setPartir(true)}>
+                Se déconnecter
+              </Bouton>
+            )}
           </div>
         )}
       </div>

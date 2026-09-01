@@ -107,10 +107,16 @@ export function brancherServeur() {
       /* --- Authentification --- */
       if (url.pathname.startsWith('/auth/v1/')) {
         const quoi = url.pathname.replace('/auth/v1/', '');
+        /* Enregistré AVANT toute sortie : « recues » est le registre
+           de ce qui a été ENVOYÉ, pas de ce à quoi l'on a pensé à
+           répondre. L'enregistrement venait après le retour anticipé,
+           si bien qu'un appel sans réponse posée — une déconnexion,
+           par exemple — n'y figurait jamais. Un test ne pouvait donc
+           pas vérifier qu'elle était partie. */
+        recues.push({ methode, table: `auth:${quoi}`, parametres: url.searchParams, corps, entetes });
         const reponse = auth[quoi];
         if (reponse === undefined) return json({ user: null, session: null });
         const valeur = typeof reponse === 'function' ? (reponse as (r: Requete) => unknown)({ methode, table: quoi, parametres: url.searchParams, corps, entetes }) : reponse;
-        recues.push({ methode, table: `auth:${quoi}`, parametres: url.searchParams, corps, entetes });
         if (valeur && typeof valeur === 'object' && 'erreur' in (valeur as object)) {
           return json({ error: 'invalid_grant', error_description: (valeur as { erreur: string }).erreur, msg: (valeur as { erreur: string }).erreur }, 400);
         }

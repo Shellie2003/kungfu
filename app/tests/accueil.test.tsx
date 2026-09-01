@@ -303,3 +303,54 @@ describe('le carrousel de l’accueil', () => {
     expect(document.querySelectorAll('.carrousel__vue')).toHaveLength(0);
   });
 });
+
+/* ============================================================
+   Le carrousel et les rôles.
+
+   Le club : « je veux que le carrousel soit disponible pour tous
+   les rôles ». Il l'est — la question n'a jamais été le rôle, mais
+   les IMAGES : sans photo du club et sans album, il n'a rien à
+   faire défiler, et c'est l'emplacement vide qui s'affiche.
+
+   Ces tests le disent explicitement, rôle par rôle, pour qu'on
+   cesse de le redécouvrir.
+   ============================================================ */
+const ALBUM_DEUX = {
+  id: 'al1',
+  titre: 'Compétitions',
+  categorie: 'Compétitions',
+  couverture: null,
+  photos: [
+    { id: 'ph1', chemin: 'une.jpg', legende: 'Finale', rang: 1 },
+    { id: 'ph2', chemin: 'deux.jpg', legende: 'Podium', rang: 2 }
+  ]
+};
+
+describe('le carrousel, pour chaque rôle', () => {
+  for (const [nom, profil] of [
+    ['l’administration', PROFIL_ADMIN],
+    ['un élève', PROFIL_ELEVE]
+  ] as const) {
+    test(`${nom} voit défiler les mêmes photos`, async () => {
+      poser({ albums: [ALBUM_DEUX] });
+      rendre(<Accueil />, { route: '/accueil', profil });
+
+      await waitFor(() =>
+        expect(document.querySelectorAll('.carrousel__vue').length).toBe(2)
+      );
+      expect(document.querySelectorAll('.carrousel__point')).toHaveLength(2);
+    });
+  }
+
+  test('sans image, personne ne voit de carrousel — le rôle n’y est pour rien', async () => {
+    for (const profil of [PROFIL_ADMIN, PROFIL_ELEVE]) {
+      reinitialiser();
+      brancherServeur();
+      poser({ ...VIDE, albums: [] });
+      const vue = rendre(<Accueil />, { route: '/accueil', profil });
+      await screen.findByText('Photo du club à fournir');
+      expect(document.querySelectorAll('.carrousel__vue')).toHaveLength(0);
+      vue.unmount();
+    }
+  });
+});

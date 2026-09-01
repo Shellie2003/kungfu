@@ -6,12 +6,13 @@
    la fiche montre le verrou ou les informations selon ce que le
    SERVEUR a rendu — jamais selon un test de rôle fait ici.
    ============================================================ */
-import { beforeEach, describe, expect, test } from 'vitest';
-import { screen, within } from '@testing-library/react';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Etudiants } from '../src/ecrans/Etudiants';
 import { Profil } from '../src/ecrans/Profil';
 import { brancherServeur, poser, reinitialiser } from './serveur';
+import { supabase } from '../src/services/supabase';
 import { PROFIL_ADMIN, PROFIL_ELEVE, rendre } from './rendu';
 
 const GRADES = [
@@ -249,5 +250,72 @@ describe('l’accessibilité', () => {
     const lignes = screen.getAllByRole('button');
     const ligne = lignes.find((l) => within(l).queryByText('RAKOTONDRABE'));
     expect(within(ligne!).getByText('Ceinture verte')).toBeInTheDocument();
+  });
+});
+
+/* ============================================================
+   Se déconnecter.
+
+   « seDeconnecter » existait dans le code depuis le premier jour et
+   RIEN ne l'appelait : il n'y avait aucun moyen de quitter sa
+   session. Sur un téléphone partagé — et le club en a — le suivant
+   héritait du compte du précédent, avec ses conversations et, pour
+   un maître, son espace confidentiel.
+   ============================================================ */
+describe('se déconnecter', () => {
+  const MOI_FICHE = {
+    ...MEMBRES[0], debut: null, biographie: null, profils_prives: null, tuteurs: []
+  };
+
+  test('depuis SA fiche, et après confirmation', async () => {
+    poser({ profils: [MOI_FICHE] });
+    rendre(<Profil />, { route: '/etudiants/p1', chemin: '/etudiants/:id', profil: PROFIL_ELEVE });
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Se déconnecter' }));
+
+    /* La confirmation n'est pas une politesse : se reconnecter
+       demande de retrouver son matricule et son mot de passe, et un
+       appui malheureux coûterait une séance. Elle RAPPELLE le
+       matricule, justement. */
+    const question = screen.getByText(/Se déconnecter de ce téléphone/);
+    /* Le matricule est RAPPELÉ dans la question : il figure aussi
+       plus haut, dans les informations de la fiche, d'où la
+       recherche à l'intérieur de la question et non dans tout
+       l'écran. */
+    expect(within(question).getByText('F04x042')).toBeInTheDocument();
+
+    /* On espionne « signOut » plutôt que le réseau : sans session
+       active, supabase-js ne fait AUCUN appel — il vide le stockage
+       local et rend la main. Un test qui guettait une requête
+       n'aurait donc jamais rien vu, et aurait déclaré la
+       déconnexion cassée alors qu'elle marche. */
+    const quitter = vi.spyOn(supabase.auth, 'signOut');
+    await userEvent.click(screen.getByRole('button', { name: 'Oui, me déconnecter' }));
+    await waitFor(() => expect(quitter).toHaveBeenCalled());
+    quitter.mockRestore();
+  });
+
+  test('« Annuler » ne déconnecte pas', async () => {
+    poser({ profils: [MOI_FICHE] });
+    rendre(<Profil />, { route: '/etudiants/p1', chemin: '/etudiants/:id', profil: PROFIL_ELEVE });
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Se déconnecter' }));
+    const quitter = vi.spyOn(supabase.auth, 'signOut');
+    await userEvent.click(screen.getByRole('button', { name: 'Annuler' }));
+
+    expect(screen.queryByText(/Se déconnecter de ce téléphone/)).not.toBeInTheDocument();
+    expect(quitter).not.toHaveBeenCalled();
+    quitter.mockRestore();
+  });
+
+  test('sur la fiche d’un AUTRE, aucune déconnexion', async () => {
+    /* Elle n'aurait aucun sens là : on regarde quelqu'un d'autre, et
+       un bouton « Se déconnecter » sous son nom laisserait croire
+       qu'on le déconnecte, lui. */
+    poser({ profils: [{ ...MEMBRES[1], debut: null, biographie: null, profils_prives: null, tuteurs: [] }] });
+    rendre(<Profil />, { route: '/etudiants/p4', chemin: '/etudiants/:id', profil: PROFIL_ELEVE });
+
+    await screen.findByText('RABEMANANJARA');
+    expect(screen.queryByRole('button', { name: 'Se déconnecter' })).not.toBeInTheDocument();
   });
 });
