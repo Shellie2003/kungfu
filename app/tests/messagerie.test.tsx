@@ -479,7 +479,7 @@ describe('joindre une photo', () => {
     rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
 
     await userEvent.upload(await screen.findByLabelText('Joindre une photo ou un document'), photo());
-    await screen.findByText('Photo jointe.');
+    await screen.findByText('Pièce jointe.');
     await userEvent.type(screen.getByLabelText('Écrire un message'), 'Voici l’affiche.');
     await userEvent.click(screen.getByLabelText('Envoyer'));
 
@@ -499,7 +499,7 @@ describe('joindre une photo', () => {
 
     expect(await screen.findByLabelText('Envoyer')).toBeDisabled();
     await userEvent.upload(screen.getByLabelText('Joindre une photo ou un document'), photo());
-    await screen.findByText('Photo jointe.');
+    await screen.findByText('Pièce jointe.');
 
     expect(screen.getByLabelText('Envoyer')).not.toBeDisabled();
   });
@@ -798,19 +798,50 @@ describe('l’envoi instantané', () => {
 });
 
 describe('les emoji', () => {
-  test('le choix s’ouvre et ajoute au message', async () => {
+  test('un emoji choisi PART, il ne se range pas dans le champ', async () => {
+    /* CE TEST DISAIT LE CONTRAIRE, et le club a demandé le
+       changement : « pour les emoji je veux l'envoyer directement
+       lorsque je le clique, pas l'introduire dans le champ de
+       saisie ».
+
+       Il a raison, et la raison est simple : un emoji seul EST le
+       message. « 👍 » répond à une convocation, il ne la commente
+       pas. Deux gestes pour un pouce levé, c'est un geste de trop —
+       et c'est pourquoi personne ne s'en servait. */
+    poser({ salons: [SALON_CLUB], messages: [] });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    await screen.findByLabelText('Écrire un message');
+    await userEvent.click(screen.getByLabelText('Choisir un emoji'));
+    await userEvent.click(screen.getByRole('button', { name: '👏' }));
+
+    const envoi = (await waitFor(() => {
+      const r = derniere('messages');
+      expect(r).toBeDefined();
+      return r!;
+    })).corps as { texte: string };
+    expect(envoi.texte).toBe('👏');
+
+    /* Le choix se referme : le laisser ouvert cacherait le fil sous
+       une grille de vingt-quatre boutons. */
+    expect(screen.queryByRole('button', { name: '👏' })).not.toBeInTheDocument();
+  });
+
+  test('la phrase en cours d’écriture n’est pas emportée', async () => {
+    /* On peut avoir commencé à écrire, envoyer un « 👏 » au passage,
+       puis reprendre sa phrase. L'effacer serait perdre du texte que
+       personne n'a demandé à perdre — et c'est le genre de perte
+       qu'on ne pardonne pas à une messagerie. */
     poser({ salons: [SALON_CLUB], messages: [] });
     rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
 
     const champ = await screen.findByLabelText('Écrire un message');
-    await userEvent.type(champ, 'Bravo');
+    await userEvent.type(champ, 'Je serai en retard');
     await userEvent.click(screen.getByLabelText('Choisir un emoji'));
     await userEvent.click(screen.getByRole('button', { name: '👏' }));
 
-    expect(champ).toHaveValue('Bravo👏');
-    /* Le choix se referme : le laisser ouvert cacherait le fil sous
-       une grille de vingt-quatre boutons. */
-    expect(screen.queryByRole('button', { name: '👏' })).not.toBeInTheDocument();
+    await waitFor(() => expect(derniere('messages')).toBeDefined());
+    expect(champ).toHaveValue('Je serai en retard');
   });
 
   test('au repos, la grille n’existe pas dans la page', async () => {
@@ -903,5 +934,63 @@ describe('un document se télécharge vraiment', () => {
     await waitFor(() =>
       expect(screen.queryByText('Toucher pour enregistrer')).not.toBeInTheDocument()
     );
+  });
+});
+
+describe('l’anneau de progression', () => {
+  /* « Ajouter un cercle de progression pour les imports ou envois de
+     document (photo, PDF, etc.) »
+
+     Ce qu'il remplace : le mot « Envoi de la photo… ». Ce mot ne
+     distingue pas « c'est parti, patiente » de « c'est bloqué depuis
+     une minute ». Sur la ligne d'Antananarivo, un PDF de cinq
+     mégaoctets met une bonne minute — et pendant cette minute, on
+     appuie une seconde fois.
+
+     Ce qui est tenu ici, c'est qu'il ANNONCE UN NOMBRE : un anneau
+     décoratif qui tourne sans rien mesurer serait une régression
+     déguisée en amélioration. */
+  test('il annonce une progression, pas une animation', async () => {
+    poser({ salons: [SALON_CLUB], messages: [] });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    const pdf = new File(['x'.repeat(2048)], 'convocation.pdf', { type: 'application/pdf' });
+    await userEvent.upload(
+      await screen.findByLabelText('Joindre une photo ou un document'),
+      pdf
+    );
+
+    /* Le rôle compte autant que l'anneau : un lecteur d'écran
+       annonce « 100 % » là où l'œil voit un cercle plein. */
+    await waitFor(() => expect(screen.getByText('Pièce jointe.')).toBeInTheDocument());
+    const anneaux = screen.queryAllByRole('progressbar');
+    /* L'envoi est fini : l'anneau a disparu, ce qui est le
+       comportement voulu — il ne reste pas à tourner après coup. */
+    expect(anneaux).toHaveLength(0);
+  });
+
+  test('un PDF n’est PAS passé dans le compresseur d’images', async () => {
+    /* La garde la plus importante de services/images.ts : un PDF
+       traversant un canevas ne serait pas compressé, il serait
+       remplacé par une image de sa première page. Ce qui arrive au
+       serveur doit rester un PDF, de la taille d'un PDF. */
+    poser({ salons: [SALON_CLUB], messages: [] });
+    rendre(<Salon />, { route: '/messages/s1', chemin: '/messages/:id', profil: PROFIL_ELEVE });
+
+    const pdf = new File(['%PDF-1.4 contenu'], 'convocation.pdf', { type: 'application/pdf' });
+    await userEvent.upload(
+      await screen.findByLabelText('Joindre une photo ou un document'),
+      pdf
+    );
+
+    const envoi = await waitFor(() => {
+      const r = [...recues].reverse().find((x) => x.chemin?.includes('/object/pieces/'));
+      expect(r).toBeDefined();
+      return r!;
+    });
+    /* Le chemin garde « .pdf », pas « .jpg » — c'est la trace
+       visible que le fichier n'a pas été converti. */
+    expect(envoi.chemin).toMatch(/--convocation\.pdf$/);
+    expect(envoi.entetes['content-type']).toBe('application/pdf');
   });
 });

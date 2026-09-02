@@ -16,7 +16,10 @@
    ============================================================ */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from './supabase';
-import { enParallele, reduire } from './images';
+import { enParallele } from './images';
+import type { Usage } from './images';
+import { reduireEtEnvoyer } from './envoi';
+import type { Progres } from './envoi';
 import type { Role } from './session';
 
 /* Après une écriture, les listes en mémoire sont périmées.
@@ -348,7 +351,12 @@ export function useSupprimerAlbum() {
 /* Le fichier part dans un seau, la base n'en garde que le chemin.
    Le nom est tiré au sort : deux téléphones qui envoient tous deux
    « IMG_0001.jpg » écraseraient sinon la photo l'un de l'autre. */
-export async function televerser(seau: string, fichier: File): Promise<string> {
+export async function televerser(
+  seau: string,
+  fichier: File,
+  usage: Usage = 'fil',
+  progres?: Progres
+): Promise<string> {
   /* ⚠ La RÉDUCTION, qui manquait ici.
 
      Elle n'existait que dans la messagerie. Les albums, les portraits
@@ -357,20 +365,14 @@ export async function televerser(seau: string, fichier: File): Promise<string> {
      Le club a signalé un import « horriblement lent » : c'en est la
      moitié de la cause.
 
-     Mesuré dans un navigateur sur un cliché 4032x3024 :
-     7436 ko → 1086 ko. Presque sept fois moins à transporter, pour
-     celui qui envoie comme pour chacun des soixante-quatre qui
-     regardent ensuite. */
-  const envoye = await reduire(fichier);
-  const ext = envoye.name.split('.').pop()?.toLowerCase() ?? 'jpg';
-  const chemin = `${crypto.randomUUID()}.${ext}`;
-  const { error } = await supabase.storage.from(seau).upload(chemin, envoye, {
-    cacheControl: '3600',
-    upsert: false,
-    contentType: envoye.type
-  });
-  if (error) throw error;
-  return chemin;
+     « usage » dit ce que l'image DEVIENT, et le réglage en découle :
+     un portrait finit imprimé sur une carte de membre et se ménage,
+     une photo de fil se serre davantage. Voir services/images.ts.
+
+     L'envoi passe par XMLHttpRequest et non par supabase-js : c'est
+     la seule façon de savoir où en est un envoi, et donc de montrer
+     un anneau qui dit la vérité plutôt qu'un « Envoi… » immobile. */
+  return reduireEtEnvoyer(seau, fichier, usage, progres);
 }
 
 /* L'album est un paramètre de la MUTATION, pas du hook. Le passer
@@ -380,8 +382,16 @@ export async function televerser(seau: string, fichier: File): Promise<string> {
 export function useAjouterPhotos() {
   return useEcrire(
     async ({
-      albumId, fichiers, legende
-    }: { albumId: string; fichiers: File[]; legende?: string }) => {
+      albumId, fichiers, legende, progres
+    }: {
+      albumId: string;
+      fichiers: File[];
+      legende?: string;
+      /* Combien de photos sont finies, sur combien. L'anneau d'une
+         série de vingt n'a rien à montrer entre le début et la fin
+         sans cela — et vingt photos, c'est une à deux minutes. */
+      progres?: (finies: number, total: number) => void;
+    }) => {
       if (!albumId) throw new Error('Aucun album choisi.');
       /* La légende est celle de l'ENVOI, donc la même pour les vingt
          photos qui rentrent d'une compétition — « Championnat
@@ -424,7 +434,12 @@ export function useAjouterPhotos() {
          connexion et les feraient toutes échouer au lieu d'une — puis
          une seule insertion pour toutes les lignes. L'ordre des
          résultats est conservé : il porte le rang. */
-      const chemins = await enParallele(fichiers, 3, (f) => televerser('album', f));
+      const chemins = await enParallele(
+        fichiers,
+        3,
+        (f) => televerser('album', f),
+        progres
+      );
 
       const { data, error } = await supabase
         .from('photos')

@@ -15,6 +15,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from './supabase';
 import { TYPES_IMAGE, reduire } from './images';
+import { envoyerFichier } from './envoi';
+import type { Progres } from './envoi';
 
 export type TypeSalon = 'club' | 'grade' | 'evenement' | 'direct' | 'maitres';
 
@@ -279,7 +281,11 @@ export function nomDeLaPiece(chemin: string): string | null {
 export const estImage = (chemin: string): boolean =>
   /\.(jpe?g|png|webp)$/i.test(chemin);
 
-export async function joindre(salonId: string, fichier: File): Promise<string> {
+export async function joindre(
+  salonId: string,
+  fichier: File,
+  progres?: Progres
+): Promise<string> {
   if (!TYPES_ACCEPTES.includes(fichier.type)) {
     throw new Error(
       `Ce type de fichier n’est pas accepté : « ${fichier.type || 'type inconnu'} ». ` +
@@ -295,17 +301,16 @@ export async function joindre(salonId: string, fichier: File): Promise<string> {
   /* La réduction vient APRÈS le contrôle de taille : un fichier de
      vingt mégaoctets doit être refusé, pas rattrapé en douce. Ce
      serait promettre une limite qu'on n'applique pas. */
+  /* Un DOCUMENT ne traverse pas « reduire » — la fonction le rend
+     tel quel, et c'est sa garde la plus importante : un PDF passé
+     dans un canevas ne serait pas compressé, il serait remplacé par
+     une image de sa première page. */
   const envoye = await reduire(fichier);
 
   /* L'extension n'est plus calculée à part : le nom conservé la
      porte déjà, et c'est elle que lit « estImage ». */
   const chemin = `${salonId}/${crypto.randomUUID()}${SEPARATEUR}${nomSur(envoye.name)}`;
-  const { error } = await supabase.storage.from('pieces').upload(chemin, envoye, {
-    cacheControl: '3600',
-    upsert: false,
-    contentType: envoye.type
-  });
-  if (error) throw error;
+  await envoyerFichier('pieces', chemin, envoye, progres);
   return chemin;
 }
 

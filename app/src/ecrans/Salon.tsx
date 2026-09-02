@@ -11,6 +11,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Icone } from '../ui/Icone';
 import { Bouton, Carte, ChoisirFichier, Entete, Surtitre } from '../ui/base';
 import { ChoixEmoji } from '../ui/Emoji';
+import { Anneau } from '../ui/Anneau';
 import {
   MINUTES_CORRECTION,
   corrigible,
@@ -213,11 +214,16 @@ function Saisie({
 }: {
   envoyer: (texte: string, piece: string | null) => void;
   occupe: boolean;
-  joindreFichier: ((f: File) => Promise<string>) | null;
+  joindreFichier: ((f: File, progres: (p: number | null) => void) => Promise<string>) | null;
 }) {
   const [texte, setTexte] = useState('');
   const [piece, setPiece] = useState<string | null>(null);
   const [envoiPiece, setEnvoiPiece] = useState(false);
+  /* Où en est l'envoi de la pièce, de 0 à 1 — puis « null » quand
+     tout est parti et qu'on attend le serveur. Un PDF de cinq
+     mégaoctets met une bonne minute sur la ligne d'Antananarivo :
+     sans repère, on croit que rien ne se passe. */
+  const [partPiece, setPartPiece] = useState<number | null>(null);
   const [souci, setSouci] = useState<string | null>(null);
   const [emoji, setEmoji] = useState(false);
   /* Pour rendre le clavier après un choix : sans cela, le champ perd
@@ -257,7 +263,15 @@ function Saisie({
           }}
         >
           <span style={{ flexGrow: 1 }}>
-            {souci ?? (envoiPiece ? 'Envoi de la photo…' : 'Photo jointe.')}
+            {/* L'ANNEAU PENDANT L'ENVOI, le texte le reste du temps.
+
+                C'était « Envoi de la photo… », qui ne distingue pas
+                « c'est parti » de « c'est bloqué ». Un PDF de cinq
+                mégaoctets met une bonne minute sur la ligne
+                d'Antananarivo, et pendant cette minute on appuie une
+                seconde fois. L'anneau suit les octets réellement
+                partis : quand le réseau s'arrête, il s'arrête. */}
+            {souci ?? (envoiPiece ? <Anneau part={partPiece} taille={26} epaisseur={3} /> : 'Pièce jointe.')}
           </span>
           {piece && (
             <button
@@ -282,13 +296,18 @@ function Saisie({
           onFichier={async ([f]) => {
             if (!f) return;
             setEnvoiPiece(true);
+            setPartPiece(0);
             setSouci(null);
             try {
-              setPiece(await joindreFichier(f));
+              setPiece(await joindreFichier(f, setPartPiece));
             } catch (err) {
-              setSouci(`Photo refusée : ${(err as Error).message}`);
+              /* « Fichier » et non « Photo » : depuis que les
+                 documents sont acceptés, un PDF refusé s'annonçait
+                 comme une photo refusée. */
+              setSouci(`Fichier refusé : ${(err as Error).message}`);
             } finally {
               setEnvoiPiece(false);
+              setPartPiece(0);
             }
           }}
         />
@@ -297,13 +316,25 @@ function Saisie({
         <ChoixEmoji
           onFermer={() => setEmoji(false)}
           onChoisir={(e) => {
-            /* On AJOUTE à la fin plutôt que d'insérer au curseur :
-               insérer demanderait de suivre la position dans un champ
-               que le clavier d'Android réécrit à sa guise, et se
-               tromperait de place une fois sur trois. */
-            setTexte((t) => (t + e).slice(0, 4000));
+            /* L'EMOJI PART TOUT DE SUITE.
+
+               Il s'ajoutait au champ de saisie, et il fallait encore
+               appuyer sur « envoyer ». Le club a demandé l'inverse,
+               et il a raison : un emoji seul EST le message. « 👍 »
+               répond à une convocation, il ne la commente pas. Deux
+               gestes pour un pouce levé, c'est un geste de trop, et
+               c'est la raison pour laquelle personne ne s'en servait.
+
+               Ce qui est en cours d'écriture n'est pas touché : on
+               peut avoir commencé une phrase, envoyer un « 👏 », et
+               reprendre sa phrase où on l'avait laissée. L'écraser
+               ou l'emporter serait perdre du texte que personne n'a
+               demandé à perdre.
+
+               La pièce jointe non plus n'est pas emportée : elle
+               attend son propre envoi. */
             setEmoji(false);
-            champ.current?.focus();
+            envoyer(e, null);
           }}
         />
       )}

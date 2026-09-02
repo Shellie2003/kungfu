@@ -8,6 +8,7 @@ import { Avis, ChoisirFichier, Entete, Etat, Feuille, Puce, Surtitre, Zone } fro
 import { useAlbums } from '../services/club';
 import { useUrls } from '../services/stockage';
 import { useAjouterPhotos } from '../services/admin';
+import { Anneau } from '../ui/Anneau';
 import { estMaitre, useSession } from '../services/session';
 
 export function Album() {
@@ -45,16 +46,27 @@ export function Album() {
   const [cible, setCible] = useState<{ id: string; titre: string } | null>(null);
   const [legende, setLegende] = useState('');
   const [avis, setAvis] = useState<{ bon: boolean; texte: string } | null>(null);
+  /* Combien de photos sont parties, sur combien. Vingt photos, c'est
+     une à deux minutes sur la ligne d'Antananarivo : sans repère, on
+     appuie une seconde fois et l'on envoie tout deux fois. */
+  const [avancement, setAvancement] = useState<{ finies: number; total: number } | null>(null);
 
   const envoyer = (fichiers: File[]) => {
     if (!cible || !fichiers.length) return;
     setAvis(null);
+    setAvancement({ finies: 0, total: fichiers.length });
     ajouter.mutate(
-      { albumId: cible.id, fichiers, legende },
+      {
+        albumId: cible.id,
+        fichiers,
+        legende,
+        progres: (finies, total) => setAvancement({ finies, total })
+      },
       {
         onSuccess: () => {
           setCible(null);
           setLegende('');
+          setAvancement(null);
           setAvis({
             bon: true,
             texte: `${fichiers.length} photo${fichiers.length > 1 ? 's' : ''} ajoutée${fichiers.length > 1 ? 's' : ''}.`
@@ -63,7 +75,10 @@ export function Album() {
         /* La feuille RESTE ouverte sur un refus : la refermer
            emporterait la légende qui vient d'être écrite, et
            laisserait croire que c'est passé. */
-        onError: (e) => setAvis({ bon: false, texte: `Refusé : ${(e as Error).message}` })
+        onError: (e) => {
+          setAvancement(null);
+          setAvis({ bon: false, texte: `Refusé : ${(e as Error).message}` });
+        }
       }
     );
   };
@@ -239,10 +254,21 @@ export function Album() {
             desactive={ajouter.isPending}
             onFichier={envoyer}
           />
-          {ajouter.isPending && (
-            <p role="status" style={{ fontSize: 12.5, color: '#59685F' }}>
-              Envoi en cours…
-            </p>
+          {/* L'ANNEAU PLUTÔT QUE « Envoi en cours… ».
+
+              Le mot ne distingue pas « c'est parti » de « c'est
+              bloqué depuis une minute ». L'anneau suit les photos
+              réellement écrites : quand le réseau s'arrête, il
+              s'arrête. C'est l'information qu'on veut. */}
+          {ajouter.isPending && avancement && (
+            <Anneau
+              part={avancement.total ? avancement.finies / avancement.total : null}
+              libelle={
+                avancement.total > 1
+                  ? `${avancement.finies} sur ${avancement.total} photos`
+                  : 'la photo'
+              }
+            />
           )}
           {avis && !avis.bon && <Avis bon={false}>{avis.texte}</Avis>}
           <button className="link" onClick={() => setCible(null)}>

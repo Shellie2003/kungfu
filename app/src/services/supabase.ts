@@ -7,7 +7,8 @@
    ============================================================ */
 import { createClient } from '@supabase/supabase-js';
 
-const URL = import.meta.env.VITE_SUPABASE_URL;
+export const ADRESSE = import.meta.env.VITE_SUPABASE_URL;
+const URL = ADRESSE;
 const CLE = import.meta.env.VITE_SUPABASE_CLE;
 
 if (!URL || !CLE) {

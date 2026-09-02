@@ -14,6 +14,7 @@
    vérifier — le pire des deux mondes.
    ============================================================ */
 import { vi } from 'vitest';
+import { supabase } from '../src/services/supabase';
 
 export const URL_ESSAI = 'https://essai.supabase.co';
 
@@ -114,6 +115,12 @@ const json = (corps: unknown, statut = 200) =>
   });
 
 export function brancherServeur() {
+  /* Les deux, toujours : un test qui branche le serveur veut que
+     TOUT le réseau soit simulé, pas seulement la moitié qui passe
+     par « fetch ». Les oublier a fait expirer huit tests d'envoi de
+     photo le jour où les envois sont passés à XMLHttpRequest. */
+  brancherXHR();
+  poserSessionLocale();
   vi.stubGlobal(
     'fetch',
     vi.fn(async (entree: RequestInfo | URL, options?: RequestInit) => {
@@ -272,4 +279,103 @@ export function brancherServeur() {
       return json(valeur);
     })
   );
+}
+
+/* ============================================================
+   XMLHttpRequest, parce que l'envoi de fichiers ne passe plus par
+   « fetch ».
+
+   Les pièces jointes, les portraits et les photos d'album partent
+   maintenant par XMLHttpRequest : c'est la seule façon de savoir où
+   en est un ENVOI et donc d'afficher un anneau de progression qui
+   dit la vérité. « fetch » ne le sait pas, et ne le saura pas dans
+   la WebView d'un Android 9.
+
+   Le bouchon du navigateur (outils/bouchon.mjs) n'a rien eu à
+   changer : « page.route » intercepte tout le réseau, quel que soit
+   le moyen. Ici, en revanche, seul « fetch » était remplacé — les
+   huit tests d'envoi de photo sont donc partis chercher un vrai
+   serveur et ont expiré.
+
+   Ce faux XHR ne réimplémente pas la norme : il en fait juste assez
+   pour que le code d'envoi marche, et il retombe sur le MÊME
+   traitement que « fetch ». Les requêtes se retrouvent donc dans
+   « recues » comme les autres, et un test peut vérifier ce qui est
+   parti.
+   ============================================================ */
+class FauxXHR {
+  status = 0;
+  responseText = '';
+  upload = {
+    onprogress: null as ((e: ProgressEvent) => void) | null,
+    onload: null as (() => void) | null
+  };
+  onload: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  onabort: (() => void) | null = null;
+
+  private methode = 'GET';
+  private adresse = '';
+  private entetes: Record<string, string> = {};
+
+  open(methode: string, adresse: string) {
+    this.methode = methode;
+    this.adresse = adresse;
+  }
+
+  setRequestHeader(nom: string, valeur: string) {
+    this.entetes[nom] = valeur;
+  }
+
+  send(corps?: Blob | null) {
+    /* La progression est annoncée AVANT la réponse, comme sur un
+       vrai réseau : un test peut donc voir l'anneau à mi-chemin. */
+    const total = corps instanceof Blob ? corps.size : 0;
+    this.upload.onprogress?.({ lengthComputable: true, loaded: total, total } as ProgressEvent);
+    this.upload.onload?.();
+
+    void (globalThis.fetch as typeof fetch)(this.adresse, {
+      method: this.methode,
+      headers: this.entetes,
+      body: corps as BodyInit
+    })
+      .then(async (r) => {
+        this.status = r.status;
+        this.responseText = await r.text();
+        this.onload?.();
+      })
+      .catch(() => this.onerror?.());
+  }
+}
+
+export function brancherXHR() {
+  vi.stubGlobal('XMLHttpRequest', FauxXHR);
+}
+
+/* ------------------------------------------------------------
+   Le jeton de session, pour l'envoi de fichiers.
+
+   L'envoi pose lui-même l'en-tête « Authorization », ce que
+   supabase-js faisait pour lui auparavant. Il demande donc le jeton
+   à « supabase.auth.getSession() ». Sans session, il s'arrête avant
+   de partir sur « Session expirée » — le bon comportement, et ce qui
+   a fait tomber huit tests d'envoi de photo qui n'avaient jamais eu
+   besoin d'une session jusque-là.
+
+   J'ai d'abord écrit la session dans localStorage, sous la clé que
+   supabase-js emploie. Elle n'était pas relue : le client garde en
+   mémoire ce qu'il a lu au démarrage, et il avait déjà conclu qu'il
+   n'y avait pas de session. Écrire dans le stockage APRÈS ne change
+   plus rien.
+
+   On remplace donc la méthode elle-même. C'est plus direct, et
+   surtout c'est HONNÊTE : le test dit « il y a une session », il ne
+   fait pas semblant d'en fabriquer une par un chemin détourné qui
+   pourrait marcher pour de mauvaises raisons.
+   ------------------------------------------------------------ */
+export function poserSessionLocale(id = 'u1') {
+  vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+    data: { session: sessionFactice(id) },
+    error: null
+  } as never);
 }

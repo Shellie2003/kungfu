@@ -268,3 +268,24 @@ body {
   color: #59685F;
   margin-top: 1px;
 }
+
+/* ------------------------------------------------------------
+   L'anneau de progression.
+
+   La rotation ne sert QUE pendant l'attente de la réponse du
+   serveur — le moment où tout est parti et où l'on ne sait plus rien
+   dire de précis. La progression elle-même n'est pas animée : c'est
+   une information, pas une décoration.
+
+   « prefers-reduced-motion » arrête la rotation. L'anneau plein
+   reste, et il continue de dire ce qu'il a à dire.
+   ------------------------------------------------------------ */
+.anneau--attente { animation: anneau-tourne 1.1s linear infinite; }
+
+@keyframes anneau-tourne {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anneau--attente { animation: none; }
+}
