@@ -176,6 +176,19 @@ jobs:
       - name: Faire tourner le carrousel
         run: node outils/verifier-carrousel.mjs
 
+      # L'application et le seau doivent accepter les MÊMES fichiers.
+      #
+      # Le PDF était proposé par l'écran, accepté par le sélecteur,
+      # autorisé par messagerie.ts, couvert par des tests — et refusé
+      # par le seau, dont la liste n'avait jamais quitté les trois
+      # types d'images. L'envoi durait plusieurs secondes avant
+      # d'échouer.
+      #
+      # C'est un défaut de RACCORD, et c'est le quatrième du projet.
+      # Celui-ci ne peut plus passer.
+      - name: Comparer l’application et les seaux
+        run: node outils/verifier-seaux.mjs
+
       # Ce que le téléphone télécharge avant d'afficher le premier
       # écran. Sans mesure, un paquet grossit d'un import à la fois —
       # chacun raisonnable — et le total se découvre un an plus tard,
