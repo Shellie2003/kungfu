@@ -14,11 +14,12 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icone } from '../../ui/Icone';
-import { Avis, Carte, Entete, Etat, Surtitre, Tuile } from '../../ui/base';
+import { Avis, Bouton, Carte, Entete, Etat, Surtitre, Tuile } from '../../ui/base';
 import {
-  useChangerRole, useComptes, useCreerCompte, useReinitialiser
+  useChangerRole, useComptes, useCreerCompte, useReinitialiser,
+  useSupprimerMembre, useSuspendre
 } from '../../services/admin';
-import { useSession } from '../../services/session';
+import { estSuper, useSession } from '../../services/session';
 import type { Role } from '../../services/session';
 import { correspond } from '../../services/texte';
 
@@ -34,7 +35,26 @@ export function AdminComptes() {
   const creer = useCreerCompte();
   const reinitialiser = useReinitialiser();
   const role = useChangerRole();
+  const suspendre = useSuspendre();
+  const supprimer = useSupprimerMembre();
   const moi = useSession((e) => e.profil);
+  /* « Seul lui peut suspendre, supprimer définitivement un membre. »
+
+     Ce n'est PAS ce qui protège : la fonction déployée refuse ces
+     deux actions à qui n'est pas super administrateur, et la règle de
+     suppression de la table exige la même chose. Un écran qui cache
+     un bouton n'empêche rien — la fonction reste appelable avec le
+     jeton de n'importe quel administrateur, depuis n'importe quel
+     outil.
+
+     Ce que l'écran fait, c'est ne pas proposer ce qui sera refusé.
+     Montrer un bouton qui mène à une erreur laisse la personne se
+     demander si le fautif est elle. */
+  const superAdmin = estSuper(moi);
+  /* Ce qu'on s'apprête à supprimer, en attente de confirmation. La
+     suppression est DÉFINITIVE et le projet n'a pas de corbeille :
+     un appui de trop effacerait dix ans d'historique d'un membre. */
+  const [aSupprimer, setASupprimer] = useState<{ id: string; qui: string } | null>(null);
   const [q, setQ] = useState('');
   const [avis, setAvis] = useState<{ bon: boolean; texte: string } | null>(null);
 
@@ -183,11 +203,100 @@ export function AdminComptes() {
                   >
                     {c.compte_id ? 'Réinitialiser' : 'Créer le compte'}
                   </button>
+
+                  {/* ---- SUSPENDRE ET SUPPRIMER : au super
+                      administrateur seul, et jamais soi-même ----
+
+                      Se suspendre ou se supprimer déconnecte
+                      définitivement ; si c'est le dernier super
+                      administrateur, plus personne ne peut en nommer
+                      un autre et le club est enfermé dehors. Le
+                      serveur le refuse aussi — ici, on ne le propose
+                      simplement pas. */}
+                  {superAdmin && c.id !== moi?.id && (
+                    <>
+                      {c.compte_id && (
+                        <button
+                          className="link"
+                          style={{ padding: '0 4px', color: '#8A3B12' }}
+                          disabled={suspendre.isPending}
+                          onClick={() =>
+                            traiter(
+                              suspendre.mutateAsync({ profilId: c.id, suspendu: c.actif })
+                            )
+                          }
+                        >
+                          {c.actif ? 'Suspendre' : 'Réactiver'}
+                        </button>
+                      )}
+                      <button
+                        className="link"
+                        style={{ padding: '0 4px', color: '#B3341A' }}
+                        aria-label={`Supprimer définitivement ${c.nom} ${c.prenom}`}
+                        onClick={() =>
+                          setASupprimer({ id: c.id, qui: `${c.nom} ${c.prenom}` })
+                        }
+                      >
+                        Supprimer
+                      </button>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
           </Etat>
         </div>
+
+        {/* ---- LA CONFIRMATION, PARCE QUE C'EST DÉFINITIF ----
+
+            Le projet désactive au lieu de supprimer, partout ailleurs.
+            Ici l'effacement est réel : la fiche, la vie privée, les
+            tuteurs, l'appartenance aux salons et les présences
+            partent avec. Il n'y a pas de corbeille, et rien ne se
+            rattrape.
+
+            Le nom est écrit dans la question. « Supprimer ce
+            membre ? » se répond « oui » sans lire ; « Supprimer
+            RAKOTONDRABE Nirina ? » fait relever les yeux. */}
+        {aSupprimer && (
+          <Carte pad={16} style={{ background: '#FFF7F2', borderColor: '#F2D8C6' }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#8A3B12' }}>
+              Supprimer définitivement {aSupprimer.qui} ?
+            </p>
+            <p style={{ fontSize: 12.5, lineHeight: '18px', color: '#6B4218', marginTop: 8 }}>
+              Sa fiche, ses informations privées, ses tuteurs, ses présences et son compte de
+              connexion seront effacés. Il n’y a pas de corbeille : rien ne se rattrape. Pour
+              écarter un membre sans rien perdre, suspendez-le plutôt.
+            </p>
+            <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+              <Bouton
+                genre="ghost"
+                desactive={supprimer.isPending}
+                onClick={() => {
+                  const qui = aSupprimer.qui;
+                  supprimer.mutate(
+                    { profilId: aSupprimer.id },
+                    {
+                      onSuccess: (r) => {
+                        setASupprimer(null);
+                        setAvis(
+                          r.ok
+                            ? { bon: true, texte: `${qui} a été supprimé définitivement.` }
+                            : { bon: false, texte: r.message ?? 'Le serveur a refusé.' }
+                        );
+                      },
+                      onError: (e) =>
+                        setAvis({ bon: false, texte: (e as Error).message })
+                    }
+                  );
+                }}
+              >
+                {supprimer.isPending ? 'Suppression…' : 'Supprimer définitivement'}
+              </Bouton>
+              <Bouton onClick={() => setASupprimer(null)}>Annuler</Bouton>
+            </div>
+          </Carte>
+        )}
 
         <div className="warn">
           <i />

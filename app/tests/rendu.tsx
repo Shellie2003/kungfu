@@ -30,12 +30,24 @@ function clientNeuf() {
 
 export const PROFIL_ELEVE: Profil = {
   id: 'p1', numero: 'F04x042', nom: 'RAKOTONDRABE', prenom: 'Nirina',
-  role: 'eleve', grade_id: 'gv', photo: null
+  role: 'eleve', grade_id: 'gv', photo: null, super_admin: false
 };
 
 export const PROFIL_ADMIN: Profil = {
   id: 'p0', numero: 'F04x001', nom: 'IDEALY', prenom: 'Santatra',
-  role: 'admin', grade_id: 'gn', photo: null
+  role: 'admin', grade_id: 'gn', photo: null, super_admin: false
+};
+
+/* LE SUPER ADMINISTRATEUR : un administrateur, PLUS le pouvoir de
+   décider des rôles, de suspendre et de supprimer.
+
+   Il est distinct de PROFIL_ADMIN à dessein. La plupart des tests
+   doivent tourner en administrateur ORDINAIRE : c'est le cas le plus
+   fréquent dans le club, et c'est celui où l'on risque de montrer un
+   bouton qui mènerait à un refus du serveur. */
+export const PROFIL_SUPER: Profil = {
+  id: 'p9', numero: 'F04x000', nom: 'IDEALY', prenom: 'Santatra',
+  role: 'admin', grade_id: 'gn', photo: null, super_admin: true
 };
 
 /* Le maître : ni élève ni administration. C'est le rôle qui a le
@@ -43,7 +55,7 @@ export const PROFIL_ADMIN: Profil = {
    club sans avoir la main sur les réglages d'argent. */
 export const PROFIL_MAITRE: Profil = {
   id: 'p4', numero: 'F04x045', nom: 'RABEMANANJARA', prenom: 'Hery',
-  role: 'maitre', grade_id: 'gn', photo: null
+  role: 'maitre', grade_id: 'gn', photo: null, super_admin: false
 };
 
 export function poserProfil(profil: Profil | null) {

@@ -32,7 +32,7 @@ describe('ajouter un étudiant', () => {
   test('refuse d’envoyer sans nom ni prénom', async () => {
     rendre(<AdminFiche />, { route: '/admin/fiche', chemin: '/admin/fiche' });
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Créer la fiche' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Inscrire ce membre' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('obligatoires');
     /* Et rien n'est parti : une validation qui prévient APRÈS avoir
        écrit une ligne incomplète ne sert à rien. */
@@ -47,7 +47,7 @@ describe('ajouter un étudiant', () => {
 
     await userEvent.type(await screen.findByLabelText(/^Nom/), 'razafy');
     await userEvent.type(screen.getByLabelText(/^Prénom/), 'Lalaina');
-    await userEvent.click(screen.getByRole('button', { name: 'Créer la fiche' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Inscrire ce membre' }));
 
     await waitFor(() => expect(derniere('rpc:prochain_numero')).toBeDefined());
     const envoi = await waitFor(() => {
@@ -64,7 +64,7 @@ describe('ajouter un étudiant', () => {
 
     await userEvent.type(await screen.findByLabelText(/^Nom/), '  rakotondrabe  ');
     await userEvent.type(screen.getByLabelText(/^Prénom/), '  Nirina  ');
-    await userEvent.click(screen.getByRole('button', { name: 'Créer la fiche' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Inscrire ce membre' }));
 
     await waitFor(() =>
       expect(derniere('profils')?.corps).toMatchObject({
@@ -85,7 +85,7 @@ describe('ajouter un étudiant', () => {
     await userEvent.type(await screen.findByLabelText(/^Nom/), 'Razafy');
     await userEvent.type(screen.getByLabelText(/^Prénom/), 'Lalaina');
     await userEvent.type(screen.getByLabelText('Date de naissance'), '2010-05-04');
-    await userEvent.click(screen.getByRole('button', { name: 'Créer la fiche' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Inscrire ce membre' }));
 
     await waitFor(() => expect(derniere('profils_prives')).toBeDefined());
     expect(derniere('profils_prives')?.corps).toMatchObject({
@@ -102,7 +102,7 @@ describe('ajouter un étudiant', () => {
 
     await userEvent.type(await screen.findByLabelText(/^Nom/), 'Razafy');
     await userEvent.type(screen.getByLabelText(/^Prénom/), 'Lalaina');
-    await userEvent.click(screen.getByRole('button', { name: 'Créer la fiche' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Inscrire ce membre' }));
 
     await waitFor(() => expect(derniere('profils')).toBeDefined());
     expect(derniere('profils_prives')).toBeUndefined();
@@ -117,7 +117,7 @@ describe('ajouter un étudiant', () => {
     await userEvent.type(await screen.findByLabelText(/^Nom/), 'Razafy');
     await userEvent.type(screen.getByLabelText(/^Prénom/), 'Lalaina');
     await userEvent.type(screen.getByLabelText('Note de l’encadrement'), 'Rentre à pied.');
-    await userEvent.click(screen.getByRole('button', { name: 'Créer la fiche' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Inscrire ce membre' }));
 
     await waitFor(() =>
       expect(derniere('profils_prives')?.corps).toMatchObject({ notes: 'Rentre à pied.' })
@@ -134,7 +134,7 @@ describe('ajouter un étudiant', () => {
     await userEvent.type(await screen.findByLabelText(/^Nom/), 'Razafy');
     await userEvent.type(screen.getByLabelText(/^Prénom/), 'Lalaina');
     await userEvent.type(screen.getByLabelText('Note de l’encadrement'), 'Genou fragile.');
-    await userEvent.click(screen.getByRole('button', { name: 'Créer la fiche' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Inscrire ce membre' }));
 
     await waitFor(() => expect(derniere('profils_prives')).toBeDefined());
   });

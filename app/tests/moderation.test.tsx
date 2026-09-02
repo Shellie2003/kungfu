@@ -17,7 +17,7 @@ import type { Profil } from '../src/services/session';
 
 const PROFIL_MAITRE: Profil = {
   id: 'p4', numero: 'F04x045', nom: 'RABEMANANJARA', prenom: 'Hery',
-  role: 'maitre', grade_id: 'gn', photo: null
+  role: 'maitre', grade_id: 'gn', photo: null, super_admin: false
 };
 
 const SIGNALEMENT = {

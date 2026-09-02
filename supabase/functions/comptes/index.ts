@@ -87,7 +87,7 @@ Deno.serve(async (requete) => {
 
   const { data: moi, error: eMoi } = await commeAppelant
     .from('profils')
-    .select('id, role')
+    .select('id, role, super_admin')
     .eq('compte_id', compte)
     .maybeSingle();
 
@@ -95,6 +95,7 @@ Deno.serve(async (requete) => {
   if (moi.role !== 'admin') {
     return repondre({ message: 'Réservé à l’administration.' }, 403);
   }
+  const superAdmin = moi.super_admin === true;
 
   /* --- L'action demandée --- */
   let corps: { action?: string; profilId?: string; suspendu?: boolean };
@@ -105,6 +106,48 @@ Deno.serve(async (requete) => {
   }
   const { action, profilId } = corps;
   if (!action || !profilId) return repondre({ message: 'action et profilId sont requis.' }, 400);
+
+  /* ------------------------------------------------------------
+     CE QUI EST RÉSERVÉ AU SUPER ADMINISTRATEUR.
+
+     « Seul lui peut suspendre, supprimer définitivement un membre. »
+
+     Le contrôle est ICI, sur le serveur, et non dans l'écran. Un
+     écran qui cache un bouton ne protège rien : la fonction est
+     appelable par n'importe quel administrateur avec son propre
+     jeton, depuis n'importe quel outil. C'est le même raisonnement
+     qui fait vivre la clé de service sur le serveur plutôt que dans
+     l'APK.
+
+     La création de compte et la réinitialisation de mot de passe
+     restent à l'administration ordinaire : ce sont les gestes du
+     quotidien — un membre a perdu son mot de passe un samedi matin —
+     et les réserver au super administrateur ferait attendre le club
+     sans rien protéger de plus.
+     ------------------------------------------------------------ */
+  if ((action === 'suspendre' || action === 'supprimer') && !superAdmin) {
+    return repondre(
+      {
+        message:
+          action === 'supprimer'
+            ? 'Supprimer définitivement un membre est réservé au super administrateur.'
+            : 'Suspendre un membre est réservé au super administrateur.'
+      },
+      403
+    );
+  }
+
+  /* On ne se suspend ni ne se supprime soi-même : le super
+     administrateur se déconnecterait définitivement, et s'il est le
+     dernier, plus personne ne peut en nommer un autre. Le club
+     serait enfermé dehors, et cela ne se rattraperait que par le
+     tableau de bord Supabase. */
+  if ((action === 'suspendre' || action === 'supprimer') && profilId === moi.id) {
+    return repondre(
+      { message: 'On ne peut pas se suspendre ni se supprimer soi-même.' },
+      400
+    );
+  }
 
   const admin = createClient(URL, CLE_SERVICE, { auth: { persistSession: false } });
 
@@ -160,6 +203,41 @@ Deno.serve(async (requete) => {
     });
     if (error) return repondre({ message: error.message }, 400);
     return repondre({ ok: true });
+  }
+
+  if (action === 'supprimer') {
+    /* ⚠ DÉFINITIF, ET DANS CET ORDRE.
+
+       Le projet DÉSACTIVE partout ailleurs — un grade retiré, une
+       fiche d'élève, un créneau d'horaire — parce qu'effacer casse un
+       historique que personne ne peut reconstituer. Le club a demandé
+       la suppression définitive pour ce seul compte ; elle existe
+       donc, et elle est réellement définitive.
+
+       L'ordre compte. Le COMPTE de connexion part d'abord :
+       si l'on supprimait la fiche en premier et que la suppression du
+       compte échouait, il resterait un compte capable de se connecter
+       sans aucune fiche — donc sans rôle, sans nom, et qu'aucun écran
+       de l'application ne permettrait plus de retrouver.
+
+       Dans l'autre sens, l'échec est bénin : une fiche sans compte
+       est l'état ordinaire de soixante et un membres du club.
+
+       Ce qui part avec la fiche, par les liens en cascade posés au
+       premier jour : la vie privée, les tuteurs, l'appartenance aux
+       salons, les présences. Ce qui reste : les messages écrits, dont
+       l'auteur devient nul — faire disparaître une conversation à
+       laquelle d'autres ont participé n'est pas ce qu'on demande en
+       supprimant un membre. */
+    if (fiche.compte_id) {
+      const { error } = await admin.auth.admin.deleteUser(fiche.compte_id);
+      if (error) return repondre({ message: error.message }, 400);
+    }
+
+    const { error: eFin } = await admin.from('profils').delete().eq('id', profilId);
+    if (eFin) return repondre({ message: eFin.message }, 400);
+
+    return repondre({ ok: true, supprime: fiche.numero });
   }
 
   return repondre({ message: `Action inconnue : ${action}` }, 400);

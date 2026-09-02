@@ -22,6 +22,12 @@ export type Profil = {
   role: Role;
   grade_id: string | null;
   photo: string | null;
+  /* Administrateur qui décide des rôles, suspend et supprime.
+     Un DRAPEAU par-dessus le rôle, et non un quatrième rôle : un
+     super administrateur EST un administrateur, plus ces pouvoirs.
+     Voir la migration 0016, qui explique pourquoi — cinquante-quatre
+     règles d'accès en dépendent. */
+  super_admin: boolean;
 };
 
 type Etat = {
@@ -78,7 +84,7 @@ async function lireProfil(): Promise<Profil | null> {
 
   const { data, error } = await supabase
     .from('profils')
-    .select('id, numero, nom, prenom, role, grade_id, photo')
+    .select('id, numero, nom, prenom, role, grade_id, photo, super_admin')
     .eq('compte_id', compte)
     .maybeSingle();
   if (error) return null;
@@ -114,3 +120,10 @@ export function useEcouteSession() {
 /* Raccourcis de lecture, pour ne pas répéter la condition partout. */
 export const estMaitre = (p: Profil | null) => p?.role === 'maitre' || p?.role === 'admin';
 export const estAdmin = (p: Profil | null) => p?.role === 'admin';
+
+/* Ce que l'ÉCRAN cache. Ce n'est pas la protection — celle-ci est sur
+   le serveur, dans la migration 0016 et dans la fonction déployée
+   « comptes » — c'est la politesse : ne pas montrer un bouton qui
+   mènerait à un refus, parce que la personne ne saurait pas si le
+   fautif est elle ou l'application. */
+export const estSuper = (p: Profil | null) => p?.super_admin === true;

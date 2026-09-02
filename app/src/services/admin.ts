@@ -50,7 +50,7 @@ import type { Role } from './session';
    Les clés sont des PRÉFIXES : « messages » périme
    ['messages', <salon>] pour tous les salons, ce qui est bien ce
    qu'on veut d'un message supprimé par la modération. */
-function useEcrire<T>(faire: (v: T) => Promise<void>, cles: string[]) {
+function useEcrire<T, R = void>(faire: (v: T) => Promise<R>, cles: string[]) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: faire,
@@ -64,6 +64,15 @@ function useEcrire<T>(faire: (v: T) => Promise<void>, cles: string[]) {
 export type SaisieFiche = {
   nom: string;
   prenom: string;
+  /* Le RÔLE, choisi à l'inscription.
+     « Le super admin décide quel est le rôle d'une personne dès
+     l'inscription. » Seul lui peut l'envoyer autre chose qu'« élève » :
+     un déclencheur de la base le refuse aux autres (migration 0016),
+     et l'écran ne montre le choix qu'à lui. */
+  role?: Role;
+  /* Le chemin du portrait, déjà envoyé dans le seau. Absent tant que
+     personne n'en a choisi. */
+  photo?: string | null;
   grade_id: string | null;
   debut: string | null;
   biographie: string | null;
@@ -80,8 +89,20 @@ export type SaisieFiche = {
 /* Le numéro de membre est attribué par la BASE, pas ici : deux
    inscriptions simultanées produiraient sinon deux fois le même
    numéro. prochain_numero() s'en charge. */
+export type Inscription = {
+  id: string;
+  numero: string;
+  /* Le mot de passe engendré par le serveur, montré UNE FOIS. Nul si
+     la fiche a été créée sans compte de connexion. */
+  motDePasse: string | null;
+  /* Ce qui a échoué APRÈS la création de la fiche. La fiche existe,
+     le compte non : l'écran doit le dire au lieu d'annoncer une
+     réussite complète. */
+  souci?: string;
+};
+
 export function useCreerFiche() {
-  return useEcrire(async (s: SaisieFiche) => {
+  return useEcrire(async (s: SaisieFiche): Promise<Inscription> => {
     const { data: numero, error: eNum } = await supabase.rpc('prochain_numero');
     if (eNum) throw eNum;
 
@@ -93,18 +114,24 @@ export function useCreerFiche() {
         prenom: s.prenom.trim(),
         grade_id: s.grade_id,
         debut: s.debut,
-        biographie: s.biographie
+        biographie: s.biographie,
+        /* Élève par défaut : c'est le cas de soixante et un des
+           soixante-quatre membres, et c'est aussi le seul rôle qu'un
+           administrateur ordinaire peut inscrire. */
+        role: s.role ?? 'eleve',
+        photo: s.photo ?? null
       })
-      .select('id')
+      .select('id, numero')
       .single();
     if (error) throw error;
+    const cree = data as { id: string; numero: string };
 
     /* La vie privée vit dans une table SÉPARÉE : une règle d'accès
        porte sur une ligne, jamais sur une colonne. C'est ainsi que
        la date de naissance d'un mineur reste hors de l'annuaire. */
     if (s.date_naissance || s.telephone || s.adresse || s.notes) {
       const { error: ePrive } = await supabase.from('profils_prives').insert({
-        profil_id: (data as { id: string }).id,
+        profil_id: cree.id,
         date_naissance: s.date_naissance,
         telephone: s.telephone,
         adresse: s.adresse,
@@ -112,7 +139,35 @@ export function useCreerFiche() {
       });
       if (ePrive) throw ePrive;
     }
-  }, ['membres','fiche','comptes']);
+
+    /* ---- LES IDENTIFIANTS, ENGENDRÉS DANS LA FOULÉE ----
+
+       « Puis l'application génère automatiquement les infos de
+       connexion de ce membre créé. »
+
+       C'était en deux temps : créer la fiche ici, puis retrouver le
+       membre dans l'écran des comptes et lui créer un accès. Deux
+       écrans, et l'on oubliait le second — la fiche existait, le
+       membre ne pouvait pas se connecter, et personne ne s'en
+       apercevait avant qu'il essaie.
+
+       ⚠ L'ÉCHEC DU COMPTE N'ANNULE PAS LA FICHE, et c'est délibéré.
+       La fiche est le travail de saisie : nom, grade, date de
+       naissance, tuteur. La perdre parce que la création du compte a
+       échoué ferait tout retaper. Le compte, lui, se rattrape d'un
+       appui depuis l'écran des comptes.
+
+       On rend donc le souci plutôt que de le lever, et l'écran dit
+       exactement ce qui existe et ce qui manque. */
+    const acces = await appelerFonction('creer', { profilId: cree.id });
+
+    return {
+      id: cree.id,
+      numero: cree.numero,
+      motDePasse: acces.ok ? (acces.motDePasse ?? null) : null,
+      ...(acces.ok ? {} : { souci: acces.message })
+    };
+  }, ['membres', 'fiche', 'comptes']);
 }
 
 export function useModifierFiche(id: string | undefined) {
@@ -786,6 +841,33 @@ export function useReinitialiser() {
   return useMutation({
     mutationFn: ({ profilId }: { profilId: string }): Promise<ResultatCompte> =>
       appelerFonction('reinitialiser', { profilId })
+  });
+}
+
+/* La SUPPRESSION DÉFINITIVE d'un membre.
+
+   Elle n'existait nulle part, et c'était un choix : le projet
+   désactive au lieu de supprimer, partout. Le club l'a demandée pour
+   le seul compte qui doit l'avoir.
+
+   Le contrôle du droit est sur le SERVEUR — la fonction déployée
+   refuse l'action à qui n'est pas super administrateur — et la règle
+   de suppression de la table exige la même chose. L'écran ne fait
+   que ne pas montrer un bouton qui serait refusé.
+
+   Elle périme « membres », « comptes » et « fiche » : la personne
+   disparaît de l'annuaire, de la liste des comptes, et sa fiche
+   n'existe plus. */
+export function useSupprimerMembre() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ profilId }: { profilId: string }): Promise<ResultatCompte> =>
+      appelerFonction('supprimer', { profilId }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ['comptes'] });
+      void client.invalidateQueries({ queryKey: ['membres'] });
+      void client.invalidateQueries({ queryKey: ['fiche'] });
+    }
   });
 }
 

@@ -161,7 +161,24 @@ export function brancherServeur() {
         recues.push({ methode, table: `fonction:${nom}`, parametres: url.searchParams, corps, entetes });
         const reponse = tables[`fonction:${nom}`];
         if (reponse === undefined) return json({ message: 'Not Found' }, 404);
-        return json(typeof reponse === 'function' ? (reponse as (r: Requete) => unknown)({ methode, table: nom, parametres: url.searchParams, corps, entetes }) : reponse);
+        const valeur = typeof reponse === 'function'
+          ? (reponse as (r: Requete) => unknown)({ methode, table: nom, parametres: url.searchParams, corps, entetes })
+          : reponse;
+        /* Un REFUS se pose en donnant un « statut ». Sans cela, le
+           bouchon répondait toujours 200 et supabase-js ne voyait
+           aucune erreur : un test qui voulait éprouver « le serveur
+           a refusé » éprouvait en réalité « le serveur a accepté une
+           réponse bizarre », et le chemin d'erreur de l'application
+           n'était jamais parcouru.
+
+           C'est important ici plus qu'ailleurs : la fonction
+           « comptes » est le seul endroit où se décide qui peut
+           supprimer un membre. */
+        if (valeur && typeof valeur === 'object' && 'statut' in (valeur as object)) {
+          const { statut, ...reste } = valeur as { statut: number };
+          return json(reste, statut);
+        }
+        return json(valeur);
       }
 
       /* --- Le stockage de fichiers ---
