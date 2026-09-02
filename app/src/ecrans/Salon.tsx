@@ -12,6 +12,7 @@ import { Icone } from '../ui/Icone';
 import { Bouton, Carte, ChoisirFichier, Entete, Surtitre } from '../ui/base';
 import { ChoixEmoji } from '../ui/Emoji';
 import { Anneau } from '../ui/Anneau';
+import { Visionneuse } from '../ui/Visionneuse';
 import {
   MINUTES_CORRECTION,
   corrigible,
@@ -58,6 +59,10 @@ function Fil({
      peut en contenir plusieurs, et deux téléchargements simultanés
      ne doivent pas s'écraser l'un l'autre dans l'affichage. */
   const [enCours, setEnCours] = useState<Record<string, string>>({});
+  /* L'image ouverte en grand. Fermée, la visionneuse n'existe pas
+     dans le document — c'est ce qui laisse le fil identique à la
+     maquette au repos. */
+  const [enGrand, setEnGrand] = useState<Message | null>(null);
 
   const prendre = async (chemin: string, nom: string, url: string) => {
     setEnCours((p) => ({ ...p, [chemin]: 'Enregistrement…' }));
@@ -123,27 +128,47 @@ function Fil({
                 rendait une balise « img » quoi qu'il arrive. */}
             {m.piece && pieces[m.piece] && (
               estImage(m.piece) ? (
-                <img
-                  src={pieces[m.piece]}
-                  alt={m.texte}
-                  loading="lazy"
-                  /* Les proportions réservent la place AVANT que
-                     l'image n'arrive : sans elles, le fil sursaute à
-                     chaque photo chargée et l'on perd sa lecture. */
-                  width={240}
-                  height={180}
+                /* UN BOUTON AUTOUR DE L'IMAGE.
+
+                   Elle s'affichait à 240 pixels de large et rien ne
+                   se passait quand on appuyait dessus : un visage au
+                   fond d'une photo de groupe était donc invisible, et
+                   la seule façon de la voir en grand était de la
+                   redemander à celui qui l'avait envoyée. */
+                <button
+                  onClick={() => setEnGrand(m)}
+                  aria-label={`Voir en grand : ${m.texte || 'photo'}`}
                   style={{
                     display: 'block',
+                    padding: 0,
+                    border: 0,
+                    background: 'none',
+                    cursor: 'pointer',
                     width: '100%',
-                    maxWidth: 240,
-                    height: 'auto',
-                    aspectRatio: '4 / 3',
-                    objectFit: 'cover',
-                    background: 'rgba(0,0,0,.06)',
-                    borderRadius: 12,
-                    marginBottom: 6
+                    maxWidth: 240
                   }}
-                />
+                >
+                  <img
+                    src={pieces[m.piece]}
+                    alt={m.texte}
+                    loading="lazy"
+                    /* Les proportions réservent la place AVANT que
+                       l'image n'arrive : sans elles, le fil sursaute à
+                       chaque photo chargée et l'on perd sa lecture. */
+                    width={240}
+                    height={180}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      height: 'auto',
+                      aspectRatio: '4 / 3',
+                      objectFit: 'cover',
+                      background: 'rgba(0,0,0,.06)',
+                      borderRadius: 12,
+                      marginBottom: 6
+                    }}
+                  />
+                </button>
               ) : (
                 /* UN BOUTON, ET NON UN LIEN.
 
@@ -202,6 +227,20 @@ function Fil({
         );
       })}
       <div ref={bas} />
+
+      {enGrand?.piece && pieces[enGrand.piece] && (
+        <Visionneuse
+          src={pieces[enGrand.piece]!}
+          nom={nomDeLaPiece(enGrand.piece) ?? 'photo.jpg'}
+          genre="message"
+          /* Un message pas encore confirmé par le serveur n'a pas
+             d'identifiant réel : on le regarde, on n'y réagit pas —
+             la réaction partirait dans le vide. */
+          sujet={enAttente(enGrand) ? null : enGrand.id}
+          legende={enGrand.texte}
+          fermer={() => setEnGrand(null)}
+        />
+      )}
     </div>
   );
 }

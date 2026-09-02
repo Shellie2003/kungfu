@@ -289,3 +289,90 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .anneau--attente { animation: none; }
 }
+
+/* ------------------------------------------------------------
+   La visionneuse : une image en grand, sur fond sombre.
+
+   Le fond sombre n'est pas un effet de style. C'est le seul écran où
+   l'image compte plus que le cadre — la même décision que la photo
+   en grand d'un album, qui vit déjà hors du gabarit clair. Une photo
+   sur fond blanc paraît délavée ; sur fond sombre, on voit ce
+   qu'elle contient.
+
+   Par-dessus TOUT, encoche et barre du bas comprises : on regarde
+   une photo, pas une application.
+   ------------------------------------------------------------ */
+.visionneuse {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: #0B1712;
+  display: flex;
+  flex-direction: column;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.visionneuse__barre {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  flex: none;
+}
+
+/* « contain » et non « cover » : on veut voir la photo ENTIÈRE. La
+   rogner serait cacher précisément ce qu'on est venu regarder. */
+.visionneuse__image {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  object-fit: contain;
+}
+
+.visionneuse__bas {
+  flex: none;
+  padding: 12px 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.visionneuse__legende {
+  font-size: 13.5px;
+  line-height: 19px;
+  color: #E8F1EC;
+}
+
+.visionneuse__comptes { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.visionneuse__compte {
+  font-size: 12.5px;
+  color: #C9D8D0;
+  background: rgba(255, 255, 255, .1);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.visionneuse__reactions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Assez grand pour le doigt : 44 pixels est le minimum au-dessous
+   duquel on vise, et l'on vise mal une pastille de 30 px en tenant
+   son téléphone d'une main. */
+.visionneuse__reaction {
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  background: rgba(255, 255, 255, .06);
+  font-size: 21px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* La sienne se voit : sans marque, on ne sait plus si l'on a déjà
+   réagi, et l'on appuie une seconde fois — ce qui l'annule. */
+.visionneuse__reaction--mienne {
+  background: rgba(18, 97, 60, .55);
+  border-color: #4E9C57;
+}

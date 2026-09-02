@@ -9,6 +9,8 @@ import { useAlbums } from '../services/club';
 import { useUrls } from '../services/stockage';
 import { useAjouterPhotos } from '../services/admin';
 import { Anneau } from '../ui/Anneau';
+import { BarreReactions } from '../ui/Visionneuse';
+import { enregistrer } from '../services/telechargement';
 import { estMaitre, useSession } from '../services/session';
 
 export function Album() {
@@ -296,6 +298,29 @@ export function Photo() {
   const photo = album?.photos[rang];
   const src = photo?.chemin ? photos[photo.chemin] ?? null : null;
 
+  /* ENREGISTRER LA PHOTO. Le même chemin que les documents de la
+     messagerie : sur le téléphone on rapatrie le fichier et on
+     l'écrit dans « Documents », sur le web le navigateur l'ouvre. Un
+     lien « download » ne ferait rien dans une WebView Android — ce
+     projet a déjà corrigé ce défaut une fois. */
+  const [etat, setEtat] = useState<string | null>(null);
+  const [enCours, setEnCours] = useState(false);
+
+  const prendre = async () => {
+    if (!src) return;
+    setEnCours(true);
+    setEtat(null);
+    const r = await enregistrer(src, photo?.chemin?.split('/').pop() ?? 'photo.jpg');
+    setEnCours(false);
+    setEtat(
+      r.fait === 'enregistre'
+        ? `Enregistré dans « ${r.ou} »`
+        : r.fait === 'ouvert'
+          ? 'Ouvert dans un onglet'
+          : `Échec : ${r.pourquoi}`
+    );
+  };
+
   return (
     <div className="phone" style={{ background: '#0B1712' }}>
       <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -305,7 +330,18 @@ export function Photo() {
         <span style={{ flexGrow: 1, fontSize: 14, color: '#C9D8D0', textAlign: 'center' }}>
           {album ? `${rang + 1} sur ${album.photos.length}` : ''}
         </span>
-        <span style={{ width: 44 }} />
+        {enCours ? (
+          <Anneau part={null} taille={26} epaisseur={3} />
+        ) : (
+          <button
+            className="link"
+            style={{ color: '#FFF', padding: '0 6px' }}
+            disabled={!src}
+            onClick={() => void prendre()}
+          >
+            Enregistrer
+          </button>
+        )}
       </div>
 
       <div
@@ -365,6 +401,26 @@ export function Photo() {
           {photo?.legende ?? album?.titre ?? ''}
         </p>
         <p style={{ fontSize: 13, color: '#9BB0A5' }}>{album?.categorie ?? ''}</p>
+
+        {etat && (
+          <p
+            role="status"
+            style={{
+              fontSize: 12.5,
+              color: etat.startsWith('Échec') ? '#FFB4A2' : '#C9D8D0'
+            }}
+          >
+            {etat}
+          </p>
+        )}
+
+        {/* Les réactions du club sur ses propres photos. Le même
+            composant que la visionneuse des conversations : les
+            recopier ici les aurait fait diverger à la première
+            correction. */}
+        <div style={{ marginTop: 6 }}>
+          <BarreReactions genre="photo" sujet={photo?.id ?? null} />
+        </div>
       </div>
     </div>
   );

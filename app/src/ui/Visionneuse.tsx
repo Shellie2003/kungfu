@@ -1,0 +1,222 @@
+/* ============================================================
+   L'image en grand.
+
+   « Je veux aussi une visualisation grande si on appuie sur une
+   image, avec des boutons de réaction et téléchargement. »
+
+   Avant : une photo de conversation s'affichait à 240 pixels de
+   large, et rien ne se passait quand on appuyait dessus. Un visage
+   au fond d'une photo de groupe était donc invisible, et la seule
+   façon de la voir en grand était de la demander à celui qui
+   l'avait envoyée.
+
+   ------------------------------------------------------------
+   FOND SOMBRE, ET RIEN D'AUTRE
+
+   C'est le seul écran où l'image compte plus que le cadre — la même
+   décision que l'écran « photo en grand » d'un album, qui vit hors
+   du gabarit clair pour la même raison. Une photo sur fond blanc
+   paraît délavée ; sur fond sombre, on voit ce qu'elle contient.
+
+   ------------------------------------------------------------
+   CE QU'ON PEUT Y FAIRE
+
+   RÉAGIR — une seule réaction par personne, qui se remplace et
+   s'annule. Voir services/reactions.ts.
+
+   ENREGISTRER — le même chemin que les documents de la messagerie :
+   sur le téléphone, le fichier est rapatrié et écrit dans
+   « Documents » ; sur le web, le navigateur l'ouvre. Un lien
+   « download » ne ferait rien dans une WebView Android, et c'est un
+   défaut que ce projet a déjà corrigé une fois.
+
+   ------------------------------------------------------------
+   FERMÉE, ELLE N'EXISTE PAS DANS LE DOCUMENT
+
+   Comme la feuille de choix : ce n'est pas une optimisation, c'est
+   ce qui laisse les écrans au repos identiques à la maquette, et
+   donc ce qui permet à la comparaison au pixel de rester exigeante.
+   ============================================================ */
+import { useEffect, useState } from 'react';
+import { Icone } from './Icone';
+import { Anneau } from './Anneau';
+import { enregistrer } from '../services/telechargement';
+import {
+  REACTIONS,
+  compter,
+  maReaction,
+  useReactions,
+  useReagir
+} from '../services/reactions';
+import type { Genre } from '../services/reactions';
+import { useSession } from '../services/session';
+
+/* ------------------------------------------------------------
+   Les réactions, seules.
+
+   Extraites parce qu'elles servent à DEUX endroits : la visionneuse
+   ci-dessous, et l'écran « photo en grand » d'un album — qui est
+   déjà une visionneuse, écrite avant celle-ci et avec sa propre
+   navigation d'une photo à l'autre. La remplacer par celle-ci ferait
+   perdre cette navigation ; en recopier les réactions les ferait
+   diverger à la première correction.
+   ------------------------------------------------------------ */
+export function BarreReactions({
+  genre,
+  sujet,
+  sombre = true
+}: {
+  genre: Genre;
+  sujet: string | null;
+  sombre?: boolean;
+}) {
+  const moi = useSession((e) => e.profil);
+  const { data: reactions } = useReactions(genre, sujet);
+  const reagir = useReagir(genre, sujet);
+
+  const mienne = maReaction(reactions, moi?.id);
+  const comptes = compter(reactions);
+
+  if (!sujet) return null;
+
+  return (
+    <>
+      {/* Le compte : sans lui, on ne sait pas si l'on est seul à
+          avoir aimé la photo — et c'est justement ce qu'on veut
+          savoir. */}
+      {comptes.length > 0 && (
+        <div className="visionneuse__comptes">
+          {comptes.map(([emoji, n]) => (
+            <span
+              key={emoji}
+              className="visionneuse__compte"
+              style={sombre ? undefined : { background: 'rgba(0,0,0,.06)', color: '#59685F' }}
+            >
+              <span aria-hidden="true">{emoji}</span> {n}
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="visionneuse__reactions">
+        {REACTIONS.map((emoji) => (
+          <button
+            key={emoji}
+            className={
+              mienne === emoji
+                ? 'visionneuse__reaction visionneuse__reaction--mienne'
+                : 'visionneuse__reaction'
+            }
+            aria-label={mienne === emoji ? `Retirer ${emoji}` : `Réagir ${emoji}`}
+            aria-pressed={mienne === emoji}
+            disabled={reagir.isPending}
+            onClick={() => reagir.mutate(emoji)}
+          >
+            <span aria-hidden="true">{emoji}</span>
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
+
+export function Visionneuse({
+  src,
+  nom,
+  genre,
+  sujet,
+  legende,
+  fermer
+}: {
+  /* L'adresse signée de l'image. */
+  src: string;
+  /* Le nom sous lequel elle sera enregistrée. */
+  nom: string;
+  genre: Genre;
+  /* L'identifiant du message ou de la photo. Nul : on regarde
+     l'image, on ne réagit pas — c'est le cas d'un message pas encore
+     confirmé par le serveur. */
+  sujet: string | null;
+  legende?: string | null;
+  fermer: () => void;
+}) {
+  const [etat, setEtat] = useState<string | null>(null);
+  const [enCours, setEnCours] = useState(false);
+
+  /* Échap ferme. Sur un téléphone il n'y a pas de clavier, mais la
+     version web tourne sur des ordinateurs — et la croix seule
+     obligerait à viser. */
+  useEffect(() => {
+    const auClavier = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') fermer();
+    };
+    document.addEventListener('keydown', auClavier);
+    return () => document.removeEventListener('keydown', auClavier);
+  }, [fermer]);
+
+  const prendre = async () => {
+    setEnCours(true);
+    setEtat(null);
+    const r = await enregistrer(src, nom);
+    setEnCours(false);
+    setEtat(
+      r.fait === 'enregistre'
+        ? `Enregistré dans « ${r.ou} »`
+        : r.fait === 'ouvert'
+          ? 'Ouvert dans un onglet'
+          : `Échec : ${r.pourquoi}`
+    );
+  };
+
+  return (
+    <div
+      className="visionneuse"
+      role="dialog"
+      aria-modal="true"
+      aria-label={legende ?? 'Image en grand'}
+      /* Le fond ferme ; l'image et la barre ne remontent pas
+         jusqu'à lui, sans quoi appuyer sur une réaction refermerait
+         tout. */
+      onClick={fermer}
+    >
+      <div className="visionneuse__barre" onClick={(e) => e.stopPropagation()}>
+        <button className="tapicon" onClick={fermer} aria-label="Fermer">
+          <Icone nom="x" taille={22} couleur="#FFF" epaisseur={2} />
+        </button>
+        <span style={{ flexGrow: 1 }} />
+        {enCours ? (
+          <Anneau part={null} taille={26} epaisseur={3} />
+        ) : (
+          <button
+            className="link"
+            style={{ color: '#FFF', padding: '0 6px' }}
+            onClick={() => void prendre()}
+          >
+            Enregistrer
+          </button>
+        )}
+      </div>
+
+      <img
+        src={src}
+        alt={legende ?? ''}
+        className="visionneuse__image"
+        onClick={(e) => e.stopPropagation()}
+      />
+
+      <div className="visionneuse__bas" onClick={(e) => e.stopPropagation()}>
+        {legende && <p className="visionneuse__legende">{legende}</p>}
+
+        {etat && (
+          <p
+            role="status"
+            style={{ fontSize: 12.5, color: etat.startsWith('Échec') ? '#FFB4A2' : '#C9D8D0' }}
+          >
+            {etat}
+          </p>
+        )}
+
+        <BarreReactions genre={genre} sujet={sujet} />
+      </div>
+    </div>
+  );
+}
