@@ -250,7 +250,7 @@ export function Champ({
   libelle: string;
   valeur: string;
   poser: (v: string) => void;
-  type?: 'text' | 'date' | 'tel' | 'password' | 'number';
+  type?: 'text' | 'date' | 'time' | 'tel' | 'password' | 'number';
   invite?: string;
   aide?: string;
   fige?: boolean;

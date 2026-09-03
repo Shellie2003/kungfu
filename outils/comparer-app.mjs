@@ -63,7 +63,7 @@ const PAIRES = [
       '^\\d+$', 'membres$', 'séances', '^\\d{4}$',
       'Sortie au lac|Séance du mercredi|Départ 6h00|Décalée',
       '^(SORTIE|CHANGEMENT D’HORAIRE)$', '^\\d{2}$', '^(sept|nov|janv)$',
-      'Sortie prévue samedi|Un club ouvert',
+      'Sortie prévue samedi|Un club ouvert|La sortie annuelle',
       'Mon espace|Ma carte|Ma fiche|Administration|avec le code|Et le changement|Membres, publications'
     ]
   },
@@ -123,10 +123,10 @@ const PAIRES = [
       /* La maquette montre cinq actualités inventées, le bouchon en
          sert deux. Ce sont les titres, les textes et les dates qui
          diffèrent — pas la forme de la carte, qui elle est mesurée. */
-      'Sortie au lac|Séance du mercredi|Départ 6h00|Décalée|Prévoir le repas',
+      'Sortie au lac|Séance du mercredi|Départ 6h00|Décalée|Prévoir le repas|La sortie annuelle',
       'Tournoi régional|Huit membres|Réunion des parents|Samedi 9h00|Passage de grade|Onze élèves',
       '^(SORTIE|CHANGEMENT D’HORAIRE|COMPÉTITION|RÉUNION|CÉRÉMONIE)$',
-      '^\\d{2}$', '^\\d{2} \\w+$', '^(sept|nov|oct|janv|déc)$', '^NOUVEAU$',
+      '^\\d{2}$', '^\\d{2} [^ ]+$', '^(sept|nov|oct|janv|déc|août|juil)$', '^NOUVEAU$',
       /* Les puces de filtre viennent de la table des catégories ;
          la maquette en a écrit quatre à la main. */
       '^(Tout|Sorties|Compétitions|Réunions|Sortie|Compétition|Réunion|Cérémonie|Changement d’horaire)$'
@@ -135,9 +135,21 @@ const PAIRES = [
   {
     cle: 'casierDetail', route: '/#/casier/a1', maquette: 'casierDetail',
     exemples: [
-      'Sortie au lac|Départ 6h00|Prévoir le repas|Devant la salle',
-      '^SORTIE$', '^\\d{2}$', '^(sept|nov|janv)$', 'samedi|septembre|Publié',
-      'RAHARISOA|l’administration|IDEALY'
+      'Sortie au lac|Prévoir le repas|Devant la salle',
+      'La sortie annuelle|Les mineurs doivent',
+      '^SORTIE$', '^\\d{2}$', '^(sept|nov|janv)$', 'Publié',
+      /* La date longue : « Samedi 22 novembre » contre
+         « samedi 12 septembre ». */
+      '^[^ ]+ \\d{1,2} [^ ]+$',
+      /* L'heure : la maquette écrivait « Départ 6h00 · retour vers
+         18h00 » pour une SORTIE ; l'application écrit « De 6h00 à
+         18h00 », qui sert aussi une réunion et une cérémonie. */
+      '^(Départ 6h00.*|De \\d+h\\d+ à \\d+h\\d+|À \\d+h\\d+)$',
+      'RAHARISOA|l’administration|IDEALY',
+      /* S'inscrire n'était pas un état dans la maquette : on voyait
+         « J'y participe » qu'on soit inscrit ou non, et l'on ne
+         savait plus si l'on s'était inscrit. */
+      '^(J’y participe|Modifier mon inscription|Inscription envoyée.*)$'
     ]
   },
   {

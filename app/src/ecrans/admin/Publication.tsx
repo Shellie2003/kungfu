@@ -45,6 +45,13 @@ export function AdminPublier() {
   const [categorie, setCategorie] = useState('');
   const [texte, setTexte] = useState('');
   const [date, setDate] = useState('');
+  /* L'heure de début et de fin. Facultatives toutes les deux, et
+     c'est voulu : beaucoup d'annonces n'ont pas de rendez-vous.
+     Quand elles existent, elles évitent que « on part à quelle
+     heure ? » se cherche dans un paragraphe de dix lignes — ou se
+     demande de vive voix le samedi matin. */
+  const [heure, setHeure] = useState('');
+  const [heureFin, setHeureFin] = useState('');
   const [lieu, setLieu] = useState('');
   /* La participation demandée. Chaîne vide = gratuit ou non fixé :
      l'écran ne réclame alors rien, et le membre ne voit aucun
@@ -78,6 +85,8 @@ export function AdminPublier() {
     setCategorie(a.categorie);
     setTexte(a.texte);
     setDate(a.date_evt ?? '');
+    setHeure(a.heure_evt?.slice(0, 5) ?? '');
+    setHeureFin(a.heure_fin?.slice(0, 5) ?? '');
     setLieu(a.lieu ?? '');
     setPrix(a.participation_ar != null ? String(a.participation_ar) : '');
     setImage(a.image);
@@ -98,6 +107,7 @@ export function AdminPublier() {
 
   function vider() {
     setTitre(''); setCategorie(''); setTexte(''); setDate(''); setLieu('');
+    setHeure(''); setHeureFin('');
     setPrix(''); setImage(null); setEdite(null);
   }
 
@@ -110,6 +120,11 @@ export function AdminPublier() {
       { id: edite ?? undefined,
         titre: titre.trim(), categorie: categorie.trim(), texte: texte.trim(),
         date_evt: date || null, lieu: lieu || null, image, publiee,
+        /* Les heures partent vides plutôt qu'en chaîne vide : la base
+           attend un « time » ou rien, et « '' » lui ferait lever une
+           erreur de conversion au lieu d'enregistrer « non
+           précisé ». */
+        heure_evt: heure || null, heure_fin: heureFin || null,
         /* Vide = gratuit ou non fixé. On n'envoie pas zéro : « zéro
            ariary » et « rien n'est demandé » ne sont pas la même
            chose, et l'écran du membre ne doit pas afficher
@@ -181,6 +196,17 @@ export function AdminPublier() {
               aide="Elle donne la couleur de l’étiquette dans le casier. La liste se modifie dans « Catégories »."
             />
             <Champ libelle="Date de l’événement" type="date" valeur={date} poser={setDate} />
+            {/* Les deux heures côte à côte : elles se saisissent
+                ensemble, et sur une colonne elles auraient l'air de
+                deux réglages sans rapport. */}
+            <div style={{ display: 'flex', gap: 12 }}>
+              <div style={{ flexGrow: 1 }}>
+                <Champ libelle="Heure de début" type="time" valeur={heure} poser={setHeure} />
+              </div>
+              <div style={{ flexGrow: 1 }}>
+                <Champ libelle="Heure de fin" type="time" valeur={heureFin} poser={setHeureFin} />
+              </div>
+            </div>
             <Champ libelle="Lieu" valeur={lieu} poser={setLieu} invite="Devant la salle" />
             {/* LA PARTICIPATION DEMANDÉE.
 

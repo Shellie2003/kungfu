@@ -405,9 +405,17 @@ export function Accueil() {
                   >
                     {a.titre}
                   </span>
+                  {/* La première phrase, et deux lignes au plus.
+
+                      Une phrase peut être longue : « La sortie
+                      annuelle est ouverte à tous les membres, quel
+                      que soit le grade. » en fait déjà deux. Sans
+                      butée, une annonce bavarde repoussait les
+                      suivantes hors de l'accueil. */}
                   <span
+                    className="extrait"
                     style={{
-                      display: 'block',
+                      ['--lignes' as string]: 2,
                       fontSize: 13,
                       color: '#59685F',
                       lineHeight: '18px',

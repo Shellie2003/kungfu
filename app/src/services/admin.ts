@@ -344,6 +344,10 @@ export type SaisieActualite = {
   categorie: string;
   texte: string;
   date_evt: string | null;
+  /* Heure de début et de fin, heure locale du club. Nulles = non
+     précisées — le cas ordinaire d'une annonce sans rendez-vous. */
+  heure_evt: string | null;
+  heure_fin: string | null;
   lieu: string | null;
   /* Le chemin dans le seau « album », pas l'adresse : les seaux sont
      privés et l'adresse signée expire. Stocker l'adresse donnerait

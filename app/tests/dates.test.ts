@@ -10,7 +10,7 @@
    deux sans raison compréhensible.
    ============================================================ */
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { dateLongue, depuis, jourEtMois } from '../src/services/casier';
+import { creneau, dateLongue, depuis, heureFr, jourEtMois } from '../src/services/casier';
 import { eclaircir, teinter } from '../src/services/categories';
 import { heure, nomDuJour } from '../src/services/club';
 import { dateFr } from '../src/services/membres';
@@ -42,9 +42,15 @@ describe('jourEtMois', () => {
 });
 
 describe('dateLongue', () => {
-  test('écrit le jour de la semaine, en français', () => {
-    /* Le 12 septembre 2026 est un samedi. */
-    expect(dateLongue('2026-09-12')).toBe('samedi 12 septembre');
+  test('écrit le jour de la semaine, en français, avec sa majuscule', () => {
+    /* Le 12 septembre 2026 est un samedi.
+
+       La majuscule est voulue : le navigateur rend « samedi », qui
+       est juste au milieu d'une phrase. Mais cette date est un
+       INTITULÉ, seul sur sa ligne en tête d'une carte, et un intitulé
+       qui commence en minuscule se lit comme la suite de la ligne
+       précédente. La maquette l'écrivait ainsi. */
+    expect(dateLongue('2026-09-12')).toBe('Samedi 12 septembre');
   });
 });
 
@@ -182,5 +188,50 @@ describe('MVola', () => {
     expect(ariary(10000)).toBe(`10${nbsp}000${nbsp}Ar`);
     expect(ariary(500)).toBe(`500${nbsp}Ar`);
     expect(ariary(1000)).not.toContain(' ');
+  });
+});
+
+/* ============================================================
+   L'HEURE D'UN ÉVÉNEMENT.
+
+   « date_evt » est une DATE sans heure : à quelle heure on part se
+   disait dans le texte libre, ce qui marche tant que quelqu'un pense
+   à l'écrire et tant que personne ne le cherche dans dix lignes.
+   ============================================================ */
+describe('heureFr', () => {
+  test('« 06:00:00 » s’écrit « 6h00 »', () => {
+    /* Sans le zéro de tête : « 06h00 » se lit comme un horaire de
+       train, pas comme un rendez-vous au club. */
+    expect(heureFr('06:00:00')).toBe('6h00');
+    expect(heureFr('18:30:00')).toBe('18h30');
+  });
+
+  test('les minutes gardent le leur', () => {
+    /* « 17h5 » n'est pas une heure. */
+    expect(heureFr('17:05:00')).toBe('17h05');
+  });
+
+  test('sans heure, rien — et non « nullh00 »', () => {
+    expect(heureFr(null)).toBeNull();
+    expect(heureFr(undefined)).toBeNull();
+    expect(heureFr('')).toBeNull();
+  });
+});
+
+describe('creneau', () => {
+  test('deux heures donnent un intervalle', () => {
+    expect(creneau('06:00:00', '18:00:00')).toBe('De 6h00 à 18h00');
+  });
+
+  test('une seule heure donne un début, pas un faux intervalle', () => {
+    /* « De 6h00 à » serait pire que rien. */
+    expect(creneau('06:00:00', null)).toBe('À 6h00');
+  });
+
+  test('aucune heure ne produit aucune ligne', () => {
+    /* La ligne est masquée à l'écran plutôt qu'affichée vide : la
+       plupart des annonces n'ont pas de rendez-vous. */
+    expect(creneau(null, null)).toBeNull();
+    expect(creneau(null, '18:00:00')).toBeNull();
   });
 });

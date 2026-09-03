@@ -15,6 +15,14 @@ export type Actualite = {
   categorie: string;
   texte: string;
   date_evt: string | null;
+  /* L'heure de début et de fin, heure locale du club. Nulles = non
+     précisées, ce qui est le cas ordinaire d'une annonce sans
+     rendez-vous. Ce sont des heures de MUR et non des instants : « on
+     part à 6h » ne se convertit pas d'un fuseau à l'autre, et un
+     horodatage aurait fait lire « départ 3h00 » à un membre en
+     voyage. */
+  heure_evt: string | null;
+  heure_fin: string | null;
   lieu: string | null;
   image: string | null;
   cree_le: string;
@@ -34,7 +42,8 @@ export type Actualite = {
 };
 
 const CHAMPS =
-  'id, titre, categorie, texte, date_evt, lieu, image, participation_ar, cree_le, ' +
+  'id, titre, categorie, texte, date_evt, heure_evt, heure_fin, lieu, image, ' +
+  'participation_ar, cree_le, ' +
   'auteur_id, profils:auteur_id ( nom, prenom )';
 
 /* PostgREST rend une jointure « un vers un » tantôt en objet, tantôt
@@ -193,11 +202,20 @@ export function jourEtMois(iso: string): { jour: string; mois: string } {
 }
 
 export function dateLongue(iso: string): string {
-  return new Date(iso).toLocaleDateString('fr-FR', {
+  const d = new Date(iso).toLocaleDateString('fr-FR', {
     weekday: 'long',
     day: 'numeric',
     month: 'long'
   });
+  /* « Samedi 22 novembre » et non « samedi 22 novembre ».
+
+     Les jours de la semaine ne prennent pas de majuscule au milieu
+     d'une phrase, et c'est ce que rend le navigateur. Mais ici la
+     date n'est pas dans une phrase : c'est un intitulé, seul sur sa
+     ligne, en tête d'une carte. La maquette l'écrivait avec une
+     majuscule, et un intitulé qui commence en minuscule se lit comme
+     une ligne coupée de la précédente. */
+  return d.charAt(0).toUpperCase() + d.slice(1);
 }
 
 /* « Il y a 2 h », « Hier », « Il y a 3 j ». Au-delà d'une semaine
@@ -211,4 +229,33 @@ export function depuis(iso: string): string {
   if (jours === 1) return 'Hier';
   if (jours < 8) return `Il y a ${jours} j`;
   return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+}
+
+/* ------------------------------------------------------------
+   L'heure d'un événement, écrite comme on la dit.
+
+   « 06:00:00 » est ce que rend la base ; « 6h00 » est ce qu'on
+   écrit sur une affiche. On retire le zéro de tête — « 06h00 » se
+   lit comme un horaire de train, pas comme un rendez-vous au club.
+
+   « De 6h00 à 18h00 » plutôt que « Départ 6h00 · retour vers
+   18h00 » : la maquette montrait une SORTIE, mais la même ligne
+   sert une réunion, une cérémonie et un changement d'horaire, où
+   « départ » ne veut rien dire.
+   ------------------------------------------------------------ */
+export function heureFr(t: string | null | undefined): string | null {
+  if (!t) return null;
+  const [h, m] = t.split(':');
+  if (h === undefined || m === undefined) return null;
+  return `${Number(h)}h${m}`;
+}
+
+export function creneau(
+  debut: string | null | undefined,
+  fin: string | null | undefined
+): string | null {
+  const d = heureFr(debut);
+  const f = heureFr(fin);
+  if (!d) return null;
+  return f ? `De ${d} à ${f}` : `À ${d}`;
 }

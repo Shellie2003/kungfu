@@ -151,6 +151,30 @@ body {
 .newscard { display: flex; flex-direction: column; gap: 10px; width: 100%; }
 .newscard--new { border-color: #C4D4CB; }
 
+/* L'APERÇU S'ARRÊTE À TROIS LIGNES.
+
+   Une carte de casier montrait le texte ENTIER. Une annonce de dix
+   lignes remplissait donc l'écran à elle seule, et la liste — dont
+   tout l'intérêt est de parcourir ce qui est arrivé — devenait un
+   seul article qu'il fallait dépasser au doigt. La maquette montrait
+   des cartes de deux lignes parce que ses textes d'exemple étaient
+   courts ; rien ne le garantissait dans l'application.
+
+   Trois lignes plutôt que deux : deux coupent au milieu d'une phrase
+   presque à chaque fois, et l'on ouvre pour rien.
+
+   « -webkit-line-clamp » est préfixé partout, y compris dans les
+   navigateurs qui n'ont rien de WebKit ; la WebView d'Android le
+   comprend depuis longtemps. Là où il manquerait, le texte s'affiche
+   en entier — l'ancien comportement, et non un texte coupé. */
+.extrait {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--lignes, 3);
+  line-clamp: var(--lignes, 3);
+  overflow: hidden;
+}
+
 /* Étudiants */
 .searchbar { display: flex; align-items: center; gap: 10px; background: #FFF; border: 1px solid var(--bord); border-radius: 12px; padding: 0 14px; min-height: 48px; font-size: 15px; color: #8A978F; }
 .studentrow { display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 14px; }

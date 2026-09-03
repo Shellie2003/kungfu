@@ -7,6 +7,7 @@ import { Icone } from '../ui/Icone';
 import { Bouton, Carte, Entete, Etat, Puce, Filet } from '../ui/base';
 import {
   categories,
+  creneau,
   dateLongue,
   jourEtMois,
   useActualite,
@@ -14,6 +15,7 @@ import {
   useNotifications
 } from '../services/casier';
 import { teinter, useCategories } from '../services/categories';
+import { useReglages } from '../services/club';
 import { useUrl } from '../services/stockage';
 import { estAdmin, useSession } from '../services/session';
 import { useParticipation } from '../services/participation';
@@ -150,9 +152,21 @@ export function Casier() {
                 >
                   {a.titre}
                 </span>
+                {/* Deux lignes au plus.
+
+                    La carte montrait le texte ENTIER : une annonce de
+                    dix lignes remplissait l'écran à elle seule, et la
+                    liste — dont tout l'intérêt est de parcourir ce
+                    qui est arrivé — devenait un article qu'il fallait
+                    dépasser au doigt.
+
+                    Deux et non trois : c'est la hauteur de carte de
+                    la maquette, celle que le club a validée, et le
+                    banc de comparaison la mesure. */}
                 <span
+                  className="extrait"
                   style={{
-                    display: 'block',
+                    ['--lignes' as string]: 2,
                     fontSize: 14,
                     lineHeight: '21px',
                     color: '#59685F',
@@ -182,6 +196,7 @@ export function Actualite() {
      non, et l'on ne savait plus si l'on s'était inscrit — donc on
      recommençait. */
   const { data: participation } = useParticipation(id, moi?.id);
+  const { data: reglages } = useReglages();
   /* Appelé avant le retour anticipé : un hook ne se saute pas selon
      l'état du chargement. */
   const illustration = useUrl('album', a?.image);
@@ -274,6 +289,20 @@ export function Actualite() {
                     <Icone nom="calendar" taille={19} couleur="#0F5132" />
                     <div>
                       <p style={{ fontSize: 14, fontWeight: 600 }}>{dateLongue(a.date_evt)}</p>
+                      {/* L'HEURE, sous la date.
+
+                          C'est la seule chose qu'on vient chercher la
+                          veille d'une sortie, et elle n'existait pas :
+                          « date_evt » est une date sans heure. Elle se
+                          disait dans le texte libre — « Départ 6h00
+                          devant la salle » — ce qui marche tant que
+                          quelqu'un pense à l'écrire, et tant que
+                          personne ne la cherche dans dix lignes. */}
+                      {creneau(a.heure_evt, a.heure_fin) && (
+                        <p style={{ fontSize: 13, color: '#59685F' }}>
+                          {creneau(a.heure_evt, a.heure_fin)}
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -283,7 +312,14 @@ export function Actualite() {
                     <Icone nom="pin" taille={19} couleur="#0F5132" />
                     <div>
                       <p style={{ fontSize: 14, fontWeight: 600 }}>{a.lieu}</p>
-                      <p style={{ fontSize: 13, color: '#59685F' }}>Analamahitsy</p>
+                      {/* Le quartier vient d'un RÉGLAGE, comme sur la
+                          carte de membre et sur l'accueil. Il était
+                          écrit en dur ici : le jour où le club change
+                          de salle, deux écrans sur trois disent la
+                          vérité et celui-ci ment. */}
+                      <p style={{ fontSize: 13, color: '#59685F' }}>
+                        {reglages?.lieu_club ?? 'Analamahitsy'}
+                      </p>
                     </div>
                   </div>
                 )}

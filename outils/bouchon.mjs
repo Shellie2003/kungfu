@@ -108,8 +108,11 @@ export const REPONSES = {
   ],
   profils: PROFILS.map(avecGrade),
   actualites: [
-    { id: 'a1', titre: 'Sortie au lac Mantasoa', categorie: 'Sortie', texte: 'Départ 6h00 devant la salle.\n\nPrévoir le repas de midi.', date_evt: '2026-09-12', lieu: 'Devant la salle', image: null, cree_le: maintenant() },
-    { id: 'a2', titre: 'Séance du mercredi à 17h30', categorie: 'Changement d’horaire', texte: 'Décalée d’une heure jusqu’à la fin décembre.', date_evt: null, lieu: null, image: null, cree_le: '2026-01-18T09:00:00Z' }
+    { id: 'a1', titre: 'Sortie au lac Mantasoa', categorie: 'Sortie', texte: 'La sortie annuelle est ouverte à tous les membres, quel que soit le grade. Le transport est organisé par le club. Chacun apporte son repas de midi et une tenue de rechange.\n\nLes mineurs doivent remettre une autorisation signée avant le mercredi 19 novembre.', date_evt: '2026-09-12', heure_evt: '06:00:00', heure_fin: '18:00:00', lieu: 'Devant la salle', image: null, cree_le: maintenant() },
+    { id: 'a2', titre: 'Séance du mercredi à 17h30', categorie: 'Changement d’horaire', texte: 'Décalée d’une heure jusqu’à la fin décembre, en raison des travaux.', date_evt: null, heure_evt: null, heure_fin: null, lieu: null, image: null, cree_le: ilYA(20 * 86400) },
+    { id: 'a3', titre: 'Tournoi régional d’Antananarivo', categorie: 'Compétition', texte: 'Huit membres du club sont sélectionnés. Réunion d’information vendredi.', date_evt: null, heure_evt: null, heure_fin: null, lieu: null, image: null, cree_le: ilYA(26 * 86400) },
+    { id: 'a4', titre: 'Réunion des parents', categorie: 'Réunion', texte: 'Samedi 9h00 à la salle. Présentation du programme de l’année.', date_evt: null, heure_evt: null, heure_fin: null, lieu: null, image: null, cree_le: ilYA(33 * 86400) },
+    { id: 'a5', titre: 'Remise des grades', categorie: 'Cérémonie', texte: 'Onze passages validés. Félicitations aux nouveaux gradés.', date_evt: null, heure_evt: null, heure_fin: null, lieu: null, image: null, cree_le: ilYA(41 * 86400) }
   ],
   /* Quatre notifications, réparties comme la maquette : deux du jour,
      deux plus anciennes. Une seule d'un côté et deux de l'autre
@@ -194,7 +197,11 @@ export const REPONSES = {
   ],
   participations: [
     {
-      id: 'pa1', accompagnants: 2, montant_promis: 5000,
+      /* Elle appartient à NIRINA, pas au connecté. C'est ce qui
+         permet de voir « J'y participe » sur l'écran d'une actualité
+         — l'état ordinaire — tout en gardant une ligne à pointer sur
+         l'écran des participations. */
+      id: 'pa1', profil_id: 'p1', accompagnants: 2, montant_promis: 5000,
       profils: { nom: 'RAKOTONDRABE', prenom: 'Nirina', numero: 'F04x042' },
       versements: [{ id: 'v1', montant: 5000, recu_le: '2026-09-01' }]
     }
@@ -422,6 +429,13 @@ export async function brancher(page, inconnues = [], { role } = {}) {
       return route.fulfill({ json: seul ? fiche : fiche ? [fiche] : [] });
     }
 
+    /* « profil_id » est le seul filtre honoré, et il le faut : « ma
+       participation à cette sortie » se demande par lui. Sans cela le
+       bouchon rendait celle de quelqu'un d'autre, et l'écran d'une
+       actualité affichait « inscription envoyée » à qui n'avait rien
+       envoyé. */
+    const profil = url.searchParams.get('profil_id')?.replace('eq.', '');
+
     /* LA SEULE RÈGLE D'ACCÈS QUE CE BOUCHON IMITE.
 
        Il n'en applique aucune autre, et c'est assumé : les règles ont
@@ -433,6 +447,9 @@ export async function brancher(page, inconnues = [], { role } = {}) {
     let donnees = corps;
     if (table === 'salons' && MOI_VU.role === 'eleve') {
       donnees = donnees.filter((s) => s.type !== 'maitres');
+    }
+    if (profil && Array.isArray(donnees) && donnees.some((l) => 'profil_id' in (l ?? {}))) {
+      donnees = donnees.filter((l) => l.profil_id === profil);
     }
     const id = url.searchParams.get('id')?.replace('eq.', '');
     /* MA fiche se cherche par identifiant comme les autres — la
