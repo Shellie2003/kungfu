@@ -193,13 +193,16 @@ describe('le casier : modifier là où l’on lit, et participer quand cela a un
     expect(screen.queryByRole('button', { name: 'J’y participe' })).not.toBeInTheDocument();
   });
 
-  test('déjà inscrit, l’écran le DIT', async () => {
+  test('déjà inscrit, l’écran dit OÙ EN EST la demande', async () => {
     /* Il s'affichait à l'identique qu'on soit inscrit ou non : on ne
        savait plus si l'on s'était inscrit, donc on recommençait. */
     poser({
       ...annonce({ date_evt: dans(7) }),
       participations: [
-        { id: 'pa1', accompagnants: 0, montant_promis: null, note: null, versements: [] }
+        {
+          id: 'pa1', accompagnants: 0, montant_promis: null, note: null,
+          valide_le: null, refuse_le: null, motif: null, versements: []
+        }
       ]
     });
     rendre(<Actualite />, {
@@ -208,9 +211,58 @@ describe('le casier : modifier là où l’on lit, et participer quand cela a un
       profil: PROFIL_ELEVE
     });
 
+    /* Une inscription neuve est EN ATTENTE, et l'écran le dit : une
+       validation que seul l'organisateur connaît n'est pas une
+       validation, c'est une décision privée. */
     expect(
-      await screen.findByRole('button', { name: 'Vous participez · modifier' })
+      await screen.findByText('Inscription envoyée — en attente de validation.')
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Modifier mon inscription' })
+    ).toBeInTheDocument();
+  });
+
+  test('validée, l’écran le dit aussi', async () => {
+    poser({
+      ...annonce({ date_evt: dans(7) }),
+      participations: [
+        {
+          id: 'pa1', accompagnants: 0, montant_promis: null, note: null,
+          valide_le: maintenant, refuse_le: null, motif: null, versements: []
+        }
+      ]
+    });
+    rendre(<Actualite />, {
+      route: '/casier/a1',
+      chemin: '/casier/:id',
+      profil: PROFIL_ELEVE
+    });
+
+    expect(await screen.findByText('Votre inscription est validée.')).toBeInTheDocument();
+  });
+
+  test('refusée, le MOTIF s’affiche', async () => {
+    /* Refuser sans rien dire laisse quelqu'un aller demander pourquoi
+       au bord du tapis — exactement ce que l'application devrait
+       éviter. */
+    poser({
+      ...annonce({ date_evt: dans(7) }),
+      participations: [
+        {
+          id: 'pa1', accompagnants: 0, montant_promis: null, note: null,
+          valide_le: null, refuse_le: maintenant,
+          motif: 'Le taxi-brousse est complet.', versements: []
+        }
+      ]
+    });
+    rendre(<Actualite />, {
+      route: '/casier/a1',
+      chemin: '/casier/:id',
+      profil: PROFIL_ELEVE
+    });
+
+    expect(await screen.findByText(/n’a pas été retenue/)).toBeInTheDocument();
+    expect(screen.getByText(/Le taxi-brousse est complet/)).toBeInTheDocument();
   });
 });
 

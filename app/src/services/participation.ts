@@ -21,6 +21,18 @@ export type Participation = {
      colonne existait et rien ne l'écrivait ; les gens le disaient
      donc de vive voix, et cela se perdait. */
   note: string | null;
+  /* Où en est la demande. Nuls tous les deux = EN ATTENTE, ce qui est
+     l'état de départ de toute inscription.
+
+     Le membre doit le voir : une validation que seul l'organisateur
+     connaît n'est pas une validation, c'est une décision privée. On
+     s'inscrit à une sortie et l'on veut savoir si l'on part. */
+  valide_le: string | null;
+  refuse_le: string | null;
+  /* Le motif du refus, écrit par l'organisateur. Facultatif — mais
+     quand il existe, il est ce qui évite d'aller demander pourquoi
+     au bord du tapis. */
+  motif: string | null;
   versements: { id: string; montant: number; recu_le: string }[];
 };
 
@@ -31,7 +43,10 @@ export function useParticipation(actualiteId: string | undefined, profilId: stri
     queryFn: async (): Promise<Participation | null> => {
       const { data, error } = await supabase
         .from('participations')
-        .select('id, accompagnants, montant_promis, note, versements ( id, montant, recu_le )')
+        .select(
+          `id, accompagnants, montant_promis, note, valide_le, refuse_le, motif,
+           versements ( id, montant, recu_le )`
+        )
         .eq('actualite_id', actualiteId!)
         .eq('profil_id', profilId!)
         .maybeSingle();

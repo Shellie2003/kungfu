@@ -41,6 +41,7 @@ const PUBLICATION: Rangee[] = [
   ['Les catégories', 'Rubriques du casier et des albums, et leurs couleurs', 'flag', '/admin/categories'],
   ['Les salons', 'Ouvrir un fil par grade ou par événement', 'chat', '/admin/salons'],
   ['Journal d’accès', 'Qui est entré dans l’espace des maîtres', 'eyeOff', '/admin/journal'],
+  ['Inscriptions à valider', 'Les demandes en attente sur VOS sorties', 'shieldCheck', '/admin/a-valider'],
   ['Participations', 'Qui vient, et pointer les versements', 'shieldCheck', '/admin/participations'],
   ['Le club', 'Horaires, responsable, contact, MVola', 'calendar', '/admin/club'],
   ['Pointer les présences', 'En scannant les cartes, ou au matricule', 'shield', '/presences/pointer']

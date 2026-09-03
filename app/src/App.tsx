@@ -83,6 +83,9 @@ const AdminComptes = lazy(() =>
 const AdminClub = lazy(() =>
   import('./ecrans/admin/Club').then((m) => ({ default: m.AdminClub }))
 );
+const AdminAValider = lazy(() =>
+  import('./ecrans/admin/AValider').then((m) => ({ default: m.AdminAValider }))
+);
 const AdminParticipations = lazy(() =>
   import('./ecrans/admin/Participations').then((m) => ({ default: m.AdminParticipations }))
 );
@@ -255,6 +258,9 @@ function Connectee() {
         {estAdmin(profil) && <Route path="/admin/salons" element={<AdminSalons />} />}
         {estAdmin(profil) && <Route path="/admin/journal" element={<AdminJournal />} />}
         {estAdmin(profil) && <Route path="/admin/impression" element={<AdminImpression />} />}
+        {estAdmin(profil) && (
+          <Route path="/admin/a-valider" element={<AdminAValider />} />
+        )}
         {estAdmin(profil) && (
           <Route path="/admin/participations" element={<AdminParticipations />} />
         )}

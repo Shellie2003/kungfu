@@ -102,6 +102,7 @@ const ECRANS = [
   ['adm-albums', '/#/admin/albums', 'Créer un album'],
   ['adm-club', '/#/admin/club', 'Renseignements'],
   ['signalements', '/#/signalements', 'Propos déplacés'],
+  ['adm-a-valider', '/#/admin/a-valider', 'Inscriptions à valider'],
   ['adm-participations', '/#/admin/participations', 'De quelle sortie'],
   /* Un texte RENDU, pas une invite de champ : innerText ne contient
      pas les placeholders, et l'attendre échouerait toujours. */

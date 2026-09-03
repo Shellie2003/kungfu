@@ -320,16 +320,46 @@ export function Actualite() {
               qui a eu lieu. */}
           {a.date_evt && new Date(a.date_evt) >= aujourdhui() ? (
             participation ? (
-              /* DÉJÀ INSCRIT. On le dit, et l'on mène à sa propre
-                 inscription pour la corriger — pas à un formulaire
-                 vierge qui laisserait croire qu'il faut tout
-                 recommencer. */
-              <Bouton
-                genre="ghost"
-                onClick={() => aller(`/casier/${a.id}/participer`)}
-              >
-                Vous participez · modifier
-              </Bouton>
+              /* DÉJÀ INSCRIT — et l'écran dit OÙ EN EST la demande.
+
+                 Une validation que seul l'organisateur connaît n'est
+                 pas une validation, c'est une décision privée. On
+                 s'inscrit à une sortie et l'on veut savoir si l'on
+                 part : sans cela, il faut aller le demander de vive
+                 voix, ce qui est exactement ce que l'application
+                 devrait éviter. */
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {participation.refuse_le ? (
+                  <div className="warn">
+                    <i />
+                    <p>
+                      <b>Votre inscription n’a pas été retenue.</b>
+                      {participation.motif ? ` ${participation.motif}` : ''}
+                    </p>
+                  </div>
+                ) : participation.valide_le ? (
+                  <div
+                    className="banner"
+                    style={{ background: '#E8F1EC', borderColor: '#B9D3C4' }}
+                  >
+                    <Icone nom="shieldCheck" taille={17} couleur="#0F5132" />
+                    <span style={{ flexGrow: 1 }}>Votre inscription est validée.</span>
+                  </div>
+                ) : (
+                  <div className="banner">
+                    <Icone nom="calendar" taille={17} couleur="#0F5132" />
+                    <span style={{ flexGrow: 1 }}>
+                      Inscription envoyée — en attente de validation.
+                    </span>
+                  </div>
+                )}
+                <Bouton
+                  genre="ghost"
+                  onClick={() => aller(`/casier/${a.id}/participer`)}
+                >
+                  Modifier mon inscription
+                </Bouton>
+              </div>
             ) : (
               <Bouton onClick={() => aller(`/casier/${a.id}/participer`)}>J’y participe</Bouton>
             )
