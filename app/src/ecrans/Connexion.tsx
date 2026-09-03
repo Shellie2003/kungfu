@@ -38,7 +38,16 @@ export function Connexion({
   }
 
   return (
-    <div className="phone phone--green" style={{ padding: '0 24px' }}>
+    /* L'écran de connexion n'a ni barre de titre ni onglets : c'est le
+       seul rembourrage qui le sépare de l'encoche et de la barre de
+       gestes. */
+    <div
+      className="phone phone--green"
+      style={{
+        padding:
+          'env(safe-area-inset-top, 0px) 24px env(safe-area-inset-bottom, 0px)'
+      }}
+    >
       <div
         style={{
           flexGrow: 1,

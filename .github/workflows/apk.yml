@@ -193,6 +193,21 @@ jobs:
       - name: Faire tourner le carrousel
         run: node outils/verifier-carrousel.mjs
 
+      # Ce que la comparaison à la maquette ne voit PAS.
+      #
+      # Elle mesure des pixels et de la géométrie. Elle ne dit rien
+      # d'un bouton qu'aucun lecteur d'écran ne sait nommer, d'une
+      # cible trop petite pour un doigt, ni d'un parcours au clavier
+      # où l'on ne voit jamais où l'on est. Ces trois défauts sont
+      # invisibles à qui ne les subit pas : personne ne se plaint, on
+      # cesse simplement de se servir de l'écran.
+      #
+      # Le premier passage en a trouvé onze, dont une barre de
+      # recherche de quarante-huit pixels dont dix-huit seulement
+      # réagissaient au doigt.
+      - name: Vérifier ce qui ne se photographie pas
+        run: node outils/verifier-acces.mjs
+
       # L'application et le seau doivent accepter les MÊMES fichiers.
       #
       # Le PDF était proposé par l'écran, accepté par le sélecteur,

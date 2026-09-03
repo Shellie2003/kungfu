@@ -113,9 +113,20 @@ export function Admin() {
   return (
     <div className="phone">
       <div
+        className="hautSombre"
         style={{
           background: '#0E2119',
-          padding: '20px 20px 24px',
+          /* Le haut vient de « hautSombre » : 20 px, plus la hauteur
+             de la barre d'état là où elle recouvre la page.
+
+             ⚠ On écrit les côtés UN PAR UN, jamais « padding » en
+             raccourci : le raccourci en ligne repose padding-top à
+             zéro et l'emporte sur la classe — un style en ligne gagne
+             toujours. Le titre repassait alors sous l'heure, et la
+             comparaison à la maquette l'a dit tout de suite. */
+          paddingLeft: 20,
+          paddingRight: 20,
+          paddingBottom: 24,
           display: 'flex',
           flexDirection: 'column',
           gap: 18

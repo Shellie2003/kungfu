@@ -2,7 +2,24 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <!-- « maximum-scale=1 » a été retiré, et c'est important.
+
+       Il interdisait d'agrandir la page à deux doigts. On le pose
+       d'ordinaire pour empêcher le zoom involontaire quand on touche
+       un champ de saisie — un vieux réflexe d'iPhone — mais ce qu'il
+       empêche vraiment, c'est qu'une personne qui voit mal puisse
+       lire. Le club compte des parents et des gradés d'un certain
+       âge, et l'application affiche des matricules et des montants
+       en douze pixels.
+
+       Le zoom involontaire, lui, ne se produit pas ici : les champs
+       sont en quinze pixels ou plus, taille à partir de laquelle
+       aucun navigateur mobile ne zoome à la mise au point.
+
+       « viewport-fit=cover » reste : la page occupe tout l'écran,
+       encoche et barre de gestes comprises, et la feuille de style
+       rend au contenu les marges que le système occupe. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Kung-fu Waishi Analamahitsy</title>
   <meta name="theme-color" content="#0F5132">
 </head>

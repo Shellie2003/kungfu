@@ -323,7 +323,18 @@ export function Photo() {
 
   return (
     <div className="phone" style={{ background: '#0B1712' }}>
-      <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center', gap: 4 }}>
+      {/* La photo en grand n'a pas de barre d'onglets : rien ne la
+          protège de l'encoche en haut ni de la barre de gestes en
+          bas. Le rembourrage du haut vient de la classe. */}
+      <div
+        className="hautPhoto"
+        /* Les côtés un par un : « padding » en raccourci reposerait
+           le haut à zéro et l'emporterait sur la classe. */
+        style={{
+          paddingLeft: 12, paddingRight: 12,
+          display: 'flex', alignItems: 'center', gap: 4
+        }}
+      >
         <button className="tapicon" onClick={() => aller('/album')} aria-label="Fermer">
           <Icone nom="x" taille={22} couleur="#FFF" epaisseur={2} />
         </button>
@@ -390,8 +401,14 @@ export function Photo() {
       </div>
 
       <div
+        className="basSombre"
         style={{
-          padding: '20px 20px 32px',
+          /* Le bas vient de « basSombre » : 32 px, plus la barre de
+             gestes. La légende et les réactions passaient dessous.
+             Les côtés un par un, pour la même raison qu'au-dessus. */
+          paddingTop: 20,
+          paddingLeft: 20,
+          paddingRight: 20,
           display: 'flex',
           flexDirection: 'column',
           gap: 6

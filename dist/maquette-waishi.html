@@ -64,6 +64,38 @@
 html, body { margin: 0; padding: 0; height: 100%; }
 p, h1, h2, h3 { margin: 0; }
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+
+/* ------------------------------------------------------------
+   OÙ EST LE DOIGT QUAND IL N'Y A PAS DE DOIGT.
+
+   L'application se pilote au doigt, et rien n'avait été prévu pour
+   qui ne peut pas s'en servir : ni clavier branché sur un téléphone,
+   ni commande par contacteur, ni la navigation au clavier de la
+   version web. On ne voyait tout simplement pas où l'on était.
+
+   Le liseré par défaut du navigateur existe bien, mais il est rogné
+   partout où il compte : « .list » découpe ce qui dépasse, et le
+   liseré d'une rangée sélectionnée disparaissait donc sous le bord
+   arrondi de la liste.
+
+   « :focus-visible » et non « :focus » : le second s'allume aussi à
+   l'appui du doigt, et l'on verrait un cadre vert autour de chaque
+   bouton qu'on touche — un défaut de plus, pas une aide.
+
+   Le décalage négatif rentre le liseré à l'INTÉRIEUR de l'élément,
+   ce qui le rend visible même dans un conteneur qui découpe. */
+:where(button, a, [role="button"], [tabindex]):focus-visible {
+  outline: 2px solid var(--vert-texte);
+  outline-offset: -2px;
+  border-radius: 10px;
+}
+/* Les champs de saisie, eux, ont la place de porter leur liseré à
+   l'extérieur : rien ne les découpe, et un cadre posé dessus
+   mangerait le texte qu'on est en train d'écrire. */
+:where(input, textarea, select):focus-visible {
+  outline: 2px solid var(--vert-texte);
+  outline-offset: 1px;
+}
 /* Une icône dont la taille est écrite dans la balise ne doit jamais
    être rétrécie par la flexbox qui la contient : sans cette règle,
    elle s'écrase à quelques pixels dès que le texte voisin est long. */
@@ -126,11 +158,26 @@ body {
 .phone > * { flex-shrink: 0; }
 .phone--green { background: var(--vert); }
 
+/* Un en-tête sombre qui occupe le haut de l'écran : l'administration,
+   et la visionneuse de photos. Comme le bandeau vert, il passe SOUS
+   la barre d'état et descend son contenu. La classe existe pour que
+   la marge de sécurité soit écrite à UN endroit — trois blocs
+   rembourrés à la main, c'est trois occasions d'en oublier un. */
+.hautSombre { padding-top: calc(20px + env(safe-area-inset-top, 0px)); }
+.hautPhoto { padding-top: calc(14px + env(safe-area-inset-top, 0px)); }
+/* Et le bas, pour un écran sans barre d'onglets : la visionneuse
+   affiche ses réactions là où passe la barre de gestes. */
+.basSombre { padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px)); }
+
 .display { font-family: var(--display); font-weight: 700; }
 .overline { font-family: var(--display); font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--gris); }
 
 /* Bandeau d'accueil */
-.hero { background: var(--vert); padding: 22px 20px 26px; display: flex; flex-direction: column; gap: 20px; }
+/* L'ENCOCHE, EN HAUT — même raison que la barre de gestes en bas.
+   Le bandeau vert doit passer SOUS la barre d'état, pour qu'il n'y
+   ait pas de liseré blanc au-dessus ; c'est son CONTENU qui descend.
+   D'où un rembourrage, et non une marge. */
+.hero { background: var(--vert); padding: calc(22px + env(safe-area-inset-top, 0px)) 20px 26px; display: flex; flex-direction: column; gap: 20px; }
 .hero__note { background: #12613C; border: 1px solid #2E7A55; border-radius: 14px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; }
 
 .emblem { width: 46px; height: 46px; border-radius: 12px; background: #FFF; display: grid; place-items: center; flex: none; }
@@ -152,7 +199,7 @@ body {
    pixel près de l'autre. Le titre, lui, occupe la même ligne de
    quarante-quatre pixels que les boutons — la zone tactile — qu'il
    y ait un bouton ou non. */
-.apphead { background: #FFF; border-bottom: 1px solid var(--filet); padding: 10px 8px 12px; display: flex; align-items: center; gap: 4px; }
+.apphead { background: #FFF; border-bottom: 1px solid var(--filet); padding: calc(10px + env(safe-area-inset-top, 0px)) 8px 12px; display: flex; align-items: center; gap: 4px; }
 .apphead__title { flex-grow: 1; min-height: 44px; display: flex; align-items: center; font-family: var(--display); font-size: 18px; font-weight: 600; }
 
 .tapicon { width: 44px; height: 44px; display: grid; place-items: center; flex: none; border-radius: 12px; }
@@ -172,8 +219,27 @@ body {
 .listrow + .listrow { border-top: 1px solid #EDF3F0; }
 
 .rowhead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.link { font-size: 13px; font-weight: 600; color: var(--vert-texte); }
-.linkrow { display: flex; align-items: center; gap: 6px; margin-top: 14px; font-size: 14px; font-weight: 600; color: var(--vert-texte); }
+/* Un lien de texte reste une CIBLE, et elle faisait dix-sept pixels
+   de haut. « Tout le casier », « Tout lire », « Modifier » : des mots
+   posés dans un écran, sans cadre ni fond, qu'on vise au doigt.
+
+   La zone est agrandie par un calque INVISIBLE et hors du flux, non
+   par une hauteur minimale. La différence n'est pas cosmétique :
+   « min-height: 44px » aurait fait grandir de vingt-sept pixels
+   chaque en-tête de section qui porte un lien — l'accueil en a un —
+   et l'on aurait payé en mise en page validée ce qu'on gagnait en
+   confort. Là, rien ne bouge à l'écran ; seul le doigt trouve plus
+   large. Vérifié par le banc de comparaison, qui n'a pas bronché.
+
+   Les voisins d'un tel lien ne sont jamais cliquables — un surtitre,
+   une étiquette — donc le calque ne vole aucun appui. */
+.link { position: relative; font-size: 13px; font-weight: 600; color: var(--vert-texte); }
+.link::after { content: ''; position: absolute; inset: -14px -10px; }
+/* Même raison que « .link » : c'est une ligne de texte cliquable, et
+   elle faisait dix-sept pixels de haut. Le calque agrandit la zone
+   sans toucher à la mise en page. */
+.linkrow { position: relative; display: flex; align-items: center; gap: 6px; margin-top: 14px; font-size: 14px; font-weight: 600; color: var(--vert-texte); }
+.linkrow::after { content: ''; position: absolute; inset: -14px -10px; }
 
 .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 
@@ -216,6 +282,28 @@ body {
 
 /* Étudiants */
 .searchbar { display: flex; align-items: center; gap: 10px; background: #FFF; border: 1px solid var(--bord); border-radius: 12px; padding: 0 14px; min-height: 48px; font-size: 15px; color: #8A978F; }
+/* LE CHAMP OCCUPE TOUTE LA HAUTEUR DE LA BARRE.
+
+   Il n'en occupait que dix-huit pixels : le reste de la barre — le
+   fond blanc, le liseré, l'icône de loupe — n'était pas cliquable.
+   On voyait un champ de quarante-huit pixels, on tapait dedans, et
+   il ne se passait rien deux fois sur trois. Le défaut se voit
+   d'autant moins qu'on finit par viser juste sans s'en rendre
+   compte. */
+.searchbar input { align-self: stretch; }
+
+/* La case à cocher native fait treize pixels de côté sur un
+   téléphone. C'est en dessous du plancher, et cela se sent : on
+   coche « Prévenir les membres » du bout de l'ongle. Elle est portée
+   à vingt pixels, avec sa zone étendue par un calque — l'étiquette
+   qui la suit reste cliquable, elle, puisque les deux vivent dans le
+   même « label ». */
+input[type="checkbox"] {
+  position: relative;
+  width: 20px; height: 20px; flex: none;
+  accent-color: var(--vert);
+}
+input[type="checkbox"]::after { content: ''; position: absolute; inset: -12px; }
 .studentrow { display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 14px; }
 
 .grade { display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 999px; background: #F1F6F3; border: 1px solid var(--bord); font-size: 12px; font-weight: 600; }
@@ -269,7 +357,21 @@ body {
 .input--on { background: #FFF; border: 2px solid var(--vert); padding: 0 13px; }
 
 /* Navigation inférieure */
-.tabbar { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); background: #FFF; border-top: 1px solid var(--filet); padding: 8px 4px 14px; position: sticky; bottom: 0; }
+/* LA BARRE DE GESTES D'ANDROID PASSAIT PAR-DESSUS LES ONGLETS.
+
+   « viewport-fit=cover » est posé dans index.html : la page occupe
+   tout l'écran, encoche et barre de gestes comprises. C'est ce qu'on
+   veut — un liseré blanc sous le bandeau vert serait laid — mais cela
+   oblige à rendre à la page les marges que le système occupe, et
+   personne ne l'avait fait. Depuis Android 15 le plein écran n'est
+   plus un choix : il est imposé, et les libellés « Accueil »,
+   « Étudiants »… se retrouvaient sous la barre de gestes, à moitié
+   masqués et difficiles à atteindre.
+
+   « env(safe-area-inset-*) » vaut zéro partout où il n'y a rien à
+   éviter — sur le web, dans la maquette, sur un téléphone à boutons.
+   La règle ne change donc rien là où elle ne sert pas. */
+.tabbar { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); background: #FFF; border-top: 1px solid var(--filet); padding: 8px 4px calc(14px + env(safe-area-inset-bottom, 0px)); position: sticky; bottom: 0; }
 .tabbar__item { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 6px 0; min-height: 44px; }
 
 /* ------------------------------------------------------------
@@ -683,7 +785,15 @@ body {
 /* ============================================================
    PARTICIPATION ET CONTRIBUTION MVOLA
    ============================================================ */
-.modif { font-size: 11px; color: var(--vert-texte); font-weight: 600; }
+/* Le plus petit texte cliquable de l'application : onze pixels, soit
+   treize de haut. Ces « Modifier » ont été ajoutés après la maquette,
+   sur l'écran du club, et leur taille est CONTRAINTE — la comparaison
+   au pixel a refusé deux fois de les agrandir, parce qu'ils poussaient
+   l'écran. Le calque résout la contradiction : la zone touchée fait
+   quarante et un pixels de haut, le texte en fait toujours treize, et
+   la maquette ne bouge pas. */
+.modif { position: relative; font-size: 11px; color: var(--vert-texte); font-weight: 600; }
+.modif::after { content: ''; position: absolute; inset: -14px -12px; }
 .aide { font-size: 12.5px; line-height: 18px; color: var(--gris); }
 .input--fige { background: var(--fond); color: var(--gris); }
 
