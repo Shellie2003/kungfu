@@ -51,6 +51,23 @@ on:
       # vercel.json décide de la version WEB. Il n'était surveillé
       # nulle part : une erreur y est passée inaperçue deux jours.
       - 'vercel.json'
+      # Et les MIGRATIONS, qui manquaient — troisième fois que ce
+      # trou se répète, après outils/ et vercel.json.
+      #
+      # Une migration ne change pas l'APK, ce qui rendait l'oubli
+      # défendable. Mais deux contrôles LISENT les migrations :
+      #
+      #   · verifier-seaux.mjs compare les types de fichiers acceptés
+      #     par le code à ceux déclarés pour le seau. C'est ce
+      #     contrôle qui a rattrapé le PDF refusé en silence ;
+      #   · verifier-ecritures.mjs veille sur ce que les règles
+      #     d'accès rendent invisible.
+      #
+      # Sans ce chemin, changer une migration pouvait rompre l'accord
+      # entre le code et la base SANS qu'aucun contrôle ne devienne
+      # rouge — c'est-à-dire exactement la panne qu'ils existent pour
+      # empêcher, arrivant par la porte qu'on n'avait pas fermée.
+      - 'supabase/**'
 
 jobs:
   apk:
