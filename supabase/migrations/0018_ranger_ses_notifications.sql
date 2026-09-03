@@ -1,0 +1,32 @@
+-- ============================================================
+-- Chacun range SES notifications.
+--
+-- L'écran des notifications ne savait faire qu'une chose : « Tout
+-- lire ». On ne pouvait ni en marquer une seule, ni en retirer
+-- aucune. Cinquante notifications s'accumulaient, la plus ancienne
+-- restait à côté de la plus récente, et la pastille du casier ne
+-- disait plus rien d'utile.
+--
+-- La raison en base est simple : la table n'avait AUCUNE politique de
+-- suppression. Personne ne pouvait effacer une notification — ni son
+-- destinataire, ni l'administration. Une fonctionnalité manquait, et
+-- rien dans l'application ne pouvait la combler : il fallait
+-- commencer ici.
+--
+-- ------------------------------------------------------------
+-- LA SIENNE, ET RIEN QUE LA SIENNE
+--
+-- « profil_id = prive.mon_profil() » est ce qui empêche d'effacer la
+-- notification de quelqu'un d'autre — donc de faire disparaître
+-- l'annonce d'un entraînement dans le téléphone d'un autre membre.
+--
+-- L'administration n'est PAS mentionnée, et c'est délibéré. Une
+-- notification est une copie personnelle, déjà distribuée : la
+-- retirer du téléphone de quelqu'un après l'avoir envoyée ne
+-- corrigerait rien — l'annonce a été lue — et donnerait le moyen
+-- d'effacer ce qu'on a dit. Pour se corriger, on publie une
+-- rectification.
+-- ------------------------------------------------------------
+create policy "je range mes notifications" on notifications
+  for delete to authenticated
+  using (profil_id = prive.mon_profil());

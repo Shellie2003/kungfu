@@ -103,6 +103,64 @@ export async function toutMarquerLu() {
 }
 
 /* ------------------------------------------------------------
+   Ranger ses notifications, une par une.
+
+   L'écran ne savait faire qu'une chose : « Tout lire ». On ne
+   pouvait ni en marquer une seule, ni en retirer aucune. Cinquante
+   s'accumulaient, la plus ancienne restait à côté de la plus
+   récente, et la pastille du casier ne disait plus rien d'utile.
+
+   « lue_le » est posé par le SERVEUR ? Non : par le téléphone, avec
+   son horloge. C'est assumé — ce champ ne sert qu'à distinguer lu de
+   non lu, et une minute d'écart entre deux téléphones n'a aucune
+   conséquence. Rien n'en dépend qui compte.
+   ------------------------------------------------------------ */
+export async function marquerLue(id: string) {
+  const { data, error } = await supabase
+    .from('notifications')
+    .update({ lue_le: new Date().toISOString() })
+    .eq('id', id)
+    .is('lue_le', null)
+    .select('id');
+  if (error) throw error;
+  /* Zéro ligne n'est PAS une erreur ici : cela veut dire qu'elle
+     était déjà lue, ce qui arrive dès qu'on rouvre la même
+     notification. On ne lève donc rien — contrairement aux
+     écritures où zéro ligne signale un refus. */
+  return data?.length === 1;
+}
+
+export async function retirerNotification(id: string) {
+  const { data, error } = await supabase
+    .from('notifications')
+    .delete()
+    .eq('id', id)
+    .select('id');
+  if (error) throw error;
+  /* Ici, en revanche, zéro ligne EST un refus : la notification
+     existait, on vient de la voir à l'écran. Sans ce contrôle, la
+     liste se rafraîchirait et la notification réapparaîtrait sans
+     que rien n'ait expliqué pourquoi. */
+  if (!data?.length) {
+    throw new Error('Le serveur n’a pas retiré cette notification.');
+  }
+}
+
+/* Vider ce qui est déjà lu. Le geste de rangement le plus fréquent :
+   on veut retrouver un écran qui ne montre que ce qui reste à
+   voir. Ce qui n'est PAS lu n'est jamais emporté — ce serait
+   effacer une annonce qu'on n'a pas vue. */
+export async function viderLesLues() {
+  const { data, error } = await supabase
+    .from('notifications')
+    .delete()
+    .not('lue_le', 'is', null)
+    .select('id');
+  if (error) throw error;
+  return data?.length ?? 0;
+}
+
+/* ------------------------------------------------------------
    Les catégories du casier viennent des actualités elles-mêmes.
 
    Le club en invente : « Cérémonie » n'était pas prévue et elle

@@ -19,6 +19,10 @@ export type Membre = {
   nom: string;
   prenom: string;
   photo: string | null;
+  /* Retiré du club. Les élèves ne le voient pas — la règle d'accès
+     l'écarte — mais l'administration si, et elle doit pouvoir le
+     distinguer pour le réintégrer. */
+  actif: boolean;
   grade: { nom: string; couleur: string; rang: number } | null;
 };
 
@@ -30,13 +34,20 @@ type LigneBrute = {
   nom: string;
   prenom: string;
   photo: string | null;
+  actif: boolean;
   grades: { nom: string; couleur: string; rang: number } | null;
 };
 
 export async function lireMembres(): Promise<Membre[]> {
   const { data, error } = await supabase
     .from('profils')
-    .select('id, numero, nom, prenom, photo, grades ( nom, couleur, rang )')
+    /* « actif » manquait, et « Désactiver cette fiche » existait
+       depuis toujours : un membre retiré du club restait donc affiché
+       à l'administration exactement comme les autres, sans rien qui
+       le distingue. La règle d'accès le cache aux élèves — pas à
+       l'administration, qui doit pouvoir le retrouver pour le
+       réintégrer. Encore faut-il qu'elle le voie. */
+    .select('id, numero, nom, prenom, photo, actif, grades ( nom, couleur, rang )')
     /* Classé par grade, du plus élevé au plus bas, puis par nom.
        « Ito hoe classé par grade ito » — le club l'a demandé. */
     .order('rang', { referencedTable: 'grades', ascending: false })
@@ -50,6 +61,7 @@ export async function lireMembres(): Promise<Membre[]> {
     nom: l.nom,
     prenom: l.prenom,
     photo: l.photo,
+    actif: l.actif,
     grade: l.grades ?? null
   }));
 }
@@ -134,7 +146,7 @@ export function useFiche(id: string | undefined) {
       const { data, error } = await supabase
         .from('profils')
         .select(
-          `id, numero, nom, prenom, photo, debut, biographie,
+          `id, numero, nom, prenom, photo, actif, debut, biographie,
            grades ( nom, couleur, rang ),
            profils_prives ( date_naissance, telephone, adresse, notes ),
            tuteurs ( id, nom, lien, telephone, urgence )`
@@ -158,6 +170,7 @@ export function useFiche(id: string | undefined) {
         nom: l.nom,
         prenom: l.prenom,
         photo: l.photo,
+        actif: l.actif,
         grade: l.grades ?? null,
         debut: l.debut,
         biographie: l.biographie,

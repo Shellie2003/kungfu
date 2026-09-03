@@ -512,16 +512,48 @@ export function AdminFiche() {
           <div className="warn">
             <i />
             <p>
-              Une fiche ne se supprime pas, elle se désactive : un élève qui revient retrouve
-              son numéro, son grade et son historique.
-              <br />
-              <button
-                className="link"
-                style={{ marginTop: 8 }}
-                onClick={() => id && desactiver.mutate({ profilId: id, actif: false })}
-              >
-                Désactiver cette fiche
-              </button>
+              {/* ⚠ CE BOUTON NE SAVAIT QUE DÉSACTIVER.
+
+                  Il disait « Désactiver cette fiche » quel que soit
+                  l'état du membre, et n'envoyait jamais que
+                  « actif: false ». Un élève retiré du club ne pouvait
+                  donc PAS revenir : la fonction de réactivation
+                  existait dans les services, aucun écran ne
+                  l'appelait, et la seule issue était le tableau de
+                  bord Supabase — c'est-à-dire moi.
+
+                  Et le texte promettait précisément le contraire :
+                  « un élève qui revient retrouve son numéro, son
+                  grade et son historique ». Il le retrouvait, à
+                  condition que quelqu'un puisse le réactiver. */}
+              {fiche.actif === false ? (
+                <>
+                  Cette fiche est <b>retirée du club</b>. Le membre n’apparaît plus dans
+                  l’annuaire des élèves et ne peut plus se connecter. Son numéro, son grade et
+                  son historique sont intacts.
+                  <br />
+                  <button
+                    className="link"
+                    style={{ marginTop: 8 }}
+                    onClick={() => id && desactiver.mutate({ profilId: id, actif: true })}
+                  >
+                    Réintégrer ce membre
+                  </button>
+                </>
+              ) : (
+                <>
+                  Une fiche ne se supprime pas, elle se désactive : un élève qui revient
+                  retrouve son numéro, son grade et son historique.
+                  <br />
+                  <button
+                    className="link"
+                    style={{ marginTop: 8 }}
+                    onClick={() => id && desactiver.mutate({ profilId: id, actif: false })}
+                  >
+                    Retirer ce membre du club
+                  </button>
+                </>
+              )}
             </p>
           </div>
         )}

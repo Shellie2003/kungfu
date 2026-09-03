@@ -16,6 +16,16 @@ import {
 import { teinter, useCategories } from '../services/categories';
 import { useUrl } from '../services/stockage';
 import { estAdmin, useSession } from '../services/session';
+import { useParticipation } from '../services/participation';
+
+/* Aujourd'hui à minuit : une sortie qui a lieu AUJOURD'HUI accepte
+   encore les inscriptions. Comparer à l'instant présent fermerait
+   l'inscription d'une sortie du matin dès qu'il est midi. */
+const aujourdhui = () => {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
 
 export function Casier() {
   const aller = useNavigate();
@@ -166,6 +176,12 @@ export function Actualite() {
   const aller = useNavigate();
   const { data: a, isPending } = useActualite(id);
   const { data: cats } = useCategories();
+  const moi = useSession((e) => e.profil);
+  /* Ai-je déjà dit que je viens ? L'écran l'ignorait complètement :
+     « J'y participe » s'affichait à l'identique qu'on soit inscrit ou
+     non, et l'on ne savait plus si l'on s'était inscrit — donc on
+     recommençait. */
+  const { data: participation } = useParticipation(id, moi?.id);
   /* Appelé avant le retour anticipé : un hook ne se saute pas selon
      l'état du chargement. */
   const illustration = useUrl('album', a?.image);
@@ -185,7 +201,32 @@ export function Actualite() {
 
   return (
     <>
-      <Entete titre={a.categorie} retour={() => aller('/casier')} />
+      <Entete
+        titre={a.categorie}
+        retour={() => aller('/casier')}
+        /* MODIFIER LÀ OÙ L'ON LIT.
+
+           Corriger une faute dans une annonce demandait de ressortir,
+           d'ouvrir l'administration, d'ouvrir « Publier une
+           actualité », puis de retrouver l'annonce dans la liste du
+           bas. Quatre appuis pour une virgule — donc une virgule qui
+           reste.
+
+           Le crayon n'apparaît qu'à qui peut écrire : le serveur
+           refuse déjà le reste, et proposer ce qui sera refusé laisse
+           la personne se demander si le fautif est elle. */
+        action={
+          estAdmin(moi) ? (
+            <button
+              className="tapicon"
+              onClick={() => aller(`/admin/publier?a=${a.id}`)}
+              aria-label="Modifier cette actualité"
+            >
+              <Icone nom="edit" taille={21} couleur="#0E2119" />
+            </button>
+          ) : undefined
+        }
+      />
 
       <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         {/* L'image de l'actualité, quand il y en a une. Sinon
@@ -258,7 +299,41 @@ export function Actualite() {
             </p>
           ))}
 
-          <Bouton onClick={() => aller(`/casier/${a.id}/participer`)}>J’y participe</Bouton>
+          {/* ---- « J'Y PARTICIPE » N'A PAS TOUJOURS DE SENS ----
+
+              Le bouton s'affichait sur TOUTE actualité, y compris un
+              changement d'horaire ou une réunion annoncée. On ne
+              participe pas à un changement d'horaire : l'écran de
+              participation demandait alors des accompagnants et une
+              promesse de versement pour une information qui n'attend
+              aucune réponse.
+
+              Le repère, c'est la DATE de l'événement : une actualité
+              qui n'en porte pas n'est pas un événement, c'est une
+              annonce. C'est le même champ que l'écran affiche déjà
+              plus haut, et il est déjà rempli par le club quand il
+              s'agit d'une sortie ou d'une compétition.
+
+              Une date PASSÉE ferme aussi : s'inscrire à une sortie
+              d'il y a trois mois ne veut rien dire, et le club
+              recevrait des promesses de versement pour un événement
+              qui a eu lieu. */}
+          {a.date_evt && new Date(a.date_evt) >= aujourdhui() ? (
+            participation ? (
+              /* DÉJÀ INSCRIT. On le dit, et l'on mène à sa propre
+                 inscription pour la corriger — pas à un formulaire
+                 vierge qui laisserait croire qu'il faut tout
+                 recommencer. */
+              <Bouton
+                genre="ghost"
+                onClick={() => aller(`/casier/${a.id}/participer`)}
+              >
+                Vous participez · modifier
+              </Bouton>
+            ) : (
+              <Bouton onClick={() => aller(`/casier/${a.id}/participer`)}>J’y participe</Bouton>
+            )
+          ) : null}
         </div>
       </div>
     </>

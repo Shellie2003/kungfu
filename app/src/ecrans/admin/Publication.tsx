@@ -1,8 +1,8 @@
 /* ============================================================
    Administration · Publier, notifier, albums et photos
    ============================================================ */
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Icone } from '../../ui/Icone';
 import {
   Avis, Bouton, Carte, Champ, ChoisirFichier, Choix, Entete, Etat, Surtitre, Tuile, Zone
@@ -26,6 +26,15 @@ import {
 /* ---------------------------------------------- Publier une actualité */
 export function AdminPublier() {
   const aller = useNavigate();
+  /* ---- ARRIVER DÉJÀ SUR LA BONNE ACTUALITÉ ----
+
+     Le club a demandé de pouvoir modifier une actualité LÀ OÙ IL LA
+     LIT. Le crayon de l'écran du casier mène ici avec l'identifiant
+     dans l'adresse ; sans cela il faudrait retrouver l'annonce dans
+     la liste du bas, ce qui est exactement le détour qu'on cherche à
+     supprimer. */
+  const [parametres] = useSearchParams();
+  const demandee = parametres.get('a');
   const { data: actus } = useActualites();
   const { data: cats } = useCategories();
   const publier = usePublier();
@@ -47,6 +56,27 @@ export function AdminPublier() {
      neuve. Un seul formulaire pour les deux : deux écrans auraient
      divergé au premier champ ajouté. */
   const [edite, setEdite] = useState<string | null>(null);
+
+  /* Charger l'actualité demandée dans l'adresse, UNE SEULE FOIS.
+
+     « une seule fois » n'est pas une précaution de style : sans le
+     verrou, chaque rafraîchissement de la liste — après un envoi, par
+     exemple — reposerait les champs et effacerait ce qu'on est en
+     train d'écrire. */
+  const chargee = useRef(false);
+  useEffect(() => {
+    if (chargee.current || !demandee) return;
+    const a = (actus ?? []).find((x) => x.id === demandee);
+    if (!a) return;
+    chargee.current = true;
+    setEdite(a.id);
+    setTitre(a.titre);
+    setCategorie(a.categorie);
+    setTexte(a.texte);
+    setDate(a.date_evt ?? '');
+    setLieu(a.lieu ?? '');
+    setImage(a.image);
+  }, [actus, demandee]);
   /* Ce qui attend une confirmation de suppression. */
   const [aSupprimer, setASupprimer] = useState<{ id: string; titre: string } | null>(null);
   /* Prévenir les membres au moment de publier.

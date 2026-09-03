@@ -14,12 +14,14 @@ import { useGrades, useMembres } from '../services/membres';
 import { useNotifications } from '../services/casier';
 import { useUrls } from '../services/stockage';
 import { correspond, courtGrade } from '../services/texte';
+import { estAdmin, useSession } from '../services/session';
 
 export function Etudiants() {
   const aller = useNavigate();
   const { data: membres, isPending, error } = useMembres();
   const { data: grades } = useGrades();
   const { data: notifs } = useNotifications();
+  const moi = useSession((e) => e.profil);
   const [recherche, setRecherche] = useState('');
   const [filtre, setFiltre] = useState<string | null>(null);
 
@@ -43,15 +45,38 @@ export function Etudiants() {
       <Entete
         titre="Étudiants"
         action={
-          <button
-            className="tapicon"
-            onClick={() => aller('/notifications')}
-            aria-label="Notifications"
-            style={{ position: 'relative' }}
-          >
-            <Icone nom="bell" taille={22} couleur="#0E2119" />
-            {nonlues > 0 && <span className="dot dot--plain" />}
-          </button>
+          <>
+            {/* INSCRIRE, LÀ OÙ L'ON REGARDE L'ANNUAIRE.
+
+                L'inscription vivait uniquement dans l'écran
+                d'administration : constater qu'un membre manque ici,
+                puis ressortir, ouvrir l'administration et retrouver
+                « Ajouter un étudiant ». Trois appuis pour un geste
+                qu'on décide en regardant la liste.
+
+                Ce n'est pas une permission de plus — le serveur
+                refuse déjà ce que le rôle n'autorise pas — c'est un
+                raccourci, et il n'apparaît qu'à qui peut s'en
+                servir. */}
+            {estAdmin(moi) && (
+              <button
+                className="tapicon"
+                onClick={() => aller('/admin/fiche')}
+                aria-label="Inscrire un membre"
+              >
+                <Icone nom="plus" taille={22} couleur="#0E2119" epaisseur={2} />
+              </button>
+            )}
+            <button
+              className="tapicon"
+              onClick={() => aller('/notifications')}
+              aria-label="Notifications"
+              style={{ position: 'relative' }}
+            >
+              <Icone nom="bell" taille={22} couleur="#0E2119" />
+              {nonlues > 0 && <span className="dot dot--plain" />}
+            </button>
+          </>
         }
       />
 
@@ -113,6 +138,12 @@ export function Etudiants() {
               key={m.id}
               className="card studentrow"
               onClick={() => aller(`/etudiants/${m.id}`)}
+              /* Un membre RETIRÉ du club reste visible de
+                 l'administration — la règle d'accès le cache aux
+                 élèves — et il faut qu'elle le distingue, sans quoi
+                 « Désactiver cette fiche » n'a aucun effet visible et
+                 l'on ne sait plus qui est encore au club. */
+              style={m.actif === false ? { opacity: 0.55 } : undefined}
             >
               <Portrait taille={52} rayon={14} photo={m.photo ? portraits[m.photo] : null} />
               <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
@@ -126,6 +157,19 @@ export function Etudiants() {
                 >
                   {m.prenom}
                 </span>
+                {m.actif === false && (
+                  <span
+                    style={{
+                      display: 'block',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: '#8A3B12',
+                      marginTop: 4
+                    }}
+                  >
+                    Retiré du club
+                  </span>
+                )}
                 {m.grade && (
                   <span style={{ display: 'block', marginTop: 7 }}>
                     <Grade nom={m.grade.nom} couleur={m.grade.couleur} />
