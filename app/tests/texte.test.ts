@@ -2,7 +2,7 @@
    La recherche, les grades abrégés, et l'onglet actif.
    ============================================================ */
 import { describe, expect, test } from 'vitest';
-import { correspond, courtGrade, pliage } from '../src/services/texte';
+import { correspond, courtGrade, enLettres, pliage } from '../src/services/texte';
 import { ongletDe } from '../src/ui/Onglets';
 
 describe('pliage', () => {
@@ -106,5 +106,40 @@ describe('ongletDe', () => {
        /admin/albums. Le test le prouve. */
     expect(ongletDe('/album')).toBe('/album');
     expect(ongletDe('/admin/albums')).toBe('');
+  });
+});
+
+describe('enLettres', () => {
+  test('sous dix, le nombre s’écrit en toutes lettres', () => {
+    /* « Trois places au total avec vous » contre « 3 places » : dans
+       une phrase, l'usage français écrit les petits nombres en
+       lettres, et la maquette le faisait. */
+    expect(enLettres(3)).toBe('trois');
+    expect(enLettres(9)).toBe('neuf');
+  });
+
+  test('à partir de dix, le chiffre redevient plus lisible', () => {
+    expect(enLettres(10)).toBe('10');
+    expect(enLettres(43)).toBe('43');
+  });
+
+  test('« un » s’accorde, et lui seul', () => {
+    /* « Un places au total » serait pire que le chiffre qu'on
+       remplaçait. */
+    expect(enLettres(1)).toBe('un');
+    expect(enLettres(1, { feminin: true })).toBe('une');
+    expect(enLettres(2, { feminin: true })).toBe('deux');
+  });
+
+  test('la majuscule est demandée, jamais imposée', () => {
+    /* Le mot commence parfois une phrase et parfois non : le décider
+       ici obligerait l'appelant à défaire. */
+    expect(enLettres(3, { majuscule: true })).toBe('Trois');
+    expect(enLettres(1, { majuscule: true, feminin: true })).toBe('Une');
+  });
+
+  test('un nombre qui n’est pas un entier positif reste tel quel', () => {
+    expect(enLettres(-1)).toBe('-1');
+    expect(enLettres(2.5)).toBe('2.5');
   });
 });

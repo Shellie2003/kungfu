@@ -80,33 +80,6 @@ export function Notifications() {
           </p>
         )}
 
-        {/* VIDER CE QUI EST DÉJÀ LU.
-
-            Le geste de rangement le plus fréquent : on veut retrouver
-            un écran qui ne montre que ce qui reste à voir. Ce qui
-            n'est pas lu n'est jamais emporté — ce serait effacer une
-            annonce qu'on n'a pas vue. Le bouton n'apparaît donc que
-            s'il y a vraiment quelque chose à ranger. */}
-        {liste.length > restantes && (
-          <button
-            className="link"
-            style={{ alignSelf: 'flex-start' }}
-            disabled={vider.isPending}
-            onClick={() => {
-              setSouci(null);
-              vider.mutate(undefined, {
-                onError: (err) => setSouci((err as Error).message)
-              });
-            }}
-          >
-            {vider.isPending
-              ? 'Rangement…'
-              : `Effacer les ${liste.length - restantes} notification${
-                  liste.length - restantes > 1 ? 's' : ''
-                } déjà lue${liste.length - restantes > 1 ? 's' : ''}`}
-          </button>
-        )}
-
         <Etat
           chargement={isPending}
           erreur={error}
@@ -232,6 +205,40 @@ export function Notifications() {
               </div>
             ))}
         </Etat>
+
+        {/* VIDER CE QUI EST DÉJÀ LU — EN BAS, ET C'EST LE POINT.
+
+            Le geste de rangement le plus fréquent : on veut retrouver
+            un écran qui ne montre que ce qui reste à voir. Ce qui
+            n'est pas lu n'est jamais emporté — ce serait effacer une
+            annonce qu'on n'a pas vue.
+
+            Il était EN HAUT, et poussait la liste de trente-cinq
+            pixels — mesuré par la comparaison à la maquette. On vient
+            ici pour lire ses notifications, pas pour les ranger : la
+            liste doit commencer là où elle commence, et le balai
+            attendre en fin de course, là où l'on arrive quand on a
+            fini de lire. C'est le même défaut que le bouton
+            « Modifier » de l'écran du club, à un autre endroit. */}
+        {liste.length > restantes && (
+          <button
+            className="link"
+            style={{ alignSelf: 'flex-start' }}
+            disabled={vider.isPending}
+            onClick={() => {
+              setSouci(null);
+              vider.mutate(undefined, {
+                onError: (err) => setSouci((err as Error).message)
+              });
+            }}
+          >
+            {vider.isPending
+              ? 'Rangement…'
+              : `Effacer les ${liste.length - restantes} notification${
+                  liste.length - restantes > 1 ? 's' : ''
+                } déjà lue${liste.length - restantes > 1 ? 's' : ''}`}
+          </button>
+        )}
       </div>
     </>
   );

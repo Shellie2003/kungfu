@@ -33,3 +33,33 @@ export const correspond = (requete: string, ...champs: (string | null | undefine
   if (!q) return true;
   return pliage(champs.filter(Boolean).join(' ')).includes(q);
 };
+
+/* ------------------------------------------------------------
+   Les petits nombres s'écrivent en lettres.
+
+   « 3 places au total avec vous » contre « Trois places au total
+   avec vous » : la maquette avait raison, et l'usage français aussi
+   — sous dix, dans une phrase, un nombre s'écrit en toutes lettres.
+   Le chiffre reste pour ce qui se compte d'un coup d'œil : un
+   compteur, une somme en ariary, un matricule.
+
+   Au-delà de neuf, le chiffre redevient plus lisible que le mot :
+   « quarante-trois places » se déchiffre, « 43 places » se lit.
+   ------------------------------------------------------------ */
+const LETTRES = [
+  'zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'
+];
+
+export function enLettres(
+  n: number,
+  /* « un » s'accorde, et lui seul : « une place », « un membre ».
+     L'oublier écrirait « Un places au total avec vous », ce qui est
+     pire que le chiffre qu'on remplaçait. */
+  { majuscule = false, feminin = false } = {}
+): string {
+  const mot =
+    Number.isInteger(n) && n >= 0 && n < LETTRES.length
+      ? n === 1 && feminin ? 'une' : (LETTRES[n] ?? String(n))
+      : String(n);
+  return majuscule ? mot.charAt(0).toUpperCase() + mot.slice(1) : mot;
+}

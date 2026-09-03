@@ -17,6 +17,7 @@ import { supabase } from './supabase';
 import { assure } from './ecrire';
 import { TYPES_IMAGE, reduire } from './images';
 import { envoyerFichier } from './envoi';
+import { pliage } from './texte';
 import type { Progres } from './envoi';
 
 export type TypeSalon = 'club' | 'grade' | 'evenement' | 'direct' | 'maitres';
@@ -636,10 +637,31 @@ export async function marquerLu(salonId: string, profilId: string) {
 
 /* Deux lettres pour une vignette de salon : « Tout le club » → TC.
    Un salon direct n'en a pas — il porte le portrait de la personne. */
+/* Les mots-outils ne comptent pas dans une initiale.
+
+   « Tout le club » donnait « TL » : l'article prenait la place du
+   mot qui identifie le salon. Les deux lettres d'une pastille sont
+   tout ce qu'on a pour reconnaître une conversation d'un coup d'œil
+   dans une liste — « TC » se rattache à « club », « TL » ne se
+   rattache à rien. La maquette écrivait « TC », et elle avait
+   raison.
+
+   La liste reste courte à dessein : ce sont les articles et les
+   prépositions qui ne portent jamais de sens dans un nom de salon.
+   Si tout est mot-outil — « Le des » n'existe pas, mais la fonction
+   ne doit pas rendre une pastille vide — on retombe sur les mots
+   d'origine. */
+const OUTILS = new Set([
+  'le', 'la', 'les', 'l', 'de', 'du', 'des', 'd', 'un', 'une',
+  'et', 'à', 'au', 'aux', 'en'
+]);
+
 export function initiales(titre: string): string {
-  const mots = titre.trim().split(/\s+/);
-  if (mots.length === 1) return (mots[0] ?? '').slice(0, 2).toUpperCase();
-  return ((mots[0]?.[0] ?? '') + (mots[1]?.[0] ?? '')).toUpperCase();
+  const mots = titre.trim().split(/\s+/).filter(Boolean);
+  const porteurs = mots.filter((m) => !OUTILS.has(pliage(m.replace(/[’']/g, ''))));
+  const utiles = porteurs.length ? porteurs : mots;
+  if (utiles.length === 1) return (utiles[0] ?? '').slice(0, 2).toUpperCase();
+  return ((utiles[0]?.[0] ?? '') + (utiles[1]?.[0] ?? '')).toUpperCase();
 }
 
 export function heureCourte(iso: string): string {

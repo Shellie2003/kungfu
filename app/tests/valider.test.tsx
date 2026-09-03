@@ -35,24 +35,28 @@ beforeEach(() => {
 
 const maintenant = new Date().toISOString();
 
-const ATTENTE = [
-  {
-    id: 'pa1',
-    actualite_id: 'a1',
-    accompagnants: 2,
-    montant_promis: 15000,
-    note: 'Je viens avec ma sœur, elle n’est pas membre.',
-    cree_le: maintenant,
-    versements: [{ montant: 20000 }],
-    profils: { nom: 'RAKOTONDRABE', prenom: 'Nirina', numero: 'F04x042' },
-    actualites: {
-      titre: 'Sortie au lac',
-      date_evt: '2026-10-12',
-      participation_ar: 15000,
-      auteur_id: PROFIL_ADMIN.id
-    }
+/* L'inscription en attente, seule, puis la liste. Nommer la ligne
+   évite « ATTENTE[0] », que TypeScript tient pour possiblement
+   absent — et il a raison : rien ne garantit qu'un tableau littéral
+   ait un premier élément après un copier-coller. */
+const SEULE = {
+  id: 'pa1',
+  actualite_id: 'a1',
+  accompagnants: 2,
+  montant_promis: 15000,
+  note: 'Je viens avec ma sœur, elle n’est pas membre.',
+  cree_le: maintenant,
+  versements: [{ montant: 20000 }],
+  profils: { nom: 'RAKOTONDRABE', prenom: 'Nirina', numero: 'F04x042' },
+  actualites: {
+    titre: 'Sortie au lac',
+    date_evt: '2026-10-12',
+    participation_ar: 15000,
+    auteur_id: PROFIL_ADMIN.id
   }
-];
+};
+
+const ATTENTE = [SEULE];
 
 describe('l’écran ne demande que ce qu’il a le droit de voir', () => {
   test('il filtre sur l’auteur de la sortie, et sur ce qui est en attente', async () => {
@@ -137,9 +141,9 @@ describe('ce que l’écran montre pour décider', () => {
     poser({
       participations: [
         {
-          ...ATTENTE[0],
+          ...SEULE,
           versements: [],
-          actualites: { ...ATTENTE[0].actualites, participation_ar: null }
+          actualites: { ...SEULE.actualites, participation_ar: null }
         }
       ]
     });
@@ -152,7 +156,7 @@ describe('ce que l’écran montre pour décider', () => {
 
   test('tout versé se dit « Soldé », pas « 0 Ar »', async () => {
     poser({
-      participations: [{ ...ATTENTE[0], accompagnants: 0, versements: [{ montant: 15000 }] }]
+      participations: [{ ...SEULE, accompagnants: 0, versements: [{ montant: 15000 }] }]
     });
     rendre(<AdminAValider />, { route: '/admin/a-valider', profil: PROFIL_ADMIN });
 

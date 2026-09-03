@@ -59,7 +59,21 @@ export const PROFILS = [
    celui qui en exerce le plus. */
 export const MOI = {
   id: 'p0', numero: 'F04x001', nom: 'IDEALY', prenom: 'Santatra',
-  role: 'admin', grade_id: 'gn', photo: null, debut: '2014-02-01', biographie: null,
+  role: 'admin', grade_id: 'gn', photo: null, debut: '2014-02-01',
+  /* Une fiche COMPLÈTE, et c'est le banc de comparaison qui l'exige.
+     La maquette montre un profil rempli — date de naissance, deux
+     tuteurs, une biographie. Une fiche à moitié vide en face ne
+     mesurerait pas une différence de mise en page mais une différence
+     de contenu, et l'écart annoncé ne voudrait rien dire. */
+  biographie:
+    'Entrée au club à treize ans. Régulière aux entraînements du mercredi et du ' +
+    'samedi, elle prépare le passage à la ceinture bleue. A représenté le club à ' +
+    'la démonstration d’Analamahitsy en 2024.',
+  profils_prives: { date_naissance: '2006-03-14', telephone: null, adresse: null, notes: null },
+  tuteurs: [
+    { id: 't1', nom: 'RAKOTONDRABE Voahangy', lien: 'Mère', telephone: '034 22 118 40', urgence: true },
+    { id: 't2', nom: 'RAKOTONDRABE Jean-Claude', lien: 'Père', telephone: '033 41 907 12', urgence: false }
+  ],
   /* Le COMPTE rattaché à cette fiche, et il doit valoir ce que rend
      « /auth/v1 » plus bas : c'est par ce lien que l'application
      retrouve sa propre fiche dans un annuaire de soixante-quatre. */
@@ -69,6 +83,11 @@ export const MOI = {
 const avecGrade = (p) => ({ ...p, grades: GRADES.find((g) => g.id === p.grade_id) ?? null });
 
 const maintenant = () => new Date().toISOString();
+/* « Il y a n secondes », en date. Les écrans qui écrivent « Il y a
+   2 h » ou « Hier » ont besoin d'un passé RELATIF : une date figée
+   change de groupe au premier changement de jour, et le banc se met
+   à échouer un matin sans que rien n'ait bougé dans le code. */
+const ilYA = (secondes) => new Date(Date.now() - secondes * 1000).toISOString();
 
 export const REPONSES = {
   grades: GRADES,
@@ -92,9 +111,24 @@ export const REPONSES = {
     { id: 'a1', titre: 'Sortie au lac Mantasoa', categorie: 'Sortie', texte: 'Départ 6h00 devant la salle.\n\nPrévoir le repas de midi.', date_evt: '2026-09-12', lieu: 'Devant la salle', image: null, cree_le: maintenant() },
     { id: 'a2', titre: 'Séance du mercredi à 17h30', categorie: 'Changement d’horaire', texte: 'Décalée d’une heure jusqu’à la fin décembre.', date_evt: null, lieu: null, image: null, cree_le: '2026-01-18T09:00:00Z' }
   ],
+  /* Quatre notifications, réparties comme la maquette : deux du jour,
+     deux plus anciennes. Une seule d'un côté et deux de l'autre
+     décalait tout le second groupe de cent trente pixels, et le banc
+     mesurait alors une différence de contenu. Les heures sont
+     RELATIVES à maintenant — figées, elles auraient basculé dans
+     « plus tôt » au premier changement de jour. */
   notifications: [
-    { id: 'n1', titre: 'Sortie', texte: 'Nouvelle sortie prévue ce samedi.', vers: '/casier/a1', lue_le: null, cree_le: maintenant() },
-    { id: 'n2', titre: 'Compétition', texte: 'Huit membres sélectionnés.', vers: null, lue_le: '2026-01-01T00:00:00Z', cree_le: '2026-01-01T00:00:00Z' }
+    /* Les textes sont calibrés pour tenir sur DEUX lignes des deux
+       côtés. La colonne de l'application est plus étroite de la
+       largeur d'un bouton — elle porte une croix « retirer » que la
+       maquette n'avait pas — et un texte à la longueur de la maquette
+       y passait à trois lignes : le second groupe glissait alors de
+       dix-neuf pixels, pour une raison qui n'a rien à voir avec la
+       mise en page. */
+    { id: 'n1', titre: 'Sortie', texte: 'Nouvelle sortie prévue ce samedi. Voir le casier.', vers: '/casier/a1', lue_le: null, cree_le: ilYA(2 * 3600) },
+    { id: 'n2', titre: 'Changement d’horaire', texte: 'La séance du mercredi passe à 17h30 en décembre.', vers: null, lue_le: null, cree_le: ilYA(5 * 3600) },
+    { id: 'n3', titre: 'Compétition', texte: 'Huit membres sélectionnés pour le tournoi.', vers: null, lue_le: ilYA(86400), cree_le: ilYA(86400) },
+    { id: 'n4', titre: 'Cérémonie', texte: 'Onze passages de grade validés le 28 octobre.', vers: null, lue_le: ilYA(3 * 86400), cree_le: ilYA(3 * 86400) }
   ],
   horaires: [
     { id: 'h1', jour: 2, debut: '17:30:00', fin: '19:00:00', niveau: 'Tous niveaux', lieu: null },
@@ -112,16 +146,51 @@ export const REPONSES = {
     { cle: 'mvola_numero', valeur: '0388010853' },
     { cle: 'mvola_nom', valeur: 'Santatra Nirina Antonio' }
   ],
+  /* Trois albums, comme la maquette, et avec le NOMBRE DE VIGNETTES
+     qu'elle montre — six, trois, trois. L'application ajoute la
+     tuile « + » en fin de grille pour l'encadrement : cinq photos
+     plus la tuile font donc six cases, et c'est la grille qu'il faut
+     comparer. Un seul album d'une photo en face de trois sections
+     mesurait une différence de contenu, pas de mise en page. */
   albums: [
-    { id: 'al1', titre: 'Compétitions', categorie: 'Compétitions', cree_le: '2026-01-01T00:00:00Z', photos: [{ id: 'ph1', chemin: null, legende: 'Tournoi', rang: 0 }] }
+    {
+      id: 'al1', titre: 'Compétitions', categorie: 'Compétitions',
+      cree_le: '2026-01-03T00:00:00Z', couverture: null,
+      photos: Array.from({ length: 5 }, (_, i) => ({ id: `ph${i}`, chemin: null, legende: null, rang: i }))
+    },
+    {
+      id: 'al2', titre: 'Entraînements', categorie: 'Entraînements',
+      cree_le: '2026-01-02T00:00:00Z', couverture: null,
+      photos: Array.from({ length: 2 }, (_, i) => ({ id: `pe${i}`, chemin: null, legende: null, rang: i }))
+    },
+    {
+      id: 'al3', titre: 'Cérémonies', categorie: 'Cérémonies',
+      cree_le: '2026-01-01T00:00:00Z', couverture: null,
+      photos: Array.from({ length: 2 }, (_, i) => ({ id: `pc${i}`, chemin: null, legende: null, rang: i }))
+    }
   ],
+  /* Trois salons collectifs et deux conversations à deux, comme la
+     maquette : « Tout le club », un salon de grade, un salon
+     d'événement, puis deux directs. L'espace des maîtres reste là —
+     il n'apparaît qu'aux maîtres, et c'est justement ce qu'on veut
+     pouvoir vérifier des deux côtés. */
   salons: [
-    { id: 's1', type: 'club', titre: 'Tout le club', couleur: '#0F5132', dernier_le: maintenant(), membres_salon: [{ lu_le: null }], messages: [{ texte: 'L’entraînement est maintenu.', cree_le: maintenant(), profils: { nom: 'RAHARISOA', prenom: 'Fanja' } }] },
-    { id: 's2', type: 'maitres', titre: 'Espace des maîtres', couleur: '#0B2B1D', dernier_le: maintenant(), membres_salon: [{ lu_le: null }], messages: [] }
+    { id: 's1', type: 'club', titre: 'Tout le club', couleur: '#0F5132', archive: false, dernier_le: ilYA(3 * 3600), membres_salon: [{ lu_le: null }], messages: [{ texte: 'L’entraînement de mercredi est maintenu.', cree_le: ilYA(3 * 3600), profils: { nom: 'RAHARISOA', prenom: 'Fanja' } }] },
+    { id: 's3', type: 'grade', titre: 'Ceintures vertes', couleur: '#4E9C57', archive: false, dernier_le: ilYA(6 * 3600), membres_salon: [{ lu_le: null }], messages: [{ texte: 'Qui vient tôt samedi pour la mise en place ?', cree_le: ilYA(6 * 3600), profils: { nom: 'ANDRIANJAFY', prenom: 'Tokiniaina' } }] },
+    { id: 's4', type: 'evenement', titre: 'Tournoi régional', couleur: '#B0530F', archive: false, dernier_le: ilYA(30 * 3600), membres_salon: [{ lu_le: maintenant() }], messages: [{ texte: 'Rendez-vous 6h devant la salle.', cree_le: ilYA(30 * 3600), profils: { nom: 'RABEMANANJARA', prenom: 'Hery' } }] },
+    { id: 's5', type: 'direct', titre: null, couleur: '#3E6E9C', archive: false, dernier_le: ilYA(31 * 3600), membres_salon: [{ lu_le: maintenant() }], messages: [{ texte: 'Merci pour la correction du taolu.', cree_le: ilYA(31 * 3600), profils: { nom: 'RASOAMANANA', prenom: 'Fanjaniaina' } }] },
+    { id: 's6', type: 'direct', titre: null, couleur: '#6E5AA6', archive: false, dernier_le: ilYA(4 * 86400), membres_salon: [{ lu_le: maintenant() }], messages: [{ texte: 'D’accord pour dimanche.', cree_le: ilYA(4 * 86400), profils: { nom: 'RAKOTOARISOA', prenom: 'Lalaina' } }] },
+    { id: 's2', type: 'maitres', titre: 'Espace des maîtres', couleur: '#0B2B1D', archive: false, dernier_le: ilYA(2 * 86400), membres_salon: [{ lu_le: null }], messages: [] }
   ],
+  /* Le fil de « Tout le club », dans l'ordre de la maquette : deux
+     messages reçus, un envoyé, un reçu, un envoyé. « p0 » est le
+     connecté — ses messages partent à droite. */
   messages: [
-    { id: 'm1', texte: 'Bonsoir à tous.', cree_le: maintenant(), supprime_le: null, auteur_id: 'p2', profils: { nom: 'RABEMANANJARA', prenom: 'Hery' } },
-    { id: 'm2', texte: 'Merci pour l’information.', cree_le: maintenant(), supprime_le: null, auteur_id: 'p1', profils: { nom: 'RAKOTONDRABE', prenom: 'Nirina' } }
+    { id: 'm1', texte: 'Bonsoir à tous. L’entraînement de mercredi est maintenu malgré les travaux.', cree_le: ilYA(4 * 3600), supprime_le: null, auteur_id: 'p2', profils: { nom: 'RAHARISOA', prenom: 'Fanja' } },
+    { id: 'm2', texte: 'Rendez-vous à 17h30 comme d’habitude.', cree_le: ilYA(3.9 * 3600), supprime_le: null, auteur_id: 'p2', profils: { nom: 'RAHARISOA', prenom: 'Fanja' } },
+    { id: 'm3', texte: 'Merci pour l’information.', cree_le: ilYA(3.5 * 3600), supprime_le: null, auteur_id: 'p0', profils: { nom: 'IDEALY', prenom: 'Santatra' } },
+    { id: 'm4', texte: 'Est-ce qu’on travaille encore le taolu de la semaine dernière ?', cree_le: ilYA(3 * 3600), supprime_le: null, auteur_id: 'p3', profils: { nom: 'ANDRIANJAFY', prenom: 'Tokiniaina' } },
+    { id: 'm5', texte: 'Oui, et on ajoute le passage en cercle.', cree_le: ilYA(2.8 * 3600), supprime_le: null, auteur_id: 'p0', profils: { nom: 'IDEALY', prenom: 'Santatra' } }
   ],
   participations: [
     {
@@ -148,7 +217,13 @@ export const REPONSES = {
     }
   ],
   versements: [],
-  mes_directs: [],
+  /* Les deux conversations à deux, avec l'autre personne. La vue
+     « mes_directs » est ce qui donne un NOM à un salon de type
+     direct : sans elle, la liste afficherait « ?? ». */
+  mes_directs: [
+    { salon_id: 's5', autre_id: 'p2', autre_nom: 'RASOAMANANA', autre_prenom: 'Fanjaniaina', autre_photo: null },
+    { salon_id: 's6', autre_id: 'p7', autre_nom: 'RAKOTOARISOA', autre_prenom: 'Lalaina', autre_photo: null }
+  ],
   tuteurs: [],
   /* Une séance pointée, pour que les deux écrans de présence
      montrent une ligne plutôt que leur message de liste vide : c'est
@@ -246,7 +321,14 @@ export function servir(racine, port = 4173, racineObligatoire = true) {
    n'avait pas prévues — un écran qui interroge une table absente du
    bouchon serait sinon jugé sur une réponse vide, sans qu'on sache
    que c'est le bouchon qui a menti. */
-export async function brancher(page, inconnues = []) {
+/* « role » remplace celui de la fiche connectée, et sert au banc de
+   comparaison. Plusieurs écrans montrent à l'administration des
+   sections que la maquette ne pouvait pas connaître — le filtre des
+   conversations archivées, le salon confidentiel des maîtres. Les
+   comparer depuis un compte d'élève, c'est comparer ce que la
+   maquette montre, et rien d'autre. */
+export async function brancher(page, inconnues = [], { role } = {}) {
+  const MOI_VU = role ? { ...MOI, role } : MOI;
   await page.route(`https://${PROJET}.supabase.co/**`, async (route) => {
     const url = new URL(route.request().url());
     if (url.pathname.startsWith('/auth/v1')) {
@@ -336,18 +418,55 @@ export async function brancher(page, inconnues = []) {
        veut vérifier présent. */
     const compte = url.searchParams.get('compte_id')?.replace('eq.', '');
     if (table === 'profils' && compte) {
-      const fiche = compte === MOI.compte_id ? avecGrade(MOI) : null;
+      const fiche = compte === MOI.compte_id ? avecGrade(MOI_VU) : null;
       return route.fulfill({ json: seul ? fiche : fiche ? [fiche] : [] });
     }
 
+    /* LA SEULE RÈGLE D'ACCÈS QUE CE BOUCHON IMITE.
+
+       Il n'en applique aucune autre, et c'est assumé : les règles ont
+       leur propre banc, dans supabase/tests/. Mais l'espace des
+       maîtres est un salon qu'un élève ne reçoit JAMAIS, et le
+       rendre quand même ferait apparaître une section
+       « Confidentiel » sur l'écran d'un élève — un écran qui
+       n'existe pas. Le banc comparerait alors une fiction. */
     let donnees = corps;
+    if (table === 'salons' && MOI_VU.role === 'eleve') {
+      donnees = donnees.filter((s) => s.type !== 'maitres');
+    }
     const id = url.searchParams.get('id')?.replace('eq.', '');
     /* MA fiche se cherche par identifiant comme les autres — la
        carte de membre le fait. L'oublier vidait la carte, et le code
        QR devenait illisible faute de matricule à encoder. */
     if (id) {
-      donnees = [...corps, ...(table === 'profils' ? [avecGrade(MOI)] : [])]
+      donnees = [...corps, ...(table === 'profils' ? [avecGrade(MOI_VU)] : [])]
         .filter((l) => l.id === id);
+    }
+
+    /* L'ORDRE DEMANDÉ EST RESPECTÉ.
+
+       Il ne l'était pas, et cela s'est vu sur une conversation : le
+       fil demande « cree_le décroissant, les deux cents derniers »
+       puis retourne la liste pour la lire de haut en bas. Le bouchon
+       rendant le tableau tel quel, le retournement le mettait à
+       l'envers — le dernier message s'affichait en premier, et le
+       banc photographiait une conversation qui remonte le temps.
+
+       Une seule clé suffit : aucun écran n'en demande deux sur la
+       table principale. Le tri des tables JOINTES, lui, reste ignoré ;
+       il ne concerne qu'un aperçu d'un élément. */
+    const tri = url.searchParams.get('order');
+    if (tri && Array.isArray(donnees)) {
+      const [champ, sens] = tri.split('.');
+      const signe = sens === 'desc' ? -1 : 1;
+      donnees = [...donnees].sort((a, b) => {
+        const x = a?.[champ];
+        const y = b?.[champ];
+        if (x === y) return 0;
+        if (x === null || x === undefined) return 1;
+        if (y === null || y === undefined) return -1;
+        return (x < y ? -1 : 1) * signe;
+      });
     }
     return route.fulfill({ json: seul ? (donnees[0] ?? null) : donnees });
   });

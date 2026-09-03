@@ -10,6 +10,7 @@ import { useReglages } from '../services/club';
 import { useSession } from '../services/session';
 import { ariary, codeMvola, useInscrire, useParticipation } from '../services/participation';
 import { attendu, reste } from '../services/validation';
+import { enLettres } from '../services/texte';
 
 const MONTANTS = [1000, 2000, 5000, 10000];
 
@@ -126,9 +127,15 @@ export function Participation() {
                 <Icone nom="plus" taille={20} couleur="#0F5132" epaisseur={2} />
               </button>
             </div>
+            {/* « Trois places au total » et non « 3 places » : sous
+                dix, dans une phrase, un nombre s'écrit en lettres.
+                C'est ce que la maquette faisait, et la comparaison
+                l'a redit — le chiffre reste au compteur juste
+                au-dessus, où il se lit d'un coup d'œil. */}
             <p className="aide" style={{ marginTop: 12 }}>
-              {venus + 1} place{venus > 0 ? 's' : ''} au total avec vous. Le club compte les
-              places pour le transport.
+              {enLettres(venus + 1, { majuscule: true, feminin: true })} place
+              {venus > 0 ? 's' : ''} au total avec vous. Le club compte les places pour le
+              transport.
             </p>
           </Carte>
         </div>

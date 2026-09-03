@@ -101,6 +101,140 @@ const PAIRES = [
   {
     cle: 'motdepasse', route: '/#/motdepasse', maquette: 'motdepasse',
     exemples: ['^•+$', 'MOT DE PASSE ACTUEL']
+  },
+
+  /* ------------------------------------------------------------
+     LES DIX AUTRES.
+
+     Pendant longtemps ce banc n'a mesuré que cinq écrans, et l'on
+     disait « l'application ressemble à la maquette » en n'ayant
+     regardé qu'un quart de l'application. Les écrans que personne ne
+     mesure sont exactement ceux qui dérivent : rien ne le dit.
+
+     Ceux-ci sont les écrans de la maquette qui ont un équivalent dans
+     l'application. Les autres pages de la maquette — charte,
+     directions A/B/C, fonctionnalités, sécurité — sont des planches
+     de présentation, pas des écrans ; et les écrans d'administration
+     de l'application n'ont, eux, jamais eu de maquette.
+     ------------------------------------------------------------ */
+  {
+    cle: 'casier', route: '/#/casier', maquette: 'casier',
+    exemples: [
+      /* La maquette montre cinq actualités inventées, le bouchon en
+         sert deux. Ce sont les titres, les textes et les dates qui
+         diffèrent — pas la forme de la carte, qui elle est mesurée. */
+      'Sortie au lac|Séance du mercredi|Départ 6h00|Décalée|Prévoir le repas',
+      'Tournoi régional|Huit membres|Réunion des parents|Samedi 9h00|Passage de grade|Onze élèves',
+      '^(SORTIE|CHANGEMENT D’HORAIRE|COMPÉTITION|RÉUNION|CÉRÉMONIE)$',
+      '^\\d{2}$', '^\\d{2} \\w+$', '^(sept|nov|oct|janv|déc)$', '^NOUVEAU$',
+      /* Les puces de filtre viennent de la table des catégories ;
+         la maquette en a écrit quatre à la main. */
+      '^(Tout|Sorties|Compétitions|Réunions|Sortie|Compétition|Réunion|Cérémonie|Changement d’horaire)$'
+    ]
+  },
+  {
+    cle: 'casierDetail', route: '/#/casier/a1', maquette: 'casierDetail',
+    exemples: [
+      'Sortie au lac|Départ 6h00|Prévoir le repas|Devant la salle',
+      '^SORTIE$', '^\\d{2}$', '^(sept|nov|janv)$', 'samedi|septembre|Publié',
+      'RAHARISOA|l’administration|IDEALY'
+    ]
+  },
+  {
+    cle: 'album', route: '/#/album', maquette: 'album',
+    /* Les TITRES d'album ne sont pas écartés : ce sont eux qui portent
+       la mise en page de la section. Seule « Sorties » l'est — c'est
+       une puce de filtre, et les puces viennent des albums existants,
+       donc d'une catégorie que le bouchon n'a pas. */
+    exemples: ['^Sorties$', 'photos?$']
+  },
+  {
+    cle: 'notifications', route: '/#/notifications', maquette: 'notifications',
+    exemples: [
+      '^(Sortie|Compétition|Cérémonie|Changement d’horaire)$',
+      'Nouvelle sortie|Huit membres|La séance du mercredi|Onze passages',
+      '^(Il y a .+|Hier)$',
+      /* Ranger ses notifications une par une n'existait pas dans la
+         maquette : « Tout lire » était le seul geste possible. Le
+         balai est en fin de liste — il ne décale rien. */
+      '^Effacer les .* déjà lues?$'
+    ]
+  },
+  {
+    cle: 'carte', route: '/#/carte', maquette: 'carte',
+    exemples: [
+      'IDEALY|Santatra|RAKOTONDRABE|Nirina', 'F04x\\d+', 'Ceinture',
+      '^\\d{4}$', '2014|2019'
+    ]
+  },
+  {
+    cle: 'participation', route: '/#/casier/a1/participer', maquette: 'participation',
+    exemples: [
+      'Sortie au lac|Devant la salle|Départ 6h00', '^\\d{2}$', '^(sept|nov)$',
+      '^(Santatra|IDEALY|Nirina)$', 'F04x\\d+', '0388010853|Santatra Nirina Antonio',
+      '#111', '^\\d[\\d  ]*$'
+    ]
+  },
+  {
+    /* Vue d'un compte d'élève : l'administration a en plus le filtre
+       « en cours / archivées » et le salon confidentiel des maîtres,
+       tous deux en tête de liste. Ils poussaient la liste de cent
+       soixante et onze pixels, et le banc mesurait la présence de
+       deux fonctionnalités au lieu d'une mise en page. */
+    cle: 'messages', route: '/#/messages', maquette: 'messages', commeEleve: true,
+    exemples: [
+      'L’entraînement de mercredi|Qui vient tôt samedi|Rendez-vous 6h|Merci pour la correction|D’accord pour dimanche',
+      '^(Tokiniaina|Hery|Fanja) :$',
+      '^\\d{1,2}:\\d{2}$', '^\\d$', '^(Hier|Lun\\.|lun\\.|mar\\.|mer\\.|jeu\\.|ven\\.|sam\\.|dim\\.)$',
+      '^\\d{2}/\\d{2}$',
+      /* Les noms des salons et des correspondants sont des exemples ;
+         leur PLACE, elle, est mesurée par les surtitres de section. */
+      '^(Tout le club|Ceintures vertes|Tournoi régional|RASOAMANANA Fanjaniaina|RAKOTOARISOA Lalaina)$',
+      '^(TC|CV|TR|TO|CE|RA)$'
+    ]
+  },
+  {
+    cle: 'salon', route: '/#/messages/s1', maquette: 'salon', commeEleve: true,
+    exemples: [
+      'Tout le club|Bonsoir à tous|Merci pour l’information|Rendez-vous à 17h30',
+      'Est-ce qu’on travaille|Oui, et on ajoute',
+      'RAHARISOA|ANDRIANJAFY|Fanja|Tokiniaina',
+      '^\\d{1,2}:\\d{2}( · lu)?$', 'membres$', '^\\d+ ',
+      /* L'emoji s'envoie d'un appui — demandé après la maquette : « je
+         veux l'envoyer directement lorsque je le clique, pas
+         l'introduire dans le champ de saisie ». */
+      '^🙂$'
+    ]
+  },
+  {
+    /* La maquette a DEUX profils : « verrouillé », qui montre à un
+       visiteur ce qu'il ne verra pas, et « ouvert ». L'application n'a
+       que le second — on n'y entre pas sans session, la route
+       renvoie à la connexion. C'est donc « ouvert » qui se compare ;
+       le verrouillé n'a pas d'équivalent, et ne peut pas en avoir.
+
+       La maquette montre la fiche telle que SON titulaire la voit —
+       « session de Nirina ». On ouvre donc la sienne propre, et non
+       celle d'un autre membre : sinon le bandeau manque, et tout ce
+       qui le suit se décale de cinquante-six pixels pour une raison
+       qui n'a rien à voir avec la mise en page. */
+    cle: 'profil', route: '/#/etudiants/p0', maquette: 'profilOuvert',
+    exemples: [
+      'RAKOTONDRABE|Nirina|IDEALY|Santatra|Voahangy|Jean-Claude', 'F04x\\d+', 'Ceinture',
+      'Entrée au club|treize ans|bleue|Analamahitsy en 2024',
+      '^\\d{4}$', '2019|2006|2014', '^\\d{2} \\d{2} \\d{3} \\d{2}$', 'mars|septembre|février',
+      'Mère|Père|, en priorité', 'session de',
+      /* Se déconnecter n'existait pas dans la maquette : la fonction
+         était dans le code et RIEN ne l'appelait, donc sur un
+         téléphone partagé le suivant héritait de la session du
+         précédent. Ajouté après, et placé en bas — il ne décale
+         rien de ce que la maquette montre. */
+      '^(Cette session|Se déconnecter)$'
+    ]
+  },
+  {
+    cle: 'admin', route: '/#/admin', maquette: 'admin',
+    exemples: ['^\\d+$', 'membres|publications|séances|photos']
   }
 ];
 
@@ -146,11 +280,17 @@ const RELEVE = `(racine) => {
   for (const e of [racine, ...racine.querySelectorAll('*')]) {
     const noeuds = [...e.childNodes].filter((n) => n.nodeType === 3 && n.textContent.trim());
     if (!noeuds.length) continue;
-    const texte = noeuds.map((n) => n.textContent).join('').replace(/\\s+/g, ' ').trim();
-    if (!texte) continue;
     const r = document.createRange();
     r.setStartBefore(noeuds[0]);
     r.setEndAfter(noeuds[noeuds.length - 1]);
+    /* Le texte se lit sur l'ÉTENDUE, et non en recollant les nœuds
+       retenus. React écrit « {jour} {mois} » en trois nœuds — « 12 »,
+       « », « sept » — et le nœud du milieu, vide au sens du filtre,
+       était jeté : l'application affichait « 12 sept » et le banc
+       lisait « 12sept », donc un texte manquant d'un côté et un texte
+       en trop de l'autre. L'écart était dans l'instrument. */
+    const texte = r.toString().replace(/\\s+/g, ' ').trim();
+    if (!texte) { r.detach(); continue; }
     const b = r.getBoundingClientRect();
     r.detach();
     if (!b.width || !b.height) continue;
@@ -248,6 +388,23 @@ const anonyme = await navigateur.newPage({
 });
 await brancher(anonyme);
 
+/* Une troisième page, connectée en ÉLÈVE.
+
+   Plusieurs écrans montrent à l'administration des sections que la
+   maquette ne pouvait pas connaître : le filtre « en cours /
+   archivées » des conversations, le salon confidentiel des maîtres.
+   Elles sont en haut de l'écran, donc elles poussent tout le reste,
+   et la comparaison mesurait alors la présence d'une fonctionnalité
+   au lieu de mesurer une mise en page. Vue d'un compte d'élève, la
+   liste est celle que la maquette montre. */
+const eleve = await navigateur.newPage({
+  viewport: { width: 370, height: 780 },
+  deviceScaleFactor: 1,
+  reducedMotion: 'reduce'
+});
+await poserSession(eleve);
+await brancher(eleve, [], { role: 'eleve' });
+
 let largeur = 370;
 let hauteur = 780;
 
@@ -292,14 +449,15 @@ async function photoApplication(vue, route, chemin) {
 console.log('');
 let echecs = 0;
 
-for (const { cle, route, maquette, exemples, sansSession } of liste) {
+for (const { cle, route, maquette, exemples, sansSession, commeEleve } of liste) {
   const fMaq = `${SORTIE}/${cle}-maquette.png`;
   const fApp = `${SORTIE}/${cle}-application.png`;
   const fDif = `${SORTIE}/${cle}-ecart.png`;
 
   /* La maquette d'abord : c'est elle qui donne la taille. */
   const geoMaq = await photoMaquette(maquette, fMaq);
-  const geoApp = await photoApplication(sansSession ? anonyme : page, route, fApp);
+  const vue = sansSession ? anonyme : commeEleve ? eleve : page;
+  const geoApp = await photoApplication(vue, route, fApp);
 
   const ecarts = comparerGeometrie(geoApp, geoMaq, exemples);
   const { pourcent } = comparerImages(fApp, fMaq, fDif);

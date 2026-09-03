@@ -73,7 +73,7 @@ const ECRANS = [
   ['actualite', '/#/casier/a1', 'Sortie au lac Mantasoa'],
   ['participation', '/#/casier/a1/participer', 'Ma participation'],
   ['album', '/#/album', 'Compétitions'],
-  ['photo', '/#/album/al1/0', 'sur 1'],
+  ['photo', '/#/album/al1/0', 'sur 5'],
   ['club', '/#/club', 'Entraînements'],
   ['notifications', '/#/notifications', 'Aujourd’hui'],
   ['messages', '/#/messages', 'Tout le club'],

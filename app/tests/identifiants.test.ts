@@ -43,8 +43,24 @@ describe('identifiantDepuisMatricule', () => {
 
 describe('initiales', () => {
   test('deux mots donnent deux lettres', () => {
-    expect(initiales('Tout le club')).toBe('TL');
     expect(initiales('Ceintures vertes')).toBe('CV');
+    expect(initiales('Tournoi régional')).toBe('TR');
+  });
+
+  test('les articles ne prennent pas la place d’un mot qui compte', () => {
+    /* « Tout le club » donnait « TL » : l'article occupait la
+       seconde lettre, et la pastille ne se rattachait plus à rien.
+       Les deux lettres sont tout ce qu'on a pour reconnaître une
+       conversation dans une liste — la maquette écrivait « TC ». */
+    expect(initiales('Tout le club')).toBe('TC');
+    expect(initiales('Les ceintures noires')).toBe('CN');
+    expect(initiales('Sortie au lac')).toBe('SL');
+  });
+
+  test('un titre entièrement fait de mots-outils garde ses lettres', () => {
+    /* Le repli compte : rendre une pastille vide serait pire que
+       rendre deux lettres qui ne disent rien. */
+    expect(initiales('Le des')).toBe('LD');
   });
 
   test('un seul mot donne ses deux premières lettres', () => {

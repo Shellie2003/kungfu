@@ -98,8 +98,23 @@ body {
 .emblem--lg { width: 72px; height: 72px; border-radius: 20px; }
 
 /* En-tête d'écran */
+/* La hauteur est FIXE, et ce n'est pas un détail de style.
+   Sans elle, la barre mesure 66 px quand l'écran porte un bouton
+   d'action — 44 px de zone tactile — et 45 px quand il n'en porte
+   pas. Tout le contenu sautait donc de vingt-quatre pixels d'un
+   écran à l'autre : on passait du casier à l'album et la page
+   remontait sous le doigt. C'est le même défaut que le bouton
+   « Modifier » de l'écran du club, mesuré et corrigé, à ceci près
+   qu'il se voyait ici entre DEUX écrans et non dans un seul.
+
+   La hauteur est posée sur le TITRE et non sur la barre : celle-ci
+   porte un liseré d'un pixel qui compte dans sa hauteur, si bien
+   qu'une barre calculée à la main tombait juste d'un côté et à un
+   pixel près de l'autre. Le titre, lui, occupe la même ligne de
+   quarante-quatre pixels que les boutons — la zone tactile — qu'il
+   y ait un bouton ou non. */
 .apphead { background: #FFF; border-bottom: 1px solid var(--filet); padding: 10px 8px 12px; display: flex; align-items: center; gap: 4px; }
-.apphead__title { flex-grow: 1; font-family: var(--display); font-size: 18px; font-weight: 600; }
+.apphead__title { flex-grow: 1; min-height: 44px; display: flex; align-items: center; font-family: var(--display); font-size: 18px; font-weight: 600; }
 
 .tapicon { width: 44px; height: 44px; display: grid; place-items: center; flex: none; border-radius: 12px; }
 .tapicon:hover { background: rgba(15, 81, 50, .07); }
