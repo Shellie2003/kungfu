@@ -18,6 +18,14 @@ export type Actualite = {
   lieu: string | null;
   image: string | null;
   cree_le: string;
+  /* La participation demandée par personne, en ariary. Nulle =
+     gratuit, ou pas encore fixé — l'écran ne réclame alors rien. */
+  participation_ar: number | null;
+  /* L'identifiant de l'auteur, en plus de son nom. C'est lui qui
+     décide qui valide les inscriptions (migration 0020) : l'écran
+     s'en sert pour ne proposer le raccourci qu'à celui qui a créé la
+     sortie. */
+  auteur_id: string | null;
   /* Qui a publié. La colonne existait depuis le premier jour et
      restait vide ; l'écran affichait « par l'administration » pour
      tout le monde. Un déclencheur de la base la pose maintenant —
@@ -26,7 +34,8 @@ export type Actualite = {
 };
 
 const CHAMPS =
-  'id, titre, categorie, texte, date_evt, lieu, image, cree_le, profils:auteur_id ( nom, prenom )';
+  'id, titre, categorie, texte, date_evt, lieu, image, participation_ar, cree_le, ' +
+  'auteur_id, profils:auteur_id ( nom, prenom )';
 
 /* PostgREST rend une jointure « un vers un » tantôt en objet, tantôt
    en tableau d'un élément selon ce qu'il déduit des clés. On accepte

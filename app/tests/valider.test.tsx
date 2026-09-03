@@ -43,8 +43,14 @@ const ATTENTE = [
     montant_promis: 15000,
     note: 'Je viens avec ma sœur, elle n’est pas membre.',
     cree_le: maintenant,
+    versements: [{ montant: 20000 }],
     profils: { nom: 'RAKOTONDRABE', prenom: 'Nirina', numero: 'F04x042' },
-    actualites: { titre: 'Sortie au lac', date_evt: '2026-10-12', auteur_id: PROFIL_ADMIN.id }
+    actualites: {
+      titre: 'Sortie au lac',
+      date_evt: '2026-10-12',
+      participation_ar: 15000,
+      auteur_id: PROFIL_ADMIN.id
+    }
   }
 ];
 
@@ -103,6 +109,55 @@ describe('ce que l’écran montre pour décider', () => {
        ligne. */
     expect(screen.getByText('Sortie au lac')).toBeInTheDocument();
     expect(screen.getByText('1 en attente')).toBeInTheDocument();
+  });
+
+  test('ce qui est ATTENDU compte les accompagnants, et le reste se lit', async () => {
+    /* Le cœur de « fixer la participation ». Quinze mille ariary
+       pour quelqu'un qui vient avec deux personnes font quarante-cinq
+       mille : trois places, trois fois le prix du taxi-brousse.
+       Compter la seule inscription afficherait « soldé » à quelqu'un
+       qui doit encore deux places — l'organisateur le découvrirait
+       au départ, devant le chauffeur. */
+    poser({ participations: ATTENTE });
+    rendre(<AdminAValider />, { route: '/admin/a-valider', profil: PROFIL_ADMIN });
+
+    await screen.findByText('RAKOTONDRABE Nirina');
+    expect(screen.getByText('45 000 Ar')).toBeInTheDocument();
+    /* Déjà versé, et ce qui manque : 45 000 − 20 000. */
+    expect(screen.getByText('20 000 Ar')).toBeInTheDocument();
+    expect(screen.getByText('25 000 Ar')).toBeInTheDocument();
+    /* Et le prix fixé, rappelé sous le titre de la sortie. */
+    expect(screen.getByText(/15 000 Ar par personne/)).toBeInTheDocument();
+  });
+
+  test('une sortie GRATUITE n’affiche pas « 0 Ar »', async () => {
+    /* « 0 Ar attendu » se lit comme un montant qu'on a oublié de
+       poser, et l'on va vérifier. Ne rien dire dit la vérité : rien
+       n'est demandé. */
+    poser({
+      participations: [
+        {
+          ...ATTENTE[0],
+          versements: [],
+          actualites: { ...ATTENTE[0].actualites, participation_ar: null }
+        }
+      ]
+    });
+    rendre(<AdminAValider />, { route: '/admin/a-valider', profil: PROFIL_ADMIN });
+
+    await screen.findByText('RAKOTONDRABE Nirina');
+    expect(screen.queryByText('Attendu')).not.toBeInTheDocument();
+    expect(screen.queryByText('0 Ar')).not.toBeInTheDocument();
+  });
+
+  test('tout versé se dit « Soldé », pas « 0 Ar »', async () => {
+    poser({
+      participations: [{ ...ATTENTE[0], accompagnants: 0, versements: [{ montant: 15000 }] }]
+    });
+    rendre(<AdminAValider />, { route: '/admin/a-valider', profil: PROFIL_ADMIN });
+
+    await screen.findByText('RAKOTONDRABE Nirina');
+    expect(screen.getByText('Soldé')).toBeInTheDocument();
   });
 });
 

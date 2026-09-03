@@ -350,6 +350,19 @@ export type SaisieActualite = {
      une actualité dont l'image cesse de s'afficher au bout d'une
      heure. */
   image: string | null;
+  /* La participation demandée par personne, en ariary.
+
+     Nulle = gratuit, ou pas encore décidé. Les deux existent
+     vraiment — un entraînement exceptionnel ne coûte rien, et le
+     prix du taxi-brousse se connaît parfois la veille — et l'écran
+     les traite pareil : il ne réclame rien.
+
+     C'est ce montant qui donne un SENS aux versements. Ils
+     existaient depuis le premier jour ; sans montant attendu, « il a
+     versé 30 000 » ne se comparait à rien et l'on ne pouvait pas
+     dire « il reste 20 000 », qui est la seule chose que le club
+     veut savoir en regardant sa liste. */
+  participation_ar: number | null;
   publiee: boolean;
 };
 

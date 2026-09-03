@@ -128,6 +128,49 @@ describe('je participe', () => {
       expect(screen.getByLabelText('Un mot pour le club')).toHaveValue('Je viens avec ma sœur.')
     );
   });
+
+  test('le montant FIXÉ par le club est dit, et ce qui reste avec', async () => {
+    /* Le vrai défaut de cet écran : il proposait quatre sommes rondes
+       et personne ne savait combien il fallait donner. On demandait au
+       maître le samedi. Le montant vient maintenant de la sortie
+       elle-même, et le total suit les accompagnants — c'est par place
+       qu'on paie le taxi-brousse. */
+    poser({
+      actualites: { ...SORTIE, participation_ar: 15000 },
+      participations: {
+        id: 'pa1', accompagnants: 1, montant_promis: null, note: null,
+        valide_le: null, refuse_le: null, motif: null,
+        versements: [{ id: 'v1', montant: 10000, recu_le: '2026-09-01' }]
+      },
+      reglages: []
+    });
+    rendre(<Participation />, {
+      route: '/participer/a1', chemin: '/participer/:id', profil: PROFIL_ELEVE
+    });
+
+    /* Deux places à quinze mille. */
+    expect(await screen.findByText(/15 000 Ar × 2 places/)).toBeInTheDocument();
+    expect(screen.getByText('30 000 Ar')).toBeInTheDocument();
+    /* Et le reliquat, proposé d'un appui : c'est le montant qu'on
+       voulait envoyer, et le chercher parmi des sommes rondes qui ne
+       tombent pas juste était tout le problème. */
+    const reliquat = screen.getByRole('button', { name: /tout le reste/ });
+    expect(reliquat.textContent?.replace(/\s/g, ' ')).toContain('20 000');
+  });
+
+  test('sans montant fixé, l’écran ne réclame rien', async () => {
+    /* Gratuit et « pas encore décidé » se ressemblent, et l'écran les
+       traite pareil : il se tait. Afficher « reste 0 Ar » ferait
+       croire à un montant qu'on a oublié de poser. */
+    poser({ actualites: SORTIE, participations: null, reglages: [] });
+    rendre(<Participation />, {
+      route: '/participer/a1', chemin: '/participer/:id', profil: PROFIL_ELEVE
+    });
+
+    await screen.findByText('Ma participation');
+    expect(screen.queryByText('Reste')).not.toBeInTheDocument();
+    expect(screen.queryByText(/tout le reste/)).not.toBeInTheDocument();
+  });
 });
 
 /* ============================================================

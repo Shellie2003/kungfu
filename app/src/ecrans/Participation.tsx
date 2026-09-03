@@ -9,6 +9,7 @@ import { jourEtMois, useActualite } from '../services/casier';
 import { useReglages } from '../services/club';
 import { useSession } from '../services/session';
 import { ariary, codeMvola, useInscrire, useParticipation } from '../services/participation';
+import { attendu, reste } from '../services/validation';
 
 const MONTANTS = [1000, 2000, 5000, 10000];
 
@@ -35,6 +36,15 @@ export function Participation() {
   const numeroMvola = reglages?.mvola_numero;
   const nomMvola = reglages?.mvola_nom;
   const recu = (participation?.versements ?? []).reduce((s, v) => s + v.montant, 0);
+
+  /* Le montant FIXÉ par celui qui a publié la sortie. Il change tout
+     pour le membre : jusqu'ici l'écran proposait quatre montants ronds
+     et personne ne savait combien il fallait donner — on demandait au
+     maître le samedi. Le total suit les accompagnants, parce que c'est
+     par place qu'on paie le taxi-brousse. */
+  const prix = actu?.participation_ar ?? null;
+  const du = attendu(prix, venus);
+  const reliquat = reste(prix, venus, participation?.versements);
 
   const { jour, mois } = jourEtMois(actu?.date_evt ?? actu?.cree_le ?? new Date().toISOString());
 
@@ -126,10 +136,58 @@ export function Participation() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <Surtitre>Ma participation</Surtitre>
           <Carte pad={16}>
+            {du > 0 && (
+              <div
+                style={{
+                  background: '#F1F6F3',
+                  borderRadius: 12,
+                  padding: '12px 14px',
+                  marginBottom: 14,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 6
+                }}
+              >
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <span style={{ flexGrow: 1, fontSize: 13, color: '#59685F' }}>
+                    Demandé · {ariary(prix!)} × {venus + 1} place{venus > 0 ? 's' : ''}
+                  </span>
+                  <b style={{ fontSize: 13.5, color: '#0E2119' }}>{ariary(du)}</b>
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <span style={{ flexGrow: 1, fontSize: 13, color: '#59685F' }}>Déjà envoyé</span>
+                  <b style={{ fontSize: 13.5, color: '#0E2119' }}>{ariary(recu)}</b>
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <span style={{ flexGrow: 1, fontSize: 13, color: '#59685F' }}>Reste</span>
+                  <b
+                    className="display"
+                    style={{ fontSize: 15, color: reliquat > 0 ? '#8A3A12' : '#12613C' }}
+                  >
+                    {reliquat > 0 ? ariary(reliquat) : 'Soldé'}
+                  </b>
+                </div>
+              </div>
+            )}
+
             <p style={{ fontSize: 13.5, lineHeight: '20px', color: '#59685F' }}>
               Vous pouvez envoyer en plusieurs fois. Choisissez le montant de cet envoi.
             </p>
             <div className="montants">
+              {/* Le reliquat en premier : c'est le montant qu'on
+                  voulait envoyer neuf fois sur dix, et le chercher
+                  parmi quatre sommes rondes qui ne tombent pas juste
+                  était le vrai défaut de cet écran. */}
+              {reliquat > 0 && (
+                <button
+                  className={montant === reliquat ? 'montant montant--on' : 'montant'}
+                  onClick={() => setMontant(reliquat)}
+                  aria-pressed={montant === reliquat}
+                >
+                  {reliquat.toLocaleString('fr-FR').replace(/ | /g, ' ')}
+                  <i>tout le reste</i>
+                </button>
+              )}
               {MONTANTS.map((m) => (
                 <button
                   key={m}

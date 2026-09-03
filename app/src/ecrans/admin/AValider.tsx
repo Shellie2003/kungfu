@@ -30,7 +30,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icone } from '../../ui/Icone';
 import { Avis, Bouton, Carte, Champ, Entete, Etat, Surtitre } from '../../ui/base';
-import { useAValider, useTrancher } from '../../services/validation';
+import { attendu, reste, useAValider, useTrancher, verse } from '../../services/validation';
 import type { EnAttente } from '../../services/validation';
 import { ariary } from '../../services/participation';
 import { dateLongue } from '../../services/casier';
@@ -49,13 +49,17 @@ export function AdminAValider() {
   const [motif, setMotif] = useState('');
 
   /* Groupées par sortie, dans l'ordre où elles se sont inscrites. */
-  const parSortie = new Map<string, { titre: string; date: string | null; gens: EnAttente[] }>();
+  const parSortie = new Map<
+    string,
+    { titre: string; date: string | null; prix: number | null; gens: EnAttente[] }
+  >();
   for (const p of liste ?? []) {
     const cle = p.actualite_id;
     if (!parSortie.has(cle)) {
       parSortie.set(cle, {
         titre: p.sortie?.titre ?? 'Sortie',
         date: p.sortie?.date_evt ?? null,
+        prix: p.sortie?.participation_ar ?? null,
         gens: []
       });
     }
@@ -114,14 +118,23 @@ export function AdminAValider() {
                 </span>
               </div>
 
-              {sortie.date && (
+              {(sortie.date || sortie.prix) && (
                 <p style={{ fontSize: 12.5, color: '#59685F', marginTop: -6 }}>
-                  {dateLongue(sortie.date)}
+                  {sortie.date && dateLongue(sortie.date)}
+                  {sortie.date && sortie.prix ? ' · ' : ''}
+                  {/* Le montant FIXÉ à la publication. Il est rappelé
+                      ici parce que c'est lui qui donne un sens à
+                      « il a versé 30 000 » : sans lui, le nombre ne se
+                      compare à rien. */}
+                  {sortie.prix ? `${ariary(sortie.prix)} par personne` : ''}
                 </p>
               )}
 
               {sortie.gens.map((p) => {
                 const qui = p.membre ? `${p.membre.nom} ${p.membre.prenom}` : 'Membre inconnu';
+                const du = attendu(sortie.prix, p.accompagnants);
+                const paye = verse(p.versements);
+                const du_reste = reste(sortie.prix, p.accompagnants, p.versements);
                 return (
                   <Carte key={p.id} pad={16}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -152,6 +165,54 @@ export function AdminAValider() {
                             </span>
                             <span style={{ flexGrow: 1 }}>{ariary(p.montant_promis)}</span>
                           </div>
+                        )}
+                        {/* « Attendu » n'apparaît que si la sortie a un
+                            prix : sur une sortie gratuite, afficher
+                            « 0 Ar » ferait croire à un montant oublié.
+                            Il tient compte des accompagnants — trois
+                            places à quinze mille font quarante-cinq
+                            mille, et c'est ce qu'on encaisse. */}
+                        {du > 0 && (
+                          <>
+                            <div>
+                              <span
+                                style={{
+                                  width: 130, flex: 'none', color: '#0E2119', fontWeight: 600
+                                }}
+                              >
+                                Attendu
+                              </span>
+                              <span style={{ flexGrow: 1 }}>{ariary(du)}</span>
+                            </div>
+                            <div>
+                              <span
+                                style={{
+                                  width: 130, flex: 'none', color: '#0E2119', fontWeight: 600
+                                }}
+                              >
+                                Déjà versé
+                              </span>
+                              <span style={{ flexGrow: 1 }}>{ariary(paye)}</span>
+                            </div>
+                            <div>
+                              <span
+                                style={{
+                                  width: 130, flex: 'none', color: '#0E2119', fontWeight: 600
+                                }}
+                              >
+                                Reste
+                              </span>
+                              <span
+                                style={{
+                                  flexGrow: 1,
+                                  fontWeight: 700,
+                                  color: du_reste > 0 ? '#8A3A12' : '#12613C'
+                                }}
+                              >
+                                {du_reste > 0 ? ariary(du_reste) : 'Soldé'}
+                              </span>
+                            </div>
+                          </>
                         )}
                       </div>
 

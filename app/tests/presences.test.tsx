@@ -24,6 +24,21 @@ import { PROFIL_ELEVE, rendre } from './rendu';
 
 const MEMBRE = { id: 'p1', nom: 'RAKOTONDRABE', prenom: 'Nirina', numero: 'F04x042' };
 
+/* L'ANNUAIRE, qui est ce qui fait la feuille de présence.
+
+   La feuille ne part plus des présences — elle partait d'elles, et
+   pour savoir qui MANQUAIT il fallait comparer de tête avec
+   l'annuaire, soixante-quatre noms. Elle part maintenant des membres,
+   tous absents tant que personne ne les a pointés, comme une feuille
+   de présence sur papier. */
+const ANNUAIRE = [
+  { ...MEMBRE, photo: null, actif: true, grades: null },
+  {
+    id: 'p2', nom: 'ANDRIANJAFY', prenom: 'Tokiniaina', numero: 'F04x044',
+    photo: null, actif: true, grades: null
+  }
+];
+
 beforeEach(() => {
   reinitialiser();
   brancherServeur();
@@ -168,6 +183,7 @@ describe('pointer', () => {
   test('la feuille du jour montre qui est pointé, et son statut', async () => {
     poser({
       horaires: [],
+      profils: ANNUAIRE,
       presences: [
         { id: 'pr1', seance_le: aujourdhui(), statut: 'retard', horaire_id: null, profils: MEMBRE }
       ]
@@ -178,6 +194,108 @@ describe('pointer', () => {
     /* Deux fois : l'option de la liste déroulante, et l'étiquette de
        la ligne. C'est cette seconde qui est le sujet du test. */
     expect(screen.getAllByText('En retard')).toHaveLength(2);
+  });
+});
+
+describe('la fiche de présence', () => {
+  /* « On crée une fiche de présence, tous les élèves sont absents par
+     défaut, on scanne ou on clique pour valider la présence (parfois
+     un élève oublie sa carte). »
+
+     L'écran ne montrait que les membres DÉJÀ POINTÉS. Pour savoir qui
+     manquait, il fallait comparer de tête avec l'annuaire — et un
+     élève sans sa carte n'avait aucun moyen d'être marqué présent
+     autrement qu'en dictant son matricule. */
+  test('tout le monde y figure, ABSENT par défaut', async () => {
+    poser({ horaires: [], profils: ANNUAIRE, presences: [] });
+    rendre(<AdminPresences />, { route: '/presences/pointer' });
+
+    expect(await screen.findByText('RAKOTONDRABE Nirina')).toBeInTheDocument();
+    expect(screen.getByText('ANDRIANJAFY Tokiniaina')).toBeInTheDocument();
+    expect(screen.getAllByText('Absent')).toHaveLength(2);
+    expect(screen.getByText('0 présent sur 2')).toBeInTheDocument();
+  });
+
+  test('celui qui est pointé n’est plus marqué absent', async () => {
+    poser({
+      horaires: [],
+      profils: ANNUAIRE,
+      presences: [
+        { id: 'pr1', seance_le: aujourdhui(), statut: 'present', horaire_id: null, profils: MEMBRE }
+      ]
+    });
+    rendre(<AdminPresences />, { route: '/presences/pointer' });
+
+    await screen.findByText('RAKOTONDRABE Nirina');
+    /* Un seul absent : l'autre. */
+    expect(screen.getAllByText('Absent')).toHaveLength(1);
+    expect(screen.getByText('1 présent sur 2')).toBeInTheDocument();
+  });
+
+  test('un APPUI pointe le membre — la carte oubliée', async () => {
+    /* C'est le cœur de la demande : l'élève qui a oublié sa carte se
+       pointe d'un doigt, sans dicter son matricule. */
+    poser({ horaires: [], profils: ANNUAIRE, presences: [] });
+    rendre(<AdminPresences />, { route: '/presences/pointer' });
+
+    await userEvent.click(
+      await screen.findByLabelText('Pointer ANDRIANJAFY Tokiniaina')
+    );
+
+    const appel = await waitFor(() => {
+      const r = derniere('rpc:pointer_presence');
+      expect(r).toBeDefined();
+      return r!;
+    });
+    /* Le matricule part, parce que c'est ce que la fonction de la
+       base attend — la même que le scanner emploie. Un seul chemin
+       d'écriture pour trois gestes. */
+    expect((appel.corps as { p_matricule: string }).p_matricule).toBe('F04x044');
+  });
+
+  test('un second appui RETIRE le pointage', async () => {
+    /* Cocher et décocher, comme sur du papier. Il n'y a rien d'autre
+       à apprendre. */
+    poser({
+      horaires: [],
+      profils: ANNUAIRE,
+      presences: [
+        { id: 'pr1', seance_le: aujourdhui(), statut: 'present', horaire_id: null, profils: MEMBRE }
+      ]
+    });
+    rendre(<AdminPresences />, { route: '/presences/pointer' });
+
+    await userEvent.click(
+      await screen.findByLabelText('Retirer le pointage de RAKOTONDRABE Nirina')
+    );
+
+    await waitFor(() => expect(derniere('presences', 'DELETE')).toBeDefined());
+  });
+
+  test('un membre RETIRÉ du club n’est pas sur la feuille', async () => {
+    /* Il ne vient plus. Il reste dans l'annuaire pour
+       l'administration, pas sur la feuille du samedi matin. */
+    poser({
+      horaires: [],
+      profils: [ANNUAIRE[0], { ...ANNUAIRE[1], actif: false }],
+      presences: []
+    });
+    rendre(<AdminPresences />, { route: '/presences/pointer' });
+
+    await screen.findByText('RAKOTONDRABE Nirina');
+    expect(screen.queryByText('ANDRIANJAFY Tokiniaina')).not.toBeInTheDocument();
+  });
+
+  test('la recherche filtre la feuille', async () => {
+    /* Soixante-quatre noms font quatre écrans de défilement, et l'on
+       pointe pendant que les élèves arrivent. */
+    poser({ horaires: [], profils: ANNUAIRE, presences: [] });
+    rendre(<AdminPresences />, { route: '/presences/pointer' });
+
+    await userEvent.type(await screen.findByLabelText('Chercher un nom'), 'Toki');
+
+    expect(screen.getByText('ANDRIANJAFY Tokiniaina')).toBeInTheDocument();
+    expect(screen.queryByText('RAKOTONDRABE Nirina')).not.toBeInTheDocument();
   });
 });
 

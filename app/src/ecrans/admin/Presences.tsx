@@ -15,6 +15,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icone } from '../../ui/Icone';
 import { Avis, Bouton, Carte, Champ, Choix, Entete, Etat, Surtitre } from '../../ui/base';
+import { useMembres } from '../../services/membres';
+import { correspond } from '../../services/texte';
 import { heure, nomDuJour, useHoraires } from '../../services/club';
 import {
   LIBELLE,
@@ -175,10 +177,36 @@ export function AdminPresences() {
   const [camera, setCamera] = useState(false);
   const [avis, setAvis] = useState<{ bon: boolean; texte: string } | null>(null);
 
+  const [cherche, setCherche] = useState('');
+
   const { data: horaires } = useHoraires();
   const { data: presences, isPending, error } = usePresencesDuJour(jour);
+  /* L'ANNUAIRE, qui est ce qui fait la feuille. Les présences disent
+     seulement qui a été pointé ; la liste des élèves dit qui devrait
+     l'être, et c'est elle qui permet de voir qui MANQUE. */
+  const { data: membres } = useMembres();
   const pointer = usePointer();
   const depointer = useDepointer();
+
+  /* Un membre retiré du club n'a pas à figurer sur la feuille : il ne
+     vient plus. Il reste dans l'annuaire pour l'administration, pas
+     ici. */
+  const actifs = (membres ?? []).filter((m) => m.actif !== false);
+
+  /* Le pointage de chacun, s'il existe. Une carte plutôt qu'une
+     recherche dans un tableau : soixante-quatre membres fois
+     soixante-quatre présences ferait quatre mille comparaisons à
+     chaque frappe dans la recherche. */
+  const parProfil = new Map((presences ?? []).map((p) => [p.membre?.id ?? '', p]));
+
+  const feuille = actifs
+    .filter((m) => correspond(cherche, m.nom, m.prenom, m.numero))
+    .map((membre) => ({ membre, presence: parProfil.get(membre.id) ?? null }));
+
+  const pointes = (presences ?? []).length;
+  /* L'annuaire n'est pas encore arrivé : la feuille serait vide, ce
+     qui ferait croire qu'il n'y a aucun membre. */
+  const sansMembres = membres === undefined;
 
   /* Le dernier code lu, et l'instant où il l'a été. Le scanner relit
      la même carte quatre fois par seconde tant qu'elle est devant
@@ -296,42 +324,117 @@ export function AdminPresences() {
           {avis && <Avis bon={avis.bon}>{avis.texte}</Avis>}
         </div>
 
+        {/* ============================================================
+            LA FICHE DE PRÉSENCE.
+
+            « On crée une fiche de présence, tous les élèves sont
+            absents par défaut, on scanne ou on clique pour valider la
+            présence (parfois un élève oublie sa carte). »
+
+            Cet écran ne montrait que les membres DÉJÀ POINTÉS. Pour
+            savoir qui manquait, il fallait comparer de tête avec
+            l'annuaire — soixante-quatre noms — et un élève sans sa
+            carte n'avait aucun moyen d'être marqué présent autrement
+            qu'en dictant son matricule.
+
+            La feuille part donc de l'ANNUAIRE et non des présences :
+            tout le monde y figure, absent tant que personne ne l'a
+            pointé. C'est ainsi qu'une feuille de présence a toujours
+            fonctionné sur le papier, et c'est ce qui permet de voir
+            d'un coup d'œil qui manque.
+
+            Le scanner et la saisie du matricule restent au-dessus :
+            trois chemins vers le même geste, et chacun sert un cas
+            réel — la carte présentée, la carte oubliée, la carte
+            illisible.
+            ============================================================ */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div className="rowhead">
             <Surtitre>{jourLong(jour)}</Surtitre>
             <span style={{ fontSize: 12, color: '#7C8B82' }}>
-              {(presences ?? []).length} pointé{(presences ?? []).length > 1 ? 's' : ''}
+              {pointes} présent{pointes > 1 ? 's' : ''} sur {(membres ?? []).length}
             </span>
           </div>
 
+          {/* La recherche : soixante-quatre noms font quatre écrans de
+              défilement, et l'on pointe pendant que les élèves
+              arrivent. Sans elle, trouver un nom prend plus de temps
+              que de le taper. */}
+          <div className="searchbar">
+            <Icone nom="search" taille={19} couleur="#7C8B82" />
+            <input
+              value={cherche}
+              onChange={(e) => setCherche(e.target.value)}
+              placeholder="Chercher un nom"
+              aria-label="Chercher un nom"
+              style={{
+                flexGrow: 1, minWidth: 0, border: 0, background: 'transparent',
+                font: 'inherit', outline: 'none'
+              }}
+            />
+          </div>
+
           <Etat
-            chargement={isPending}
+            chargement={isPending || sansMembres}
             erreur={error}
-            vide={(presences ?? []).length === 0}
-            messageVide="Personne n’est encore pointé ce jour-là."
+            vide={feuille.length === 0}
+            messageVide={
+              cherche.trim()
+                ? 'Aucun membre ne correspond.'
+                : 'Aucun membre actif dans l’annuaire.'
+            }
           >
             <div className="list">
-              {(presences ?? []).map((p) => {
-                const [couleur, fond] = teinteStatut(p.statut);
+              {feuille.map(({ membre, presence }) => {
+                const [couleur, fond] = presence
+                  ? teinteStatut(presence.statut)
+                  : ['#8A978F', '#F1F6F3'];
                 return (
-                  <div key={p.id} className="listrow">
+                  <div
+                    key={membre.id}
+                    className="listrow"
+                    style={presence ? undefined : { opacity: 0.72 }}
+                  >
                     <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
                       <b style={{ display: 'block', fontSize: 14, fontWeight: 600 }}>
-                        {p.membre ? `${p.membre.nom} ${p.membre.prenom}` : 'Membre inconnu'}
+                        {membre.nom} {membre.prenom}
                       </b>
                       <span style={{ display: 'block', fontSize: 12.5, color: '#59685F' }}>
-                        {p.membre?.numero}
+                        {membre.numero}
                       </span>
                     </span>
+
                     <span className="tag" style={{ color: couleur, background: fond }}>
-                      {LIBELLE[p.statut]}
+                      {presence ? LIBELLE[presence.statut] : 'Absent'}
                     </span>
+
+                    {/* UN SEUL APPUI. Pointer si absent, retirer le
+                        pointage si déjà là — c'est le même geste que
+                        cocher et décocher une case sur du papier, et
+                        il n'y a rien d'autre à apprendre.
+
+                        Le statut choisi en haut de l'écran s'applique :
+                        « présent », « en retard » ou « excusé ». */}
                     <button
                       className="tapicon"
-                      aria-label={`Retirer le pointage de ${p.membre?.nom ?? 'ce membre'}`}
-                      onClick={() => depointer.mutate(p.id)}
+                      disabled={pointer.isPending || depointer.isPending}
+                      aria-label={
+                        presence
+                          ? `Retirer le pointage de ${membre.nom} ${membre.prenom}`
+                          : `Pointer ${membre.nom} ${membre.prenom}`
+                      }
+                      onClick={() =>
+                        presence
+                          ? depointer.mutate(presence.id)
+                          : pointerCe(membre.numero)
+                      }
                     >
-                      <Icone nom="x" taille={17} couleur="#B3341A" />
+                      <Icone
+                        nom={presence ? 'x' : 'shieldCheck'}
+                        taille={19}
+                        couleur={presence ? '#B3341A' : '#12613C'}
+                        epaisseur={2}
+                      />
                     </button>
                   </div>
                 );

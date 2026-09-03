@@ -46,6 +46,10 @@ export function AdminPublier() {
   const [texte, setTexte] = useState('');
   const [date, setDate] = useState('');
   const [lieu, setLieu] = useState('');
+  /* La participation demandée. Chaîne vide = gratuit ou non fixé :
+     l'écran ne réclame alors rien, et le membre ne voit aucun
+     montant. */
+  const [prix, setPrix] = useState('');
   const [avis, setAvis] = useState<{ bon: boolean; texte: string } | null>(null);
   /* Le CHEMIN de l'image dans le seau, pas son adresse : les seaux
      sont privés et l'adresse signée expire au bout d'une heure. */
@@ -75,6 +79,7 @@ export function AdminPublier() {
     setTexte(a.texte);
     setDate(a.date_evt ?? '');
     setLieu(a.lieu ?? '');
+    setPrix(a.participation_ar != null ? String(a.participation_ar) : '');
     setImage(a.image);
   }, [actus, demandee]);
   /* Ce qui attend une confirmation de suppression. */
@@ -93,7 +98,7 @@ export function AdminPublier() {
 
   function vider() {
     setTitre(''); setCategorie(''); setTexte(''); setDate(''); setLieu('');
-    setImage(null); setEdite(null);
+    setPrix(''); setImage(null); setEdite(null);
   }
 
   function envoyer(publiee: boolean) {
@@ -104,7 +109,12 @@ export function AdminPublier() {
     publier.mutate(
       { id: edite ?? undefined,
         titre: titre.trim(), categorie: categorie.trim(), texte: texte.trim(),
-        date_evt: date || null, lieu: lieu || null, image, publiee },
+        date_evt: date || null, lieu: lieu || null, image, publiee,
+        /* Vide = gratuit ou non fixé. On n'envoie pas zéro : « zéro
+           ariary » et « rien n'est demandé » ne sont pas la même
+           chose, et l'écran du membre ne doit pas afficher
+           « 0 Ar ». */
+        participation_ar: prix.trim() ? Math.max(0, Math.round(Number(prix))) : null },
       {
         onSuccess: () => {
           const base = edite
@@ -172,6 +182,26 @@ export function AdminPublier() {
             />
             <Champ libelle="Date de l’événement" type="date" valeur={date} poser={setDate} />
             <Champ libelle="Lieu" valeur={lieu} poser={setLieu} invite="Devant la salle" />
+            {/* LA PARTICIPATION DEMANDÉE.
+
+                C'est elle qui donne un sens aux versements. Ils
+                existaient depuis le premier jour ; sans montant
+                attendu, « il a versé 30 000 » ne se comparait à rien,
+                et l'application ne pouvait pas dire « il reste
+                20 000 » — la seule chose que le club veut savoir en
+                regardant sa liste.
+
+                Laissée vide, elle ne réclame rien : un entraînement
+                exceptionnel est gratuit, et le prix du taxi-brousse
+                se connaît parfois la veille. */}
+            <Champ
+              libelle="Participation par personne"
+              type="number"
+              valeur={prix}
+              poser={setPrix}
+              invite="15000"
+              aide="En ariary. Laissez vide si c’est gratuit, ou si le montant n’est pas encore fixé."
+            />
             <Zone
               libelle="Texte"
               valeur={texte}

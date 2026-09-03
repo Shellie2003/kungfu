@@ -18,7 +18,7 @@ import { MotDePasse } from '../src/ecrans/MotDePasse';
 import {
   brancherServeur, derniere, poser, poserAuth, recues, reinitialiser, sessionFactice
 } from './serveur';
-import { PROFIL_ELEVE, rendre } from './rendu';
+import { PROFIL_ADMIN, PROFIL_ELEVE, rendre } from './rendu';
 
 const GRADES = [{ id: 'gv', nom: 'Ceinture verte', couleur: '#4E9C57', rang: 4, actif: true }];
 
@@ -765,5 +765,169 @@ describe('pointer les versements', () => {
     rendre(<AdminParticipations />, { route: '/admin/participations' });
     await userEvent.click(await screen.findByText('Sortie au lac Mantasoa'));
     expect(await screen.findByText('Personne ne s’est encore inscrit.')).toBeInTheDocument();
+  });
+});
+
+/* ============================================================
+   Fixer la participation, encaisser en espèces, payer petit à petit.
+
+   « Parfois un membre le paie en espèces, alors on peut valider
+   directement la participation dans l'app sans que le membre envoie
+   une invitation. Et parfois un membre paie petit à petit. »
+
+   Le paiement fractionné existait DÉJÀ : la table « versements »
+   enregistre une ligne par envoi depuis le premier jour. Ce qui
+   manquait n'était pas la table, c'était le REPÈRE — combien il faut
+   payer. Sans lui, « il a versé 30 000 » ne se compare à rien, et
+   l'écran ne peut pas dire ce que le club veut savoir en regardant sa
+   liste : « il reste 20 000 ».
+   ============================================================ */
+describe('la participation fixée et l’encaissement en espèces', () => {
+  /* L'auteur de la sortie est celui qui rend le bouton visible : le
+     serveur ne laisse que lui inscrire quelqu'un DÉJÀ validé
+     (migration 0021). L'écran ne propose donc pas ce qui serait
+     refusé. */
+  const SORTIE_PAYANTE = {
+    id: 'a1', titre: 'Sortie au lac Mantasoa', categorie: 'Sortie',
+    texte: 'Départ 6h00.', date_evt: '2026-09-12', lieu: null, image: null,
+    participation_ar: 15000, auteur_id: PROFIL_ADMIN.id,
+    cree_le: new Date().toISOString()
+  };
+
+  const ANNUAIRE = [
+    {
+      id: 'p42', numero: 'F04x042', nom: 'RAKOTONDRABE', prenom: 'Nirina',
+      photo: null, actif: true, grades: GRADES[0]
+    },
+    {
+      id: 'p43', numero: 'F04x043', nom: 'RANDRIA', prenom: 'Soa',
+      photo: null, actif: true, grades: GRADES[0]
+    }
+  ];
+
+  const INSCRIT = {
+    id: 'pa1', accompagnants: 2, montant_promis: 5000, note: null,
+    profils: { nom: 'RAKOTONDRABE', prenom: 'Nirina', numero: 'F04x042' },
+    versements: [{ id: 'v1', montant: 20000, recu_le: '2026-09-01' }]
+  };
+
+  const ouvrir = async () => {
+    rendre(<AdminParticipations />, { route: '/admin/participations' });
+    await userEvent.click(await screen.findByText('Sortie au lac Mantasoa'));
+  };
+
+  test('le reliquat se lit par membre : 45 000 attendus, 20 000 versés', async () => {
+    poser({ actualites: [SORTIE_PAYANTE], participations: [INSCRIT], profils: ANNUAIRE });
+    await ouvrir();
+
+    expect(await screen.findByText('RAKOTONDRABE Nirina')).toBeInTheDocument();
+    /* Trois places à quinze mille : l'accompagnant paie sa place. */
+    expect(screen.getByText('reste 25 000 Ar')).toBeInTheDocument();
+  });
+
+  test('sur une sortie GRATUITE, aucun reliquat n’est affiché', async () => {
+    /* Sans montant fixé, « reste −20 000 Ar » s'afficherait pour
+       quelqu'un qui a donné sans qu'on demande rien. */
+    poser({
+      actualites: [{ ...SORTIE_PAYANTE, participation_ar: null }],
+      participations: [INSCRIT],
+      profils: ANNUAIRE
+    });
+    await ouvrir();
+
+    await screen.findByText('RAKOTONDRABE Nirina');
+    expect(screen.queryByText(/^reste /)).not.toBeInTheDocument();
+  });
+
+  test('inscrire en espèces crée une participation DÉJÀ validée', async () => {
+    /* Le geste du samedi matin : on tend un billet, on dit
+       « inscris-moi ». Jusqu'ici il fallait que le membre sorte son
+       téléphone, s'inscrive, et que l'organisateur valide ensuite —
+       trois gestes pour une phrase. */
+    poser({
+      actualites: [SORTIE_PAYANTE], participations: [INSCRIT], profils: ANNUAIRE,
+      'participations:POST': [{ id: 'pa2' }]
+    });
+    await ouvrir();
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: /Inscrire un membre payé en espèces/ })
+    );
+    await userEvent.selectOptions(await screen.findByLabelText('Le membre'), 'p43');
+    await userEvent.clear(screen.getByLabelText('Montant reçu en espèces'));
+    await userEvent.type(screen.getByLabelText('Montant reçu en espèces'), '15000');
+    await userEvent.click(screen.getByRole('button', { name: 'Inscrire et pointer' }));
+
+    const envoi = await waitFor(() => {
+      const r = derniere('participations', 'POST');
+      expect(r).toBeDefined();
+      return r!;
+    });
+    expect(envoi.corps).toMatchObject({ actualite_id: 'a1', profil_id: 'p43' });
+    /* DÉJÀ validée : c'est tout l'intérêt. Une inscription en attente
+       obligerait l'organisateur à revenir la valider alors qu'il tient
+       l'argent dans la main. */
+    expect((envoi.corps as { valide_le: string | null }).valide_le).toBeTruthy();
+
+    /* Et le versement suit, rattaché à l'inscription qui vient d'être
+       créée — jamais avant, il n'aurait rien à quoi se rattacher. */
+    await waitFor(() =>
+      expect(derniere('versements')?.corps).toMatchObject({
+        participation_id: 'pa2',
+        montant: 15000
+      })
+    );
+  });
+
+  test('sans versement, on inscrit quand même : c’est « il paiera plus tard »', async () => {
+    /* Le cas « petit à petit » commence souvent à zéro : on note la
+       place, on encaisse ensuite. Exiger un montant obligerait à
+       taper un chiffre faux. */
+    poser({
+      actualites: [SORTIE_PAYANTE], participations: [], profils: ANNUAIRE,
+      'participations:POST': [{ id: 'pa2' }]
+    });
+    await ouvrir();
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: /Inscrire un membre payé en espèces/ })
+    );
+    await userEvent.selectOptions(await screen.findByLabelText('Le membre'), 'p42');
+    await userEvent.click(screen.getByRole('button', { name: 'Inscrire et pointer' }));
+
+    await waitFor(() => expect(derniere('participations', 'POST')).toBeDefined());
+    /* Aucun versement n'est parti : zéro n'est pas un encaissement. */
+    expect(derniere('versements')).toBeUndefined();
+  });
+
+  test('quelqu’un de déjà inscrit n’est pas proposé', async () => {
+    /* La base a une contrainte d'unicité : le proposer mènerait droit
+       au refus, et l'on chercherait pourquoi. */
+    poser({ actualites: [SORTIE_PAYANTE], participations: [INSCRIT], profils: ANNUAIRE });
+    await ouvrir();
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: /Inscrire un membre payé en espèces/ })
+    );
+    const liste = await screen.findByLabelText('Le membre');
+    expect(liste).toHaveTextContent('RANDRIA Soa');
+    expect(liste).not.toHaveTextContent('RAKOTONDRABE Nirina');
+  });
+
+  test('un administrateur qui n’a pas créé la sortie ne voit pas le bouton', async () => {
+    /* Ce n'est pas cet écran qui protège — c'est le déclencheur de la
+       0021. Mais proposer un bouton dont l'appui finit toujours par un
+       refus est une promesse qu'on ne tient pas. */
+    poser({
+      actualites: [{ ...SORTIE_PAYANTE, auteur_id: 'quelquun-dautre' }],
+      participations: [INSCRIT],
+      profils: ANNUAIRE
+    });
+    await ouvrir();
+
+    await screen.findByText('RAKOTONDRABE Nirina');
+    expect(
+      screen.queryByRole('button', { name: /Inscrire un membre payé en espèces/ })
+    ).not.toBeInTheDocument();
   });
 });
