@@ -38,13 +38,34 @@ const PUBLICATION: Rangee[] = [
   ['Publier une actualité', 'Sortie, compétition, réunion…', 'news', '/admin/publier'],
   ['Envoyer une notification', 'Prévient tous les membres', 'bell', '/admin/notifier'],
   ['Albums et photos', 'Créer, ajouter, supprimer', 'album', '/admin/albums'],
-  ['Les catégories', 'Rubriques du casier et des albums, et leurs couleurs', 'flag', '/admin/categories'],
-  ['Les salons', 'Ouvrir un fil par grade ou par événement', 'chat', '/admin/salons'],
-  ['Journal d’accès', 'Qui est entré dans l’espace des maîtres', 'eyeOff', '/admin/journal'],
+  ['Les catégories', 'Rubriques du casier et des albums, et leurs couleurs', 'flag', '/admin/categories']
+];
+
+/* ------------------------------------------------------------
+   DEUX SECTIONS DE PLUS, ET POURQUOI.
+
+   « Publication » en comptait dix, dont la fiche de présence, les
+   versements d'une sortie et le journal d'accès à l'espace des
+   maîtres. Aucun des trois ne publie quoi que ce soit.
+
+   Un intitulé de section n'est pas une décoration : c'est ce qui
+   permet de trouver un écran sans lire les dix lignes. Quand il
+   cesse de décrire ce qu'il contient, la liste redevient une liste,
+   et l'on parcourt tout à chaque fois. C'est exactement ce qui était
+   arrivé — la section avait grossi d'une ligne à chaque
+   fonctionnalité, et personne n'avait rouvert la question du
+   classement.
+   ------------------------------------------------------------ */
+const VIE_DU_CLUB: Rangee[] = [
+  ['Pointer les présences', 'En scannant les cartes, ou au matricule', 'shield', '/presences/pointer'],
   ['Inscriptions à valider', 'Les demandes en attente sur VOS sorties', 'shieldCheck', '/admin/a-valider'],
   ['Participations', 'Qui vient, et pointer les versements', 'shieldCheck', '/admin/participations'],
+  ['Les salons', 'Ouvrir un fil par grade ou par événement', 'chat', '/admin/salons']
+];
+
+const REGLAGES: Rangee[] = [
   ['Le club', 'Horaires, responsable, contact, MVola', 'calendar', '/admin/club'],
-  ['Pointer les présences', 'En scannant les cartes, ou au matricule', 'shield', '/presences/pointer']
+  ['Journal d’accès', 'Qui est entré dans l’espace des maîtres', 'eyeOff', '/admin/journal']
 ];
 
 function Bloc({ titre, lignes }: { titre: string; lignes: Rangee[] }) {
@@ -114,7 +135,13 @@ export function Admin() {
               Administration
             </p>
             <p style={{ fontSize: 12, color: '#9BB0A5', marginTop: 2 }}>
-              {moi ? `${moi.prenom} ${moi.nom}` : (reglages?.responsable ?? '')}
+              {/* « NOM Prénom », comme partout ailleurs dans
+                  l'application — l'annuaire, la file de validation,
+                  la liste des participations. Cet écran écrivait
+                  « Prénom NOM », et deux façons d'écrire un nom dans
+                  la même application, c'est une hésitation que le
+                  lecteur porte à chaque fois. */}
+              {moi ? `${moi.nom} ${moi.prenom}` : (reglages?.responsable ?? '')}
             </p>
           </div>
         </div>
@@ -150,6 +177,8 @@ export function Admin() {
       >
         <Bloc titre="Membres" lignes={MEMBRES} />
         <Bloc titre="Publication" lignes={PUBLICATION} />
+        <Bloc titre="Vie du club" lignes={VIE_DU_CLUB} />
+        <Bloc titre="Réglages" lignes={REGLAGES} />
 
         <div className="warn">
           <i />

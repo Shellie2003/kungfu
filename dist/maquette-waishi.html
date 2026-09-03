@@ -1781,7 +1781,9 @@ const SCREENS = {
         <button class="tapicon" data-go="accueil" aria-label="Retour" style="margin-left:-10px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5 8 12l7 7"/></svg></button>
         <div style="flex-grow:1">
           <p class="display" style="font-size:18px;font-weight:600;color:#FFF">Administration</p>
-          <p style="font-size:12px;color:#9BB0A5;margin-top:2px">Idealy Itoerantsoa Santatra</p>
+          <!-- Le nom de qui est CONNECTÉ, écrit « NOM Prénom » comme
+               partout ailleurs. -->
+          <p style="font-size:12px;color:#9BB0A5;margin-top:2px">IDEALY Santatra</p>
         </div>
       </div>
       <div class="stats">
@@ -1800,6 +1802,22 @@ const SCREENS = {
       </div>
     </div>
 
+    <!-- LES QUATRE SECTIONS DE L'ÉCRAN LIVRÉ.
+
+         Cette planche en montrait DEUX de quatre lignes. L'application
+         en compte seize, et la maquette ne pouvait pas les deviner :
+         elles ont été demandées après elle, une à une. Une planche qui
+         annonce huit écrans là où il y en a seize n'est plus une
+         maquette, c'est une liste périmée — et le banc de comparaison,
+         lui, mesurait cet écart tous les jours sans qu'on puisse rien
+         y faire.
+
+         Elle est donc mise à jour. C'est le SEUL écran où la maquette
+         suit l'application plutôt que l'inverse, et c'est assumé : son
+         contenu est un catalogue de fonctionnalités, pas une décision
+         de mise en page. La forme — bandeau sombre, trois chiffres,
+         listes à tuile et chevron — est celle qui a été validée, et
+         c'est elle que le banc continue de vérifier au pixel. -->
     <div style="flex-grow:1;padding:20px 20px 28px;display:flex;flex-direction:column;gap:22px">
       <div style="display:flex;flex-direction:column;gap:12px">
         <h2 class="overline">Membres</h2>
@@ -1820,8 +1838,18 @@ const SCREENS = {
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#A8B6AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
           </div>
           <div class="listrow">
+            <span class="tile tile--sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.2"/><path d="M12 7.6v5.2"/><path d="m5.5 10.8 6.5-1.5 6.5 1.5"/><path d="m12 12.8-3.6 7.6"/><path d="m12 12.8 3.6 7.6"/></svg></span>
+            <span style="flex-grow:1;min-width:0"><b style="display:block;font-size:15px;font-weight:600">Les grades du club</b><span style="display:block;font-size:12px;color:#59685F;margin-top:1px">Créer, renommer, recolorer, ordonner</span></span>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#A8B6AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+          </div>
+          <div class="listrow">
             <span class="tile tile--sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10" width="15" height="10.5" rx="3"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/></svg></span>
             <span style="flex-grow:1;min-width:0"><b style="display:block;font-size:15px;font-weight:600">Comptes et accès</b><span style="display:block;font-size:12px;color:#59685F;margin-top:1px">Créer, suspendre, réinitialiser</span></span>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#A8B6AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+          </div>
+          <div class="listrow">
+            <span class="tile tile--sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/><path d="M9 12.2l2 2 4-4.4"/></svg></span>
+            <span style="flex-grow:1;min-width:0"><b style="display:block;font-size:15px;font-weight:600">Imprimer les cartes</b><span style="display:block;font-size:12px;color:#59685F;margin-top:1px">Dix par page A4, avec traits de coupe</span></span>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#A8B6AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
           </div>
         </div>
@@ -1842,12 +1870,54 @@ const SCREENS = {
           </div>
           <div class="listrow">
             <span class="tile tile--sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg></span>
-            <span style="flex-grow:1;min-width:0"><b style="display:block;font-size:15px;font-weight:600">Créer un album</b><span style="display:block;font-size:12px;color:#59685F;margin-top:1px">Puis y ajouter des photos</span></span>
+            <span style="flex-grow:1;min-width:0"><b style="display:block;font-size:15px;font-weight:600">Albums et photos</b><span style="display:block;font-size:12px;color:#59685F;margin-top:1px">Créer, ajouter, supprimer</span></span>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#A8B6AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
           </div>
           <div class="listrow">
-            <span class="tile tile--sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg></span>
-            <span style="flex-grow:1;min-width:0"><b style="display:block;font-size:15px;font-weight:600">Gérer les photos</b><span style="display:block;font-size:12px;color:#59685F;margin-top:1px">Ajouter, classer, supprimer</span></span>
+            <span class="tile tile--sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 21 19H3z"/><path d="M12 9.5v4"/><path d="M12 16.3v.2"/></svg></span>
+            <span style="flex-grow:1;min-width:0"><b style="display:block;font-size:15px;font-weight:600">Les catégories</b><span style="display:block;font-size:12px;color:#59685F;margin-top:1px">Rubriques du casier et des albums, et leurs couleurs</span></span>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#A8B6AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <h2 class="overline">Vie du club</h2>
+        <div class="list">
+          <div class="listrow">
+            <span class="tile tile--sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/></svg></span>
+            <span style="flex-grow:1;min-width:0"><b style="display:block;font-size:15px;font-weight:600">Pointer les présences</b><span style="display:block;font-size:12px;color:#59685F;margin-top:1px">En scannant les cartes, ou au matricule</span></span>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#A8B6AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+          </div>
+          <div class="listrow">
+            <span class="tile tile--sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/><path d="M9 12.2l2 2 4-4.4"/></svg></span>
+            <span style="flex-grow:1;min-width:0"><b style="display:block;font-size:15px;font-weight:600">Inscriptions à valider</b><span style="display:block;font-size:12px;color:#59685F;margin-top:1px">Les demandes en attente sur VOS sorties</span></span>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#A8B6AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+          </div>
+          <div class="listrow">
+            <span class="tile tile--sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/><path d="M9 12.2l2 2 4-4.4"/></svg></span>
+            <span style="flex-grow:1;min-width:0"><b style="display:block;font-size:15px;font-weight:600">Participations</b><span style="display:block;font-size:12px;color:#59685F;margin-top:1px">Qui vient, et pointer les versements</span></span>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#A8B6AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+          </div>
+          <div class="listrow">
+            <span class="tile tile--sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H8l-4 4V5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5z"/></svg></span>
+            <span style="flex-grow:1;min-width:0"><b style="display:block;font-size:15px;font-weight:600">Les salons</b><span style="display:block;font-size:12px;color:#59685F;margin-top:1px">Ouvrir un fil par grade ou par événement</span></span>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#A8B6AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <h2 class="overline">Réglages</h2>
+        <div class="list">
+          <div class="listrow">
+            <span class="tile tile--sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17"/><path d="M8 3v4"/><path d="M16 3v4"/></svg></span>
+            <span style="flex-grow:1;min-width:0"><b style="display:block;font-size:15px;font-weight:600">Le club</b><span style="display:block;font-size:12px;color:#59685F;margin-top:1px">Horaires, responsable, contact, MVola</span></span>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#A8B6AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+          </div>
+          <div class="listrow">
+            <span class="tile tile--sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l16 16"/><path d="M9.5 9.6A3 3 0 0 0 12 15a3 3 0 0 0 2.4-1.2"/><path d="M6.4 6.6C4.3 8 3 10 3 12c0 0 3.5 5.5 9 5.5 1.5 0 2.9-.4 4.1-1"/><path d="M9.8 6.8A9.6 9.6 0 0 1 12 6.5c5.5 0 9 5.5 9 5.5a15 15 0 0 1-2.6 3.1"/></svg></span>
+            <span style="flex-grow:1;min-width:0"><b style="display:block;font-size:15px;font-weight:600">Journal d’accès</b><span style="display:block;font-size:12px;color:#59685F;margin-top:1px">Qui est entré dans l’espace des maîtres</span></span>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#A8B6AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
           </div>
         </div>
@@ -1855,7 +1925,7 @@ const SCREENS = {
 
       <div class="warn">
         <i></i>
-        <p>L’administration est le seul rôle autorisé à modifier une fiche. Les membres consultent, sans jamais pouvoir écrire.</p>
+        <p>L’administration est le seul rôle autorisé à écrire ; les membres consultent. Ce n’est pas cet écran qui le décide — c’est la base, et elle refuserait les mêmes gestes depuis n’importe quelle autre application.</p>
       </div>
     </div>
   </div>`

@@ -469,7 +469,9 @@ screen('admin', '12 · Administration', { full: `
         <button class="tapicon" data-go="accueil" aria-label="Retour" style="margin-left:-10px">${svg('back', 22, '#FFF', 2)}</button>
         <div style="flex-grow:1">
           <p class="display" style="font-size:18px;font-weight:600;color:#FFF">Administration</p>
-          <p style="font-size:12px;color:#9BB0A5;margin-top:2px">Idealy Itoerantsoa Santatra</p>
+          <!-- Le nom de qui est CONNECTÉ, écrit « NOM Prénom » comme
+               partout ailleurs. -->
+          <p style="font-size:12px;color:#9BB0A5;margin-top:2px">IDEALY Santatra</p>
         </div>
       </div>
       <div class="stats">
@@ -481,34 +483,41 @@ screen('admin', '12 · Administration', { full: `
       </div>
     </div>
 
-    <div style="flex-grow:1;padding:20px 20px 28px;display:flex;flex-direction:column;gap:22px">
-      <div style="display:flex;flex-direction:column;gap:12px">
-        ${overline('Membres')}
-        <div class="list">
-          ${[['Ajouter un étudiant', 'Fiche, photo, grade, biographie', 'plus'], ['Modifier une fiche', 'Corriger ou compléter', 'edit'], ['Changer un grade', 'Après un passage validé', 'edit'], ['Comptes et accès', 'Créer, suspendre, réinitialiser', 'lock']]
-            .map(([t, d, ic]) => `<div class="listrow">
-            <span class="tile tile--sm">${svg(ic, 18, '#0F5132')}</span>
-            <span style="flex-grow:1;min-width:0"><b style="display:block;font-size:15px;font-weight:600">${t}</b><span style="display:block;font-size:12px;color:#59685F;margin-top:1px">${d}</span></span>
-            ${svg('chev', 17, '#A8B6AE', 2)}
-          </div>`).join('\n          ')}
-        </div>
-      </div>
+    <!-- LES QUATRE SECTIONS DE L'ÉCRAN LIVRÉ.
 
-      <div style="display:flex;flex-direction:column;gap:12px">
-        ${overline('Publication')}
+         Cette planche en montrait DEUX de quatre lignes. L'application
+         en compte seize, et la maquette ne pouvait pas les deviner :
+         elles ont été demandées après elle, une à une. Une planche qui
+         annonce huit écrans là où il y en a seize n'est plus une
+         maquette, c'est une liste périmée — et le banc de comparaison,
+         lui, mesurait cet écart tous les jours sans qu'on puisse rien
+         y faire.
+
+         Elle est donc mise à jour. C'est le SEUL écran où la maquette
+         suit l'application plutôt que l'inverse, et c'est assumé : son
+         contenu est un catalogue de fonctionnalités, pas une décision
+         de mise en page. La forme — bandeau sombre, trois chiffres,
+         listes à tuile et chevron — est celle qui a été validée, et
+         c'est elle que le banc continue de vérifier au pixel. -->
+    <div style="flex-grow:1;padding:20px 20px 28px;display:flex;flex-direction:column;gap:22px">
+      ${[['Membres', [['Ajouter un étudiant', 'Fiche, photo, grade, biographie', 'plus'], ['Modifier une fiche', 'Corriger ou compléter', 'edit'], ['Changer un grade', 'Après un passage validé', 'edit'], ['Les grades du club', 'Créer, renommer, recolorer, ordonner', 'martial'], ['Comptes et accès', 'Créer, suspendre, réinitialiser', 'lock'], ['Imprimer les cartes', 'Dix par page A4, avec traits de coupe', 'shieldCheck']]],
+         ['Publication', [['Publier une actualité', 'Sortie, compétition, réunion…', 'news'], ['Envoyer une notification', 'Prévient tous les membres', 'bell'], ['Albums et photos', 'Créer, ajouter, supprimer', 'album'], ['Les catégories', 'Rubriques du casier et des albums, et leurs couleurs', 'flag']]],
+         ['Vie du club', [['Pointer les présences', 'En scannant les cartes, ou au matricule', 'shield'], ['Inscriptions à valider', 'Les demandes en attente sur VOS sorties', 'shieldCheck'], ['Participations', 'Qui vient, et pointer les versements', 'shieldCheck'], ['Les salons', 'Ouvrir un fil par grade ou par événement', 'chat']]],
+         ['Réglages', [['Le club', 'Horaires, responsable, contact, MVola', 'calendar'], ['Journal d’accès', 'Qui est entré dans l’espace des maîtres', 'eyeOff']]]]
+        .map(([section, lignes]) => `<div style="display:flex;flex-direction:column;gap:12px">
+        ${overline(section)}
         <div class="list">
-          ${[['Publier une actualité', 'Sortie, compétition, réunion…', 'news'], ['Envoyer une notification', 'Prévient tous les membres', 'bell'], ['Créer un album', 'Puis y ajouter des photos', 'album'], ['Gérer les photos', 'Ajouter, classer, supprimer', 'album']]
-            .map(([t, d, ic]) => `<div class="listrow">
+          ${lignes.map(([t, d, ic]) => `<div class="listrow">
             <span class="tile tile--sm">${svg(ic, 18, '#0F5132')}</span>
             <span style="flex-grow:1;min-width:0"><b style="display:block;font-size:15px;font-weight:600">${t}</b><span style="display:block;font-size:12px;color:#59685F;margin-top:1px">${d}</span></span>
             ${svg('chev', 17, '#A8B6AE', 2)}
           </div>`).join('\n          ')}
         </div>
-      </div>
+      </div>`).join('\n\n      ')}
 
       <div class="warn">
         <i></i>
-        <p>L’administration est le seul rôle autorisé à modifier une fiche. Les membres consultent, sans jamais pouvoir écrire.</p>
+        <p>L’administration est le seul rôle autorisé à écrire ; les membres consultent. Ce n’est pas cet écran qui le décide — c’est la base, et elle refuserait les mêmes gestes depuis n’importe quelle autre application.</p>
       </div>
     </div>
   </div>` });
