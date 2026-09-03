@@ -11,6 +11,7 @@
    ============================================================ */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from './supabase';
+import { assure } from './ecrire';
 
 export type Signalement = {
   id: string;
@@ -82,11 +83,13 @@ function useTraiter() {
     mutationFn: async ({
       id, parId, suite
     }: { id: string; parId: string; suite: string }) => {
-      const { error } = await supabase
+      const { data: ecrit1, error } = await supabase
         .from('signalements')
         .update({ traite_le: new Date().toISOString(), traite_par: parId, suite })
-        .eq('id', id);
+        .eq('id', id)
+        .select('id');
       if (error) throw error;
+      assure(ecrit1, 'enregistré ce signalement');
     },
     onSuccess: () => client.invalidateQueries({ queryKey: ['signalements'] })
   });
@@ -109,21 +112,25 @@ export function useMasquerMessage() {
          échoue, le message est retiré et le signalement reste à
          traiter — visible, donc rattrapable. L'inverse laisserait un
          signalement classé sur un message toujours affiché. */
-      const { error } = await supabase
+      const { data: ecrit2, error } = await supabase
         .from('messages')
         .update({ supprime_le: new Date().toISOString() })
-        .eq('id', messageId);
+        .eq('id', messageId)
+        .select('id');
       if (error) throw error;
+      assure(ecrit2, 'retiré ce message');
 
-      const { error: eSignal } = await supabase
+      const { data: ecrit3, error: eSignal } = await supabase
         .from('signalements')
         .update({
           traite_le: new Date().toISOString(),
           traite_par: parId,
           suite: 'Message retiré'
         })
-        .eq('id', signalementId);
+        .eq('id', signalementId)
+        .select('id');
       if (eSignal) throw eSignal;
+      assure(ecrit3, 'enregistré ce signalement');
     },
     onSuccess: () => {
       client.invalidateQueries({ queryKey: ['signalements'] });

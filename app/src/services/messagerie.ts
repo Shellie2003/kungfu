@@ -14,6 +14,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from './supabase';
+import { assure } from './ecrire';
 import { TYPES_IMAGE, reduire } from './images';
 import { envoyerFichier } from './envoi';
 import type { Progres } from './envoi';
@@ -105,8 +106,10 @@ export function useArchiver() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async ({ salonId, archive }: { salonId: string; archive: boolean }) => {
-      const { error } = await supabase.from('salons').update({ archive }).eq('id', salonId);
+      const { data: ecrit1, error } = await supabase.from('salons').update({ archive }).eq('id', salonId)
+        .select('id');
       if (error) throw error;
+      assure(ecrit1, 'archivé cette conversation');
     },
     onSuccess: () => client.invalidateQueries({ queryKey: ['salons'] })
   });
@@ -615,6 +618,15 @@ export function useSignaler() {
 }
 
 export async function marquerLu(salonId: string, profilId: string) {
+  /* zéro-ligne-normal: on n'est pas toujours MEMBRE du salon qu'on
+     lit — l'encadrement ouvre l'espace des maîtres sans y être
+     inscrit. Il n'y a alors aucune ligne à toucher, et ce n'est pas
+     un incident.
+
+     L'erreur elle-même est ignorée, et c'est assumé : marquer un fil
+     lu est un confort. Échouer ne doit pas empêcher de lire les
+     messages, ni faire surgir un avertissement au milieu d'une
+     conversation. */
   await supabase
     .from('membres_salon')
     .update({ lu_le: new Date().toISOString() })

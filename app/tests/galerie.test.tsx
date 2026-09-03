@@ -198,8 +198,15 @@ describe('la couverture et l’ordre', () => {
 
   test('déplacer ÉCHANGE deux rangs, en deux mises à jour', async () => {
     /* Renuméroter vingt photos pour en déplacer une ferait vingt
-       écritures là où deux suffisent. */
-    poser({ albums: [ALBUM2] });
+       écritures là où deux suffisent.
+
+       « photos:PATCH » est posé explicitement : depuis que les
+       écritures vérifient qu'elles ont vraiment écrit, une réponse
+       vide veut dire « le serveur a refusé », et la première mise à
+       jour s'arrêtait là. C'est le comportement voulu — un vrai
+       serveur rend la ligne touchée — et c'est au simulateur de le
+       reproduire. */
+    poser({ albums: [ALBUM2], 'photos:PATCH': [{ id: 'ph1' }] });
     rendre(<AdminAlbums />);
 
     await userEvent.click(await screen.findByLabelText('Seconde'));

@@ -10,6 +10,7 @@
    ============================================================ */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from './supabase';
+import { assure } from './ecrire';
 
 export type Participation = {
   id: string;
@@ -59,7 +60,7 @@ export function useInscrire(actualiteId: string | undefined) {
       montantPromis: number | null;
       note?: string | null;
     }) => {
-      const { error } = await supabase.from('participations').upsert(
+      const { data: ecrit1, error } = await supabase.from('participations').upsert(
         {
           actualite_id: actualiteId,
           profil_id: profilId,
@@ -68,8 +69,10 @@ export function useInscrire(actualiteId: string | undefined) {
           note: note?.trim() || null
         },
         { onConflict: 'actualite_id,profil_id' }
-      );
+      )
+      .select('id');
       if (error) throw error;
+      assure(ecrit1, 'enregistré votre participation');
     },
     onSuccess: () => client.invalidateQueries({ queryKey: ['participation'] })
   });

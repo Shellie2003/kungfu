@@ -16,6 +16,7 @@
    ============================================================ */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from './supabase';
+import { assure } from './ecrire';
 import { enParallele } from './images';
 import type { Usage } from './images';
 import { reduireEtEnvoyer } from './envoi';
@@ -177,7 +178,7 @@ export function useModifierFiche(id: string | undefined) {
     /* Ni le numéro ni le rôle ne figurent ici : un déclencheur de la
        base les fige, et les envoyer ferait échouer toute la mise à
        jour. Le grade se change par son propre écran. */
-    const { error } = await supabase
+    const { data: ecrit1, error } = await supabase
       .from('profils')
       .update({
         nom: s.nom.trim().toUpperCase(),
@@ -185,10 +186,12 @@ export function useModifierFiche(id: string | undefined) {
         debut: s.debut,
         biographie: s.biographie
       })
-      .eq('id', id);
+      .eq('id', id)
+      .select('id');
     if (error) throw error;
+    assure(ecrit1, 'enregistré cette fiche');
 
-    const { error: ePrive } = await supabase.from('profils_prives').upsert(
+    const { data: ecrit2, error: ePrive } = await supabase.from('profils_prives').upsert(
       {
         profil_id: id,
         date_naissance: s.date_naissance,
@@ -197,8 +200,10 @@ export function useModifierFiche(id: string | undefined) {
         notes: s.notes
       },
       { onConflict: 'profil_id' }
-    );
+    )
+      .select('id');
     if (ePrive) throw ePrive;
+    assure(ecrit2, 'enregistré les informations privées');
   }, ['membres','fiche']);
 }
 
@@ -208,11 +213,13 @@ export function useModifierFiche(id: string | undefined) {
    autorisé. */
 export function useChangerGrade() {
   return useEcrire(async ({ profilId, gradeId }: { profilId: string; gradeId: string }) => {
-    const { error } = await supabase
+    const { data: ecrit3, error } = await supabase
       .from('profils')
       .update({ grade_id: gradeId })
-      .eq('id', profilId);
+      .eq('id', profilId)
+      .select('id');
     if (error) throw error;
+    assure(ecrit3, 'enregistré cette fiche');
   }, ['membres','fiche']);
 }
 
@@ -239,18 +246,22 @@ export function useCreerGrade() {
 
 export function useModifierGrade() {
   return useEcrire(async ({ id, ...g }: SaisieGrade & { id: string }) => {
-    const { error } = await supabase
+    const { data: ecrit4, error } = await supabase
       .from('grades')
       .update({ nom: g.nom.trim(), couleur: g.couleur, rang: g.rang })
-      .eq('id', id);
+      .eq('id', id)
+      .select('id');
     if (error) throw error;
+    assure(ecrit4, 'enregistré ce grade');
   }, ['grades','membres','fiche']);
 }
 
 export function useActiverGrade() {
   return useEcrire(async ({ id, actif }: { id: string; actif: boolean }) => {
-    const { error } = await supabase.from('grades').update({ actif }).eq('id', id);
+    const { data: ecrit5, error } = await supabase.from('grades').update({ actif }).eq('id', id)
+      .select('id');
     if (error) throw error;
+    assure(ecrit5, 'enregistré ce grade');
   }, ['grades']);
 }
 
@@ -296,8 +307,10 @@ export function useDesactiver() {
   return useEcrire(async ({ profilId, actif }: { profilId: string; actif: boolean }) => {
     /* On désactive, on ne supprime pas : un élève qui revient
        retrouve son numéro, son grade et son historique. */
-    const { error } = await supabase.from('profils').update({ actif }).eq('id', profilId);
+    const { data: ecrit6, error } = await supabase.from('profils').update({ actif }).eq('id', profilId)
+      .select('id');
     if (error) throw error;
+    assure(ecrit6, 'enregistré cette fiche');
   }, ['membres','fiche','comptes']);
 }
 
@@ -318,8 +331,10 @@ export function useAjouterTuteur(profilId: string | undefined) {
 
 export function useRetirerTuteur() {
   return useEcrire(async (id: string) => {
-    const { error } = await supabase.from('tuteurs').delete().eq('id', id);
+    const { data: ecrit7, error } = await supabase.from('tuteurs').delete().eq('id', id)
+      .select('id');
     if (error) throw error;
+    assure(ecrit7, 'retiré ce tuteur');
   }, ['fiche']);
 }
 
@@ -350,8 +365,10 @@ export type SaisieActualite = {
 export function usePublier() {
   return useEcrire(async ({ id, ...s }: SaisieActualite & { id?: string }) => {
     if (id) {
-      const { error } = await supabase.from('actualites').update(s).eq('id', id);
+      const { data: ecrit8, error } = await supabase.from('actualites').update(s).eq('id', id)
+        .select('id');
       if (error) throw error;
+      assure(ecrit8, 'enregistré cette actualité');
       return;
     }
     const { error } = await supabase.from('actualites').insert(s);
@@ -361,8 +378,10 @@ export function usePublier() {
 
 export function useSupprimerActualite() {
   return useEcrire(async (id: string) => {
-    const { error } = await supabase.from('actualites').delete().eq('id', id);
+    const { data: ecrit9, error } = await supabase.from('actualites').delete().eq('id', id)
+      .select('id');
     if (error) throw error;
+    assure(ecrit9, 'enregistré cette actualité');
   }, ['actualites','actualite']);
 }
 
@@ -398,8 +417,10 @@ export function useCreerAlbum() {
 
 export function useSupprimerAlbum() {
   return useEcrire(async (id: string) => {
-    const { error } = await supabase.from('albums').delete().eq('id', id);
+    const { data: ecrit10, error } = await supabase.from('albums').delete().eq('id', id)
+      .select('id');
     if (error) throw error;
+    assure(ecrit10, 'enregistré cet album');
   }, ['albums']);
 }
 
@@ -527,11 +548,13 @@ export function useAjouterPhotos() {
    l'écran affiche alors son texte de repli au lieu d'un blanc. */
 export function useLegender() {
   return useEcrire(async ({ id, legende }: { id: string; legende: string }) => {
-    const { error } = await supabase
+    const { data: ecrit11, error } = await supabase
       .from('photos')
       .update({ legende: legende.trim() || null })
-      .eq('id', id);
+      .eq('id', id)
+      .select('id');
     if (error) throw error;
+    assure(ecrit11, 'enregistré cette photo');
   }, ['albums']);
 }
 
@@ -541,11 +564,13 @@ export function useLegender() {
    la photo dans la liste à chaque rendu. */
 export function useCouverture() {
   return useEcrire(async ({ albumId, chemin }: { albumId: string; chemin: string | null }) => {
-    const { error } = await supabase
+    const { data: ecrit12, error } = await supabase
       .from('albums')
       .update({ couverture: chemin })
-      .eq('id', albumId);
+      .eq('id', albumId)
+      .select('id');
     if (error) throw error;
+    assure(ecrit12, 'enregistré cet album');
   }, ['albums']);
 }
 
@@ -569,10 +594,14 @@ export function useCouverture() {
 export function useDeplacerPhoto() {
   return useEcrire(
     async ({ a, b }: { a: { id: string; rang: number }; b: { id: string; rang: number } }) => {
-      const { error } = await supabase.from('photos').update({ rang: b.rang }).eq('id', a.id);
+      const { data: ecrit13, error } = await supabase.from('photos').update({ rang: b.rang }).eq('id', a.id)
+        .select('id');
       if (error) throw error;
-      const { error: e2 } = await supabase.from('photos').update({ rang: a.rang }).eq('id', b.id);
+      assure(ecrit13, 'enregistré cette photo');
+      const { data: ecrit14, error: e2 } = await supabase.from('photos').update({ rang: a.rang }).eq('id', b.id)
+        .select('id');
       if (e2) throw e2;
+      assure(ecrit14, 'enregistré cette photo');
     },
     ['albums']
   );
@@ -580,8 +609,10 @@ export function useDeplacerPhoto() {
 
 export function useSupprimerPhoto() {
   return useEcrire(async ({ id, chemin }: { id: string; chemin: string }) => {
-    const { error } = await supabase.from('photos').delete().eq('id', id);
+    const { data: ecrit15, error } = await supabase.from('photos').delete().eq('id', id)
+      .select('id');
     if (error) throw error;
+    assure(ecrit15, 'enregistré cette photo');
     /* Le fichier part après la ligne : si l'inverse échouait à
        mi-chemin, la base montrerait une photo qui n'existe plus. */
     await supabase.storage.from('album').remove([chemin]);
@@ -591,8 +622,10 @@ export function useSupprimerPhoto() {
 export function useChangerPortrait() {
   return useEcrire(async ({ profilId, fichier }: { profilId: string; fichier: File }) => {
     const chemin = await televerser('portraits', fichier);
-    const { error } = await supabase.from('profils').update({ photo: chemin }).eq('id', profilId);
+    const { data: ecrit16, error } = await supabase.from('profils').update({ photo: chemin }).eq('id', profilId)
+      .select('id');
     if (error) throw error;
+    assure(ecrit16, 'enregistré cette fiche');
   }, ['membres','fiche','urls']);
 }
 
@@ -676,6 +709,12 @@ export function useInscrireAuSalon() {
        déjà là est un geste ordinaire — on ajoute dix personnes dont
        deux y étaient — et cela ne doit pas faire échouer les huit
        autres sur une contrainte d'unicité. */
+    /* zéro-ligne-normal: « ignoreDuplicates » ne rend que les lignes
+       NOUVELLES. Réinscrire un salon dont tous les membres sont déjà
+       là rend donc zéro ligne, et c'est le résultat voulu — pas un
+       refus. Traiter ce cas comme une erreur ferait échouer la
+       réinscription d'un salon complet, qui est justement le geste
+       qu'on fait après avoir ajouté un seul élève. */
     const { error } = await supabase
       .from('membres_salon')
       .upsert(
@@ -688,12 +727,14 @@ export function useInscrireAuSalon() {
 
 export function useRetirerDuSalon() {
   return useEcrire(async ({ salonId, profilId }: { salonId: string; profilId: string }) => {
-    const { error } = await supabase
+    const { data: ecrit18, error } = await supabase
       .from('membres_salon')
       .delete()
       .eq('salon_id', salonId)
-      .eq('profil_id', profilId);
+      .eq('profil_id', profilId)
+      .select('id');
     if (error) throw error;
+    assure(ecrit18, 'enregistré cette inscription');
   }, ['membres-salon','salons']);
 }
 
@@ -762,8 +803,10 @@ export function useRetirerHoraire() {
     /* On désactive plutôt que de supprimer : un créneau retiré pour
        les travaux revient souvent, et le retrouver vaut mieux que de
        le ressaisir. */
-    const { error } = await supabase.from('horaires').update({ actif: false }).eq('id', id);
+    const { data: ecrit19, error } = await supabase.from('horaires').update({ actif: false }).eq('id', id)
+      .select('id');
     if (error) throw error;
+    assure(ecrit19, 'enregistré cette séance');
   }, ['horaires']);
 }
 

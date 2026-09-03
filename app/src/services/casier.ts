@@ -95,6 +95,10 @@ export function useNotifications() {
 }
 
 export async function toutMarquerLu() {
+  /* zéro-ligne-normal: tout était déjà lu, et appuyer sur « Tout
+     lire » dans ce cas ne doit pas afficher une erreur. C'est la
+     différence entre « le serveur a refusé » et « il n'y avait rien
+     à faire » — la seconde n'est pas un incident. */
   const { error } = await supabase
     .from('notifications')
     .update({ lue_le: new Date().toISOString() })

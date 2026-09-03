@@ -54,7 +54,15 @@ describe('l’écran', () => {
   });
 
   test('« retirer » masque le message ET classe le signalement', async () => {
-    poser({ signalements: [SIGNALEMENT] });
+    /* « messages:PATCH » est posé explicitement : depuis que les
+       écritures vérifient qu'elles ont vraiment écrit, une réponse
+       vide veut dire « le serveur a refusé », et le masquage
+       s'arrêtait avant de classer le signalement. C'est exactement le
+       comportement voulu — mieux vaut un signalement à traiter qu'un
+       signalement classé sur un message toujours affiché — et c'est
+       au simulateur de rendre la ligne touchée, comme le vrai
+       serveur. */
+    poser({ signalements: [SIGNALEMENT], 'messages:PATCH': [{ id: 'm1' }] });
     rendre(<Moderation />, { profil: PROFIL_MAITRE });
 
     await userEvent.click(await screen.findByRole('button', { name: 'Retirer le message' }));

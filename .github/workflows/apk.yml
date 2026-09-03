@@ -189,6 +189,19 @@ jobs:
       - name: Comparer l’application et les seaux
         run: node outils/verifier-seaux.mjs
 
+      # Une écriture doit savoir si elle a écrit.
+      #
+      # Une règle d'accès ne REJETTE pas une mise à jour : elle rend la
+      # ligne invisible. L'écriture ne touche alors rien et répond que
+      # tout va bien. L'écran annonce « Enregistré », et rien ne l'a
+      # été — le club le découvre des semaines plus tard.
+      #
+      # Ce défaut est revenu CINQ fois dans ce projet, à cinq endroits
+      # différents, et chaque fois il a fallu qu'un humain le
+      # remarque. Il ne reviendra plus par inadvertance.
+      - name: Vérifier que les écritures écrivent
+        run: node outils/verifier-ecritures.mjs
+
       # Ce que le téléphone télécharge avant d'afficher le premier
       # écran. Sans mesure, un paquet grossit d'un import à la fois —
       # chacun raisonnable — et le total se découvre un an plus tard,

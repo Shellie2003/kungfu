@@ -14,6 +14,7 @@
    ============================================================ */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from './supabase';
+import { assure } from './ecrire';
 
 export type Statut = 'present' | 'retard' | 'excuse';
 
@@ -125,8 +126,10 @@ export function useDepointer() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('presences').delete().eq('id', id);
+      const { data: ecrit1, error } = await supabase.from('presences').delete().eq('id', id)
+        .select('id');
       if (error) throw error;
+      assure(ecrit1, 'retiré cette présence');
     },
     onSuccess: () => client.invalidateQueries({ queryKey: ['presences'] })
   });
