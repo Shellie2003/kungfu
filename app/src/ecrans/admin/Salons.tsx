@@ -43,6 +43,17 @@ const COULEURS: [string, string][] = [
   ['#0B2B1D', 'Vert sombre']
 ];
 
+/* Les types de salon, tels qu'on les dit. La colonne stocke des mots
+   de base de données — « evenement », « maitres », sans accent ni
+   majuscule — et cet écran les donnait à lire au club. */
+const NOM_DU_TYPE: Record<string, string> = {
+  club: 'Tout le club',
+  grade: 'Un grade',
+  evenement: 'Un événement',
+  maitres: 'Espace des maîtres',
+  direct: 'Conversation à deux'
+};
+
 export function AdminSalons() {
   const aller = useNavigate();
   const { data: salons, isPending, error } = useSalons();
@@ -51,6 +62,32 @@ export function AdminSalons() {
   const creer = useCreerSalon();
   const inscrire = useInscrireAuSalon();
   const retirer = useRetirerDuSalon();
+
+  /* ------------------------------------------------------------
+     LES CONVERSATIONS À DEUX NE SONT PAS ADMINISTRÉES.
+
+     Elles apparaissaient dans cette liste, deux rangées identiques
+     intitulées « Conversation » avec un point d'interrogation en
+     guise d'initiale — parce qu'un salon direct n'a pas de titre, et
+     que le nom de l'autre personne vient d'une vue à laquelle
+     l'administration n'a pas accès.
+
+     Ce n'était pas seulement laid. Le bouton « Membres » ouvrait une
+     liste vide, puisque la règle d'accès ne rend les membres d'un
+     salon qu'à ceux qui en font partie. On proposait donc
+     d'administrer ce qu'on ne peut ni voir ni modifier — et une liste
+     de conversations privées affichée dans un écran d'administration
+     se lit comme de la surveillance, même quand elle n'en est pas.
+
+     ⚠ À SIGNALER AU CLUB, et non corrigé ici : la règle
+     « l'administration ouvre les salons » de la migration 0003 est un
+     « for all » sans restriction de type. Un administrateur peut donc
+     constater qu'une conversation à deux EXISTE — jamais qui y
+     participe, jamais ce qui s'y dit, les deux étant gardés par
+     d'autres règles. Resserrer une règle d'accès est une décision de
+     sécurité : elle se prend avec le club, pas au détour d'une
+     correction d'écran. */
+  const collectifs = (salons ?? []).filter((s) => s.type !== 'direct');
 
   const [type, setType] = useState<'grade' | 'evenement'>('evenement');
   const [titre, setTitre] = useState('');
@@ -226,11 +263,11 @@ export function AdminSalons() {
           <Etat
             chargement={isPending}
             erreur={error}
-            vide={(salons ?? []).length === 0}
+            vide={collectifs.length === 0}
             messageVide="Aucun salon."
           >
             <div className="list">
-              {(salons ?? []).map((s) => (
+              {collectifs.map((s) => (
                 <div key={s.id} className="listrow">
                   <span
                     style={{
@@ -248,7 +285,12 @@ export function AdminSalons() {
                       {s.titre ?? 'Conversation'}
                     </b>
                     <span style={{ display: 'block', fontSize: 12.5, color: '#59685F' }}>
-                      {s.type}
+                      {/* Le type EN FRANÇAIS. L'écran affichait la
+                          valeur de la colonne : « evenement »,
+                          « maitres », sans accent ni majuscule. Ce
+                          sont des mots de base de données, et on les
+                          donnait à lire au club. */}
+                      {NOM_DU_TYPE[s.type] ?? s.type}
                     </span>
                   </span>
                   <button

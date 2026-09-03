@@ -130,7 +130,26 @@ export function AdminComptes() {
           >
             <div className="list">
               {liste.map((c) => (
-                <div key={c.id} className="listrow">
+                /* ---- UNE LIGNE SUR DEUX ÉTAGES ----
+
+                   Tout tenait sur une seule ligne : la tuile, le nom,
+                   le matricule et son état, le choix du rôle, et
+                   jusqu'à quatre actions. Sur trois cent quatre-vingt-
+                   dix pixels, la colonne du nom se réduisait à cent
+                   quarante : « RANDRIAMAMPIONONA » passait sur deux
+                   lignes et « F04x061 · Élève · sans compte » sur
+                   quatre. On lisait une colonne de mots empilés.
+
+                   L'identité prend maintenant toute la largeur, et les
+                   commandes vont dessous. C'est une rangée plus haute
+                   et beaucoup plus courte à lire — et sur cet écran on
+                   cherche un nom avant de faire quoi que ce soit. */
+                <div
+                  key={c.id}
+                  className="listrow"
+                  style={{ flexDirection: 'column', alignItems: 'stretch', gap: 12 }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
                   <Tuile
                     icone={c.compte_id ? 'shieldCheck' : 'lock'}
                     petite
@@ -147,6 +166,17 @@ export function AdminComptes() {
                       {c.compte_id ? '' : ' · sans compte'}
                     </span>
                   </span>
+                  </div>
+
+                  {/* Les commandes, sur leur propre étage. « wrap »
+                      parce que le super administrateur en voit quatre :
+                      rôle, compte, suspension, suppression. */}
+                  <div
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      flexWrap: 'wrap', paddingLeft: 57
+                    }}
+                  >
                   {/* Le rôle, ici et nulle part ailleurs. C'était une
                       fonctionnalité validée à la livraison —
                       « attribution du rôle de maître, par
@@ -241,6 +271,7 @@ export function AdminComptes() {
                       </button>
                     </>
                   )}
+                  </div>
                 </div>
               ))}
             </div>

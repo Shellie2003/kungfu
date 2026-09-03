@@ -390,10 +390,32 @@ export function AdminPresences() {
                   ? teinteStatut(presence.statut)
                   : ['#8A978F', '#F1F6F3'];
                 return (
-                  <div
+                  /* TOUTE LA RANGÉE EST LA CIBLE.
+
+                     Elle ne l'était pas : il fallait viser la petite
+                     icône à droite. Sur une fiche de présence on
+                     pointe soixante noms à la suite, debout, un
+                     téléphone dans une main — et l'on visait un
+                     carré de quarante-quatre pixels soixante fois.
+                     C'est le geste le plus répété de l'application,
+                     et c'était le plus étroit.
+
+                     La rangée devient donc un bouton, l'icône reste
+                     comme repère visuel de ce qui va se passer. */
+                  <button
                     key={membre.id}
                     className="listrow"
                     style={presence ? undefined : { opacity: 0.72 }}
+                    disabled={pointer.isPending || depointer.isPending}
+                    aria-pressed={Boolean(presence)}
+                    aria-label={
+                      presence
+                        ? `Retirer le pointage de ${membre.nom} ${membre.prenom}`
+                        : `Pointer ${membre.nom} ${membre.prenom}`
+                    }
+                    onClick={() =>
+                      presence ? depointer.mutate(presence.id) : pointerCe(membre.numero)
+                    }
                   >
                     <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
                       <b style={{ display: 'block', fontSize: 14, fontWeight: 600 }}>
@@ -414,29 +436,21 @@ export function AdminPresences() {
                         il n'y a rien d'autre à apprendre.
 
                         Le statut choisi en haut de l'écran s'applique :
-                        « présent », « en retard » ou « excusé ». */}
-                    <button
-                      className="tapicon"
-                      disabled={pointer.isPending || depointer.isPending}
-                      aria-label={
-                        presence
-                          ? `Retirer le pointage de ${membre.nom} ${membre.prenom}`
-                          : `Pointer ${membre.nom} ${membre.prenom}`
-                      }
-                      onClick={() =>
-                        presence
-                          ? depointer.mutate(presence.id)
-                          : pointerCe(membre.numero)
-                      }
-                    >
+                        « présent », « en retard » ou « excusé ».
+
+                        L'icône n'est plus un bouton : la rangée l'est.
+                        Elle est donc cachée aux lecteurs d'écran, qui
+                        lisent déjà le nom, l'état et l'action dans le
+                        libellé de la rangée. */}
+                    <span className="tapicon" aria-hidden="true">
                       <Icone
                         nom={presence ? 'x' : 'shieldCheck'}
                         taille={19}
                         couleur={presence ? '#B3341A' : '#12613C'}
                         epaisseur={2}
                       />
-                    </button>
-                  </div>
+                    </span>
+                  </button>
                 );
               })}
             </div>

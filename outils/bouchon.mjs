@@ -46,12 +46,12 @@ export const GRADES = [
    « Toky » ferme la marche parce que c'est lui, l'élève SANS
    compte — le cas que l'architecture doit tenir. */
 export const PROFILS = [
-  { id: 'p1', numero: 'F04x042', nom: 'RAKOTONDRABE', prenom: 'Nirina', role: 'eleve', grade_id: 'gv', photo: null, debut: '2019-09-09', biographie: 'Entrée au club à treize ans. Régulière aux entraînements du mercredi et du samedi, elle prépare le passage à la ceinture bleue.' },
-  { id: 'p2', numero: 'F04x043', nom: 'RASOAMANANA', prenom: 'Fanjaniaina', role: 'eleve', grade_id: 'gj', photo: null, debut: null, biographie: null },
-  { id: 'p3', numero: 'F04x044', nom: 'ANDRIANJAFY', prenom: 'Tokiniaina', role: 'eleve', grade_id: 'gb', photo: null, debut: null, biographie: null },
-  { id: 'p4', numero: 'F04x045', nom: 'RABEMANANJARA', prenom: 'Hery', role: 'maitre', grade_id: 'gn', photo: null, debut: '2014-02-01', biographie: null },
-  { id: 'p5', numero: 'F04x046', nom: 'RAZAFIMAHATRATRA', prenom: 'Miora', role: 'eleve', grade_id: 'go', photo: null, debut: null, biographie: null },
-  { id: 'p6', numero: 'F04x061', nom: 'RANDRIAMAMPIONONA', prenom: 'Toky', role: 'eleve', grade_id: 'gc', photo: null, debut: null, biographie: null }
+  { id: 'p1', numero: 'F04x042', nom: 'RAKOTONDRABE', prenom: 'Nirina', role: 'eleve', actif: true, grade_id: 'gv', photo: null, debut: '2019-09-09', biographie: 'Entrée au club à treize ans. Régulière aux entraînements du mercredi et du samedi, elle prépare le passage à la ceinture bleue.' },
+  { id: 'p2', numero: 'F04x043', nom: 'RASOAMANANA', prenom: 'Fanjaniaina', role: 'eleve', actif: true, grade_id: 'gj', photo: null, debut: null, biographie: null },
+  { id: 'p3', numero: 'F04x044', nom: 'ANDRIANJAFY', prenom: 'Tokiniaina', role: 'eleve', actif: true, grade_id: 'gb', photo: null, debut: null, biographie: null },
+  { id: 'p4', numero: 'F04x045', nom: 'RABEMANANJARA', prenom: 'Hery', role: 'maitre', actif: true, grade_id: 'gn', photo: null, debut: '2014-02-01', biographie: null },
+  { id: 'p5', numero: 'F04x046', nom: 'RAZAFIMAHATRATRA', prenom: 'Miora', role: 'eleve', actif: true, grade_id: 'go', photo: null, debut: null, biographie: null },
+  { id: 'p6', numero: 'F04x061', nom: 'RANDRIAMAMPIONONA', prenom: 'Toky', role: 'eleve', actif: true, grade_id: 'gc', photo: null, debut: null, biographie: null }
 ];
 
 /* La fiche de celui qui est connecté pendant les essais. On prend
@@ -65,7 +65,7 @@ export const MOI = {
      de membre : une bande noire en face d'une bande verte faisait
      compter au banc une différence qui n'est qu'un choix de jeu
      d'essai. */
-  role: 'admin', grade_id: 'gv', photo: null, debut: '2014-02-01',
+  role: 'admin', actif: true, grade_id: 'gv', photo: null, debut: '2014-02-01',
   /* Une fiche COMPLÈTE, et c'est le banc de comparaison qui l'exige.
      La maquette montre un profil rempli — date de naissance, deux
      tuteurs, une biographie. Une fiche à moitié vide en face ne
@@ -207,8 +207,19 @@ export const REPONSES = {
          permet de voir « J'y participe » sur l'écran d'une actualité
          — l'état ordinaire — tout en gardant une ligne à pointer sur
          l'écran des participations. */
-      id: 'pa1', profil_id: 'p1', accompagnants: 2, montant_promis: 5000,
+      id: 'pa1', profil_id: 'p1', actualite_id: 'a1', accompagnants: 2,
+      montant_promis: 5000, note: 'Je viens avec ma sœur, elle n’est pas membre.',
+      cree_le: ilYA(2 * 86400),
       profils: { nom: 'RAKOTONDRABE', prenom: 'Nirina', numero: 'F04x042' },
+      /* La sortie JOINTE. Le banc ne fait pas de jointures : sans
+         cette copie, l'écran de validation groupait tout sous
+         « Sortie » et n'affichait ni la date, ni le montant attendu,
+         ni le reste dû — c'est-à-dire rien de ce qu'il sert à
+         montrer. */
+      actualites: {
+        titre: 'Sortie au lac Mantasoa', date_evt: '2026-09-12',
+        participation_ar: 15000, auteur_id: 'p0'
+      },
       versements: [{ id: 'v1', montant: 5000, recu_le: '2026-09-01' }]
     }
   ],
