@@ -154,7 +154,7 @@ describe('je participe', () => {
     /* Et le reliquat, proposé d'un appui : c'est le montant qu'on
        voulait envoyer, et le chercher parmi des sommes rondes qui ne
        tombent pas juste était tout le problème. */
-    const reliquat = screen.getByRole('button', { name: /tout le reste/ });
+    const reliquat = screen.getByRole('button', { name: /Tout le reste/ });
     expect(reliquat.textContent?.replace(/\s/g, ' ')).toContain('20 000');
   });
 
@@ -199,5 +199,118 @@ describe('publier depuis le casier', () => {
     rendre(<Casier />, { route: '/casier', profil: PROFIL_ELEVE });
     await screen.findByText('Sortie au lac Mantasoa');
     expect(screen.queryByLabelText('Publier une actualité')).not.toBeInTheDocument();
+  });
+});
+
+/* ============================================================
+   LE CODE USSD, MODIFIABLE.
+
+   « Les codes USSD doivent être éditables ; voici la structure par
+   défaut : #111*1*2*num_responsable*montant#. Ceci n'est pas exécuté
+   automatiquement mais renvoyé seulement dans l'application de
+   téléphonie par défaut. »
+
+   Les menus d'un opérateur changent — MVola a déjà renuméroté les
+   siens — et un code figé dans l'application ferait attendre une mise
+   à jour sur le Play Store pour un chiffre.
+   ============================================================ */
+describe('le code USSD', () => {
+  const REGLAGES = [
+    { cle: 'mvola_numero', valeur: '0388010853' },
+    { cle: 'mvola_nom', valeur: 'Santatra Nirina Antonio' }
+  ];
+
+  const ouvrir = () =>
+    rendre(<Participation />, {
+      route: '/participer/a1', chemin: '/participer/:id', profil: PROFIL_ELEVE
+    });
+
+  test('la structure par défaut est celle du club', async () => {
+    poser({ actualites: SORTIE, participations: null, reglages: REGLAGES });
+    ouvrir();
+
+    const champ = (await screen.findByLabelText('Code USSD à composer')) as HTMLInputElement;
+    expect(champ.value).toBe('#111*1*2*0388010853*5000#');
+  });
+
+  test('le club peut poser un AUTRE gabarit, sans nouvelle version', async () => {
+    /* Orange Money et Airtel Money ont leurs propres menus, et MVola
+       renumérote les siens. C'est un réglage, pas une constante. */
+    poser({
+      actualites: SORTIE,
+      participations: null,
+      reglages: [...REGLAGES, { cle: 'ussd_gabarit', valeur: '#144*1*NUMERO*MONTANT#' }]
+    });
+    ouvrir();
+
+    const champ = (await screen.findByLabelText('Code USSD à composer')) as HTMLInputElement;
+    expect(champ.value).toBe('#144*1*0388010853*5000#');
+  });
+
+  test('le code SUIT le montant tant qu’on n’y a pas touché', async () => {
+    /* Un code figé au premier rendu enverrait cinq mille ariary après
+       qu'on a choisi dix mille, et personne ne s'en apercevrait. */
+    poser({ actualites: SORTIE, participations: null, reglages: REGLAGES });
+    ouvrir();
+
+    await screen.findByLabelText('Code USSD à composer');
+    await userEvent.click(screen.getByRole('button', { name: /^10\s?000\s?Ar$/ }));
+
+    expect(
+      (screen.getByLabelText('Code USSD à composer') as HTMLInputElement).value
+    ).toBe('#111*1*2*0388010853*10000#');
+  });
+
+  test('corrigé à la main, il le DIT et ne suit plus le montant', async () => {
+    /* Sinon on corrige le code, on change le montant, et le montant
+       corrigé disparaît sans un mot. */
+    poser({ actualites: SORTIE, participations: null, reglages: REGLAGES });
+    ouvrir();
+
+    const champ = await screen.findByLabelText('Code USSD à composer');
+    await userEvent.clear(champ);
+    await userEvent.type(champ, '#111*1*2*0331234567*7000#');
+
+    expect(screen.getByText(/Code modifié à la main/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /^1\s?000\s?Ar$/ }));
+    expect((champ as HTMLInputElement).value).toBe('#111*1*2*0331234567*7000#');
+  });
+
+  test('« rétablir » ramène le code du club', async () => {
+    poser({ actualites: SORTIE, participations: null, reglages: REGLAGES });
+    ouvrir();
+
+    const champ = await screen.findByLabelText('Code USSD à composer');
+    await userEvent.clear(champ);
+    await userEvent.type(champ, '#000#');
+    await userEvent.click(screen.getByRole('button', { name: 'rétablir' }));
+
+    expect((champ as HTMLInputElement).value).toBe('#111*1*2*0388010853*5000#');
+    expect(screen.queryByText(/Code modifié à la main/)).not.toBeInTheDocument();
+  });
+
+  test('RIEN n’est composé tout seul : le code part au clavier', async () => {
+    /* LE POINT QUI COMPTE. L'application ouvre l'application de
+       téléphonie avec le code déjà écrit ; c'est la personne qui
+       appuie sur appeler. Une application qui déclencherait un
+       transfert d'argent sans confirmation serait exactement ce
+       qu'on ne veut pas — et Android ne compose de toute façon
+       jamais un code USSD depuis un lien « tel: ». */
+    poser({ actualites: SORTIE, participations: null, reglages: REGLAGES });
+    ouvrir();
+
+    await screen.findByLabelText('Code USSD à composer');
+    const allees: string[] = [];
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { set href(v: string) { allees.push(v); }, get href() { return ''; } }
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: /Ouvrir le clavier/ }));
+
+    expect(allees).toHaveLength(1);
+    expect(allees[0]).toMatch(/^tel:/);
+    expect(decodeURIComponent(allees[0]!)).toBe('tel:#111*1*2*0388010853*5000#');
   });
 });

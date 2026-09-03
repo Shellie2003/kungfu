@@ -1,7 +1,7 @@
 /* ============================================================
    08 · Album photo — et 09 · une photo en grand
    ============================================================ */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Icone } from '../ui/Icone';
 import { Avis, ChoisirFichier, Entete, Etat, Feuille, Puce, Surtitre, Zone } from '../ui/base';
@@ -11,6 +11,7 @@ import { useAjouterPhotos } from '../services/admin';
 import { Anneau } from '../ui/Anneau';
 import { BarreReactions } from '../ui/Visionneuse';
 import { enregistrer } from '../services/telechargement';
+import { useGlisser } from '../ui/glisser';
 import { estMaitre, useSession } from '../services/session';
 
 export function Album() {
@@ -298,6 +299,44 @@ export function Photo() {
   const photo = album?.photos[rang];
   const src = photo?.chemin ? photos[photo.chemin] ?? null : null;
 
+  /* ---- PASSER D'UNE PHOTO À L'AUTRE, AU DOIGT ----
+
+     « Défiler l'image de droite vers la gauche comme un carrousel. »
+
+     C'est le geste de n'importe quelle galerie de téléphone, et il
+     n'existait pas : il fallait fermer, revenir à la grille, et viser
+     la vignette d'à côté. Trois gestes pour un.
+
+     « replace » et non « push » : vingt photos parcourues au doigt
+     laisseraient vingt entrées dans l'historique, et le bouton retour
+     d'Android les remonterait une à une au lieu de sortir de l'album.
+
+     La liste ne BOUCLE PAS. Revenir à la première après la dernière
+     ferait perdre le compte — « 3 sur 24 » n'aurait plus de sens si
+     l'on peut tourner indéfiniment — et l'on ne saurait plus si l'on
+     a tout vu. Aux deux bouts, le geste ne fait simplement rien. */
+  const total = album?.photos.length ?? 0;
+  const versPhoto = (n: number) => {
+    if (!album || n < 0 || n >= total) return;
+    aller(`/album/${album.id}/${n}`, { replace: true });
+  };
+  const { gestes, onAGlisse } = useGlisser({
+    versLaGauche: () => versPhoto(rang + 1),
+    versLaDroite: () => versPhoto(rang - 1)
+  });
+
+  /* Les flèches du clavier font la même chose : la version web
+     tourne sur des ordinateurs, où il n'y a pas de doigt à glisser. */
+  useEffect(() => {
+    const auClavier = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') versPhoto(rang + 1);
+      if (e.key === 'ArrowLeft') versPhoto(rang - 1);
+      if (e.key === 'Escape') aller('/album');
+    };
+    document.addEventListener('keydown', auClavier);
+    return () => document.removeEventListener('keydown', auClavier);
+  });
+
   /* ENREGISTRER LA PHOTO. Le même chemin que les documents de la
      messagerie : sur le téléphone on rapatrie le fichier et on
      l'écrit dans « Documents », sur le web le navigateur l'ouvre. Un
@@ -356,18 +395,54 @@ export function Photo() {
       </div>
 
       <div
+        {...gestes}
         style={{
           flexGrow: 1,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '0 12px'
+          padding: '0 12px',
+          position: 'relative',
+          /* Le glissement horizontal appartient à cette zone ; le
+             navigateur garde le défilement vertical et le zoom. Sans
+             cela, Android interprète parfois le geste comme un retour
+             en arrière avant que la page ne le voie. */
+          touchAction: 'pan-y pinch-zoom'
         }}
       >
+        {/* DEUX FLÈCHES, PARCE QU'UN GESTE NE S'ANNONCE PAS.
+
+            Rien à l'écran ne dit qu'on peut glisser : on le découvre
+            par hasard ou jamais. Les flèches le disent, servent à la
+            souris sur la version web, et disparaissent au bout de la
+            série — au lieu de rester là sans rien faire. */}
+        {rang > 0 && (
+          <button
+            className="tapicon feuilleter feuilleter--gauche"
+            aria-label="Photo précédente"
+            onClick={() => versPhoto(rang - 1)}
+          >
+            <Icone nom="back" taille={22} couleur="#FFF" epaisseur={2} />
+          </button>
+        )}
+        {rang < total - 1 && (
+          <button
+            className="tapicon feuilleter feuilleter--droite"
+            aria-label="Photo suivante"
+            onClick={() => versPhoto(rang + 1)}
+          >
+            <Icone nom="chev" taille={22} couleur="#FFF" epaisseur={2} />
+          </button>
+        )}
+
         {src ? (
           <img
             src={src}
             alt={photo?.legende ?? ''}
+            /* « draggable » éteint : sur un ordinateur, tirer une
+               image la déplace au lieu de feuilleter. */
+            draggable={false}
+            onClick={() => onAGlisse()}
             style={{ width: '100%', borderRadius: 16, objectFit: 'contain' }}
           />
         ) : (

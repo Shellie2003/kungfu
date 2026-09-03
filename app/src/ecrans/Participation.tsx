@@ -8,7 +8,13 @@ import { Bouton, Carte, Entete, Surtitre, Zone } from '../ui/base';
 import { jourEtMois, useActualite } from '../services/casier';
 import { useReglages } from '../services/club';
 import { useSession } from '../services/session';
-import { ariary, codeMvola, useInscrire, useParticipation } from '../services/participation';
+import {
+  GABARIT_USSD,
+  ariary,
+  codeMvola,
+  useInscrire,
+  useParticipation
+} from '../services/participation';
 import { attendu, reste } from '../services/validation';
 import { enLettres } from '../services/texte';
 
@@ -29,6 +35,11 @@ export function Participation() {
   const [note, setNote] = useState<string | null>(null);
   const [montant, setMontant] = useState<number | null>(5000);
   const [avis, setAvis] = useState<string | null>(null);
+  /* Le code corrigé à la main. « null » tant qu'on n'y a pas touché,
+     pour que le code SUIVE le montant choisi — un code figé au
+     premier rendu enverrait cinq mille ariary après qu'on a choisi
+     dix mille, et personne ne s'en apercevrait. */
+  const [ussdSaisi, setUssdSaisi] = useState<string | null>(null);
 
   /* Tant qu'on n'a rien touché, on montre ce que la base sait déjà :
      revenir sur l'écran ne doit pas donner l'impression d'être
@@ -46,6 +57,15 @@ export function Participation() {
   const prix = actu?.participation_ar ?? null;
   const du = attendu(prix, venus);
   const reliquat = reste(prix, venus, participation?.versements);
+
+  /* Le code tel qu'il se compose, gabarit du club compris. Le club le
+     pose une fois dans ses réglages ; à défaut, celui de MVola. */
+  const codeAuto =
+    numeroMvola && montant
+      ? codeMvola(numeroMvola, montant, reglages?.ussd_gabarit || GABARIT_USSD)
+      : '';
+  const ussd = ussdSaisi ?? codeAuto;
+  const setUssd = (v: string | null) => setUssdSaisi(v);
 
   const { jour, mois } = jourEtMois(actu?.date_evt ?? actu?.cree_le ?? new Date().toISOString());
 
@@ -190,6 +210,7 @@ export function Participation() {
                   className={montant === reliquat ? 'montant montant--on' : 'montant'}
                   onClick={() => setMontant(reliquat)}
                   aria-pressed={montant === reliquat}
+                  aria-label={`Tout le reste, ${ariary(reliquat)}`}
                 >
                   {reliquat.toLocaleString('fr-FR').replace(/ | /g, ' ')}
                   <i>tout le reste</i>
@@ -201,6 +222,11 @@ export function Participation() {
                   className={montant === m ? 'montant montant--on' : 'montant'}
                   onClick={() => setMontant(m)}
                   aria-pressed={montant === m}
+                  /* Sans libellé, le nom lu est « 10 000Ar » d'un seul
+                     tenant : le nombre et son unité sont deux nœuds
+                     collés, et une voix de synthèse les prononce
+                     ainsi. */
+                  aria-label={ariary(m)}
                 >
                   {m.toLocaleString('fr-FR').replace(/ | /g, ' ')}
                   <i>Ar</i>
@@ -223,21 +249,64 @@ export function Participation() {
               <>
                 <div className="ussd">
                   <p className="ussd__lbl">Le code composé sur votre téléphone</p>
-                  {/* Le numéro est mis en évidence pour qu'on le
-                      vérifie d'un coup d'œil avant d'appeler. */}
-                  <code className="ussd__code">
-                    #111*1*2*<b>{numeroMvola}</b>*{montant}#
-                  </code>
+                  {/* ---- LE CODE EST MODIFIABLE ----
+
+                      Il était écrit dans la page, en dur. Or les menus
+                      d'un opérateur changent : MVola a déjà renuméroté
+                      les siens, Orange Money et Airtel Money ont les
+                      leurs, et un club en déplacement peut se voir
+                      demander autre chose. Un code figé ferait
+                      attendre une mise à jour sur le Play Store pour
+                      un chiffre.
+
+                      Le club pose le gabarit une fois dans ses
+                      réglages ; ici, chacun peut encore corriger le
+                      code avant de l'envoyer au clavier. Le champ est
+                      en « tel » : le clavier du téléphone s'ouvre avec
+                      les chiffres, l'étoile et le dièse, et non avec
+                      des lettres. */}
+                  <input
+                    className="ussd__code"
+                    type="tel"
+                    inputMode="tel"
+                    aria-label="Code USSD à composer"
+                    value={ussd}
+                    onChange={(e) => setUssd(e.target.value)}
+                    style={{
+                      width: '100%', border: 0, background: 'transparent',
+                      padding: 0, font: 'inherit', color: 'inherit'
+                    }}
+                  />
                   {nomMvola && <p className="ussd__nom">{nomMvola} · MVola</p>}
+                  {/* Corrigé à la main, il ne suit plus le montant :
+                      le dire évite d'envoyer mille ariary en croyant
+                      en envoyer dix mille. */}
+                  {ussd !== codeAuto && (
+                    <p className="ussd__nom" style={{ color: '#8A3A12' }}>
+                      Code modifié à la main. Il ne suivra plus le montant choisi
+                      au-dessus —{' '}
+                      <button
+                        className="link"
+                        style={{ fontSize: 12 }}
+                        onClick={() => setUssd(null)}
+                      >
+                        rétablir
+                      </button>
+                    </p>
+                  )}
                 </div>
 
                 <div style={{ marginTop: 14 }}>
                   <Bouton
+                    desactive={!ussd.trim()}
                     onClick={() => {
                       /* tel: avec un code USSD ouvre le clavier
-                         pré-rempli ; Android ne le compose jamais
-                         seul, et c'est bien ainsi. */
-                      window.location.href = `tel:${encodeURIComponent(codeMvola(numeroMvola, montant))}`;
+                         pré-rempli ; Android ne le compose JAMAIS
+                         seul, et c'est bien ainsi — une application
+                         qui déclencherait un transfert d'argent sans
+                         qu'on ait rien confirmé serait exactement ce
+                         qu'on ne veut pas. */
+                      window.location.href = `tel:${encodeURIComponent(ussd.trim())}`;
                     }}
                   >
                     Ouvrir le clavier avec ce code

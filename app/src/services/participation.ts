@@ -93,11 +93,43 @@ export function useInscrire(actualiteId: string | undefined) {
   });
 }
 
-/* Le code USSD de MVola, tel qu'il se compose sur un téléphone
-   malgache. Le numéro du club est un réglage : il change de main
-   comme le reste. */
-export function codeMvola(numero: string, montant: number): string {
-  return `#111*1*2*${numero}*${montant}#`;
+/* ------------------------------------------------------------
+   LE CODE USSD DE MVOLA.
+
+   « Voici la structure par défaut : #111*1*2*num_responsable*montant#
+   — ceci n'est pas exécuté automatiquement mais renvoyé seulement
+   dans l'application de téléphonie par défaut. »
+
+   Deux choses, et la seconde est la plus importante.
+
+   1. C'EST UN DÉFAUT, PAS UNE VÉRITÉ. Les menus d'un opérateur
+      changent : MVola a déjà renuméroté les siens, Orange Money et
+      Airtel Money ont les leurs, et un club qui se déplace à
+      Antsirabe peut se voir demander autre chose. Un code figé dans
+      le code de l'application ferait attendre une mise à jour sur
+      le Play Store pour un chiffre. Il se corrige donc à l'écran,
+      avant l'envoi.
+
+   2. RIEN N'EST COMPOSÉ TOUT SEUL. Le code part dans l'application
+      de téléphonie, pré-écrit, et c'est la personne qui appuie sur
+      appeler. Android ne compose d'ailleurs jamais un code USSD
+      seul depuis un lien « tel: » — et c'est heureux : une
+      application qui déclencherait un transfert d'argent sans qu'on
+      ait rien confirmé serait exactement ce qu'on ne veut pas.
+   ------------------------------------------------------------ */
+
+/* Le gabarit, avec ses deux repères. Ils sont remplacés par le
+   numéro du club et le montant choisi ; tout le reste — les
+   étoiles, le « 111 », les numéros de menu — est du texte que le
+   club peut corriger. */
+export const GABARIT_USSD = '#111*1*2*NUMERO*MONTANT#';
+
+export function codeMvola(
+  numero: string,
+  montant: number,
+  gabarit: string = GABARIT_USSD
+): string {
+  return gabarit.replace(/NUMERO/g, numero).replace(/MONTANT/g, String(montant));
 }
 
 /* « 10 000 Ar », avec l'espace insécable qui empêche le nombre de

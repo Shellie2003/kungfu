@@ -39,7 +39,16 @@ const REGLAGES: [cle: string, libelle: string, aide?: string][] = [
   ['presentation_courte', 'Présentation courte', 'Deux ou trois phrases, sur l’accueil.'],
   ['presentation', 'Présentation longue', 'Sur l’écran du Club.'],
   ['mvola_numero', 'Numéro MVola', 'Celui qui reçoit les participations.'],
-  ['mvola_nom', 'Nom du titulaire MVola', 'Affiché sous le code, pour vérification.']
+  ['mvola_nom', 'Nom du titulaire MVola', 'Affiché sous le code, pour vérification.'],
+  /* Le gabarit du code USSD. Les menus d'un opérateur changent —
+     MVola a déjà renuméroté les siens — et un code figé dans
+     l'application ferait attendre une mise à jour sur le Play Store
+     pour un chiffre. Le club le corrige ici, une fois pour tous. */
+  [
+    'ussd_gabarit',
+    'Code USSD',
+    'NUMERO et MONTANT sont remplacés à l’envoi. Par défaut : #111*1*2*NUMERO*MONTANT#'
+  ]
 ];
 
 /* La photo du club n'est pas un champ de texte : elle s'envoie. Elle

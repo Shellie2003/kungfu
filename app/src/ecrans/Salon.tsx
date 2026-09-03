@@ -64,6 +64,23 @@ function Fil({
      maquette au repos. */
   const [enGrand, setEnGrand] = useState<Message | null>(null);
 
+  /* ---- TOUTES LES IMAGES DU FIL, DANS L'ORDRE ----
+
+     « Si quelqu'un envoie plusieurs images à la fois, on peut les
+     glisser de droite vers la gauche et vice versa. »
+
+     Un message ne porte qu'une pièce jointe : « plusieurs images à la
+     fois » sont donc plusieurs messages qui se suivent. On feuillette
+     entre toutes les images de la conversation, ce qui rend le geste
+     plus utile encore — on retrouve la photo d'avant-hier sans
+     remonter le fil au doigt.
+
+     Seules celles dont l'adresse est ARRIVÉE comptent : une image
+     encore en cours de signature ferait un écran noir au milieu de la
+     série, et l'on croirait avoir cassé quelque chose. */
+  const galerie = messages.filter((m) => m.piece && estImage(m.piece) && pieces[m.piece]);
+  const rangEnGrand = enGrand ? galerie.findIndex((m) => m.id === enGrand.id) : -1;
+
   const prendre = async (chemin: string, nom: string, url: string) => {
     setEnCours((p) => ({ ...p, [chemin]: 'Enregistrement…' }));
     const r = await enregistrer(url, nom);
@@ -239,6 +256,18 @@ function Fil({
           sujet={enAttente(enGrand) ? null : enGrand.id}
           legende={enGrand.texte}
           fermer={() => setEnGrand(null)}
+          precedente={
+            rangEnGrand > 0 ? () => setEnGrand(galerie[rangEnGrand - 1]!) : null
+          }
+          suivante={
+            rangEnGrand >= 0 && rangEnGrand < galerie.length - 1
+              ? () => setEnGrand(galerie[rangEnGrand + 1]!)
+              : null
+          }
+          /* Le compteur n'apparaît que s'il y a de quoi compter :
+             « 1 sur 1 » sur une conversation qui ne contient qu'une
+             photo est du bruit. */
+          position={galerie.length > 1 ? `${rangEnGrand + 1} sur ${galerie.length}` : null}
         />
       )}
     </div>

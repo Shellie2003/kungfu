@@ -41,6 +41,7 @@ import { useEffect, useState } from 'react';
 import { Icone } from './Icone';
 import { Anneau } from './Anneau';
 import { enregistrer } from '../services/telechargement';
+import { useGlisser } from './glisser';
 import {
   REACTIONS,
   compter,
@@ -125,7 +126,10 @@ export function Visionneuse({
   genre,
   sujet,
   legende,
-  fermer
+  fermer,
+  precedente,
+  suivante,
+  position
 }: {
   /* L'adresse signée de l'image. */
   src: string;
@@ -138,9 +142,32 @@ export function Visionneuse({
   sujet: string | null;
   legende?: string | null;
   fermer: () => void;
+  /* ---- FEUILLETER LES IMAGES DE LA CONVERSATION ----
+
+     « C'est pareil si quelqu'un envoie plusieurs images à la fois :
+     si on clique sur l'image on peut les glisser de droite vers la
+     gauche et vice versa. »
+
+     Un message ne porte qu'une pièce jointe : « plusieurs images à la
+     fois » sont donc plusieurs messages qui se suivent. On feuillette
+     entre TOUTES les images du fil, dans l'ordre où elles ont été
+     envoyées — ce qui est plus utile encore : on retrouve la photo
+     d'avant-hier sans remonter le fil au doigt.
+
+     Nuls quand il n'y a qu'une image : ni flèches, ni compteur, et le
+     glissement ne fait rien. */
+  precedente?: (() => void) | null;
+  suivante?: (() => void) | null;
+  /* « 3 sur 8 ». Sans lui, on ne sait pas si l'on a tout vu. */
+  position?: string | null;
 }) {
   const [etat, setEtat] = useState<string | null>(null);
   const [enCours, setEnCours] = useState(false);
+
+  const { gestes, onAGlisse } = useGlisser({
+    versLaGauche: () => suivante?.(),
+    versLaDroite: () => precedente?.()
+  });
 
   /* Échap ferme. Sur un téléphone il n'y a pas de clavier, mais la
      version web tourne sur des ordinateurs — et la croix seule
@@ -148,10 +175,14 @@ export function Visionneuse({
   useEffect(() => {
     const auClavier = (e: KeyboardEvent) => {
       if (e.key === 'Escape') fermer();
+      /* Les flèches font ce que fait le doigt : la version web tourne
+         sur des ordinateurs, où il n'y a rien à glisser. */
+      if (e.key === 'ArrowRight') suivante?.();
+      if (e.key === 'ArrowLeft') precedente?.();
     };
     document.addEventListener('keydown', auClavier);
     return () => document.removeEventListener('keydown', auClavier);
-  }, [fermer]);
+  }, [fermer, precedente, suivante]);
 
   const prendre = async () => {
     setEnCours(true);
@@ -182,7 +213,9 @@ export function Visionneuse({
         <button className="tapicon" onClick={fermer} aria-label="Fermer">
           <Icone nom="x" taille={22} couleur="#FFF" epaisseur={2} />
         </button>
-        <span style={{ flexGrow: 1 }} />
+        <span style={{ flexGrow: 1, fontSize: 14, color: '#C9D8D0', textAlign: 'center' }}>
+          {position ?? ''}
+        </span>
         {enCours ? (
           <Anneau part={null} taille={26} epaisseur={3} />
         ) : (
@@ -196,12 +229,46 @@ export function Visionneuse({
         )}
       </div>
 
-      <img
-        src={src}
-        alt={legende ?? ''}
-        className="visionneuse__image"
+      {/* La zone de l'image reçoit le geste. « pan-y pinch-zoom »
+          laisse au navigateur le défilement vertical et le zoom à
+          deux doigts, qu'on vient de rendre à l'application. */}
+      <div
+        {...gestes}
         onClick={(e) => e.stopPropagation()}
-      />
+        style={{
+          position: 'relative', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', touchAction: 'pan-y pinch-zoom'
+        }}
+      >
+        {precedente && (
+          <button
+            className="tapicon feuilleter feuilleter--gauche"
+            aria-label="Image précédente"
+            onClick={() => precedente()}
+          >
+            <Icone nom="back" taille={22} couleur="#FFF" epaisseur={2} />
+          </button>
+        )}
+        {suivante && (
+          <button
+            className="tapicon feuilleter feuilleter--droite"
+            aria-label="Image suivante"
+            onClick={() => suivante()}
+          >
+            <Icone nom="chev" taille={22} couleur="#FFF" epaisseur={2} />
+          </button>
+        )}
+        <img
+          src={src}
+          alt={legende ?? ''}
+          className="visionneuse__image"
+          draggable={false}
+          /* Un glissement se termine par un clic que le navigateur
+             envoie quand même ; le fond de la visionneuse ferme au
+             clic, et glisser refermait donc tout. */
+          onClick={() => onAGlisse()}
+        />
+      </div>
 
       <div className="visionneuse__bas" onClick={(e) => e.stopPropagation()}>
         {legende && <p className="visionneuse__legende">{legende}</p>}

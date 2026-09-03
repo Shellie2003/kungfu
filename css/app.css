@@ -792,6 +792,16 @@ input[type="checkbox"]::after { content: ''; position: absolute; inset: -12px; }
   font-size: 16px; letter-spacing: .04em; color: var(--encre); word-break: break-all;
 }
 .ussd__code b { color: var(--vert); }
+/* Le code est un CHAMP depuis qu'il est modifiable : il doit garder
+   la hauteur d'une cible qu'on vise au doigt, sans prendre l'allure
+   d'un formulaire — c'est un code qu'on relit, pas un champ qu'on
+   remplit. Le trait sous le texte le dit : on peut y toucher. */
+input.ussd__code {
+  min-height: 44px;
+  border-bottom: 1px dashed var(--bord);
+  border-radius: 0;
+}
+input.ussd__code:focus-visible { border-bottom-color: var(--vert); }
 .ussd__nom { font-size: 12px; color: var(--gris); margin-top: 7px; }
 
 .avert {
@@ -1035,3 +1045,25 @@ input[type="checkbox"]::after { content: ''; position: absolute; inset: -12px; }
 /* Sur la carte imprimée, il se pose en filigrane :
    un cachet ne doit pas gêner la lecture du nom. */
 .pc .cachet { position: absolute; right: 17mm; bottom: 3mm; width: 13mm; height: 13mm; opacity: .55; }
+
+/* ------------------------------------------------------------
+   FEUILLETER UNE IMAGE
+
+   Deux flèches posées sur les bords de l'image en grand. Elles ne
+   prennent aucune place dans la mise en page — elles flottent
+   au-dessus — parce que l'image doit rester centrée et entière : ce
+   sont les proportions de la photo qui comptent sur cet écran, pas
+   les commandes.
+
+   Le fond translucide n'est pas décoratif : une flèche blanche sur
+   une photo blanche ne se voit pas, et la moitié des photos d'un
+   club de kung-fu sont prises en plein soleil.
+   ------------------------------------------------------------ */
+.feuilleter {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 2;
+  background: rgba(11, 23, 18, .55);
+  backdrop-filter: blur(2px);
+}
+.feuilleter:hover { background: rgba(11, 23, 18, .75); }
+.feuilleter--gauche { left: 4px; }
+.feuilleter--droite { right: 4px; }
