@@ -59,7 +59,13 @@ export const PROFILS = [
    celui qui en exerce le plus. */
 export const MOI = {
   id: 'p0', numero: 'F04x001', nom: 'IDEALY', prenom: 'Santatra',
-  role: 'admin', grade_id: 'gn', photo: null, debut: '2014-02-01',
+  /* Ceinture VERTE, comme la fiche que montre la maquette. Le grade
+     et le rôle sont indépendants dans ce club — on administre sans
+     être ceinture noire — et c'est la couleur de la bande de la carte
+     de membre : une bande noire en face d'une bande verte faisait
+     compter au banc une différence qui n'est qu'un choix de jeu
+     d'essai. */
+  role: 'admin', grade_id: 'gv', photo: null, debut: '2014-02-01',
   /* Une fiche COMPLÈTE, et c'est le banc de comparaison qui l'exige.
      La maquette montre un profil rempli — date de naissance, deux
      tuteurs, une biographie. Une fiche à moitié vide en face ne

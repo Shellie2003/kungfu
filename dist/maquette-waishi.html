@@ -2261,18 +2261,28 @@ const SCREENS = {
           <div style="flex-grow:1">
             <p class="carte__qrtitle">Code de membre</p>
             <p class="carte__qrtext">Présenté à l’entraînement pour pointer la présence.</p>
-            <p class="carte__faux">Motif de démonstration — ne se scanne pas</p>
           </div>
         </div>
 
         <div class="carte__foot">
           <span>Membre depuis<br><b>9 septembre 2019</b></span>
-          <span style="text-align:right">Valide jusqu’au<br><b>31 décembre 2026</b></span>
+          <!-- « Valide jusqu'au 31 décembre 2026 » figurait ici. Il
+               n'existe aucune date de validité en base, et en inventer
+               une ferait refuser la carte le jour où elle passerait.
+               Le club, lui, est vrai — et n'était écrit nulle part
+               ailleurs sur la carte. -->
+          <span style="text-align:right">Club<br><b>Analamahitsy</b></span>
         </div>
         <div class="carte__band" style="background:#4E9C57"></div>
       </div>
 
       <div class="list">
+        <!-- « Régénérer le code » a été retiré, et c'est la seule
+             promesse de cette planche qui ne sera pas tenue. Ce code
+             encode le MATRICULE, qui figure déjà en toutes lettres
+             sur la carte : il n'y a rien à régénérer, et un bouton
+             qui prétendrait le faire laisserait croire qu'une carte
+             perdue se révoque. -->
         <div class="listrow">
           <span class="tile tile--sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4 3.5 3 3-2.5 4 3.5"/></svg></span>
           <span style="flex-grow:1;min-width:0"><b style="display:block;font-size:15px;font-weight:600">Enregistrer en image</b><span style="display:block;font-size:12px;color:#59685F;margin-top:1px">Pour l’envoyer ou l’imprimer</span></span>
@@ -2283,17 +2293,14 @@ const SCREENS = {
           <span style="flex-grow:1;min-width:0"><b style="display:block;font-size:15px;font-weight:600">Imprimer la carte</b><span style="display:block;font-size:12px;color:#59685F;margin-top:1px">Format carte bancaire</span></span>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#A8B6AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
         </div>
-        <div class="listrow">
-          <span class="tile tile--sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F5132" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10" width="15" height="10.5" rx="3"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/></svg></span>
-          <span style="flex-grow:1;min-width:0"><b style="display:block;font-size:15px;font-weight:600">Régénérer le code</b><span style="display:block;font-size:12px;color:#59685F;margin-top:1px">En cas de perte de la carte</span></span>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#A8B6AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
-        </div>
       </div>
 
-      <div class="warn">
-        <i></i>
-        <p>Le code affiché est un motif de démonstration : il ne contient aucune donnée et ne se scanne pas. Le vrai code, unique par membre, sera produit au développement une fois la maquette validée.</p>
-      </div>
+      <!-- L'avertissement sur le code de démonstration a disparu
+           parce que la maquette elle-même annonçait sa disparition :
+           « le vrai code, unique par membre, sera produit au
+           développement une fois la maquette validée ». Il l'est. Le
+           code encode le matricule et se scanne. -->
+      <p style="font-size:12.5px;line-height:18px;color:#59685F">Cette carte se lit sur le téléphone. L’administration l’imprime sur carton depuis l’écran « Imprimer les cartes » — dix par page A4, au format d’une carte bancaire.</p>
     </div>
   </div>`
   },

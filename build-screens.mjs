@@ -789,21 +789,30 @@ screen('carte', '14 · Carte de membre', { full: `
           <div style="flex-grow:1">
             <p class="carte__qrtitle">Code de membre</p>
             <p class="carte__qrtext">Présenté à l’entraînement pour pointer la présence.</p>
-            <p class="carte__faux">Motif de démonstration — ne se scanne pas</p>
           </div>
         </div>
 
         <div class="carte__foot">
           <span>Membre depuis<br><b>9 septembre 2019</b></span>
-          <span style="text-align:right">Valide jusqu’au<br><b>31 décembre 2026</b></span>
+          <!-- « Valide jusqu'au 31 décembre 2026 » figurait ici. Il
+               n'existe aucune date de validité en base, et en inventer
+               une ferait refuser la carte le jour où elle passerait.
+               Le club, lui, est vrai — et n'était écrit nulle part
+               ailleurs sur la carte. -->
+          <span style="text-align:right">Club<br><b>Analamahitsy</b></span>
         </div>
         <div class="carte__band" style="background:#4E9C57"></div>
       </div>
 
       <div class="list">
+        <!-- « Régénérer le code » a été retiré, et c'est la seule
+             promesse de cette planche qui ne sera pas tenue. Ce code
+             encode le MATRICULE, qui figure déjà en toutes lettres
+             sur la carte : il n'y a rien à régénérer, et un bouton
+             qui prétendrait le faire laisserait croire qu'une carte
+             perdue se révoque. -->
         ${[['Enregistrer en image', 'Pour l’envoyer ou l’imprimer', 'album'],
-           ['Imprimer la carte', 'Format carte bancaire', 'edit'],
-           ['Régénérer le code', 'En cas de perte de la carte', 'lock']]
+           ['Imprimer la carte', 'Format carte bancaire', 'edit']]
           .map(([t, d, ic]) => `<div class="listrow">
           <span class="tile tile--sm">${svg(ic, 18, '#0F5132')}</span>
           <span style="flex-grow:1;min-width:0"><b style="display:block;font-size:15px;font-weight:600">${t}</b><span style="display:block;font-size:12px;color:#59685F;margin-top:1px">${d}</span></span>
@@ -811,10 +820,12 @@ screen('carte', '14 · Carte de membre', { full: `
         </div>`).join('\n        ')}
       </div>
 
-      <div class="warn">
-        <i></i>
-        <p>Le code affiché est un motif de démonstration : il ne contient aucune donnée et ne se scanne pas. Le vrai code, unique par membre, sera produit au développement une fois la maquette validée.</p>
-      </div>
+      <!-- L'avertissement sur le code de démonstration a disparu
+           parce que la maquette elle-même annonçait sa disparition :
+           « le vrai code, unique par membre, sera produit au
+           développement une fois la maquette validée ». Il l'est. Le
+           code encode le matricule et se scanne. -->
+      <p style="font-size:12.5px;line-height:18px;color:#59685F">Cette carte se lit sur le téléphone. L’administration l’imprime sur carton depuis l’écran « Imprimer les cartes » — dix par page A4, au format d’une carte bancaire.</p>
     </div>
   </div>` });
 

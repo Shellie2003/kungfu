@@ -14,12 +14,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import QRCode from 'qrcode';
-import { Entete, Grade, Portrait } from '../ui/base';
+import { Avis, Entete, Grade, Portrait, Tuile } from '../ui/base';
+import { Icone } from '../ui/Icone';
 import { Emblem } from '../ui/Emblem';
 import { dateFr, useFiche } from '../services/membres';
 import { useUrl } from '../services/stockage';
 import { useSession } from '../services/session';
 import { useReglages } from '../services/club';
+import { charger, dessinerCarte, nomFichierCarte } from '../services/carteImage';
+import { enregistrer } from '../services/telechargement';
 
 export function CarteMembre() {
   const aller = useNavigate();
@@ -28,6 +31,66 @@ export function CarteMembre() {
   const portraitUrl = useUrl('portraits', fiche?.photo);
   const { data: reglages } = useReglages();
   const [qr, setQr] = useState<string | null>(null);
+  const [occupe, setOccupe] = useState(false);
+  const [avis, setAvis] = useState<{ bon: boolean; texte: string } | null>(null);
+
+  /* Enregistrer la carte en image.
+
+     Le code QR est REDESSINÉ en PNG plutôt que repris du SVG affiché
+     à l'écran : un SVG ne se peint pas sur une toile sans passer par
+     une image, et une image construite depuis un SVG « salit » la
+     toile dans certaines WebView — « toDataURL » lève alors une
+     erreur de sécurité, après le dessin, quand tout paraissait
+     marcher. On demande donc directement un PNG à la bibliothèque. */
+  async function enregistrerLaCarte() {
+    if (!fiche) return;
+    setOccupe(true);
+    setAvis(null);
+    try {
+      const [imageQr, imagePortrait] = await Promise.all([
+        QRCode.toDataURL(fiche.numero, {
+          errorCorrectionLevel: 'M',
+          margin: 0,
+          width: 380,
+          color: { dark: '#0E2119', light: '#FFFFFF' }
+        }).then(charger),
+        charger(portraitUrl)
+      ]);
+
+      const toile = dessinerCarte({
+        nomClub: reglages?.nom_club ?? 'Kung-fu Waishi',
+        nom: fiche.nom,
+        prenom: fiche.prenom,
+        grade: fiche.grade?.nom ?? null,
+        couleurGrade: fiche.grade?.couleur ?? '#0F5132',
+        numero: fiche.numero,
+        depuis: dateFr(fiche.debut),
+        lieuClub: reglages?.lieu_club ?? 'Analamahitsy',
+        qr: imageQr,
+        portrait: imagePortrait
+      });
+
+      const resultat = await enregistrer(
+        toile.toDataURL('image/png'),
+        nomFichierCarte(fiche.numero)
+      );
+      setAvis(
+        resultat.fait === 'refuse'
+          ? { bon: false, texte: resultat.pourquoi }
+          : {
+              bon: true,
+              texte:
+                resultat.fait === 'enregistre'
+                  ? `Carte enregistrée dans ${resultat.ou}.`
+                  : 'Carte ouverte : votre navigateur propose de l’enregistrer.'
+            }
+      );
+    } catch (e) {
+      setAvis({ bon: false, texte: (e as Error).message });
+    } finally {
+      setOccupe(false);
+    }
+  }
 
   useEffect(() => {
     if (!fiche?.numero) return;
@@ -63,7 +126,11 @@ export function CarteMembre() {
       <div
         style={{
           flexGrow: 1,
-          padding: '20px 20px 28px',
+          /* 22 en haut, comme la maquette. Deux pixels : invisibles
+             à l'œil, mesurés par le banc, et c'est justement le
+             genre d'écart qui s'accumule sans que personne ne le
+             voie passer. */
+          padding: '22px 20px 28px',
           display: 'flex',
           flexDirection: 'column',
           gap: 20
@@ -158,8 +225,56 @@ export function CarteMembre() {
           <div className="carte__band" style={{ background: couleur }} />
         </div>
 
-        {/* La bande de couleur reprend le grade ; elle ne le dit pas
-            seule — le nom du grade est écrit juste au-dessus. */}
+        {/* ------------------------------------------------------
+            CE QUE LA MAQUETTE PROMETTAIT, ET QUI N'EXISTAIT PAS.
+
+            Elle annonçait trois actions sous la carte : enregistrer
+            en image, imprimer, régénérer le code. Aucune n'avait été
+            faite, et l'écran se contentait d'un paragraphe expliquant
+            que l'administration, elle, savait imprimer.
+
+            Deux des trois sont ici. La troisième — « régénérer le
+            code » — ne l'est pas, et ne le sera pas : ce code encode
+            le MATRICULE, qui figure déjà en toutes lettres sur la
+            carte. Il n'y a rien à régénérer, et un bouton qui
+            prétendrait le faire laisserait croire qu'une carte perdue
+            se révoque. Elle ne se révoque pas parce qu'il n'y a rien
+            à révoquer.
+            ------------------------------------------------------ */}
+        <div className="list">
+          <button
+            className="listrow"
+            onClick={() => void enregistrerLaCarte()}
+            disabled={occupe}
+          >
+            <Tuile icone="album" petite />
+            <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
+              <b style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>
+                {occupe ? 'Préparation…' : 'Enregistrer en image'}
+              </b>
+              <span style={{ display: 'block', fontSize: 12, color: '#59685F', marginTop: 1 }}>
+                Pour l’envoyer ou l’imprimer
+              </span>
+            </span>
+            <Icone nom="chev" taille={17} couleur="#A8B6AE" epaisseur={2} />
+          </button>
+
+          <button className="listrow" onClick={() => window.print()}>
+            <Tuile icone="edit" petite />
+            <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
+              <b style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>
+                Imprimer la carte
+              </b>
+              <span style={{ display: 'block', fontSize: 12, color: '#59685F', marginTop: 1 }}>
+                Format carte bancaire
+              </span>
+            </span>
+            <Icone nom="chev" taille={17} couleur="#A8B6AE" epaisseur={2} />
+          </button>
+        </div>
+
+        {avis && <Avis bon={avis.bon}>{avis.texte}</Avis>}
+
         {/* La promesse d'hier est tenue : l'écran d'administration
             « Imprimer les cartes » édite la planche du club entier,
             dix par page A4. Laisser « viendront » aurait fait de
