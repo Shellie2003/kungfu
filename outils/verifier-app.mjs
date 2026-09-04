@@ -106,7 +106,11 @@ const ECRANS = [
   ['adm-participations', '/#/admin/participations', 'De quelle sortie'],
   /* Un texte RENDU, pas une invite de champ : innerText ne contient
      pas les placeholders, et l'attendre échouerait toujours. */
-  ['nouvelle-conv', '/#/messages/nouvelle', 'Écrire à un maître'],
+  /* Le TITRE de l'écran, et non son texte d'explication : celui-ci
+     a changé le jour où le club a ouvert la messagerie entre tous
+     ses membres, et une attente adossée à une phrase qu'on réécrit
+     se périme sans que rien ne soit cassé. */
+  ['nouvelle-conv', '/#/messages/nouvelle', 'Nouvelle conversation'],
   ['presences', '/#/presences', 'Mon assiduité'],
   ['adm-presences', '/#/presences/pointer', 'Pointer les présences'],
   ['adm-salons', '/#/admin/salons', 'Ouvrir un salon'],

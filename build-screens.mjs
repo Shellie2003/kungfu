@@ -157,7 +157,14 @@ screen('accueil', '02 · Accueil', { tab: 'home', body: `
     </div>
 
     <div style="display:flex;flex-direction:column;gap:14px">
-      <div class="rowhead">${overline('Vaovao farany')}<button class="link" data-go="casier">Tout le casier</button></div>
+      <!-- « Vaovao farany » était le SEUL titre en malgache de tout
+           l'écran ; la feuille des fonctionnalités, elle, écrit
+           « Dernières actualités ». Le banc de conformité a mis
+           l'écart en évidence, et le club a tranché pour le français.
+           Une version entièrement malgache reste une demande à part :
+           ce n'est pas en gardant un seul mot qu'on l'aurait
+           préparée. -->
+      <div class="rowhead">${overline('Dernières actualités')}<button class="link" data-go="casier">Tout le casier</button></div>
       ${NEWS.slice(0, 2).map(([date, cat, cc, cb, title, text]) => `<button class="card newsrow" data-go="casierDetail">
         <span class="datebox"><b>${date.split(' ')[0]}</b><i>${date.split(' ')[1]}</i></span>
         <span style="flex-grow:1;min-width:0;text-align:left">

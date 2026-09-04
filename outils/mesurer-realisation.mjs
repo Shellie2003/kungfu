@@ -91,11 +91,11 @@ const PREUVES = {
   'acc-logo': ECRAN('/#/accueil', 'KUNG-FU WAISHI'),
   'acc-visuel': CODE(/photo_club/, 'src'),
   'acc-presentation': ECRAN('/#/accueil', 'Le club'),
-  /* Le titre est en MALGACHE sur l'écran — « VAOVAO FARANY », les
-     dernières nouvelles — là où la feuille des fonctionnalités
-     l'écrit en français. Chercher le libellé de la feuille échouait
-     sur une section parfaitement présente. */
-  'acc-vaovao': ECRAN('/#/accueil', 'VAOVAO FARANY'),
+  /* Le titre était en MALGACHE — « VAOVAO FARANY » — seul de tout
+     l'écran, là où la feuille des fonctionnalités l'écrit en
+     français. C'est ce banc qui a mis l'écart en évidence, et le
+     club a tranché pour le français. */
+  'acc-vaovao': ECRAN('/#/accueil', 'Dernières actualités'),
   /* La pastille porte un nombre, pas un mot : on vise l'étiquette
      d'accessibilité, qui est ce qu'un aveugle entend. */
   'acc-notif': CONTROLE('/#/accueil', '[aria-label^="Notifications,"]'),
@@ -142,14 +142,19 @@ const PREUVES = {
   'msg-club': ECRAN('/#/messages', 'Tout le club'),
   'msg-grade': CODE(/type:\s*'grade'|'grade'/, 'src'),
   'msg-evenement': CODE(/'evenement'/, 'src'),
-  'msg-direct': ECRAN('/#/messages/nouvelle', 'Écrire à un maître'),
+  /* Le titre de l'écran, et non le texte d'explication : celui-ci a
+     changé quand le club a ouvert la messagerie entre tous, et une
+     preuve adossée à une phrase que l'on réécrit se périme. */
+  'msg-direct': ECRAN('/#/messages/nouvelle', 'Nouvelle conversation'),
   'msg-ecrire': CODE(/postgres_changes|realtime|\.channel\(/, 'src'),
   'msg-signaler': ECRAN('/#/signalements', 'Propos déplacés'),
   /* « À décider : élève vers élève, ou seulement vers un maître. »
-     La maquette pose une QUESTION au club ; elle n'attend pas un
-     développement. Compter cela comme un manque serait se pénaliser
-     pour une décision qui n'appartient pas au code. Il est donc
-     classé à part, et n'entre pas au dénominateur. */
+     La maquette posait une QUESTION au club. LE CLUB A TRANCHÉ :
+     chacun écrit à chacun, et ce que deux membres se disent n'est lu
+     que par eux deux. La migration 0025 porte la décision ; l'écran
+     l'annonce avant qu'on essaie, ce qui est le seul endroit où elle
+     se vérifie du dehors. */
+  'msg-qui': ECRAN('/#/messages/nouvelle', 'écrire à n’importe quel membre du club'),
 
   /* ---- Espace des maîtres ---- */
   'mt-espace': ECRAN('/#/maitres', 'Espace des maîtres'),
@@ -196,12 +201,14 @@ const PREUVES = {
   'adm-album': ECRAN('/#/admin/albums', 'Créer un album')
 };
 
-/* Ce que la maquette POSE COMME QUESTION plutôt que comme travail.
-   Hors du dénominateur, et dit à voix haute pour qu'on ne croie pas
-   que je l'ai passé sous silence. */
-const A_DECIDER = {
-  'msg-qui': 'Le club doit trancher : élève vers élève, ou seulement vers un maître ?'
-};
+/* Ce que la maquette POSERAIT COMME QUESTION plutôt que comme
+   travail. Vide aujourd'hui : la seule qui y figurait — « qui peut
+   écrire à qui » — a été tranchée par le club, et elle est donc
+   repassée au dénominateur comme n'importe quelle autre. On garde le
+   mécanisme : la maquette peut poser une nouvelle question demain, et
+   il vaut mieux la sortir du compte que de se noter mal pour une
+   décision qui n'appartient pas au code. */
+const A_DECIDER = {};
 
 /* ------------------------------------------------------------
    3. LE CONTRÔLE DU DIST PÉRIMÉ.

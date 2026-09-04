@@ -23,6 +23,7 @@ import { useSession } from '../services/session';
 import { useReglages } from '../services/club';
 import { charger, dessinerCarte, nomFichierCarte } from '../services/carteImage';
 import { SAIT_IMPRIMER, enregistrer } from '../services/telechargement';
+import { CarteImprimable } from '../ui/CarteImprimable';
 
 export function CarteMembre() {
   const aller = useNavigate();
@@ -136,7 +137,28 @@ export function CarteMembre() {
           gap: 20
         }}
       >
-        <div className="carte">
+        {/* ------------------------------------------------------
+            CE QUI S'IMPRIME, ET CE QUI SE REGARDE.
+
+            Imprimer cette page sortait la carte étirée sur toute la
+            largeur d'une A4 — donc PAS au format d'une carte
+            bancaire, alors que le bouton le promet — accompagnée des
+            deux boutons d'écran, du paragraphe d'explication et du
+            fond gris de l'application.
+
+            Forcer la carte verte au format 85,6 × 54 mm ne suffisait
+            pas : mesurée, elle demande 393 points de haut pour 204
+            disponibles, et le bas se coupait — le code QR et le pied
+            disparaissaient. Une carte de membre sans son code ne sert
+            plus à rien.
+
+            La carte verte est donc faite pour l'ÉCRAN et y reste ; le
+            papier reçoit le gabarit de la planche d'administration,
+            dessiné en millimètres et déjà éprouvé. Le membre qui
+            imprime sa carte obtient exactement le carton que le club
+            lui aurait imprimé.
+            ------------------------------------------------------ */}
+        <div className="carte impression-chrome">
           {/* Le cachet du club. L'emplacement reste vide tant que le
               fichier n'est pas déposé dans img/ : un emplacement vide
               est plus honnête qu'un faux tampon. */}
@@ -241,7 +263,23 @@ export function CarteMembre() {
             se révoque. Elle ne se révoque pas parce qu'il n'y a rien
             à révoquer.
             ------------------------------------------------------ */}
-        <div className="list">
+        {/* Hors de l'écran, présent pour l'imprimante. « aria-hidden »
+            parce qu'un lecteur d'écran lirait sinon deux fois le même
+            nom, le même grade et le même matricule. */}
+        <div className="aImprimer" aria-hidden="true">
+          <CarteImprimable
+            membre={fiche}
+            nomClub={reglages?.nom_club ?? 'Kung-fu Waishi'}
+            portrait={portraitUrl}
+            qr={qr ?? undefined}
+          />
+        </div>
+
+        {/* « impression-chrome » : le décor de l'ÉCRAN, qui ne part
+            pas sur le papier. La convention existait déjà pour la
+            planche d'administration ; elle sert ici pour la même
+            raison. */}
+        <div className="list impression-chrome">
           <button
             className="listrow"
             onClick={() => void enregistrerLaCarte()}
@@ -311,7 +349,10 @@ export function CarteMembre() {
             « Imprimer les cartes » édite la planche du club entier,
             dix par page A4. Laisser « viendront » aurait fait de
             cette ligne un mensonge de plus. */}
-        <p style={{ fontSize: 12.5, lineHeight: '18px', color: '#59685F' }}>
+        <p
+          className="impression-chrome"
+          style={{ fontSize: 12.5, lineHeight: '18px', color: '#59685F' }}
+        >
           Cette carte se lit sur le téléphone. L’administration l’imprime sur carton depuis
           l’écran « Imprimer les cartes » — dix par page A4, au format d’une carte bancaire.
         </p>

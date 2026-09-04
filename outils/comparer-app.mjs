@@ -293,6 +293,7 @@ const RELEVE = `(racine) => {
      placeholder d'un vrai champ. C'est la même encre à l'écran, et
      l'ignorer ferait passer le champ pour vide. */
   for (const e of racine.querySelectorAll('input[placeholder]')) {
+    if (e.closest('[aria-hidden="true"]')) continue;
     const b = e.getBoundingClientRect();
     if (!b.width || b.bottom < o.top || b.top > o.bottom) continue;
     const c = getComputedStyle(e);
@@ -303,7 +304,23 @@ const RELEVE = `(racine) => {
     };
   }
 
+  /* CE QUI N'EST PAS POUR L'ŒIL NE COMPTE PAS.
+
+     L'écran de la carte porte, hors de la vue, la carte destinée à
+     l'IMPRIMANTE : elle doit être dans l'arbre pour que le navigateur
+     la trouve au moment d'imprimer, et elle est découpée à un point
+     carré pour ne rien montrer. « clip-path » masque la peinture,
+     pas la géométrie : ses textes gardaient donc une position, et le
+     banc lisait « KUNG-FU WAISHI » deux fois, à deux endroits, en
+     deux tailles.
+
+     Elle porte « aria-hidden », parce qu'un lecteur d'écran lirait
+     sinon deux fois le même membre. C'est exactement le même
+     jugement : ce bloc n'est pas ce que la personne perçoit. Le banc
+     s'aligne donc sur l'arbre d'accessibilité, plutôt que d'inventer
+     une seconde définition de « visible ». */
   for (const e of [racine, ...racine.querySelectorAll('*')]) {
+    if (e.closest && e.closest('[aria-hidden="true"]')) continue;
     const noeuds = [...e.childNodes].filter((n) => n.nodeType === 3 && n.textContent.trim());
     if (!noeuds.length) continue;
     const r = document.createRange();

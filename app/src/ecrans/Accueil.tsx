@@ -368,10 +368,23 @@ export function Accueil() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div className="rowhead">
-            {/* « Vaovao farany » — les dernières nouvelles. Le club
-                parle malgache entre ses murs ; le titre reste dans
-                sa langue, le reste de l'écran en français. */}
-            <Surtitre>Vaovao farany</Surtitre>
+            {/* ---- « Vaovao farany » → « Dernières actualités » ----
+
+                Le titre était en malgache, seul de tout l'écran : le
+                club parle malgache entre ses murs, et cela paraissait
+                juste. La mesure de conformité à la maquette a montré
+                que c'était le SEUL endroit où l'application et la
+                feuille des fonctionnalités du club nommaient
+                différemment la même chose — la feuille dit
+                « Dernières actualités ».
+
+                Deux langues dans un même écran demandent au lecteur
+                de savoir laquelle lire ; le club a tranché pour le
+                français, comme partout ailleurs. Une version
+                entièrement malgache reste une demande à part, et ce
+                n'est pas en gardant un seul mot qu'on l'aurait
+                préparée. */}
+            <Surtitre>Dernières actualités</Surtitre>
             <button className="link" onClick={() => aller('/casier')}>
               Tout le casier
             </button>

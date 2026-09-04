@@ -25,6 +25,10 @@ import type { Membre } from '../../services/membres';
 import { useUrls } from '../../services/stockage';
 import { useReglages } from '../../services/club';
 import { SAIT_IMPRIMER } from '../../services/telechargement';
+/* Le gabarit de la carte imprimée vit désormais à part : l'écran
+   « Ma carte de membre » imprime EXACTEMENT le même carton, et deux
+   définitions auraient fini par diverger. */
+import { CarteImprimable } from '../../ui/CarteImprimable';
 
 /* Dix par page : deux colonnes de cinq, comme la maquette. */
 const PAR_PAGE = 10;
@@ -63,58 +67,6 @@ function useCodes(numeros: string[]) {
   }, [cle]);
 
   return codes;
-}
-
-function CarteImprimee({
-  membre,
-  nomClub,
-  portrait,
-  qr
-}: {
-  membre: Membre;
-  nomClub: string;
-  portrait: string | null;
-  qr: string | undefined;
-}) {
-  const couleur = membre.grade?.couleur ?? '#0F5132';
-  return (
-    <div className="pc">
-      <span className="pc__band" style={{ background: couleur }} />
-      <span className="pc__logo">
-        <span className="emblem" />
-      </span>
-      <span className="pc__org">{nomClub.toUpperCase()}</span>
-      <span className="pc__photo">
-        {portrait ? (
-          <img
-            src={portrait}
-            alt=""
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-        ) : (
-          <svg viewBox="0 0 24 24" fill="none" stroke="#8FB3A0" strokeWidth="1.4"
-               strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="8.5" r="3.6" />
-            <path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" />
-          </svg>
-        )}
-      </span>
-      <span className="pc__id">
-        <b className="pc__nom">{membre.nom}</b>
-        <span className="pc__prenom">{membre.prenom}</span>
-        {membre.grade && (
-          <span className="pc__grade">
-            <i style={{ background: couleur }} />
-            {membre.grade.nom}
-          </span>
-        )}
-        <span className="pc__num">{membre.numero}</span>
-      </span>
-      {/* Le SVG vient de la bibliothèque de codes QR, pas d'une
-          saisie : il n'y a pas de texte d'utilisateur à échapper. */}
-      <span className="pc__qr" dangerouslySetInnerHTML={{ __html: qr ?? '' }} />
-    </div>
-  );
 }
 
 export function AdminImpression() {
@@ -257,7 +209,7 @@ export function AdminImpression() {
                         aria-label={`Retirer ${m.nom} ${m.prenom} de la planche`}
                         style={{ border: 0, background: 'none', padding: 0, cursor: 'pointer' }}
                       >
-                        <CarteImprimee
+                        <CarteImprimable
                           membre={m}
                           nomClub={nomClub}
                           portrait={m.photo ? portraits[m.photo] ?? null : null}

@@ -721,13 +721,15 @@ describe('ouvrir une conversation à deux', () => {
   });
 
   test('un refus de la base est montré tel quel', async () => {
-    /* Le message vient de la règle — « demande que les deux soient
-       majeurs ». Le réécrire ici le ferait diverger le jour où le
-       club change la règle. */
+    /* Le message vient de la règle, jamais de l'écran : le réécrire
+       ici le ferait diverger le jour où le club la change — ce qui
+       vient précisément d'arriver. Le refus employé est donc celui
+       qui SUBSISTE après la décision du club : on n'écrit pas à un
+       membre désactivé. */
     poser({
       profils: MEMBRES,
       'rpc:ouvrir_direct': () => ({
-        message: 'une conversation privée entre élèves demande que les deux soient majeurs — passez par un maître',
+        message: 'membre introuvable ou désactivé',
         code: 'P0001'
       })
     });
@@ -740,12 +742,26 @@ describe('ouvrir une conversation à deux', () => {
     await waitFor(() => expect(derniere('rpc:ouvrir_direct')).toBeDefined());
   });
 
-  test('la règle des mineurs est annoncée avant d’essayer', async () => {
+  test('l’écran dit à qui l’on peut écrire, et qui LIT', async () => {
+    /* Le club a tranché la question que la maquette laissait
+       ouverte : chacun écrit à chacun. L'écran annonçait l'inverse
+       — « entre élèves, les deux doivent être majeurs » — et un
+       écran qui annonce une règle abolie est pire qu'un écran muet.
+
+       Ce qu'il doit dire maintenant tient en deux points, et le
+       second compte autant que le premier : à qui l'on écrit, et QUI
+       LIT. La protection a changé de nature — ce n'est plus un mur,
+       c'est le signalement. */
     poser({ profils: MEMBRES });
     rendre(<NouvelleConversation />, { profil: PROFIL_ELEVE });
+
     expect(
-      await screen.findByText(/Écrire à un maître ou à l’administration est toujours possible/)
+      await screen.findByText(/écrire à n’importe quel membre du club/)
     ).toBeInTheDocument();
+    expect(screen.getByText(/pas même par l’administration/)).toBeInTheDocument();
+    expect(screen.getByText(/signaler aux maîtres/)).toBeInTheDocument();
+    /* Et l'ancienne règle a bien disparu de l'écran. */
+    expect(screen.queryByText(/les deux soient majeurs/)).toBeNull();
   });
 });
 

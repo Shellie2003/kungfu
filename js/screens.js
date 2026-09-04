@@ -86,7 +86,14 @@ const SCREENS = {
     </div>
 
     <div style="display:flex;flex-direction:column;gap:14px">
-      <div class="rowhead"><h2 class="overline">Vaovao farany</h2><button class="link" data-go="casier">Tout le casier</button></div>
+      <!-- « Vaovao farany » était le SEUL titre en malgache de tout
+           l'écran ; la feuille des fonctionnalités, elle, écrit
+           « Dernières actualités ». Le banc de conformité a mis
+           l'écart en évidence, et le club a tranché pour le français.
+           Une version entièrement malgache reste une demande à part :
+           ce n'est pas en gardant un seul mot qu'on l'aurait
+           préparée. -->
+      <div class="rowhead"><h2 class="overline">Dernières actualités</h2><button class="link" data-go="casier">Tout le casier</button></div>
       <button class="card newsrow" data-go="casierDetail">
         <span class="datebox"><b>22</b><i>nov</i></span>
         <span style="flex-grow:1;min-width:0;text-align:left">

@@ -102,11 +102,23 @@ export function NouvelleConversation() {
           ))}
         </Etat>
 
+        {/* ---- CE QUE CETTE CARTE DIT, ET POURQUOI ELLE A CHANGÉ ----
+
+            Elle annonçait « entre élèves, la conversation privée
+            demande que les deux soient majeurs ». Le club a tranché :
+            chacun écrit à chacun.
+
+            Le texte ne se contente donc pas de retirer la
+            restriction, il dit ce qui protège MAINTENANT. Ce n'est
+            plus la même chose : avant, la conversation n'existait
+            pas ; maintenant elle existe et c'est le signalement qui
+            veille. Un mur ne demande à personne d'être attentif ; un
+            signalement, si — et le club compte des mineurs. */}
         <Carte style={{ background: 'var(--vert-clair)', borderColor: '#C4D9CC' }}>
           <p style={{ fontSize: 12.5, lineHeight: '18px', color: '#12613C' }}>
-            Écrire à un maître ou à l’administration est toujours possible : c’est le canal
-            par lequel un élève signale un problème. Entre élèves, la conversation privée
-            demande que les deux soient majeurs — le club peut en décider autrement.
+            Vous pouvez écrire à n’importe quel membre du club. Ce que vous vous dites à
+            deux n’est lu que par vous deux — pas même par l’administration. En cas de
+            propos déplacés, l’appui long sur un message permet de le signaler aux maîtres.
           </p>
         </Carte>
       </div>

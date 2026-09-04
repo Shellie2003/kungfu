@@ -139,10 +139,110 @@ body {
     background: #FFF;
   }
 
+  /* Le gris tendre de l'application est une couleur d'ÉCRAN. Sur le
+     papier, c'est un aplat gris sur toute la feuille — de l'encre
+     dépensée pour rien, et un fond sale derrière une carte blanche.
+     La règle de la maquette blanchit « html » et « body » ; il
+     restait la racine de l'application entre les deux. */
+  html,
+  body,
+  #racine {
+    background: #FFF !important;
+  }
+
   /* Une carte reste une carte, pas un bouton : le cadre de mise au
      point du navigateur s'imprimerait autour. */
   .planche__grille button {
     outline: none !important;
+  }
+
+  /* ------------------------------------------------------------
+     LA CARTE SEULE — « Imprimer la carte », depuis sa propre page.
+
+     CE QUI SORTAIT AVANT, ET QUI EST MESURÉ
+
+     Les règles ci-dessus ne connaissaient que la PLANCHE de
+     l'administration. L'écran « Ma carte de membre » n'était couvert
+     par rien, et l'on s'en apercevait en imprimant :
+
+       · la carte s'étirait sur toute la largeur de la page — donc
+         PAS au format d'une carte bancaire, alors que le bouton
+         promet « format carte bancaire » ;
+       · les deux boutons d'action et le paragraphe d'explication
+         partaient à l'encre ;
+       · le fond gris de l'application couvrait le reste de la
+         feuille.
+
+     CE QUI SORT MAINTENANT
+
+     La carte, seule, à 85,6 × 54 mm — les dimensions normalisées
+     d'une carte bancaire, celles-là mêmes que la planche emploie et
+     que « carteImage.ts » emploie pour l'image enregistrée. Trois
+     chemins, une seule taille.
+
+     POURQUOI « visibility » ET NON « display »
+
+     « display: none » sur tout sauf la carte ferait s'effondrer la
+     mise en page autour d'elle, et la carte se retrouverait ailleurs
+     que là où on l'attend. « visibility: hidden » laisse la
+     structure en place et n'efface que l'encre ; la carte, sortie du
+     flux, se pose alors où on la met.
+     ------------------------------------------------------------ */
+  .aImprimer {
+    /* Sortie du flux, posée dans le coin haut-gauche de la zone
+       imprimable. Le gabarit « .pc » qu'elle contient porte déjà ses
+       propres 85,6 × 54 mm : on ne les répète pas ici, sans quoi
+       deux endroits décideraient de la même taille. */
+    display: block !important;
+    position: fixed;
+    /* Les marges de page sont à ZÉRO — la planche en a besoin, elle
+       occupe la feuille entière. Une carte seule posée dans l'angle
+       sort donc à ras du bord, là où beaucoup d'imprimantes ne
+       déposent pas d'encre. On l'écarte ici plutôt que de changer
+       « @page », ce qui décalerait la planche. */
+    left: 12mm;
+    top: 12mm;
+    /* Le trait de coupe, comme sur la planche : à 2 mm du bord, il
+       ne mord pas sur la carte et se voit assez pour guider les
+       ciseaux. */
+    outline: 1px dashed #B9C7BE;
+    outline-offset: 2mm;
+  }
+
+  /* Tout le reste de la page qui porte une carte à imprimer perd son
+     encre — mais garde sa place, cf. ci-dessus. */
+  body:has(.aImprimer) * {
+    visibility: hidden;
+  }
+  body:has(.aImprimer) .aImprimer,
+  body:has(.aImprimer) .aImprimer * {
+    visibility: visible;
+  }
+}
+
+/* ------------------------------------------------------------
+   À L'ÉCRAN, la carte destinée au papier n'existe pas.
+
+   Elle est dans l'arbre pour que l'imprimante la trouve — c'est la
+   seule façon de faire sans ouvrir une fenêtre séparée, que la
+   WebView d'Android bloquerait. « display: none » suffirait à la
+   cacher, mais une règle « @media print » ne peut pas rallumer un
+   élément dont un ancêtre est éteint, et l'on se retrouverait avec
+   une page blanche.
+
+   On la sort donc de la vue sans l'éteindre. « clip-path » plutôt
+   que « left: -9999px » : un décalage de neuf mille points
+   ALLONGE la page et fait apparaître une barre de défilement
+   horizontale sur certains navigateurs.
+   ------------------------------------------------------------ */
+@media screen {
+  .aImprimer {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    pointer-events: none;
   }
 }
 

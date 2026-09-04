@@ -222,6 +222,22 @@ jobs:
       - name: Vérifier ce qui ne se photographie pas
         run: node outils/verifier-acces.mjs
 
+      # CE QUI SORT SUR LE PAPIER.
+      #
+      # Aucun autre contrôle ne regarde le média « print » : ils
+      # ouvrent tous les écrans en « screen », où les règles
+      # d'impression n'existent pas — et une règle qui n'existe pas ne
+      # peut pas être fausse.
+      #
+      # Le club l'a signalé autrement : « il y a un bug à l'impression
+      # d'une carte ». Mesuré, il était triple — carte étirée sur
+      # toute la largeur d'une A4 donc pas au format promis, boutons
+      # d'écran et paragraphe d'explication partis à l'encre, fond
+      # gris sur toute la feuille. Un défaut d'impression ne se
+      # découvre qu'après avoir usé du papier.
+      - name: Vérifier ce qui sort sur le papier
+        run: node outils/verifier-impression.mjs
+
       # L'application et le seau doivent accepter les MÊMES fichiers.
       #
       # Le PDF était proposé par l'écran, accepté par le sélecteur,

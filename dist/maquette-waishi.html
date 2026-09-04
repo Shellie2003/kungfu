@@ -831,6 +831,16 @@ input[type="checkbox"]::after { content: ''; position: absolute; inset: -12px; }
   font-size: 16px; letter-spacing: .04em; color: var(--encre); word-break: break-all;
 }
 .ussd__code b { color: var(--vert); }
+/* Le code est un CHAMP depuis qu'il est modifiable : il doit garder
+   la hauteur d'une cible qu'on vise au doigt, sans prendre l'allure
+   d'un formulaire — c'est un code qu'on relit, pas un champ qu'on
+   remplit. Le trait sous le texte le dit : on peut y toucher. */
+input.ussd__code {
+  min-height: 44px;
+  border-bottom: 1px dashed var(--bord);
+  border-radius: 0;
+}
+input.ussd__code:focus-visible { border-bottom-color: var(--vert); }
 .ussd__nom { font-size: 12px; color: var(--gris); margin-top: 7px; }
 
 .avert {
@@ -1075,6 +1085,47 @@ input[type="checkbox"]::after { content: ''; position: absolute; inset: -12px; }
    un cachet ne doit pas gêner la lecture du nom. */
 .pc .cachet { position: absolute; right: 17mm; bottom: 3mm; width: 13mm; height: 13mm; opacity: .55; }
 
+/* ------------------------------------------------------------
+   FEUILLETER UNE IMAGE
+
+   Deux flèches posées sur les bords de l'image en grand. Elles ne
+   prennent aucune place dans la mise en page — elles flottent
+   au-dessus — parce que l'image doit rester centrée et entière : ce
+   sont les proportions de la photo qui comptent sur cet écran, pas
+   les commandes.
+
+   Le fond translucide n'est pas décoratif : une flèche blanche sur
+   une photo blanche ne se voit pas, et la moitié des photos d'un
+   club de kung-fu sont prises en plein soleil.
+   ------------------------------------------------------------ */
+.feuilleter {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 2;
+  background: rgba(11, 23, 18, .55);
+  backdrop-filter: blur(2px);
+}
+.feuilleter:hover { background: rgba(11, 23, 18, .75); }
+.feuilleter--gauche { left: 4px; }
+.feuilleter--droite { right: 4px; }
+
+/* ------------------------------------------------------------
+   LA JAUGE D'OCCUPATION
+
+   Une barre, et rien de plus : elle dit une proportion, et une
+   proportion se lit d'un coup d'œil ou pas du tout. Le chiffre exact
+   est écrit à côté, en toutes lettres — « 13 Mo sur 500 Mo » — parce
+   qu'une barre à trois pour cent et une barre à un pour cent se
+   ressemblent, et que la différence peut compter.
+
+   La couleur ne dit rien seule : au-delà du seuil, le CHIFFRE change
+   de couleur lui aussi, et le pourcentage est annoncé aux lecteurs
+   d'écran par « aria-valuetext ».
+   ------------------------------------------------------------ */
+.jauge {
+  height: 8px; border-radius: 999px; background: #E3ECE8; overflow: hidden;
+}
+.jauge i { display: block; height: 100%; border-radius: 999px; transition: width .3s ease; }
+@media (prefers-reduced-motion: reduce) { .jauge i { transition: none; } }
+
   </style>
 </head>
 <body>
@@ -1176,7 +1227,14 @@ const SCREENS = {
     </div>
 
     <div style="display:flex;flex-direction:column;gap:14px">
-      <div class="rowhead"><h2 class="overline">Vaovao farany</h2><button class="link" data-go="casier">Tout le casier</button></div>
+      <!-- « Vaovao farany » était le SEUL titre en malgache de tout
+           l'écran ; la feuille des fonctionnalités, elle, écrit
+           « Dernières actualités ». Le banc de conformité a mis
+           l'écart en évidence, et le club a tranché pour le français.
+           Une version entièrement malgache reste une demande à part :
+           ce n'est pas en gardant un seul mot qu'on l'aurait
+           préparée. -->
+      <div class="rowhead"><h2 class="overline">Dernières actualités</h2><button class="link" data-go="casier">Tout le casier</button></div>
       <button class="card newsrow" data-go="casierDetail">
         <span class="datebox"><b>22</b><i>nov</i></span>
         <span style="flex-grow:1;min-width:0;text-align:left">
