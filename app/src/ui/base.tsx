@@ -6,8 +6,9 @@
    Les classes CSS sont celles de css/app.css, qui est lu tel quel :
    la mise en forme n'est donc pas réécrite, seulement appelée.
    ============================================================ */
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Icone } from './Icone';
 
 /* ---------------------------------------------- Portrait
@@ -192,6 +193,49 @@ export const Filet = () => <div className="hr" />;
    Trois écrans sur quatre lisent une liste depuis le serveur. Les
    trois cas — ça charge, ça a raté, il n'y a rien — reviennent donc
    partout, et méritent une seule écriture. */
+/* ------------------------------------------------------------
+   « RÉESSAYEZ » SANS RIEN À PRESSER.
+
+   Le message disait « vérifiez la connexion, puis réessayez » — et
+   il n'y avait rien pour réessayer. Sur le web, on rafraîchit d'un
+   F5 ; dans l'APK, il n'y a PAS de bouton de rafraîchissement, pas
+   de barre d'adresse, rien. Le seul recours était de tuer
+   l'application et de la rouvrir.
+
+   Sur la ligne d'Antananarivo, une requête qui tombe n'est pas une
+   panne : c'est mardi. Le bouton est donc la moitié qui manquait au
+   message.
+
+   On redemande TOUT plutôt que la seule requête en défaut : quand le
+   réseau revient, il revient pour tout l'écran, et redemander une
+   liste pendant que la suivante reste en erreur donnerait un écran à
+   moitié réparé.
+   ------------------------------------------------------------ */
+function EnErreur() {
+  const client = useQueryClient();
+  const [encours, setEncours] = useState(false);
+
+  return (
+    <Carte style={{ background: '#FFF7F2', borderColor: '#F2D8C6' }}>
+      <p style={{ fontSize: 13.5, lineHeight: '20px', color: '#6B4218' }}>
+        La liste n’a pas pu être chargée. Vérifiez la connexion, puis réessayez.
+      </p>
+      <div style={{ marginTop: 12 }}>
+        <Bouton
+          genre="ghost"
+          desactive={encours}
+          onClick={() => {
+            setEncours(true);
+            void client.refetchQueries().finally(() => setEncours(false));
+          }}
+        >
+          {encours ? 'Nouvel essai…' : 'Réessayer'}
+        </Bouton>
+      </div>
+    </Carte>
+  );
+}
+
 export function Etat({
   chargement,
   erreur,
@@ -213,13 +257,7 @@ export function Etat({
     );
   }
   if (erreur) {
-    return (
-      <Carte style={{ background: '#FFF7F2', borderColor: '#F2D8C6' }}>
-        <p style={{ fontSize: 13.5, lineHeight: '20px', color: '#6B4218' }}>
-          La liste n’a pas pu être chargée. Vérifiez la connexion, puis réessayez.
-        </p>
-      </Carte>
-    );
+    return <EnErreur />;
   }
   if (vide) {
     return (

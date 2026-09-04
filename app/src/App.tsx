@@ -10,7 +10,7 @@
    instant. Sans lui, l'application afficherait la connexion à
    chaque démarrage, avant de sauter à l'accueil.
    ============================================================ */
-import { Suspense, lazy, useEffect } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import {
   HashRouter,
   Navigate,
@@ -114,6 +114,7 @@ const AdminImpression = lazy(() =>
 import { seConnecter } from './services/supabase';
 import { estAdmin, estMaitre, useEcouteSession, useSession } from './services/session';
 import { VERSION, useMiseAJour, versionCourte } from './services/version';
+import { accorderLaBarre } from './services/barreDetat';
 
 /* Un réessai suffit : sur un réseau qui coupe, insister trois fois
    fait attendre une minute pour le même échec. Les données ne
@@ -165,6 +166,85 @@ function RetourAndroid() {
   return null;
 }
 
+/* ------------------------------------------------------------
+   HORS LIGNE, ET LE DIRE.
+
+   Sur la ligne d'Antananarivo, une requête qui tombe n'est pas une
+   panne : c'est mardi. Mais rien ne distinguait « le réseau est
+   coupé » de « l'application est cassée » — chaque écran affichait
+   la même carte orange, et l'on en concluait ce qu'on voulait.
+
+   Dans un navigateur, on a au moins la barre d'adresse et l'onglet
+   pour comprendre. Dans l'APK, il n'y a rien : ni barre, ni bouton
+   de rafraîchissement. Le bandeau est la seule façon de faire la
+   différence.
+
+   « navigator.onLine » ne prouve pas qu'Internet répond — un
+   téléphone connecté à un routeur sans ligne se croit en ligne. Il
+   prouve l'inverse, et c'est ce qui compte : quand il dit NON, il a
+   raison, et c'est le cas qu'on veut nommer.
+   ------------------------------------------------------------ */
+function HorsLigne() {
+  const [enLigne, setEnLigne] = useState(() => navigator.onLine !== false);
+
+  useEffect(() => {
+    const dedans = () => setEnLigne(true);
+    const dehors = () => setEnLigne(false);
+    window.addEventListener('online', dedans);
+    window.addEventListener('offline', dehors);
+    return () => {
+      window.removeEventListener('online', dedans);
+      window.removeEventListener('offline', dehors);
+    };
+  }, []);
+
+  if (enLigne) return null;
+
+  return (
+    <div
+      role="status"
+      style={{
+        background: '#FFF7F2',
+        borderBottom: '1px solid #F2D8C6',
+        color: '#8A3B12',
+        fontSize: 12.5,
+        lineHeight: '17px',
+        padding: '9px 16px',
+        textAlign: 'center'
+      }}
+    >
+      Pas de connexion. Ce qui est déjà affiché reste lisible ; le reste attend le réseau.
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------
+   La barre d'état suit l'écran.
+
+   Depuis Android 15, on ne peut plus peindre la barre d'état : elle
+   laisse voir la page. Des icônes fixées en clair — ce que faisait
+   l'application — sont blanches sur le bandeau vert de l'accueil, et
+   blanches sur la barre de titre BLANCHE de tous les autres écrans,
+   où l'heure et la batterie disparaissent alors.
+
+   On mesure donc la couleur réellement peinte en haut, à chaque
+   navigation, et l'on choisit les icônes en conséquence. Mesurer
+   plutôt que tenir une liste d'écrans sombres : la liste se
+   périmerait au premier écran ajouté.
+   ------------------------------------------------------------ */
+function AccorderLaBarre() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    /* Après le rendu ET après la peinture : la couleur se lit sur ce
+       qui est à l'écran, pas sur ce qui va y être. Deux images
+       d'attente valent mieux qu'une mesure faite sur l'écran
+       précédent. */
+    const t = window.setTimeout(() => void accorderLaBarre(), 60);
+    return () => window.clearTimeout(t);
+  }, [pathname]);
+  return null;
+}
+
 /* Changer d'écran doit ramener en haut. Le navigateur garde sinon
    la position de l'écran précédent, et l'on arrive au milieu d'une
    fiche sans comprendre pourquoi. */
@@ -194,6 +274,8 @@ function Connectee() {
     <div className="phone">
       <RetourAndroid />
       <RemonterEnHaut />
+      <AccorderLaBarre />
+      <HorsLigne />
 
       {/* Le temps d'aller chercher un écran d'encadrement, on ne
           montre rien plutôt qu'un mot qui clignote : le fichier vient

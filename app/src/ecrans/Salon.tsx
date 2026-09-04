@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Icone } from '../ui/Icone';
-import { Bouton, Carte, ChoisirFichier, Entete, Surtitre } from '../ui/base';
+import { Bouton, Carte, ChoisirFichier, Entete, Feuille, Surtitre, Zone } from '../ui/base';
 import { ChoixEmoji } from '../ui/Emoji';
 import { Anneau } from '../ui/Anneau';
 import { Visionneuse } from '../ui/Visionneuse';
@@ -459,6 +459,12 @@ function Conversation({ salonId, sombre }: { salonId: string | undefined; sombre
   /* Le message sur lequel on vient d'appuyer longuement, et le texte
      en cours de correction. « null » = aucun, donc rien d'affiché. */
   const [mien, setMien] = useState<Message | null>(null);
+  /* Le message qu'on signale, et le motif qu'on écrit. Ils
+     remplacent une boîte de dialogue du système : elle n'avait pas
+     la même allure sur le web et dans l'APK, et surtout elle cachait
+     le message qu'on était en train de signaler. */
+  const [aSignaler, setASignaler] = useState<Message | null>(null);
+  const [motif, setMotif] = useState('');
   const [correction, setCorrection] = useState<string | null>(null);
 
   /* Le compteur de non-lus se remet à zéro quand on a vraiment
@@ -478,17 +484,38 @@ function Conversation({ salonId, sombre }: { salonId: string | undefined; sombre
     if (salonId && sombre) journaliser(salonId, 'ouverture de l’espace des maîtres');
   }, [salonId, sombre]);
 
+  /* ⚠ « window.prompt » A DISPARU D'ICI.
+
+     Il ouvrait une boîte de dialogue du SYSTÈME : grise, hors du
+     design du club, et redessinée à sa façon par Capacitor — donc
+     différente sur le web et dans l'APK. Sur le geste de modération
+     d'une application qui compte des mineurs, ce n'est pas le
+     moment de changer d'allure et de donner l'impression d'être
+     sorti de l'application.
+
+     Une boîte du système ne se relit pas non plus : le motif s'y
+     tape à l'aveugle sur une ligne, sans voir le message qu'on
+     signale. La feuille, elle, le montre. */
   function signaler(m: Message) {
     if (!moi) return;
-    const motif = window.prompt(
-      'Signaler ce message à l’administration. Que se passe-t-il ?'
-    );
-    if (!motif?.trim()) return;
+    setASignaler(m);
+    setMotif('');
+  }
+
+  function envoyerLeSignalement() {
+    const m = aSignaler;
+    if (!moi || !m || !motif.trim()) return;
     signalement.mutate(
       { messageId: m.id, auteurId: moi.id, motif: motif.trim() },
       {
-        onSuccess: () => setAvis('Signalement transmis à l’administration.'),
-        onError: () => setAvis('Le signalement n’a pas pu être envoyé.')
+        onSuccess: () => {
+          setASignaler(null);
+          setAvis('Signalement transmis à l’administration.');
+        },
+        onError: () => {
+          setASignaler(null);
+          setAvis('Le signalement n’a pas pu être envoyé.');
+        }
       }
     );
   }
@@ -654,6 +681,52 @@ function Conversation({ salonId, sombre }: { salonId: string | undefined; sombre
           proposé après l'appui long, jamais avant : un bouton
           « corriger » sur chaque bulle encombrerait un fil que l'on
           lit bien plus souvent qu'on ne le corrige. */}
+      {/* ---- SIGNALER, DANS L'APPLICATION ----
+
+          La feuille montre le message signalé pendant qu'on écrit le
+          motif : une boîte du système le cachait, et l'on tapait à
+          l'aveugle. Le club compte des mineurs ; la modération est
+          l'endroit où l'on veut le moins d'hésitation. */}
+      {aSignaler && (
+        <Feuille
+          sur="Ce message"
+          titre="Signaler à l’administration"
+          fermer={() => setASignaler(null)}
+        >
+          <p
+            style={{
+              fontSize: 13,
+              lineHeight: '19px',
+              color: '#3C4A42',
+              background: '#F5F8F6',
+              borderRadius: 12,
+              padding: '10px 12px',
+              margin: '4px 0 14px'
+            }}
+          >
+            « {aSignaler.texte || 'pièce jointe'} »
+          </p>
+          <Zone
+            libelle="Que se passe-t-il ?"
+            valeur={motif}
+            poser={setMotif}
+            lignes={3}
+            aide="Lu par les maîtres. Le message n’est pas effacé par le signalement."
+          />
+          <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+            <Bouton
+              desactive={!motif.trim() || signalement.isPending}
+              onClick={envoyerLeSignalement}
+            >
+              {signalement.isPending ? 'Envoi…' : 'Signaler'}
+            </Bouton>
+            <Bouton genre="ghost" onClick={() => setASignaler(null)}>
+              Annuler
+            </Bouton>
+          </div>
+        </Feuille>
+      )}
+
       {mien && (
         <div
           style={{

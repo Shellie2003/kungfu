@@ -36,6 +36,29 @@ import { Capacitor } from '@capacitor/core';
 
 export const SUR_TELEPHONE = Capacitor.isNativePlatform();
 
+/* ------------------------------------------------------------
+   IMPRIMER : LE WEB SAIT, L'APK NON.
+
+   « window.print() » ouvre l'aperçu d'impression dans un navigateur.
+   Dans l'APK, il ne fait RIEN — et rien veut dire rien : pas de
+   message, pas d'erreur, le doigt tape et l'écran ne bouge pas.
+
+   Ce n'est pas une supposition. La WebView d'Android n'imprime pas
+   d'elle-même : il faut que l'application appelle « PrintManager »
+   et lui donne un adaptateur. On a lu la source Android de
+   Capacitor : elle n'a ni « PrintManager », ni
+   « createPrintDocumentAdapter », nulle part. Le bouton est donc
+   inerte, exactement comme l'était le lien « download » avant qu'on
+   ne le remplace par « enregistrer » — c'est le MÊME défaut, au même
+   endroit, et il faut le traiter deux fois.
+
+   Les écrans qui proposaient d'imprimer proposent donc autre chose
+   sur le téléphone : enregistrer le fichier, puis l'ouvrir. Android
+   sait imprimer depuis sa visionneuse ; c'est le chemin qui existe
+   vraiment.
+   ------------------------------------------------------------ */
+export const SAIT_IMPRIMER = !SUR_TELEPHONE;
+
 /* Ce que l'appelant doit montrer. On ne lance aucun message soi-même :
    l'écran sait où le poser, ce fichier ne le sait pas. */
 export type Resultat =

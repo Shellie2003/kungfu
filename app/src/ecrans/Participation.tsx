@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Icone } from '../ui/Icone';
-import { Bouton, Carte, Entete, Surtitre, Zone } from '../ui/base';
+import { Bouton, Carte, Champ, Entete, Surtitre, Zone } from '../ui/base';
 import { jourEtMois, useActualite } from '../services/casier';
 import { useReglages } from '../services/club';
 import { useSession } from '../services/session';
@@ -40,6 +40,10 @@ export function Participation() {
      premier rendu enverrait cinq mille ariary après qu'on a choisi
      dix mille, et personne ne s'en apercevrait. */
   const [ussdSaisi, setUssdSaisi] = useState<string | null>(null);
+  /* Le champ « autre montant », ouvert à la demande. Il remplace une
+     boîte de dialogue du système, qui n'avait pas la même allure sur
+     le web et dans l'APK. */
+  const [autre, setAutre] = useState(false);
 
   /* Tant qu'on n'a rien touché, on montre ce que la base sait déjà :
      revenir sur l'écran ne doit pas donner l'impression d'être
@@ -232,18 +236,42 @@ export function Participation() {
                   <i>Ar</i>
                 </button>
               ))}
+              {/* ⚠ « window.prompt » A DISPARU D'ICI.
+
+                  Il ouvrait une boîte de dialogue du SYSTÈME : grise,
+                  hors du design du club, et différente sur le web et
+                  dans l'APK — Capacitor la redessine à sa façon. Sur
+                  le chemin de l'argent, c'est le dernier endroit où
+                  l'on veut que l'écran change d'allure.
+
+                  Un champ dans la page fait la même chose, se voit
+                  pendant qu'on tape, et ne dépend d'aucun
+                  comportement de WebView. */}
               <button
-                className="montant montant--libre"
-                onClick={() => {
-                  const saisi = window.prompt('Montant en ariary');
-                  const n = Number(saisi?.replace(/\D/g, ''));
-                  if (n > 0) setMontant(n);
-                }}
+                className={autre ? 'montant montant--libre montant--on' : 'montant montant--libre'}
+                aria-pressed={autre}
+                onClick={() => setAutre((v) => !v)}
               >
                 Autre
                 <i>montant</i>
               </button>
             </div>
+
+            {autre && (
+              <div style={{ marginTop: 12 }}>
+                <Champ
+                  libelle="Montant en ariary"
+                  type="number"
+                  valeur={montant ? String(montant) : ''}
+                  poser={(v) => {
+                    const n = Number(v.replace(/\D/g, ''));
+                    setMontant(n > 0 ? n : null);
+                  }}
+                  invite="7500"
+                  aide="Le code ci-dessous suit ce que vous tapez."
+                />
+              </div>
+            )}
 
             {numeroMvola && montant ? (
               <>

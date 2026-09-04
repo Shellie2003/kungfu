@@ -22,7 +22,7 @@ import { useUrl } from '../services/stockage';
 import { useSession } from '../services/session';
 import { useReglages } from '../services/club';
 import { charger, dessinerCarte, nomFichierCarte } from '../services/carteImage';
-import { enregistrer } from '../services/telechargement';
+import { SAIT_IMPRIMER, enregistrer } from '../services/telechargement';
 
 export function CarteMembre() {
   const aller = useNavigate();
@@ -259,18 +259,50 @@ export function CarteMembre() {
             <Icone nom="chev" taille={17} couleur="#A8B6AE" epaisseur={2} />
           </button>
 
-          <button className="listrow" onClick={() => window.print()}>
-            <Tuile icone="edit" petite />
-            <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
-              <b style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>
-                Imprimer la carte
-              </b>
-              <span style={{ display: 'block', fontSize: 12, color: '#59685F', marginTop: 1 }}>
-                Format carte bancaire
+          {/* ⚠ IMPRIMER : LE WEB SAIT, L'APK NON.
+
+              « window.print() » ouvre l'aperçu d'impression dans un
+              navigateur. Dans l'APK il ne fait RIEN — la WebView
+              d'Android n'imprime pas d'elle-même, il faut que
+              l'application appelle « PrintManager », et la source
+              Android de Capacitor n'en contient aucune trace. Le
+              bouton était donc inerte sur le téléphone : le doigt
+              tape, l'écran ne bouge pas.
+
+              C'est le MÊME défaut que le lien « download » de la
+              messagerie, au même endroit du même moteur, et il fallait
+              le traiter deux fois.
+
+              Sur le téléphone, le chemin qui EXISTE est celui du
+              dessus : on enregistre l'image, et Android imprime
+              depuis sa visionneuse. La ligne le dit au lieu de
+              disparaître — sans quoi on chercherait où imprimer. */}
+          {SAIT_IMPRIMER ? (
+            <button className="listrow" onClick={() => window.print()}>
+              <Tuile icone="edit" petite />
+              <span style={{ flexGrow: 1, minWidth: 0, textAlign: 'left' }}>
+                <b style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>
+                  Imprimer la carte
+                </b>
+                <span style={{ display: 'block', fontSize: 12, color: '#59685F', marginTop: 1 }}>
+                  Format carte bancaire
+                </span>
               </span>
-            </span>
-            <Icone nom="chev" taille={17} couleur="#A8B6AE" epaisseur={2} />
-          </button>
+              <Icone nom="chev" taille={17} couleur="#A8B6AE" epaisseur={2} />
+            </button>
+          ) : (
+            <div className="listrow">
+              <Tuile icone="edit" petite fond="#F1F6F3" couleur="#7C8B82" />
+              <span style={{ flexGrow: 1, minWidth: 0 }}>
+                <b style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>
+                  Imprimer la carte
+                </b>
+                <span style={{ display: 'block', fontSize: 12, color: '#59685F', marginTop: 1 }}>
+                  Enregistrez-la ci-dessus, puis imprimez depuis la galerie du téléphone.
+                </span>
+              </span>
+            </div>
+          )}
         </div>
 
         {avis && <Avis bon={avis.bon}>{avis.texte}</Avis>}

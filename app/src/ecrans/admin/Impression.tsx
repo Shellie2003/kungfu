@@ -24,6 +24,7 @@ import { useGrades, useMembres } from '../../services/membres';
 import type { Membre } from '../../services/membres';
 import { useUrls } from '../../services/stockage';
 import { useReglages } from '../../services/club';
+import { SAIT_IMPRIMER } from '../../services/telechargement';
 
 /* Dix par page : deux colonnes de cinq, comme la maquette. */
 const PAR_PAGE = 10;
@@ -205,9 +206,34 @@ export function AdminImpression() {
             )}
           </div>
 
-          <Bouton onClick={() => window.print()} desactive={liste.length === 0}>
-            Imprimer ou enregistrer en PDF
-          </Bouton>
+          {/* ⚠ CET ÉCRAN NE S'IMPRIME PAS DEPUIS LE TÉLÉPHONE.
+
+              « window.print() » ouvre l'aperçu d'impression dans un
+              navigateur ; dans l'APK il ne fait rien. La WebView
+              d'Android n'imprime pas d'elle-même — il faut que
+              l'application appelle « PrintManager », et la source
+              Android de Capacitor n'en contient aucune trace. Le
+              bouton était donc inerte sur le téléphone, sur l'écran
+              dont l'impression EST tout l'objet.
+
+              On ne le remplace pas par un pis-aller : une planche A4
+              avec traits de coupe s'imprime sur une imprimante, donc
+              depuis un ordinateur. L'écran le DIT, avec l'adresse à
+              ouvrir — c'est plus utile qu'un bouton qui ment. */}
+          {SAIT_IMPRIMER ? (
+            <Bouton onClick={() => window.print()} desactive={liste.length === 0}>
+              Imprimer ou enregistrer en PDF
+            </Bouton>
+          ) : (
+            <div className="warn">
+              <i />
+              <p>
+                L’impression se fait depuis un <b>ordinateur</b> : ouvrez la version web du
+                club et revenez sur cet écran. Une planche A4 avec traits de coupe demande
+                une imprimante, et le téléphone n’en pilote aucune.
+              </p>
+            </div>
+          )}
         </div>
 
         <Etat

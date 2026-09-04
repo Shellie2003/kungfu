@@ -193,6 +193,20 @@ jobs:
       - name: Faire tourner le carrousel
         run: node outils/verifier-carrousel.mjs
 
+      # L'APPLICATION TELLE QU'ELLE EST DANS L'APK.
+      #
+      # Tous les autres bancs l'ouvrent dans un navigateur, et elle le
+      # SAIT : « isNativePlatform » rend faux, et tout le code réservé
+      # au téléphone n'est jamais exécuté. On vérifiait donc la moitié
+      # web d'une application qui se livre en APK.
+      #
+      # Celui-ci pose « window.androidBridge » avant le chargement —
+      # c'est à cela, et à rien d'autre, que Capacitor reconnaît
+      # Android. Il a trouvé deux boutons inertes : « window.print() »
+      # ne fait rien dans une WebView, faute de PrintManager.
+      - name: L’application en mode téléphone
+        run: node outils/verifier-apk.mjs
+
       # Ce que la comparaison à la maquette ne voit PAS.
       #
       # Elle mesure des pixels et de la géométrie. Elle ne dit rien
