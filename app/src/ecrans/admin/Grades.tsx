@@ -165,24 +165,21 @@ export function AdminGrades() {
             <div className="list">
               {(grades ?? []).map((g) => (
                 <div key={g.id} className="listrow" style={{ opacity: g.actif ? 1 : 0.55 }}>
-                  <button
-                    aria-label={`Modifier ${g.nom}`}
-                    style={{
-                      flexGrow: 1,
-                      minWidth: 0,
-                      textAlign: 'left',
-                      border: 0,
-                      background: 'transparent',
-                      padding: 0,
-                      font: 'inherit',
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => {
-                      setEdite(g.id);
-                      setS({ nom: g.nom, couleur: g.couleur, rang: g.rang });
-                      setAvis(null);
-                    }}
-                  >
+                  {/* ---- « MODIFIER » S'ÉCRIT, IL NE SE DEVINE PAS ----
+
+                      La rangée était DÉJÀ un bouton, et l'appuyer
+                      remplissait le formulaire du haut. Rien ne le
+                      disait : ni chevron, ni libellé, rien qu'un
+                      « aria-label » — c'est-à-dire une indication
+                      réservée aux lecteurs d'écran, invisible à qui
+                      regarde. À côté d'un « Retirer » bien visible,
+                      la liste se lisait donc comme une liste où l'on
+                      ne peut que supprimer.
+
+                      Le mot est maintenant écrit. C'est la différence
+                      entre une fonctionnalité qui existe et une
+                      fonctionnalité qu'on trouve. */}
+                  <span style={{ flexGrow: 1, minWidth: 0 }}>
                     <Grade nom={g.nom} couleur={g.couleur} />
                     <span
                       style={{ display: 'block', fontSize: 12, color: '#59685F', marginTop: 6 }}
@@ -190,9 +187,36 @@ export function AdminGrades() {
                       Rang {g.rang}
                       {g.actif === false ? ' · retiré des listes' : ''}
                     </span>
+                  </span>
+                  <button
+                    className="link"
+                    aria-label={`Modifier ${g.nom}`}
+                    onClick={() => {
+                      setEdite(g.id);
+                      setS({ nom: g.nom, couleur: g.couleur, rang: g.rang });
+                      setAvis(null);
+                      /* ⚠ ET ON REMONTE AU FORMULAIRE.
+
+                         Il est en haut de l'écran ; la ceinture noire
+                         est en bas. On appuyait sur « modifier », le
+                         formulaire se remplissait hors du champ de
+                         vision, et il ne se passait RIEN de visible —
+                         ce qui se lit comme un bouton cassé. */
+                      document
+                        .querySelector('.phone')
+                        ?.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  >
+                    Modifier
                   </button>
                   <button
                     className="link"
+                    style={{ color: g.actif === false ? undefined : '#8A3B12' }}
+                    aria-label={
+                      g.actif === false
+                        ? `Remettre ${g.nom} dans les listes`
+                        : `Retirer ${g.nom} des listes`
+                    }
                     onClick={() => activer.mutate({ id: g.id, actif: g.actif === false })}
                   >
                     {g.actif === false ? 'Remettre' : 'Retirer'}

@@ -146,7 +146,12 @@ describe('l’écran de gestion écrit vraiment', () => {
     });
     rendre(<AdminCategories />, { route: '/admin/categories', profil: PROFIL_ADMIN });
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Retirer' }));
+    /* Le libellé porte le NOM de la catégorie : avec dix rangées,
+       dix boutons « Retirer » ne se distinguent pas les uns des
+       autres pour un lecteur d'écran. */
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Retirer Stage des listes' })
+    );
 
     const envoi = await waitFor(() => {
       const r = derniere('categories', 'PATCH');

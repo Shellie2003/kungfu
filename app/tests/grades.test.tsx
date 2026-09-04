@@ -77,6 +77,26 @@ describe('créer un grade', () => {
 });
 
 describe('modifier un grade', () => {
+  test('« Modifier » est ÉCRIT, il ne se devine pas', async () => {
+    /* LE DÉFAUT QUE CE TEST VERROUILLE.
+
+       La rangée était déjà un bouton : l'appuyer chargeait le grade
+       dans le formulaire du haut. Mais rien ne le disait — ni
+       chevron, ni libellé, rien qu'un « aria-label », c'est-à-dire
+       une indication réservée aux lecteurs d'écran et invisible à
+       qui regarde. À côté d'un « Retirer » bien visible, la liste se
+       lisait comme une liste où l'on ne peut que supprimer.
+
+       « Les grades sont modifiables » et « on trouve comment les
+       modifier » sont deux choses différentes, et seule la seconde
+       compte pour le club. */
+    poser({ grades: GRADES });
+    rendre(<AdminGrades />, { route: '/admin/grades/liste' });
+
+    await screen.findByText('Ceinture verte');
+    expect(screen.getAllByText('Modifier').length).toBe(GRADES.length);
+  });
+
   test('un appui charge le grade dans le formulaire', async () => {
     poser({ grades: GRADES });
     rendre(<AdminGrades />, { route: '/admin/grades/liste' });

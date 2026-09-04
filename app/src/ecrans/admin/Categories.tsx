@@ -213,29 +213,12 @@ export function AdminCategories() {
                 <div className="list">
                   {liste.map((c) => (
                     <div key={c.id} className="listrow" style={{ opacity: c.actif ? 1 : 0.55 }}>
-                      <button
-                        aria-label={`Modifier ${c.nom}`}
-                        style={{
-                          flexGrow: 1,
-                          minWidth: 0,
-                          textAlign: 'left',
-                          border: 0,
-                          background: 'transparent',
-                          padding: 0,
-                          font: 'inherit',
-                          cursor: 'pointer'
-                        }}
-                        onClick={() => {
-                          setEdite(c.id);
-                          setS({
-                            genre: c.genre,
-                            nom: c.nom,
-                            couleur: c.couleur,
-                            rang: c.rang
-                          });
-                          setAvis(null);
-                        }}
-                      >
+                      {/* « Modifier » s'écrit, il ne se devine pas :
+                          la rangée était déjà un bouton, et seul un
+                          « aria-label » le disait — c'est-à-dire
+                          rien, pour qui regarde. Même correction que
+                          sur les grades, et pour la même raison. */}
+                      <span style={{ flexGrow: 1, minWidth: 0 }}>
                         <span
                           className="tag"
                           style={{ color: c.couleur, background: eclaircir(c.couleur) }}
@@ -253,9 +236,37 @@ export function AdminCategories() {
                           Rang {c.rang}
                           {c.actif === false ? ' · retirée des listes' : ''}
                         </span>
+                      </span>
+                      <button
+                        className="link"
+                        aria-label={`Modifier ${c.nom}`}
+                        onClick={() => {
+                          setEdite(c.id);
+                          setS({
+                            genre: c.genre,
+                            nom: c.nom,
+                            couleur: c.couleur,
+                            rang: c.rang
+                          });
+                          setAvis(null);
+                          /* Le formulaire est en haut ; la dernière
+                             catégorie est en bas. Sans ce retour, on
+                             appuyait et rien ne bougeait à l'écran. */
+                          document
+                            .querySelector('.phone')
+                            ?.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                      >
+                        Modifier
                       </button>
                       <button
                         className="link"
+                        style={{ color: c.actif === false ? undefined : '#8A3B12' }}
+                        aria-label={
+                          c.actif === false
+                            ? `Remettre ${c.nom} dans les listes`
+                            : `Retirer ${c.nom} des listes`
+                        }
                         onClick={() => activer.mutate({ id: c.id, actif: c.actif === false })}
                       >
                         {c.actif === false ? 'Remettre' : 'Retirer'}
