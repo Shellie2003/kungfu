@@ -310,10 +310,12 @@ compte pour un club à Antananarivo, et ce qui évite qu'elle change d'aspect d'
 | `build.js` | Assemble un fichier unique dans `dist/`, à envoyer par courriel |
 | `vercel.json` | Configuration d'hébergement, site statique sans étape de build |
 | `ARCHITECTURE.md` | **Le topo de démarrage** : choix technologique, étapes, coûts |
+| `PASSATION.md` | **Remettre l'application au club**, et la maintenir ensuite |
+| `supabase/tests/passation.sql` | À coller dans l'éditeur SQL : la base du club est-elle bien montée ? |
 | `supabase/` | Les migrations et le test de sécurité, exécutés sur un vrai PostgreSQL |
 | `TESTER.md` | **Comment tester** : navigateur, APK, tests |
 | `app/tests/` | 126 tests, unitaires et d'intégration, avec un serveur simulé |
-| `supabase/functions/` | La fonction « comptes », qui détient la clé de service |
+| `supabase/functions/` | « comptes », qui détient la clé de service, et « fondation » |
 | `icones.mjs` | **Le trait des icônes**, lu par la maquette ET par l'application |
 | `app/` | **L'application** : Vite + React + Tailwind + Capacitor |
 | `app/signature/` | La clé de signature de développement, et pourquoi elle est versionnée |

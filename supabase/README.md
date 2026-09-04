@@ -23,13 +23,22 @@ supabase link --project-ref <ref-du-projet>
 supabase db push
 ```
 
-Les migrations ne créent **aucun** compte et **aucune** donnée. Le premier compte
-administrateur se crée à la main dans le tableau de bord, puis :
+Les migrations ne créent **aucun** compte et **aucune** donnée.
 
-```sql
-insert into profils (id, numero, nom, prenom, role)
-values ('<uuid du compte>', 'WA-0001', 'NOM', 'Prénom', 'admin');
-```
+Le premier compte se crée **depuis l'application**, par l'écran « Créer le compte du
+club » qui n'apparaît que tant qu'aucun super administrateur n'existe. Voir
+`functions/fondation/LISEZ-MOI.md`, et **PASSATION.md** à la racine pour la marche à
+suivre complète.
+
+> ⚠️ **Cette section disait autre chose, et c'était faux.** Elle proposait de créer le
+> compte à la main dans le tableau de bord, puis :
+> `insert into profils (id, numero, …) values ('<uuid du compte>', 'WA-0001', …)`.
+>
+> Deux erreurs, dont une silencieuse. L'identifiant du compte de connexion se pose dans
+> **`compte_id`**, jamais dans `id` — qui est la clé de la fiche. Suivre cette
+> instruction créait donc une fiche sans compte rattaché : le membre existait à
+> l'annuaire et **ne pouvait pas se connecter**, sans qu'aucun message ne le dise. Le
+> format du matricule était faux par-dessus le marché (`F04x001`, pas `WA-0001`).
 
 ## Rejouer le test
 
