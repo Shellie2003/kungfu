@@ -460,7 +460,13 @@ describe('comptes et accès', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Créer le compte' }));
     const avis = await screen.findByRole('status');
     expect(avis).toHaveTextContent('Xk7mNp2qRs4T');
-    expect(avis).toHaveTextContent('il ne sera plus affiché');
+    /* La MÊME phrase que sur l'écran d'inscription : le mot de passe
+       y était noyé dans un avis d'une ligne, il a maintenant son
+       panneau, et les deux écrans qui montrent un mot de passe engendré
+       disent désormais la même chose de la même façon. */
+    expect(avis).toHaveTextContent('il ne s’affichera plus');
+    /* Et le matricule AVEC, puisque c'est ce couple qu'on transmet. */
+    expect(avis).toHaveTextContent('F04x042');
   });
 
   test('une fiche avec compte propose de réinitialiser, pas de créer', async () => {

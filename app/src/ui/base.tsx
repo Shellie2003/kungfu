@@ -6,7 +6,7 @@
    Les classes CSS sont celles de css/app.css, qui est lu tel quel :
    la mise en forme n'est donc pas réécrite, seulement appelée.
    ============================================================ */
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Icone } from './Icone';
@@ -105,14 +105,20 @@ export const Carte = ({
   children,
   pad = 18,
   style,
-  className = ''
+  className = '',
+  /* Une carte qui APPARAÎT après une action doit pouvoir s'annoncer
+     — « role=status » pour un résultat attendu, « alert » pour un
+     ennui. Sans cela, ce qui surgit au bas d'un long formulaire
+     n'existe que pour qui a les yeux dessus. */
+  role
 }: {
   children: ReactNode;
   pad?: number;
   style?: CSSProperties;
   className?: string;
+  role?: 'status' | 'alert';
 }) => (
-  <div className={`card ${className}`.trim()} style={{ padding: pad, ...style }}>
+  <div className={`card ${className}`.trim()} style={{ padding: pad, ...style }} role={role}>
     {children}
   </div>
 );
@@ -411,6 +417,106 @@ export function Choix<T extends string>({
       </span>
       {aide && <span className="aide">{aide}</span>}
     </label>
+  );
+}
+
+/* ============================================================
+   COPIER — pour ce qui doit être transmis exactement.
+
+   ------------------------------------------------------------
+   POURQUOI CELA MANQUAIT, ET CE QUE CELA COÛTAIT
+
+   Le mot de passe d'un membre est engendré par le serveur, montré
+   UNE FOIS, et stocké en clair nulle part — ni ici, ni en base. Il
+   fallait le lire à l'écran d'un téléphone et le retaper dans un
+   message : douze caractères tirés au sort, dans un alphabet choisi
+   justement pour qu'on puisse les DICTER sans se tromper.
+
+   Dicter, oui. Recopier douze caractères à la main, non : c'est
+   l'endroit de toute l'application où une faute de frappe ne se
+   rattrape pas en réessayant — le mot de passe ne repasse plus, et
+   il faut le réinitialiser, donc rappeler le membre.
+
+   ------------------------------------------------------------
+   POURQUOI PAS LE GREFFON @capacitor/clipboard
+
+   Parce qu'il n'est pas nécessaire, et qu'un greffon de plus est du
+   poids que les soixante-quatre membres téléchargent. La
+   configuration pose « androidScheme: 'https' » : la page de l'APK
+   est donc servie depuis « https://localhost », un contexte
+   SÉCURISÉ, où « navigator.clipboard » est disponible. ÉCRIRE dans
+   le presse-papier n'y demande aucune permission — seul LIRE en
+   demande une, et c'est bien pour cela que le WebChromeClient de
+   Capacitor, qui ne sait gérer que la caméra et l'audio, ne nous
+   gêne pas ici.
+
+   Le repli existe quand même, parce que « navigator.clipboard »
+   manque dans certaines WebView anciennes, et qu'il échouerait alors
+   en silence — le bouton dirait « Copié » sans rien avoir copié.
+   ============================================================ */
+async function versLePressePapier(texte: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(texte);
+      return true;
+    }
+  } catch {
+    /* Refusé ou indisponible : on tente l'ancienne méthode. */
+  }
+
+  /* Le repli : une zone de texte hors de l'écran, sélectionnée puis
+     copiée. « execCommand » est déclarée obsolète, et c'est
+     précisément pourquoi elle est en second — mais elle marche là où
+     la moderne manque, et c'est tout ce qu'on lui demande. */
+  try {
+    const zone = document.createElement('textarea');
+    zone.value = texte;
+    zone.setAttribute('readonly', '');
+    zone.style.position = 'fixed';
+    zone.style.opacity = '0';
+    zone.style.pointerEvents = 'none';
+    document.body.appendChild(zone);
+    zone.select();
+    const fait = document.execCommand('copy');
+    document.body.removeChild(zone);
+    return fait;
+  } catch {
+    return false;
+  }
+}
+
+export function Copier({
+  texte,
+  libelle = 'Copier',
+  nom
+}: {
+  texte: string;
+  libelle?: string;
+  /* Ce que le bouton s'appelle pour un lecteur d'écran. « Copier »
+     tout court ne dit pas COPIER QUOI, et il y en a deux sur le même
+     écran des comptes. */
+  nom?: string;
+}) {
+  const [etat, setEtat] = useState<'prêt' | 'fait' | 'raté'>('prêt');
+
+  /* Le message revient à « Copier » au bout de deux secondes. Le
+     minuteur est nettoyé : sans cela, poser l'état sur un composant
+     démonté avertit dans la console à chaque inscription. */
+  useEffect(() => {
+    if (etat === 'prêt') return;
+    const t = setTimeout(() => setEtat('prêt'), 2000);
+    return () => clearTimeout(t);
+  }, [etat]);
+
+  return (
+    <button
+      type="button"
+      className="btn btn--ghost"
+      aria-label={nom ?? libelle}
+      onClick={async () => setEtat((await versLePressePapier(texte)) ? 'fait' : 'raté')}
+    >
+      {etat === 'fait' ? 'Copié' : etat === 'raté' ? 'Copie impossible' : libelle}
+    </button>
   );
 }
 

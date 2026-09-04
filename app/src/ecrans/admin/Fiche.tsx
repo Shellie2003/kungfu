@@ -19,6 +19,7 @@ import {
   Carte,
   Champ,
   Choix,
+  Copier,
   Entete,
   Filet,
   Portrait,
@@ -384,7 +385,16 @@ export function AdminFiche() {
             ni en base, ni dans un journal. Il ne repassera donc pas,
             et l'écran le dit avant qu'on quitte la page. */}
         {acces && (
-          <Carte pad={16} style={{ background: '#E8F1EC', borderColor: '#B9D3C4' }}>
+          /* « role=status » : le panneau apparaît au bas d'un long
+             formulaire qui vient de se vider sous les doigts. Sans
+             annonce, quelqu'un qui n'a pas les yeux dessus ne sait
+             pas que le mot de passe est là — et il ne repassera
+             pas. */
+          <Carte
+            pad={16}
+            style={{ background: '#E8F1EC', borderColor: '#B9D3C4' }}
+            role="status"
+          >
             <p style={{ fontSize: 14, fontWeight: 700 }}>Membre inscrit</p>
             <div className="deflist" style={{ marginTop: 12 }}>
               <div>
@@ -408,11 +418,32 @@ export function AdminFiche() {
             </div>
 
             {acces.motDePasse ? (
-              <p style={{ fontSize: 12.5, lineHeight: '18px', color: '#3C4A42', marginTop: 12 }}>
-                Notez-le et remettez-le au membre <b>maintenant</b> : il ne s’affichera plus.
-                Personne ne peut le retrouver, pas même en base — il s’y trouve chiffré. En cas
-                d’oubli, l’administration en engendre un nouveau depuis « Comptes et accès ».
-              </p>
+              <>
+                {/* LES DEUX ENSEMBLE, ET PRÊTS À ENVOYER.
+
+                    Recopier douze caractères tirés au sort dans un
+                    message est le seul geste de l'application où une
+                    faute de frappe ne se rattrape pas : le mot de
+                    passe ne repasse plus, il faut le réinitialiser et
+                    rappeler le membre. On copie donc les deux lignes
+                    telles qu'on les enverra. */}
+                <div style={{ marginTop: 12 }}>
+                  <Copier
+                    nom={`Copier les identifiants de ${acces.numero}`}
+                    libelle="Copier les identifiants"
+                    texte={
+                      `Kung-fu Waishi Analamahitsy\n` +
+                      `Matricule : ${acces.numero}\n` +
+                      `Mot de passe : ${acces.motDePasse}`
+                    }
+                  />
+                </div>
+                <p style={{ fontSize: 12.5, lineHeight: '18px', color: '#3C4A42', marginTop: 12 }}>
+                  Notez-le et remettez-le au membre <b>maintenant</b> : il ne s’affichera plus.
+                  Personne ne peut le retrouver, pas même en base — il s’y trouve chiffré. En cas
+                  d’oubli, l’administration en engendre un nouveau depuis « Comptes et accès ».
+                </p>
+              </>
             ) : (
               <p style={{ fontSize: 12.5, lineHeight: '18px', color: '#8A3B12', marginTop: 12 }}>
                 <b>La fiche est créée, mais le compte de connexion n’a pas pu l’être</b>

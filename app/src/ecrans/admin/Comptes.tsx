@@ -14,7 +14,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icone } from '../../ui/Icone';
-import { Avis, Bouton, Carte, Entete, Etat, Surtitre, Tuile } from '../../ui/base';
+import { Avis, Bouton, Carte, Copier, Entete, Etat, Surtitre, Tuile } from '../../ui/base';
 import {
   useChangerRole, useComptes, useCreerCompte, useReinitialiser,
   useSupprimerMembre, useSuspendre
@@ -65,18 +65,38 @@ export function AdminComptes() {
 
   const sansCompte = liste.filter((c) => !c.compte_id).length;
 
-  function traiter(promesse: Promise<{ ok: boolean; message?: string; motDePasse?: string }>) {
+  /* ---- LES IDENTIFIANTS ENGENDRÉS, À PART DE L'AVIS ----
+
+     Ils étaient noyés dans une phrase : « Mot de passe : Kf7mQ2pXwR4t
+     — notez-le maintenant ». Il fallait donc les recopier à la main
+     dans un message, douze caractères tirés au sort. C'est le seul
+     geste de l'application où une faute de frappe ne se rattrape
+     pas : le mot de passe ne repasse plus, il faut le réinitialiser
+     et rappeler le membre.
+
+     On garde donc le matricule AVEC, puisque c'est ce couple qu'on
+     envoie, et l'on met un bouton dessus. */
+  const [identifiants, setIdentifiants] = useState<{
+    numero: string;
+    motDePasse: string;
+  } | null>(null);
+
+  function traiter(
+    promesse: Promise<{ ok: boolean; message?: string; motDePasse?: string }>,
+    numero: string
+  ) {
+    setIdentifiants(null);
     promesse.then((r) => {
       if (!r.ok) {
         setAvis({ bon: false, texte: r.message ?? 'Le serveur a refusé.' });
         return;
       }
-      setAvis({
-        bon: true,
-        texte: r.motDePasse
-          ? `Mot de passe : ${r.motDePasse} — notez-le maintenant, il ne sera plus affiché.`
-          : 'C’est fait.'
-      });
+      if (r.motDePasse) {
+        setAvis(null);
+        setIdentifiants({ numero, motDePasse: r.motDePasse });
+        return;
+      }
+      setAvis({ bon: true, texte: 'C’est fait.' });
     });
   }
 
@@ -107,6 +127,45 @@ export function AdminComptes() {
         }}
       >
         {avis && <Avis bon={avis.bon}>{avis.texte}</Avis>}
+
+        {/* Le mot de passe engendré, montré UNE FOIS et copiable.
+            « role=status » parce qu'il apparaît en haut d'une liste
+            alors qu'on vient d'appuyer plus bas : sans annonce, on ne
+            sait pas qu'il est là. */}
+        {identifiants && (
+          <Carte
+            pad={16}
+            role="status"
+            style={{ background: '#E8F1EC', borderColor: '#B9D3C4' }}
+          >
+            <p style={{ fontSize: 14, fontWeight: 700 }}>Identifiants de {identifiants.numero}</p>
+            <p
+              style={{
+                marginTop: 10,
+                fontFamily: 'monospace',
+                fontSize: 16,
+                fontWeight: 700
+              }}
+            >
+              {identifiants.motDePasse}
+            </p>
+            <div style={{ marginTop: 12 }}>
+              <Copier
+                nom={`Copier les identifiants de ${identifiants.numero}`}
+                libelle="Copier les identifiants"
+                texte={
+                  `Kung-fu Waishi Analamahitsy\n` +
+                  `Matricule : ${identifiants.numero}\n` +
+                  `Mot de passe : ${identifiants.motDePasse}`
+                }
+              />
+            </div>
+            <p style={{ fontSize: 12.5, lineHeight: '18px', color: '#3C4A42', marginTop: 12 }}>
+              Notez-le et remettez-le au membre <b>maintenant</b> : il ne s’affichera plus.
+              Personne ne peut le retrouver, pas même en base — il s’y trouve chiffré.
+            </p>
+          </Carte>
+        )}
 
         {/* Le fait marquant, dit d'entrée : tous les élèves n'ont pas
             de téléphone. Une fiche sans compte est le cas ordinaire,
@@ -227,7 +286,8 @@ export function AdminComptes() {
                       traiter(
                         c.compte_id
                           ? reinitialiser.mutateAsync({ profilId: c.id })
-                          : creer.mutateAsync({ profilId: c.id })
+                          : creer.mutateAsync({ profilId: c.id }),
+                        c.numero
                       )
                     }
                   >
@@ -252,7 +312,8 @@ export function AdminComptes() {
                           disabled={suspendre.isPending}
                           onClick={() =>
                             traiter(
-                              suspendre.mutateAsync({ profilId: c.id, suspendu: c.actif })
+                              suspendre.mutateAsync({ profilId: c.id, suspendu: c.actif }),
+                              c.numero
                             )
                           }
                         >
