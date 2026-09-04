@@ -101,6 +101,9 @@ const AdminGrades = lazy(() =>
 const AdminSalons = lazy(() =>
   import('./ecrans/admin/Salons').then((m) => ({ default: m.AdminSalons }))
 );
+const AdminOccupation = lazy(() =>
+  import('./ecrans/admin/Occupation').then((m) => ({ default: m.AdminOccupation }))
+);
 const AdminJournal = lazy(() =>
   import('./ecrans/admin/Journal').then((m) => ({ default: m.AdminJournal }))
 );
@@ -257,6 +260,9 @@ function Connectee() {
         )}
         {estAdmin(profil) && <Route path="/admin/salons" element={<AdminSalons />} />}
         {estAdmin(profil) && <Route path="/admin/journal" element={<AdminJournal />} />}
+        {estAdmin(profil) && (
+          <Route path="/admin/occupation" element={<AdminOccupation />} />
+        )}
         {estAdmin(profil) && <Route path="/admin/impression" element={<AdminImpression />} />}
         {estAdmin(profil) && (
           <Route path="/admin/a-valider" element={<AdminAValider />} />

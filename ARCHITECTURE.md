@@ -351,6 +351,54 @@ Pas sur votre base locale. C'est là que se découvrent les écarts.
 parce que personne n'a écrit pendant une semaine de vacances scolaires est inutilisable.
 Comptez les 25 dollars par mois dès la mise en service, ou dites-le clairement au club.
 
+En attendant, `.github/workflows/reveil.yml` interroge la base une fois par jour et
+l'empêche de s'endormir. Cinq secondes par jour, gratuites. Ce n'est pas un substitut à
+l'abonnement — la pause n'est qu'un des quatre paliers — mais c'est le seul des quatre qui
+se contourne sans payer.
+
+### 12 bis. Ce qui se remplit, et quand — mesuré
+
+La question a été posée en ces termes : « tôt ou tard la base sera saturée, alors on crée
+quatre comptes et on bascule sur le suivant quand le précédent est plein ». La mesure dit
+que ce serait résoudre le mauvais problème.
+
+Relevé sur le projet d'essai, qui porte le même schéma :
+
+| Poste | Occupé | Palier gratuit | Quand ce sera plein |
+|---|---|---|---|
+| Mise en veille | — | 7 jours sans requête | **Le premier mois creux** |
+| Trafic sortant | non mesurable depuis la base | 5 Go / mois | Un mois où tout le club parcourt l'album |
+| Photos et pièces jointes | 6,9 Mo | 1 Go | ~6 ans à 300 photos/an compressées |
+| Base de données | 13 Mo, dont **1,26 Mo** de tables du club | 500 Mo | **~30 ans** |
+
+Les vingt tables du club pèsent 1,26 Mo, dont l'essentiel est de la place réservée par
+Postgres et non des données. Pour soixante-quatre membres — une conversation active, quatre
+séances par semaine pointées, une cinquantaine de publications par an — la croissance est de
+l'ordre de **quinze mégaoctets par an**. La base est la dernière chose qui se remplira.
+
+**Pourquoi on ne partitionne pas entre plusieurs projets.** On ne joint pas deux bases :
+un membre dans l'un et ses messages dans l'autre, et l'annuaire, la fiche de présence et la
+messagerie cessent de fonctionner. L'authentification est par projet, donc il faudrait
+demander à la connexion « vous êtes dans lequel ». Les cinquante-quatre règles d'accès
+seraient à tenir en quatre exemplaires, à la main, et la première divergence est un trou de
+sécurité que personne ne verra. Les migrations seraient à appliquer quatre fois, dans
+l'ordre. Enfin, multiplier les projets gratuits pour contourner un quota est contraire aux
+conditions d'usage de Supabase : le risque n'est pas un avertissement, c'est la disparition
+des données du club.
+
+Le seul partitionnement qui aurait du sens : **un projet par club**, le jour où
+l'application servirait à plusieurs clubs. Jamais « quand le précédent est plein ».
+
+**Ce qui a été fait à la place.** L'écran d'administration « Place et rangement » montre les
+jauges et compte les lignes ; les fonctions `occupation()`, `a_ranger()` et `ranger()` de la
+migration 0023 les servent. Le rangement dit ce qu'il emporte avant de l'emporter, et les
+pièces jointes des messages effacés partent avec eux — sans quoi les fichiers resteraient
+dans le seau, et le rangement aggraverait le problème qu'il prétend résoudre. Ne s'effacent
+jamais au temps qui passe : les fiches, les actualités, les albums, et les présences.
+
+**Le jour où le club dépassera vraiment.** Supabase, c'est du Postgres : `pg_dump` puis
+`pg_restore` suffisent à déménager, vers le palier payant ou ailleurs. Rien à réécrire.
+
 ---
 
 ## 13. À trancher avant l'étape 1

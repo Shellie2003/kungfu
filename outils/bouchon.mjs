@@ -224,6 +224,32 @@ export const REPONSES = {
     }
   ],
   membres_salon: [],
+  /* ---- La place occupée, et ce qu'on peut ranger ----
+
+     Des chiffres VRAIS, relevés sur le projet d'essai : la base
+     entière fait treize mégaoctets, dont un et quart de tables du
+     club. C'est ce qui rend la jauge lisible sur une capture — des
+     zéros ne montreraient rien, et des chiffres ronds inventés
+     laisseraient croire que la mesure est décorative. */
+  'rpc/occupation': [
+    { quoi: 'base', octets: 13257875, lignes: null },
+    { quoi: 'tables', octets: 1294336, lignes: null },
+    { quoi: 'seau:album', octets: 3141606, lignes: 10 },
+    { quoi: 'seau:pieces', octets: 4144355, lignes: 7 },
+    { quoi: 'lignes:messages', octets: null, lignes: 15 },
+    { quoi: 'lignes:presences', octets: null, lignes: 1 },
+    { quoi: 'lignes:notifications', octets: null, lignes: 10 },
+    { quoi: 'lignes:journal', octets: null, lignes: 22 }
+  ],
+  'rpc/a_ranger': [
+    { quoi: 'journal', lignes: 8 },
+    { quoi: 'notifications', lignes: 3 },
+    { quoi: 'messages', lignes: 0 }
+  ],
+  'rpc/ranger': [
+    { quoi: 'journal', lignes: 8, chemins: null },
+    { quoi: 'notifications', lignes: 3, chemins: null }
+  ],
   signalements: [
     {
       id: 'sg1',

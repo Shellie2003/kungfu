@@ -1,0 +1,96 @@
+# ============================================================
+# EMPÊCHER LA BASE DE S'ENDORMIR.
+#
+# Le palier gratuit de Supabase met un projet EN PAUSE au bout de
+# sept jours sans requête. Le club est calme en décembre, et
+# l'application ne répond plus en janvier — jusqu'à ce que quelqu'un
+# aille la réveiller depuis un tableau de bord que personne n'ouvre.
+#
+# C'est, de très loin, ce qui arrivera EN PREMIER. La question posée
+# était « la base va être saturée, comment anticiper » ; la mesure a
+# répondu que la base tiendra une trentaine d'années au rythme du
+# club. La mise en veille, elle, arrive au bout de sept jours
+# d'inactivité, et elle est bien plus brutale : rien n'est perdu,
+# mais plus rien ne répond.
+#
+# ------------------------------------------------------------
+# POURQUOI ICI ET NON DANS LA BASE
+#
+# On pourrait poser une tâche « pg_cron » à l'intérieur de Postgres.
+# Elle ne servirait à rien : ce qui est compté comme activité, ce
+# sont les requêtes reçues par l'API, pas le travail interne du
+# moteur. Une base qui s'occupe toute seule s'endort quand même.
+#
+# Il faut donc une requête qui vienne du DEHORS, tous les jours, et
+# GitHub la fait gratuitement. Cinq secondes par jour.
+#
+# ------------------------------------------------------------
+# CE QU'ELLE DEMANDE, ET CE QU'ELLE NE VOIT PAS
+#
+# La requête la plus petite possible : le nombre de grades, sans en
+# rapatrier aucun. Elle ne lit aucune donnée de membre, et la clé
+# employée est la clé PUBLIABLE — celle qui voyage déjà dans l'APK
+# de tous les membres. Ce n'est pas un secret ; elle est quand même
+# rangée dans les secrets du dépôt pour que ce fichier reste vrai le
+# jour où le club changera de projet.
+#
+# ⚠ Sans le secret, la tâche NE FAIT RIEN et le dit. Elle n'échoue
+# pas : un dépôt cloné par quelqu'un d'autre ne doit pas afficher une
+# croix rouge tous les matins pour un secret qui ne le concerne pas.
+# ============================================================
+name: Réveiller la base
+
+on:
+  schedule:
+    # Tous les jours à 3 h 00 UTC, soit 6 h 00 à Antananarivo — avant
+    # que le club se lève, et sept fois par semaine plutôt que six :
+    # sept jours d'inactivité suffisent à endormir le projet, donc
+    # une tâche hebdomadaire arriverait pile trop tard.
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+# La tâche ne touche à rien dans le dépôt : elle n'a besoin d'aucun
+# droit. On les retire tous plutôt que de laisser ceux par défaut.
+permissions: {}
+
+jobs:
+  reveiller:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Une requête, la plus petite possible
+        env:
+          PROJET: ${{ secrets.SUPABASE_PROJET }}
+          CLE: ${{ secrets.SUPABASE_CLE_PUBLIABLE }}
+        run: |
+          if [ -z "$PROJET" ] || [ -z "$CLE" ]; then
+            echo "Les secrets SUPABASE_PROJET et SUPABASE_CLE_PUBLIABLE ne sont pas"
+            echo "posés sur ce dépôt : il n'y a rien à réveiller, et ce n'est pas"
+            echo "une erreur. Pour les poser : Settings → Secrets and variables →"
+            echo "Actions. Le projet est l'identifiant qui figure dans l'adresse"
+            echo "https://<projet>.supabase.co, et la clé est la clé PUBLIABLE"
+            echo "(anon), celle qui voyage déjà dans l'APK."
+            exit 0
+          fi
+
+          # « HEAD » et « count=exact » : on demande le NOMBRE de
+          # grades, pas les grades. Aucune ligne ne traverse le
+          # réseau, et la table des grades est la plus anodine du
+          # projet — six lignes de couleurs de ceinture.
+          code=$(curl -s -o /dev/null -w '%{http_code}' \
+            -X HEAD \
+            -H "apikey: $CLE" \
+            -H "Authorization: Bearer $CLE" \
+            -H "Prefer: count=exact" \
+            "https://$PROJET.supabase.co/rest/v1/grades?select=id&limit=1")
+
+          echo "Réponse : $code"
+
+          # 200 et 206 sont des succès ; 401 dirait que la clé a
+          # changé, et c'est justement le genre de chose qu'on veut
+          # apprendre par une croix rouge un matin plutôt qu'un
+          # samedi de compétition.
+          case "$code" in
+            200|206) echo "La base est réveillée." ;;
+            401|403) echo "::error::La clé publiable est refusée ($code)."; exit 1 ;;
+            *) echo "::error::Réponse inattendue : $code"; exit 1 ;;
+          esac

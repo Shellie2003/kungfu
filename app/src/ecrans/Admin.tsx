@@ -65,7 +65,13 @@ const VIE_DU_CLUB: Rangee[] = [
 
 const REGLAGES: Rangee[] = [
   ['Le club', 'Horaires, responsable, contact, MVola', 'calendar', '/admin/club'],
-  ['Journal d’accès', 'Qui est entré dans l’espace des maîtres', 'eyeOff', '/admin/journal']
+  ['Journal d’accès', 'Qui est entré dans l’espace des maîtres', 'eyeOff', '/admin/journal'],
+  /* Voir venir plutôt que découvrir. La base ne se remplira pas avant
+     une trentaine d'années — c'est mesuré — mais les photos, elles,
+     tiennent six ans sur le palier gratuit, et le projet se met en
+     veille au bout de sept jours sans requête. On ne s'en aperçoit
+     que le jour où plus rien ne s'enregistre. */
+  ['Place et rangement', 'Ce qu’on occupe, et ce qu’on peut ranger', 'shield', '/admin/occupation']
 ];
 
 function Bloc({ titre, lignes }: { titre: string; lignes: Rangee[] }) {

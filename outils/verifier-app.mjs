@@ -112,7 +112,8 @@ const ECRANS = [
   ['adm-salons', '/#/admin/salons', 'Ouvrir un salon'],
   ['adm-journal', '/#/admin/journal', 'Journal d’accès'],
   ['adm-impression', '/#/admin/impression', 'Planche d’impression'],
-  ['adm-grades-liste', '/#/admin/grades/liste', 'Les grades du club']
+  ['adm-grades-liste', '/#/admin/grades/liste', 'Les grades du club'],
+  ['adm-occupation', '/#/admin/occupation', 'Ce que le club occupe']
 ];
 
 const plat = (s) =>

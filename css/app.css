@@ -1067,3 +1067,22 @@ input.ussd__code:focus-visible { border-bottom-color: var(--vert); }
 .feuilleter:hover { background: rgba(11, 23, 18, .75); }
 .feuilleter--gauche { left: 4px; }
 .feuilleter--droite { right: 4px; }
+
+/* ------------------------------------------------------------
+   LA JAUGE D'OCCUPATION
+
+   Une barre, et rien de plus : elle dit une proportion, et une
+   proportion se lit d'un coup d'œil ou pas du tout. Le chiffre exact
+   est écrit à côté, en toutes lettres — « 13 Mo sur 500 Mo » — parce
+   qu'une barre à trois pour cent et une barre à un pour cent se
+   ressemblent, et que la différence peut compter.
+
+   La couleur ne dit rien seule : au-delà du seuil, le CHIFFRE change
+   de couleur lui aussi, et le pourcentage est annoncé aux lecteurs
+   d'écran par « aria-valuetext ».
+   ------------------------------------------------------------ */
+.jauge {
+  height: 8px; border-radius: 999px; background: #E3ECE8; overflow: hidden;
+}
+.jauge i { display: block; height: 100%; border-radius: 999px; transition: width .3s ease; }
+@media (prefers-reduced-motion: reduce) { .jauge i { transition: none; } }

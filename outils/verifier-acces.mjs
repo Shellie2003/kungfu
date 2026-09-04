@@ -57,7 +57,8 @@ const ECRANS = [
   ['adm-publier', '/#/admin/publier'],
   ['adm-club', '/#/admin/club'],
   ['adm-presences', '/#/presences/pointer'],
-  ['adm-participations', '/#/admin/participations']
+  ['adm-participations', '/#/admin/participations'],
+  ['adm-occupation', '/#/admin/occupation']
 ];
 
 /* ------------------------------------------------------------
