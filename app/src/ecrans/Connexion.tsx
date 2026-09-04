@@ -13,9 +13,14 @@ import { Emblem } from '../ui/Emblem';
 import type { ResultatConnexion } from '../services/supabase';
 
 export function Connexion({
-  connecter
+  connecter,
+  /* Absent presque toujours, et c'est voulu : le club n'a qu'UNE
+     fondation. Le lien n'apparaît que si la base répond que la porte
+     est encore ouverte — l'écran ne décide pas, il affiche. */
+  fonder
 }: {
   connecter: (matricule: string, motDePasse: string) => Promise<ResultatConnexion>;
+  fonder?: () => void;
 }) {
   const [matricule, setMatricule] = useState('');
   const [motDePasse, setMotDePasse] = useState('');
@@ -128,20 +133,43 @@ export function Connexion({
             {enCours ? 'Connexion…' : 'Entrer'}
           </button>
 
-          <p
-            style={{
-              fontSize: 13,
-              color: '#59685F',
-              textAlign: 'center',
-              lineHeight: '19px'
-            }}
-          >
-            Première connexion ou mot de passe oublié ?
-            <br />
-            <span style={{ color: '#12613C', fontWeight: 600 }}>
-              Demandez au responsable du club.
-            </span>
-          </p>
+          {/* LE PREMIER JOUR DU CLUB, ET LUI SEUL.
+
+              « Demandez au responsable » n'a pas de sens tant qu'il
+              n'y a pas de responsable : c'est exactement la situation
+              de quelqu'un qui vient d'installer l'application sur une
+              base vide. Les deux messages sont donc exclusifs. */}
+          {fonder ? (
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontSize: 13, color: '#59685F', lineHeight: '19px' }}>
+                Ce club n’a pas encore d’administrateur.
+              </p>
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={fonder}
+                disabled={enCours}
+                style={{ marginTop: 10 }}
+              >
+                Créer le compte du club
+              </button>
+            </div>
+          ) : (
+            <p
+              style={{
+                fontSize: 13,
+                color: '#59685F',
+                textAlign: 'center',
+                lineHeight: '19px'
+              }}
+            >
+              Première connexion ou mot de passe oublié ?
+              <br />
+              <span style={{ color: '#12613C', fontWeight: 600 }}>
+                Demandez au responsable du club.
+              </span>
+            </p>
+          )}
         </form>
 
         <p

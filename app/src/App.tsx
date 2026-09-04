@@ -23,6 +23,20 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { Onglets } from './ui/Onglets';
 import { Connexion } from './ecrans/Connexion';
+import { useFondationOuverte } from './services/fondation';
+
+/* ⚠ CHARGÉ À LA DEMANDE, et pour une raison mesurée.
+
+   Cet écran sert UNE FOIS dans la vie du club. Importé
+   ordinairement, il entrait dans le premier chargement — celui que
+   les soixante-quatre membres téléchargent à chaque nouvelle
+   version — et le banc des poids l'a vu tout de suite : 245 ko sur
+   un budget de 245. Le seul qui en aura besoin est celui qui
+   installe l'application, et lui peut bien attendre un dixième de
+   seconde. */
+const Fondation = lazy(() =>
+  import('./ecrans/Fondation').then((m) => ({ default: m.Fondation }))
+);
 import { Accueil } from './ecrans/Accueil';
 import { Etudiants } from './ecrans/Etudiants';
 import { Profil } from './ecrans/Profil';
@@ -369,9 +383,46 @@ function Racine() {
      dure deux dixièmes de seconde clignote plus qu'il n'informe. */
   if (chargement) return <div className="phone" />;
 
-  if (!session) return <Connexion connecter={seConnecter} />;
+  if (!session) return <PorteDentree />;
 
   return <Connectee />;
+}
+
+/* ---------------------------------------------- Avant la connexion
+
+   Deux écrans possibles pour qui n'a pas de session, et c'est la
+   BASE qui tranche entre les deux : « fondation_ouverte() » dit si le
+   club a déjà un administrateur.
+
+   Tant qu'on ne le sait pas, on montre la connexion. C'est le cas de
+   toute la vie du club sauf le premier jour, et faire clignoter un
+   écran d'attente pour l'exception serait payer tous les jours le
+   prix d'un seul.
+
+   « J'ai déjà un compte » revient ici sans rien perdre : l'écran de
+   fondation n'est proposé que si la porte est ouverte, mais on ne
+   force personne à passer par lui. */
+function PorteDentree() {
+  const { data: ouverte } = useFondationOuverte();
+  const [fonder, setFonder] = useState(false);
+
+  if (ouverte && fonder) {
+    /* Le repli est l'écran VERT et vide, pas un texte : c'est le
+       fond des deux écrans de cette porte, et il ne clignote donc
+       pas entre les deux. */
+    return (
+      <Suspense fallback={<div className="phone phone--green" />}>
+        <Fondation connecter={seConnecter} revenir={() => setFonder(false)} />
+      </Suspense>
+    );
+  }
+
+  return (
+    <Connexion
+      connecter={seConnecter}
+      fonder={ouverte ? () => setFonder(true) : undefined}
+    />
+  );
 }
 
 /* ---------------------------------------------- Une version plus récente

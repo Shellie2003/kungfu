@@ -77,6 +77,32 @@ publie pas. Les règles d'accès les appellent toujours ; l'extérieur, non.
 `figer_message`, `toucher_salon`. Sans lui, un appelant peut faire pointer un nom de table
 vers une table à lui.
 
+> **Et cette correction en a cassé une.** Les trois ont reçu le même
+> `revoke all … from public, anon, authenticated`. Pour `figer_message` et `toucher_salon`,
+> des **déclencheurs** appelés par la base elle-même, c'était juste. Pour `prochain_numero`,
+> appelée par l'**application** depuis l'écran d'inscription avec le jeton d'un
+> administrateur, c'était l'erreur : elle a rendu l'inscription impossible, avec
+> « permission denied for function prochain_numero ». Rien ne l'a signalé, parce que les
+> tests posent une réponse toute faite pour cette fonction et ne traversent jamais
+> PostgREST. La migration **0024** la rend à `authenticated` — mais **avec un garde-fou à
+> l'intérieur** : rendre le droit sans garde l'aurait donné à tout le monde, et la fonction
+> consomme une séquence, donc chaque appel brûle un numéro de membre. Vérifié sur la base :
+> un super administrateur obtient un numéro, un élève est refusé, un anonyme n'atteint même
+> pas la fonction.
+
+## La fondation du club (migration 0024)
+
+Le premier compte du club ne pouvait pas être créé par l'application : personne ne peut
+créer le compte de celui qui crée les comptes. Il fallait ouvrir ce tableau de bord et
+écrire du SQL à la main.
+
+L'écran de connexion propose maintenant « **Créer le compte du club** » — mais seulement si
+`fondation_ouverte()` répond vrai, c'est-à-dire tant que le club n'a **ni** ligne
+`fondation_faite` **ni** super administrateur. Le double verrou est délibéré : effacer la
+ligne ne rouvre rien tant qu'un super administrateur existe.
+
+Détails et vérifications dans `supabase/functions/fondation/LISEZ-MOI.md`.
+
 **`journaliser_acces` bornait mal son entrée** : un membre pouvait remplir le journal du
 texte de son choix. Elle tronque désormais à 120 caractères. Elle reste appelable par
 l'application — c'est sa raison d'être, et l'avertissement qui subsiste est assumé.
