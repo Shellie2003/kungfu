@@ -185,6 +185,83 @@ Deno.serve(async (requete) => {
     return repondre({ motDePasse: mdp });
   }
 
+  /* ------------------------------------------------------------
+     RENOMMER : changer le matricule d'un membre.
+
+     ⚠ LE PIÈGE, ET IL EST SILENCIEUX.
+
+     L'adresse de connexion est DÉRIVÉE du matricule : « F04x042 »
+     donne « f04x042@waishi.local ». Changer « profils.numero » sans
+     toucher au compte laisserait donc un membre dont l'application
+     compose une adresse qui n'existe pas — il taperait son nouveau
+     matricule et le bon mot de passe, et lirait « numéro de membre
+     ou mot de passe incorrect ». Rien, dans la base, ne paraîtrait
+     anormal.
+
+     Les deux changements sont donc faits ICI, ensemble. L'ordre est
+     réfléchi : le COMPTE d'abord, la fiche ensuite.
+
+       · si la fiche échoue après le compte, on remet l'ancienne
+         adresse — c'est ce que fait le « revenir en arrière »
+         ci-dessous, et l'on retombe exactement sur l'état de
+         départ ;
+       · dans l'autre sens, on ne pourrait pas : la fiche serait déjà
+         renommée et le membre déjà dehors.
+
+     Une fiche SANS compte de connexion — le cas de la plupart des
+     élèves, qui n'ont pas de téléphone — ne renomme que la fiche.
+     ------------------------------------------------------------ */
+  if (action === 'renommer') {
+    const neuf = String((corps as { numero?: string }).numero ?? '').replace(/\s+/g, '');
+    if (!/^[A-Za-z0-9]{3,20}$/.test(neuf)) {
+      return repondre({ message: 'Un matricule ne contient que des lettres et des chiffres.' }, 400);
+    }
+    if (neuf === fiche.numero) return repondre({ ok: true, numero: neuf });
+
+    /* ⚠ L'UNICITÉ SE VÉRIFIE SANS DISTINGUER LA CASSE.
+       La colonne est unique, mais PostgreSQL distingue « F04x077 »
+       de « F04X077 » : les deux pourraient coexister. Or l'adresse
+       de connexion met tout en minuscules — les deux membres
+       auraient donc la MÊME adresse, et le second ne pourrait jamais
+       se connecter. C'est sur cette adresse que porte la vraie
+       contrainte, c'est donc elle qu'il faut vérifier. */
+    const { data: pris } = await admin
+      .from('profils')
+      .select('id')
+      .ilike('numero', neuf)
+      .maybeSingle();
+    if (pris) return repondre({ message: `Le matricule ${neuf} est déjà attribué.` }, 409);
+
+    const nouvelleAdresse = `${neuf.toLowerCase()}@${DOMAINE}`;
+
+    if (fiche.compte_id) {
+      const { error } = await admin.auth.admin.updateUserById(fiche.compte_id, {
+        email: nouvelleAdresse,
+        email_confirm: true
+      });
+      if (error) return repondre({ message: error.message }, 400);
+    }
+
+    const { error: eNum } = await admin
+      .from('profils')
+      .update({ numero: neuf })
+      .eq('id', profilId);
+
+    if (eNum) {
+      /* Revenir en arrière : sans cela le membre resterait dehors,
+         avec une adresse que plus rien ne compose. */
+      if (fiche.compte_id) {
+        await admin.auth.admin.updateUserById(fiche.compte_id, {
+          email: courriel,
+          email_confirm: true
+        });
+      }
+      return repondre({ message: eNum.message }, 400);
+    }
+
+    return repondre({ ok: true, numero: neuf });
+  }
+
   if (action === 'reinitialiser') {
     if (!fiche.compte_id) return repondre({ message: 'Cette fiche n’a pas de compte.' }, 409);
     const mdp = motDePasse();

@@ -342,6 +342,19 @@ jobs:
           npx cap add android
           npx cap sync android
 
+      # L'ICÔNE DE L'APPLICATION, depuis le logo du club.
+      #
+      # Le dossier android/ étant engendré, les icônes le sont aussi :
+      # les y déposer à la main les ferait disparaître à la
+      # construction suivante. La seule source qui fasse foi est
+      # img/logo.jpg, le fichier que le club a fourni.
+      #
+      # Sans cette étape, l'application porte l'icône par défaut de
+      # Capacitor — une planète bleue — et personne ne la reconnaît
+      # dans son tiroir d'applications.
+      - name: Poser l'icône du club
+        run: node outils/poser-icones.mjs
+
       # La permission caméra, pour le pointage des présences.
       #
       # Elle n'est PAS dans le modèle de Capacitor, et elle a été

@@ -205,6 +205,27 @@ const erreurs = [];
 page.on('console', (m) => {
   if (m.type() !== 'error') return;
   if (m.text().includes('realtime')) return;
+  /* ⚠ LA MISE À JOUR DE L'APK DEMANDE GITHUB, ET CE BANC N'A PAS
+     INTERNET.
+
+     En mode téléphone — et seulement là — l'application va lire
+     « waishi.json » sur les Releases du dépôt pour savoir s'il existe
+     une version plus récente. Cet environnement de construction ne
+     joint pas github.com : la requête échoue, et le navigateur
+     l'inscrit en console.
+
+     Ce n'est pas un défaut de l'application : le service rattrape
+     l'échec et ne dit rien, ce qui est exactement le comportement
+     voulu hors ligne — annoncer une mise à jour parce que le réseau
+     est tombé serait un mensonge. C'est la même excuse que pour la
+     WebSocket du temps réel juste au-dessus, et pour la même raison :
+     un service extérieur qu'on ne peut pas joindre d'ici.
+
+     Ce qui se vérifie vraiment, ce sont les numéros et la parcimonie
+     du réseau — app/tests/mise-a-jour-apk.test.tsx. */
+  if (/ERR_CERT_AUTHORITY_INVALID|ERR_(NAME|INTERNET|CONNECTION)|github\.com/.test(m.text())) {
+    return;
+  }
   erreurs.push(`console : ${m.text()}`);
 });
 page.on('pageerror', (e) => erreurs.push(`exception : ${e.message}`));

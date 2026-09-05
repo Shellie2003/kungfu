@@ -1,0 +1,235 @@
+# ============================================================
+# PUBLIER UNE VERSION AUX MEMBRES.
+#
+#     git tag v1.1.0 && git push origin v1.1.0
+#
+# Ce workflow est le SEUL qui signe avec la vraie clé du club, et le
+# seul qui publie quelque chose que les téléphones iront chercher
+# tout seuls. Il ne tourne donc que sur une étiquette, jamais sur une
+# poussée ordinaire.
+#
+# ------------------------------------------------------------
+# POURQUOI IL EST SÉPARÉ DE apk.yml
+#
+# apk.yml construit à chaque poussée et dépose un APK de DÉBOGAGE en
+# pièce jointe d'exécution : c'est ce qui sert à essayer une
+# correction sur un téléphone, et cela doit rester rapide et sans
+# conséquence.
+#
+# Celui-ci publie. Les mélanger voudrait dire manipuler la clé de
+# signature du club à chaque commit, et publier une version à chaque
+# faute de frappe.
+#
+# Mise en place complète : LIVRER.md à la racine.
+# ============================================================
+name: Publier une version
+
+on:
+  push:
+    tags: ['v*']
+
+# Sans cela, le pas « créer la Release » échoue avec un 403 dont la
+# cause n'est pas évidente : par défaut un workflow ne peut que LIRE
+# le dépôt.
+permissions:
+  contents: write
+
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # ------------------------------------------------------------
+      # L'ÉTIQUETTE ET LE NUMÉRO DOIVENT CONCORDER.
+      #
+      # C'est le numéro de package.json que les téléphones comparent
+      # au leur — pas l'étiquette. Publier « v1.2.0 » avec un
+      # package.json resté à « 1.1.0 » donnerait une Release nommée
+      # 1.2.0 dont les téléphones ne verraient jamais la nouveauté :
+      # ils compareraient 1.1.0 à 1.1.0.
+      #
+      # Ce défaut-là ne se voit PAS : la publication réussit, la
+      # Release est là, et les membres ne reçoivent rien. On échoue
+      # donc ici, bruyamment.
+      # ------------------------------------------------------------
+      - name: L'étiquette correspond-elle au numéro ?
+        id: version
+        run: |
+          ETIQUETTE="${GITHUB_REF_NAME#v}"
+          NUMERO=$(node -p "require('./app/package.json').version")
+          echo "étiquette : $ETIQUETTE — package.json : $NUMERO"
+          if [ "$ETIQUETTE" != "$NUMERO" ]; then
+            echo "::error::L'étiquette $GITHUB_REF_NAME ne correspond pas à la version $NUMERO de app/package.json. Les téléphones comparent le NUMÉRO : la mise à jour ne serait proposée à personne."
+            exit 1
+          fi
+          echo "numero=$NUMERO" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Installer
+        working-directory: app
+        run: npm ci
+
+      # ------------------------------------------------------------
+      # LA BATTERIE, AVANT DE SIGNER QUOI QUE CE SOIT.
+      #
+      # C'est le seul garde-fou entre une erreur et soixante-quatre
+      # téléphones. Une version qui ne passe pas n'est pas publiée —
+      # et comme la mise à jour est automatique, une mauvaise version
+      # publiée se répand toute seule.
+      # ------------------------------------------------------------
+      - name: Les essais
+        working-directory: app
+        run: npx vitest run
+
+      - name: Construire l'application
+        working-directory: app
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_CLE: ${{ secrets.SUPABASE_CLE }}
+          VERSION_CONSTRUITE: ${{ github.sha }}
+        run: npx vite build
+
+      - name: Engendrer le projet Android
+        working-directory: app
+        run: |
+          npx cap add android
+          npx cap sync android
+
+      - name: Poser l'icône du club
+        run: node outils/poser-icones.mjs
+
+      - name: Déclarer la caméra
+        working-directory: app/android/app/src/main
+        run: |
+          if grep -q 'android.permission.CAMERA' AndroidManifest.xml; then
+            echo "déjà déclarée"
+          elif grep -q '<application' AndroidManifest.xml; then
+            sed -i 's|<application|<uses-permission android:name="android.permission.CAMERA" />\n\n    <application|' AndroidManifest.xml
+            grep -q 'android.permission.CAMERA' AndroidManifest.xml || exit 1
+            echo "caméra déclarée"
+          else
+            echo "::error::Le manifeste n'a pas l'ancre attendue."
+            exit 1
+          fi
+
+      # ------------------------------------------------------------
+      # LE NUMÉRO DE VERSION, DANS L'APK.
+      #
+      # Deux nombres, et ils ne servent pas à la même chose :
+      #
+      #   versionName — « 1.1.0 », ce que la personne lit ;
+      #   versionCode — un ENTIER qu'Android exige croissant. Il
+      #                 refuse d'installer un APK dont le code est
+      #                 inférieur ou égal à celui déjà en place.
+      #
+      # Le second vient du numéro d'exécution du workflow, qui
+      # augmente tout seul et ne redescend jamais. Le dériver du
+      # versionName — 1.1.0 → 10100 — obligerait à ne jamais
+      # republier une même version, ce qui arrive pourtant quand une
+      # publication échoue à mi-chemin.
+      # ------------------------------------------------------------
+      - name: Inscrire la version dans l'APK
+        working-directory: app/android/app
+        run: |
+          sed -i "s/versionCode .*/versionCode ${{ github.run_number }}/" build.gradle
+          sed -i "s/versionName .*/versionName \"${{ steps.version.outputs.numero }}\"/" build.gradle
+          grep -E 'versionCode|versionName' build.gradle
+
+      # ------------------------------------------------------------
+      # LA CLÉ DU CLUB.
+      #
+      # Elle arrive encodée en base64 dans un secret, parce que
+      # GitHub ne stocke que du texte. Le fichier reconstitué vit le
+      # temps de la construction et disparaît avec la machine.
+      #
+      # ⚠ Sans les quatre secrets, ce pas échoue — et c'est voulu.
+      # Publier une version signée par la clé de DÉBOGAGE, dont le
+      # mot de passe est « android » et qui est dans le dépôt,
+      # laisserait n'importe qui fabriquer une fausse mise à jour du
+      # club. Voir LIVRER.md, partie 1.
+      # ------------------------------------------------------------
+      - name: Poser la clé de signature du club
+        working-directory: app/android
+        env:
+          CLE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$CLE" ]; then
+            echo "::error::Le secret ANDROID_KEYSTORE_BASE64 est absent. Voir LIVRER.md, partie 1."
+            exit 1
+          fi
+          echo "$CLE" | base64 -d > waishi-release.jks
+          echo "empreinte de la clé employée :"
+          keytool -list -v -keystore waishi-release.jks \
+            -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" 2>/dev/null \
+            | grep 'SHA256:' | head -1
+
+      - name: Construire et signer
+        working-directory: app/android
+        run: |
+          ./gradlew assembleRelease --no-daemon \
+            -Pandroid.injected.signing.store.file=$PWD/waishi-release.jks \
+            -Pandroid.injected.signing.store.password="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+            -Pandroid.injected.signing.key.alias="${{ secrets.ANDROID_KEY_ALIAS }}" \
+            -Pandroid.injected.signing.key.password="${{ secrets.ANDROID_KEY_PASSWORD }}"
+
+      # ------------------------------------------------------------
+      # LES DEUX FICHIERS, AUX NOMS FIXES.
+      #
+      # GitHub sert toujours le dernier fichier d'un nom donné à
+      # l'adresse …/releases/latest/download/<nom>. Des noms fixes
+      # veulent dire une adresse fixe — donc l'application n'a besoin
+      # ni de l'API de GitHub, ni d'un jeton, ni de connaître le
+      # numéro de la dernière version pour aller la chercher.
+      #
+      # ⚠ NE JAMAIS LES RENOMMER. Les téléphones déjà installés
+      # continueraient à chercher l'ancien nom, et cesseraient de
+      # voir les mises à jour sans rien dire.
+      # ------------------------------------------------------------
+      - name: Préparer la Release
+        run: |
+          mkdir -p publication
+          cp app/android/app/build/outputs/apk/release/app-release.apk publication/waishi.apk
+          NOTES=$(git tag -l --format='%(contents:subject)' "$GITHUB_REF_NAME")
+          node -e "
+            const fs = require('node:fs');
+            fs.writeFileSync('publication/waishi.json', JSON.stringify({
+              numero: '${{ steps.version.outputs.numero }}',
+              notes: process.argv[1] || ''
+            }, null, 2) + '\n');
+          " "$NOTES"
+          cat publication/waishi.json
+          ls -lh publication/
+
+      - name: Publier
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            publication/waishi.apk
+            publication/waishi.json
+          generate_release_notes: true
+
+      - name: Résumé
+        run: |
+          {
+            echo "## Version ${{ steps.version.outputs.numero }} publiée"
+            echo ""
+            echo "Les membres la verront proposée à la prochaine ouverture de"
+            echo "l'application — au plus une fois par jour et par téléphone."
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| versionName | \`${{ steps.version.outputs.numero }}\` |"
+            echo "| versionCode | \`${{ github.run_number }}\` |"
+            echo "| APK | \`waishi.apk\` |"
+          } >> "$GITHUB_STEP_SUMMARY"

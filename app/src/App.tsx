@@ -24,6 +24,16 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Onglets } from './ui/Onglets';
 import { Connexion } from './ecrans/Connexion';
 import { useFondationOuverte } from './services/fondation';
+import { NUMERO, OU_EST_L_APK, useMiseAJourApk } from './services/miseAJourApk';
+import { SUR_TELEPHONE } from './services/telechargement';
+
+/* ⚠ CHARGÉE À LA DEMANDE, comme l'écran de fondation, et pour la
+   même raison mesurée : elle ne sert qu'aux deux secondes du
+   démarrage, et le premier chargement a un budget tenu à chaque
+   construction. */
+const Ouverture = lazy(() =>
+  import('./ui/Ouverture').then((m) => ({ default: m.Ouverture }))
+);
 
 /* ⚠ CHARGÉ À LA DEMANDE, et pour une raison mesurée.
 
@@ -457,6 +467,67 @@ function Nouveaute() {
   );
 }
 
+/* ---------------------------------------------- La mise à jour de l'APK
+
+   Le pendant du bandeau ci-dessus, pour le TÉLÉPHONE. Les deux ne se
+   ressemblent qu'en apparence : sur le web, une version plus récente
+   se prend en rafraîchissant ; dans l'APK, il faut télécharger et
+   installer un fichier.
+
+   POURQUOI UN LIEN ET NON UN BOUTON. Un « <a> » vers github.com sort
+   de la WebView vers le navigateur du téléphone — on l'a lu dans
+   « Bridge.launchIntent » de Capacitor : toute adresse dont l'hôte
+   diffère de celui de l'application part vers « ACTION_VIEW ».
+   Android télécharge alors le fichier et propose de l'installer.
+
+   Un « button » avec « window.open » ferait le même chemin, mais
+   sans qu'on puisse le VÉRIFIER : un lien porte son adresse dans le
+   document, et le banc peut la lire. */
+function MiseAJourApk() {
+  const neuve = useMiseAJourApk();
+  if (!neuve) return null;
+
+  return (
+    <div role="status" className="banner" style={{ margin: '8px 12px 0', gap: 10 }}>
+      <span style={{ flexGrow: 1 }}>
+        <b>Version {neuve.numero} disponible</b>
+        {neuve.notes ? ` — ${neuve.notes}` : null}
+        <span style={{ display: 'block', fontSize: 12, opacity: 0.8, marginTop: 2 }}>
+          Vous avez la {NUMERO}. Le téléchargement s’ouvre dans votre navigateur.
+        </span>
+      </span>
+      <a className="link" href={OU_EST_L_APK} rel="noreferrer">
+        Mettre à jour
+      </a>
+    </div>
+  );
+}
+
+/* ---------------------------------------------- L'ouverture
+
+   Elle ne s'affiche QUE dans l'application empaquetée. Sur le web,
+   l'écran de démarrage d'un site est une mauvaise habitude : on
+   arrive par un lien, on veut le contenu, et une animation de deux
+   secondes entre les deux est une porte qu'on n'a pas demandé à
+   franchir. Dans l'APK, en revanche, elle remplace le vert vide que
+   le système affiche pendant le chargement.
+
+   Elle ne retarde rien : l'application se monte DERRIÈRE, et
+   l'ouverture s'efface par-dessus. */
+function AvecOuverture({ enfants }: { enfants: React.ReactNode }) {
+  const [passee, setPassee] = useState(!SUR_TELEPHONE);
+  return (
+    <>
+      {enfants}
+      {!passee && (
+        <Suspense fallback={null}>
+          <Ouverture fini={() => setPassee(true)} />
+        </Suspense>
+      )}
+    </>
+  );
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={client}>
@@ -465,7 +536,8 @@ export default function App() {
           /etudiants ne correspond à aucun fichier et rend 404. */}
       <HashRouter>
         <Nouveaute />
-        <Racine />
+        <MiseAJourApk />
+        <AvecOuverture enfants={<Racine />} />
       </HashRouter>
     </QueryClientProvider>
   );

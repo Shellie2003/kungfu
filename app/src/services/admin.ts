@@ -71,6 +71,12 @@ export type SaisieFiche = {
      un déclencheur de la base le refuse aux autres (migration 0016),
      et l'écran ne montre le choix qu'à lui. */
   role?: Role;
+  /* Le MATRICULE, à la MODIFICATION seulement.
+     Absent à l'inscription — c'est la base qui l'attribue — et absent
+     de la modification tant que personne n'y touche : sa présence
+     déclenche un renommage du compte de connexion, et l'on ne renomme
+     pas un compte pour une biographie corrigée. */
+  numero?: string;
   /* Le chemin du portrait, déjà envoyé dans le seau. Absent tant que
      personne n'en a choisi. */
   photo?: string | null;
@@ -175,9 +181,32 @@ export function useModifierFiche(id: string | undefined) {
   return useEcrire(async (s: SaisieFiche) => {
     if (!id) throw new Error('Aucune fiche à modifier.');
 
-    /* Ni le numéro ni le rôle ne figurent ici : un déclencheur de la
-       base les fige, et les envoyer ferait échouer toute la mise à
-       jour. Le grade se change par son propre écran. */
+    /* ---- LE MATRICULE SE CORRIGE, MAIS PAS ICI ----
+
+       « Je veux que le matricule puisse être éditable. »
+
+       Il ne part PAS dans la mise à jour ci-dessous, et ce n'est pas
+       un oubli : l'adresse de connexion en est DÉRIVÉE — « F04x042 »
+       donne « f04x042@waishi.local ». Le changer dans cette table
+       seulement laisserait un membre dont l'application compose une
+       adresse qui n'existe plus : il taperait son nouveau matricule
+       et son bon mot de passe, et lirait « numéro de membre ou mot de
+       passe incorrect ». Rien, dans la base, ne paraîtrait anormal.
+
+       Les deux changements — le compte et la fiche — se font donc
+       ensemble, sur le SERVEUR, qui seul peut toucher au compte.
+       C'est l'action « renommer » de la fonction déployée, appelée
+       ci-dessous avant le reste : si elle échoue, on s'arrête, et
+       rien n'a bougé.
+
+       Le rôle, lui, ne figure toujours pas ici : il se change depuis
+       l'écran des comptes, et seul un super administrateur le peut.
+       Le grade a son propre écran. */
+    if (s.numero !== undefined) {
+      const r = await appelerFonction('renommer', { profilId: id, numero: s.numero });
+      if (!r.ok) throw new Error(r.message);
+    }
+
     const { data: ecrit1, error } = await supabase
       .from('profils')
       .update({

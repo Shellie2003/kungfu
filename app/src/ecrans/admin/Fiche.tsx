@@ -5,10 +5,17 @@
    sans valeurs de départ. Deux écrans auraient divergé au premier
    champ ajouté.
 
-   Ce que ce formulaire n'écrit PAS, et c'est délibéré : le numéro
-   de membre, attribué par la base, et le grade, qui a son propre
-   écran. Un déclencheur de la base les fige de toute façon — les
-   envoyer ferait échouer la mise à jour entière.
+   Ce que ce formulaire n'écrit PAS, et c'est délibéré : le grade,
+   qui a son propre écran, et le rôle, qui se change depuis les
+   comptes et seulement par un super administrateur.
+
+   Le NUMÉRO de membre, lui, n'est pas saisi à l'inscription — la
+   base l'attribue, parce que deux inscriptions simultanées
+   produiraient sinon deux fois le même — mais il se CORRIGE à la
+   modification. Il ne part pas dans la mise à jour ordinaire pour
+   autant : l'adresse de connexion en est dérivée, et les deux
+   doivent changer ensemble. C'est le serveur qui s'en charge — voir
+   « renommer » dans services/admin.ts.
    ============================================================ */
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -286,6 +293,38 @@ export function AdminFiche() {
           <Surtitre>État civil</Surtitre>
           <Carte pad={16}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {/* ---- LE MATRICULE, CORRIGEABLE ----
+
+                  « Je veux que le matricule puisse être éditable. »
+
+                  À la MODIFICATION seulement : à l'inscription c'est
+                  la base qui l'attribue, et deux inscriptions
+                  simultanées produiraient sinon deux fois le même.
+
+                  L'aide dit les DEUX conséquences, parce qu'aucune ne
+                  se devine et que les deux se découvrent trop tard :
+                  la connexion se fait par ce numéro, et le code QR de
+                  la carte l'encode. Une carte déjà imprimée cesse donc
+                  de pointer la présence. */}
+              {modification && (
+                <Champ
+                  libelle="Numéro de membre"
+                  valeur={s.numero ?? fiche?.numero ?? ''}
+                  /* Les espaces partent — on colle facilement
+                     « F04x 077 ». La CASSE reste : le préfixe du club
+                     est « F04x », avec un x minuscule, et tout mettre
+                     en capitales donnerait « F04X077 » à côté de
+                     « F04x078 » pour le membre suivant. C'est le
+                     serveur qui garantit l'unicité, sans distinguer
+                     la casse — voir « renommer ». */
+                  poser={(v) => setS((p) => ({ ...p, numero: v.replace(/\s+/g, '') }))}
+                  aide={
+                    'C’est avec ce numéro que le membre se connecte : le changer ' +
+                    'change aussi son identifiant. Sa carte imprimée, dont le code ' +
+                    'QR encode l’ancien numéro, sera à refaire.'
+                  }
+                />
+              )}
               <Champ
                 libelle="Nom"
                 valeur={s.nom}
