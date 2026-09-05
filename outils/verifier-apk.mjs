@@ -39,6 +39,7 @@ import { join } from 'node:path';
 import { brancher, poserSession, servir } from './bouchon.mjs';
 
 const RACINE = new URL('../app/dist/', import.meta.url).pathname;
+const RACINE_DEPOT = new URL('../', import.meta.url).pathname;
 
 /* ------------------------------------------------------------
    1. LE CONTRÔLE STATIQUE : un greffon employé doit être déclaré.
@@ -134,7 +135,53 @@ function boitesDuSysteme() {
 }
 
 /* ------------------------------------------------------------
-   3. LE CONTRÔLE À L'EXÉCUTION.
+   3. AUCUN CHEMIN DE CETTE MACHINE-CI DANS LE DÉPÔT.
+
+   L'exécution nº 74 s'est arrêtée dans poser-icones.mjs, qui
+   importait Playwright non par son nom mais par son emplacement sur
+   le disque — un chemin commençant par /opt, recopié d'un autre
+   outil. (Il n'est pas cité ici tel quel : ce contrôle-ci le
+   signalerait, et il aurait raison.)
+
+   Un chemin absolu, donc. Il existe sur la machine
+   où le script a été écrit, et nulle part ailleurs. Tout avait réussi
+   jusque-là ; l'étape a échoué en zéro seconde.
+
+   Ce défaut a une signature : il marche PARFAITEMENT chez qui l'écrit,
+   et échoue partout ailleurs. C'est exactement le genre que l'on ne
+   trouve pas en essayant — on ne peut le trouver qu'en le cherchant.
+
+   Le contrôle est ici et non dans un banc à part parce que cette
+   étape tourne déjà à chaque poussée. Un contrôle qu'on oublie de
+   lancer ne garde rien.
+   ------------------------------------------------------------ */
+const CHEMINS_D_ICI = /(['"])(\/(opt|home|Users|root)\/[^'"]*)\1/;
+
+function cheminsAbsolus() {
+  const trouves = [];
+  const parcourir = (dossier) => {
+    for (const e of readdirSync(dossier, { withFileTypes: true })) {
+      if (e.name === 'node_modules' || e.name.startsWith('.')) continue;
+      const chemin = join(dossier, e.name);
+      if (e.isDirectory()) { parcourir(chemin); continue; }
+      if (!/\.(mjs|js|ts|tsx|sh|yml)$/.test(e.name)) continue;
+      readFileSync(chemin, 'utf8').split('\n').forEach((l, i) => {
+        /* Un commentaire qui RACONTE le défaut — comme celui
+           au-dessus — n'est pas le défaut. On ne regarde que le code. */
+        if (/^\s*(\/\/|\*|#|\/\*)/.test(l)) return;
+        const m = CHEMINS_D_ICI.exec(l);
+        if (m) trouves.push(`${chemin.slice(RACINE_DEPOT.length)}:${i + 1} — ${m[2]}`);
+      });
+    }
+  };
+  for (const d of ['outils', 'app/src']) {
+    parcourir(join(RACINE_DEPOT, d));
+  }
+  return trouves;
+}
+
+/* ------------------------------------------------------------
+   4. LE CONTRÔLE À L'EXÉCUTION.
    ------------------------------------------------------------ */
 const ECRANS = [
   ['accueil', '/#/accueil'],
@@ -264,6 +311,18 @@ if (boites.length) {
   console.log('   dans le design du club, sans cacher ce qu’on regarde.');
 } else {
   console.log('✓ boîtes système  aucune : tout se dit dans le design du club');
+}
+
+const chemins = cheminsAbsolus();
+if (chemins.length) {
+  echecs++;
+  console.log('✗ chemins         d’une seule machine, donc d’aucune autre :');
+  for (const c of chemins) console.log(`   ${c}`);
+  console.log('   Cela marche chez qui l’écrit et échoue partout ailleurs.');
+  console.log('   Un module s’importe par son NOM ; un fichier du dépôt se');
+  console.log('   désigne relativement à lui-même.');
+} else {
+  console.log('✓ chemins         aucun chemin absolu : le dépôt tourne ailleurs qu’ici');
 }
 
 /* Puis chaque écran, en mode téléphone. */

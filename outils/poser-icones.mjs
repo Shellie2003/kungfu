@@ -37,7 +37,16 @@
      marge de sécurité ci-dessous — sans elle, le logo du club sort
      du cadre sur la moitié des téléphones.
    ============================================================ */
-import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
+/* ⚠ « playwright », par son NOM et non par un chemin.
+
+   J'avais écrit ici un chemin absolu — /opt/node22/lib/node_modules/… —
+   recopié d'un autre outil. Il existe sur la machine où ce script a
+   été écrit, et NULLE PART ailleurs : l'exécution nº 74 s'est arrêtée
+   dessus en zéro seconde, après avoir tout réussi jusque-là.
+
+   Les dix autres outils du dossier importent « playwright » par son
+   nom. Celui-ci le fait maintenant aussi. */
+import { chromium } from 'playwright';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
