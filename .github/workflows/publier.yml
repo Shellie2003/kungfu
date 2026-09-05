@@ -139,6 +139,47 @@ jobs:
         run: npm ci
 
       # ------------------------------------------------------------
+      # ⚠ LE SERVEUR S'ÉCRIT DANS UN FICHIER, ET AVANT LES ESSAIS.
+      #
+      # Deux raisons, et j'avais manqué la seconde.
+      #
+      # 1. SANS SERVEUR, LA CONSTRUCTION RÉUSSIRAIT QUAND MÊME. Vite ne
+      #    se plaint pas d'une variable vide : il la remplace par rien
+      #    et fabrique un APK complet, d'apparence normale, qui ne
+      #    parle à AUCUN serveur. apk.yml peut se permettre de
+      #    retomber sur .env.essai — il fabrique un APK d'essai. Ici on
+      #    publie : mieux vaut refuser de signer que distribuer une
+      #    application où personne ne pourrait se connecter.
+      #
+      # 2. LES ESSAIS EN ONT BESOIN AUSSI, et ils passent EN PREMIER.
+      #    « src/services/supabase.ts » refuse de se charger sans les
+      #    deux valeurs, et la moitié des fichiers l'importent : les
+      #    essais échouent donc à l'IMPORT, avant d'avoir rien
+      #    exécuté. C'est ce qui a fait tomber la première publication.
+      #
+      #    Ma vérification d'origine ne faisait que CONTRÔLER les
+      #    secrets, sans écrire le fichier, et se trouvait APRÈS les
+      #    essais. Elle vérifiait donc trop tard une chose qui ne
+      #    suffisait pas.
+      #
+      # On écrit le fichier ici, une fois, et tout ce qui suit le lit.
+      # ------------------------------------------------------------
+      - name: Le serveur du club
+        working-directory: app
+        env:
+          URL_SECRET: ${{ secrets.SUPABASE_URL }}
+          CLE_SECRET: ${{ secrets.SUPABASE_CLE }}
+        run: |
+          if [ -z "$URL_SECRET" ] || [ -z "$CLE_SECRET" ]; then
+            echo "::error::Les secrets SUPABASE_URL et SUPABASE_CLE sont nécessaires pour publier : sans eux les essais ne se chargent pas, et l'APK se construirait sans serveur. Voir LIVRER.md, partie 3."
+            exit 1
+          fi
+          echo "VITE_SUPABASE_URL=$URL_SECRET"  > .env
+          echo "VITE_SUPABASE_CLE=$CLE_SECRET" >> .env
+          # On montre l'adresse, jamais la clé.
+          grep VITE_SUPABASE_URL .env
+
+      # ------------------------------------------------------------
       # LA BATTERIE, AVANT DE SIGNER QUOI QUE CE SOIT.
       #
       # C'est le seul garde-fou entre une erreur et soixante-quatre
@@ -149,29 +190,6 @@ jobs:
       - name: Les essais
         working-directory: app
         run: npx vitest run
-
-      # ------------------------------------------------------------
-      # ⚠ SANS SERVEUR, LA CONSTRUCTION RÉUSSIT QUAND MÊME.
-      #
-      # Vite ne se plaint pas d'une variable vide : il la remplace par
-      # rien et fabrique un APK complet, d'apparence normale, qui ne
-      # parle à AUCUN serveur. Personne ne pourrait s'y connecter, et
-      # le défaut ne se verrait qu'une fois l'application installée.
-      #
-      # apk.yml peut se permettre de retomber sur .env.essai — il
-      # fabrique un APK d'essai. Ici on publie : mieux vaut refuser de
-      # signer que distribuer une application vide.
-      # ------------------------------------------------------------
-      - name: Le serveur est-il connu ?
-        env:
-          URL_SECRET: ${{ secrets.SUPABASE_URL }}
-          CLE_SECRET: ${{ secrets.SUPABASE_CLE }}
-        run: |
-          if [ -z "$URL_SECRET" ] || [ -z "$CLE_SECRET" ]; then
-            echo "::error::Les secrets SUPABASE_URL et SUPABASE_CLE sont nécessaires pour publier : sans eux l'APK se construirait sans serveur et personne ne pourrait se connecter. Voir LIVRER.md, partie 3."
-            exit 1
-          fi
-          echo "serveur : $URL_SECRET"
 
       - name: Construire l'application
         working-directory: app
