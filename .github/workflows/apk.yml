@@ -95,6 +95,49 @@ jobs:
         working-directory: app
         run: npm ci
 
+      # ------------------------------------------------------------
+      # ⚠ QUEL NUMÉRO CET APK PORTE-T-IL, ET EST-IL DÉJÀ SORTI ?
+      #
+      # « Après des réglages comme le temps réel ou la galerie, on
+      # doit passer à une autre version — or ce n'est pas le cas, et
+      # le build devrait préciser une nouvelle version. »
+      #
+      # C'est exact, et rien ne le disait. Le numéro de app/package.json
+      # est celui que les TÉLÉPHONES comparent pour savoir s'il existe
+      # une mise à jour. Ajouter des fonctionnalités sans le changer
+      # produit DEUX applications différentes portant le même numéro :
+      #
+      #   · celui qui a la 1.0.0 publiée ne se verra jamais proposer
+      #     la nouvelle — l'application compare 1.0.0 à 1.0.0 et se
+      #     tait, correctement ;
+      #   · et l'on croira avoir livré.
+      #
+      # Ce défaut ne se voit PAS : la construction réussit, la
+      # publication réussit, et personne ne reçoit rien. C'est la
+      # quatrième fois que ce projet rencontre cette forme-là.
+      #
+      # POURQUOI UN AVERTISSEMENT ET NON UN ÉCHEC : ce workflow-ci
+      # fabrique l'APK d'ESSAI, celui qu'on installe pour vérifier une
+      # correction. Exiger un nouveau numéro à chaque poussée
+      # empêcherait de corriger deux fois de suite le même défaut. La
+      # publication, elle, REFUSE bel et bien un numéro déjà sorti —
+      # c'est là que la barrière doit être dure, et elle l'est.
+      # ------------------------------------------------------------
+      - name: Quel numéro cet APK porte-t-il ?
+        id: numero
+        run: |
+          NUMERO=$(node -p "require('./app/package.json').version")
+          echo "numero=$NUMERO" >> "$GITHUB_OUTPUT"
+          echo "app/package.json : $NUMERO"
+
+          if git ls-remote --exit-code --tags origin "refs/tags/v$NUMERO" >/dev/null 2>&1; then
+            echo "deja=oui" >> "$GITHUB_OUTPUT"
+            echo "::warning::La version $NUMERO est DÉJÀ PUBLIÉE. Cet APK d'essai porte donc le même numéro qu'une version déjà distribuée, avec un contenu différent. Avant de publier, changez le numéro dans app/package.json — sinon les téléphones qui ont la $NUMERO ne verront jamais la nouveauté, et l'on croira avoir livré."
+          else
+            echo "deja=non" >> "$GITHUB_OUTPUT"
+            echo "ce numéro n'a pas encore été publié — il est libre"
+          fi
+
       # Les valeurs Supabase viennent des secrets s'ils existent ;
       # sinon du fichier d'essai versionné. Ainsi la chaîne marche
       # sans aucune configuration, et le jour où l'on pointera vers
@@ -447,7 +490,20 @@ jobs:
             exit 1
           fi
           sed -i "s/versionCode .*/versionCode ${{ github.run_number }}/" build.gradle
-          sed -i "s/versionName .*/versionName \"${{ github.run_number }}.0 ($COURT)\"/" build.gradle
+          # ⚠ LE NOM DE VERSION PORTE LE NUMÉRO DE L'APPLICATION.
+          #
+          # Il portait « 77.0 (d52dc48) » — le numéro d'EXÉCUTION.
+          # Android affichait donc « 77.0 » dans les paramètres du
+          # téléphone, pendant que l'application se croyait en 1.0.0
+          # pour décider s'il existe une mise à jour. Deux numéros
+          # pour une même chose, et aucun moyen de les rapprocher : à
+          # la question « quelle version as-tu ? », le membre et
+          # l'application ne donnaient pas la même réponse.
+          #
+          # Désormais « 1.1.0-essai77 (d52dc48) » : le numéro qui
+          # compte d'abord, la construction ensuite pour retrouver
+          # l'exécution, l'empreinte du commit pour retrouver le code.
+          sed -i "s/versionName .*/versionName \"${{ steps.numero.outputs.numero }}-essai${{ github.run_number }} ($COURT)\"/" build.gradle
           grep -E 'versionCode|versionName' build.gradle
 
       # La clé de débogage du projet remplace celle que Gradle
@@ -512,7 +568,8 @@ jobs:
             echo "|---|---|"
             echo "| Fichier | \`${{ steps.nommer.outputs.nom }}\` |"
             echo "| Taille | ${{ steps.nommer.outputs.taille }} |"
-            echo "| Version | \`${{ github.sha }}\` |"
+            echo "| Version | \`${{ steps.numero.outputs.numero }}\` |"
+            echo "| Commit | \`${{ github.sha }}\` |"
             if [ -n "${{ github.event.inputs.note }}" ]; then
               echo "| Note | ${{ github.event.inputs.note }} |"
             fi

@@ -18,6 +18,8 @@
    rend, plutôt que de se contenter d'importer le module.
    ============================================================ */
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { renderHook, waitFor } from '@testing-library/react';
 
 const COURANTE = 'a277203b309d6fe918af9d71ee01bb6136953a0d';
@@ -154,5 +156,70 @@ describe('en développement', () => {
     const vue = renderHook(() => useMiseAJour());
     expect(vue.result.current).toBeNull();
     expect(appels).not.toHaveBeenCalled();
+  });
+});
+
+/* ============================================================
+   ⚠ LE NUMÉRO QUI DÉCIDE DOIT ÊTRE CELUI QU'ON LIT.
+
+   « Après des réglages comme le temps réel ou la galerie, on doit
+   passer à une autre version — or ce n'est pas le cas. »
+
+   Trois numéros coexistaient, et ils ne disaient pas la même chose :
+
+     · app/package.json — celui que les TÉLÉPHONES comparent pour
+       savoir s'il existe une mise à jour ;
+     · le nom de version de l'APK d'essai — le numéro d'EXÉCUTION,
+       « 77.0 », sans rapport avec le précédent ;
+     · l'écran du club — l'empreinte du commit, « 583262e ».
+
+   À la question « quelle version as-tu ? », le membre, Android et
+   l'application donnaient trois réponses différentes. Aucune n'était
+   fausse ; ensemble, elles rendaient la mise à jour impossible à
+   diagnostiquer.
+   ============================================================ */
+describe('un seul numéro fait foi', () => {
+  test('NUMERO vient de package.json et a la forme d’un numéro', async () => {
+    const { NUMERO } = await import('../src/services/miseAJourApk');
+    /* La forme compte : c'est elle que « versionPubliee » exige du
+       fichier publié, et une comparaison entre deux formes
+       différentes ne proposerait jamais rien. */
+    expect(NUMERO).toMatch(/^\d+(\.\d+){0,3}$/);
+    expect(NUMERO).not.toBe('0.0.0');
+  });
+
+  test('l’écran du club montre ce numéro-là, pas seulement le commit', () => {
+    const source = readFileSync(
+      resolve(process.cwd(), 'src/ecrans/Club.tsx'),
+      'utf8'
+    );
+    /* Sans lui, un membre à qui l'on demande sa version répond par
+       une empreinte de commit — illisible, et sans rapport avec ce
+       que compare la mise à jour. */
+    expect(source).toContain('Version {NUMERO}');
+  });
+
+  test('⚠ l’APK d’essai s’annonce à Android avec ce numéro', () => {
+    const workflow = readFileSync(
+      resolve(process.cwd(), '..', '.github', 'workflows', 'apk.yml'),
+      'utf8'
+    );
+    /* Il s'annonçait « 77.0 » — le numéro d'exécution. Android
+       affichait donc un numéro que l'application ne connaissait pas,
+       et l'on ne pouvait pas savoir, depuis un téléphone, si la
+       version installée était celle qu'on croyait. */
+    expect(workflow).toMatch(/versionName .*steps\.numero\.outputs\.numero/);
+  });
+
+  test('la publication refuse un numéro déjà sorti', () => {
+    const workflow = readFileSync(
+      resolve(process.cwd(), '..', '.github', 'workflows', 'publier.yml'),
+      'utf8'
+    );
+    /* La barrière DURE est ici, et pas ailleurs : republier un numéro
+       déjà distribué ne proposerait rien à personne, et l'on croirait
+       avoir livré. */
+    expect(workflow).toContain('est déjà publiée');
+    expect(workflow).toMatch(/git ls-remote .*refs\/tags\/v\$NUMERO/);
   });
 });

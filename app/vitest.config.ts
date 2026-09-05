@@ -26,9 +26,28 @@
    ============================================================ */
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import { readFileSync } from 'node:fs';
+
+/* ⚠ LE NUMÉRO DE VERSION DOIT EXISTER ICI AUSSI.
+
+   vite.config.ts définit « __NUMERO__ » depuis package.json ; ce
+   fichier-ci ne le faisait pas. Les essais tournaient donc sur la
+   valeur de repli « 0.0.0 », et AUCUN d'eux ne pouvait vérifier le
+   vrai numéro — celui qui décide s'il existe une mise à jour.
+
+   Rien n'échouait, parce que le service prévoit ce repli exprès pour
+   la version web servie hors construction. Mais cela voulait dire
+   qu'un numéro faux serait passé sans un bruit.
+
+   Deux configurations pour une même application divergent toujours
+   par un endroit ; celui-ci était le plus discret. */
+const NUMERO = JSON.parse(
+  readFileSync(new URL('./package.json', import.meta.url), 'utf8')
+).version as string;
 
 export default defineConfig({
   plugins: [react()],
+  define: { __NUMERO__: JSON.stringify(NUMERO) },
   /* La maquette vit à la racine du dépôt, hors de app/, et
      l'application la LIT — css/app.css, icones.mjs, et le logo du
      club dans img/. vite.config.ts l'autorise déjà ; il fallait le

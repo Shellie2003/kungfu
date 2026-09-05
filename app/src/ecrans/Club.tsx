@@ -32,6 +32,7 @@ import { useNavigate } from 'react-router-dom';
 import { Emblem } from '../ui/Emblem';
 import { Icone } from '../ui/Icone';
 import { VERSION, versionCourte } from '../services/version';
+import { NUMERO } from '../services/miseAJourApk';
 import {
   Avis, Bouton, Carte, ChoisirFichier, Entete, Feuille, Filet, Modifier, Surtitre, Tuile, Zone
 } from '../ui/base';
@@ -484,8 +485,22 @@ export function Club() {
             Discrète et en dernier : ce n'est pas une information
             pour les soixante-quatre membres, c'est un repère pour
             qui essaie. */}
+        {/* ⚠ LES DEUX NUMÉROS, ET DANS CET ORDRE.
+
+            Cette ligne ne montrait que l'empreinte du commit. À la
+            question « quelle version as-tu ? », le membre répondait
+            donc « 583262e » — un repère utile à qui développe, et
+            illisible pour tout le monde d'autre.
+
+            Or c'est le NUMÉRO qui décide de la mise à jour : c'est lui
+            que le téléphone compare à celui publié. Il doit donc être
+            celui qu'on lit en premier, sans quoi l'application et son
+            porteur ne donnent pas la même réponse à la même question.
+
+            L'empreinte reste, en second : elle seule permet de
+            retrouver le code exact d'un APK d'essai. */}
         <p style={{ fontSize: 11, color: '#A8B6AE', textAlign: 'center', marginTop: 4 }}>
-          Version {versionCourte(VERSION)}
+          Version {NUMERO} · {versionCourte(VERSION)}
         </p>
       </div>
     </>
