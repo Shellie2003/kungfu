@@ -60,17 +60,33 @@ Le bouchon remplace ce que Supabase fournit et qu'un PostgreSQL nu n'a pas : la 
 `auth.uid()` et les rôles `anon` et `authenticated`. Il ne sert qu'au test, il n'est jamais
 appliqué au projet du club.
 
-## Le projet d'essai
+## Le projet — d'essai, puis de production
 
-Un projet **jetable** existe, sur un compte personnel :
-`znotzkfwukvvtaqfrozn`, région `ap-southeast-1`. Les cinq migrations y sont appliquées et
-le test y a été rejoué. Trois comptes d'essai — `F04x001` administration, `F04x045` maître,
-`F04x042` élève — plus une fiche **sans compte**, pour vérifier qu'un élève sans téléphone
-figure bien à l'annuaire.
+`znotzkfwukvvtaqfrozn`, région `ap-southeast-1`, sur un compte personnel.
 
-**Aucune donnée réelle du club ne doit entrer dans ce projet.** Des dates de naissance de
-mineurs sur un compte personnel, ce serait exactement ce que l'architecture cherche à
-éviter. Le projet du club sera créé au déploiement final, sur son propre compte.
+Il a d'abord été un projet **jetable**, monté pour rejouer le test de sécurité et
+essayer les écrans. Il portait cinq membres inventés et quatre comptes de connexion dont
+les mots de passe circulaient librement dans les échanges de développement.
+
+**Ce même projet est devenu celui du service réel** — le club a choisi de le garder
+plutôt que d'en créer un neuf. Il a donc fallu le vider :
+`supabase/mise-en-production.sql` efface les personnes et tout ce qu'elles ont produit,
+et **supprime les quatre comptes de connexion** dont les mots de passe ont circulé. Le
+compteur de matricules est revenu à `F04x001`.
+
+Ce qui a été gardé, parce que c'est le vrai référentiel du club et non de la donnée
+d'essai : les six grades, les neuf catégories, les quatre horaires et les réglages non
+marqués « ESSAI ».
+
+> ⚠️ **Le projet n'est plus jetable.** Il contient désormais — ou contiendra — des dates
+> de naissance de mineurs et des conversations privées. Ce qui remplace la séparation des
+> comptes est décrit dans **PASSATION.md § 1** : sauvegarde mensuelle, keystore en deux
+> exemplaires, second super administrateur, et un document que le club garde.
+>
+> Corollaire : **il n'y a plus de projet d'essai.** Une migration nouvelle ne peut donc
+> plus être essayée « sur l'autre projet » avant d'être poussée. Le jour où l'on en
+> écrira une qui touche à des données, il faudra soit créer un projet d'essai à ce
+> moment-là, soit prendre une sauvegarde juste avant.
 
 ## Ce que le contrôle de Supabase a trouvé
 

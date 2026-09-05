@@ -1,31 +1,41 @@
-# Passation au club
+# Mise en production et maintenance
 
-Ce document dit **comment remettre l'application au club**, et **ce qu'il faut savoir
-pour la maintenir ensuite**. Il s'adresse à celui qui fait la passation, pas au club.
+Ce document dit **comment l'application passe en service réel**, et **ce qu'il faut
+savoir pour la maintenir ensuite**.
 
-La règle qui commande tout le reste tient en une phrase :
+## La décision prise, et ce qu'elle engage
 
-> **Ce qui appartient au club doit être créé sur les comptes du club, dès le premier
-> jour.**
+Le projet Supabase **reste sur le compte personnel du développeur**. C'est un choix
+assumé : monter des comptes séparés pour le club — Supabase, GitHub, Vercel, Google
+Play — est un travail d'administration qui n'apporte rien à l'application elle-même, et
+qui peut attendre.
 
-Ce n'est pas une formalité juridique. Un projet Supabase créé sur votre compte
-personnel reste sous votre contrôle : le club ne peut ni le sauvegarder, ni changer un
-mot de passe, ni le récupérer si vous n'êtes plus joignable. Et à l'inverse, vous restez
-responsable de données — dates de naissance de mineurs, téléphones de parents — qui ne
-sont pas les vôtres. Migrer après coup est possible mais pénible ; le faire dès le début
-ne coûte rien.
+Ce qu'il faut savoir de ce choix, dit une fois et sans y revenir :
+
+- **Le club dépend d'une personne.** S'il n'est plus joignable, personne ne peut
+  sauvegarder la base, changer un mot de passe, ni publier une mise à jour. Ce n'est pas
+  un problème tant que la personne est là ; c'en est un le jour où elle ne l'est plus.
+- **Cette personne est responsable de données qui ne sont pas les siennes** : dates de
+  naissance de mineurs, téléphones de parents, conversations privées.
+
+D'où les quatre obligations du § 1, qui remplacent la séparation des comptes. Elles
+coûtent quelques minutes par mois. Le jour où le club voudra ses propres comptes, la
+migration est possible : Supabase sait transférer un projet vers une autre
+organisation, et le dépôt se transfère aussi.
 
 ---
 
-## 1. Ce que le club doit posséder
+## 1. Les quatre obligations du gardien
 
-| Quoi | Sur quel compte | Pourquoi cela ne peut pas rester chez vous |
+Tant que le projet vit sur un compte personnel, ce sont elles qui tiennent lieu de
+garantie pour le club.
+
+| # | Obligation | Pourquoi |
 |---|---|---|
-| Le projet **Supabase** | Un compte du club | C'est la base : les membres, les mineurs, les messages |
-| Le dépôt **GitHub** | Une organisation ou un compte du club | Le code, les migrations, l'historique des décisions |
-| Le projet **Vercel** (version web) | Un compte du club | L'adresse publique de l'application |
-| Le compte **Google Play** | Le club | Publier l'application, et surtout la mettre à jour |
-| Le **keystore** de signature | Le club, **sauvegardé en deux endroits** | Voir l'avertissement ci-dessous |
+| 1 | **Une sauvegarde mensuelle, rangée ailleurs que sur la machine de travail** | C'est la seule chose qui rende la perte du compte survivable. Voir § 4.5 |
+| 2 | **Le keystore sauvegardé en deux endroits, avec son mot de passe** | Le perdre, c'est ne plus jamais pouvoir mettre l'application à jour |
+| 3 | **Un second responsable du club en super administrateur** | Pour que le club ne dépende pas d'un seul compte à l'intérieur de l'application non plus |
+| 4 | **Écrire quelque part ce que le club devrait récupérer** — adresses, identifiants de projet, où se trouve la sauvegarde | Un document que le club garde, à ouvrir le jour où il en a besoin |
 
 > ### ⚠️ Le keystore est irremplaçable
 >
@@ -70,9 +80,17 @@ chaque mineur du club et on écrit ce qu'on veut.
 
 ### Les mots de passe
 
-Aucun mot de passe ne figure dans le dépôt, qui est public. Ceux des comptes d'essai
-n'ont jamais quitté nos échanges — et le projet d'essai est jetable, sans aucune donnée
-réelle du club.
+Aucun mot de passe ne figure dans le dépôt, qui est public.
+
+> **Un cas réel, et sa conséquence.** Les quatre comptes d'essai de ce projet ont eu
+> leurs mots de passe échangés en clair pendant le développement. Tant que le projet
+> était jetable, cela n'engageait rien. Le jour où l'on a décidé de garder ce projet pour
+> le service réel, ces quatre comptes sont devenus quatre portes connues de tiers : ils
+> ont donc été **supprimés**, pas seulement désactivés. Voir
+> `supabase/mise-en-production.sql`.
+>
+> La règle qu'il faut en tirer : **un mot de passe qui a circulé une fois a circulé pour
+> toujours.** On ne le « reprend » pas, on change le compte.
 
 ---
 
@@ -80,10 +98,13 @@ réelle du club.
 
 L'ordre compte : chaque étape suppose la précédente.
 
-### 3.1 — Créer le projet, sur le compte du club
+### 3.1 — Le projet
 
-Région : la plus proche d'Antananarivo parmi celles proposées. Notez la **référence du
-projet** (`<ref>`), elle sert partout ensuite.
+Le projet **existe déjà** : c'est celui qui a servi aux essais, conservé pour le service
+réel. Sa référence (`<ref>`) sert partout ensuite.
+
+> Sur un projet NEUF, cette étape serait : le créer, région la plus proche
+> d'Antananarivo parmi celles proposées, puis noter la référence.
 
 ### 3.2 — Appliquer les migrations
 
@@ -95,6 +116,11 @@ supabase db push
 
 Les 25 migrations s'appliquent **dans l'ordre**, `0001` à `0025`. Elles ne créent aucun
 membre et aucune donnée — uniquement le schéma, les règles d'accès et les fonctions.
+
+> Sur le projet conservé, elles sont **déjà appliquées**. Ce qu'il fallait faire à la
+> place, c'était **vider les données d'essai** : `supabase/mise-en-production.sql`, qui
+> efface les personnes et leur contenu mais garde le référentiel du club — les six
+> grades, les neuf catégories, les horaires et les réglages.
 
 ### 3.3 — Déployer les deux fonctions serveur
 
@@ -162,12 +188,37 @@ modifie rien et rend une ligne par contrôle :
 
 Une liste à cocher se coche de mémoire, un vendredi soir. Ce script, non.
 
-### 3.8 — Ce que le club doit encore fournir
+### 3.8 — Ce qui reste à faire, au jour de la mise en production
+
+**Dans le tableau de bord, tout de suite :**
+
+- [ ] **Vider les trois seaux** — Storage → `portraits`, `album`, `pieces` → tout
+      sélectionner → supprimer. Vingt fichiers d'essai y restent : le SQL ne peut pas les
+      effacer, Supabase l'interdit exprès (voir `mise-en-production.sql`, § 4).
+- [ ] **Activer** Authentication → Policies → *Leaked password protection*.
+
+**Dans l'application, à la première connexion :**
+
+- [ ] Créer le compte du club (§ 3.6). Il recevra **F04x001** : le compteur a été remis
+      à zéro.
+- [ ] **Relire les réglages** dans « Administration → Le club ». Six sont **vides** et
+      attendent le club : `presentation`, `presentation_courte`, `photo_club`, `adresse`,
+      `telephone`, `ussd_gabarit`.
+- [ ] ⚠️ **Vérifier le numéro MVola** (`0333786611`) et le nom du responsable
+      (`Santatra nirina Antonio`). Ils ont été saisis pendant les essais et ont été
+      **gardés** : un numéro faux enverrait l'argent des membres à quelqu'un d'autre.
+      C'est le seul réglage conservé qui puisse coûter de l'argent s'il est faux.
+- [ ] **Relire les quatre horaires**, gardés eux aussi.
+
+**Ce que le club doit fournir :**
 
 - L'image du **cachet du club** (`img/cachet.<ext>`) — l'emplacement reste vide en
   attendant, ce qui est plus honnête qu'un faux tampon.
 - La **photo du club** pour l'accueil.
-- Le **numéro MVola** du responsable, et le nom du club tel qu'il doit paraître.
+
+**Ce qui a été gardé et qui n'a rien à faire de plus :** les six grades (blanche, jaune,
+orange, verte, bleue, noire, dans l'ordre) et les neuf catégories — cinq pour les
+actualités, quatre pour les albums.
 
 ---
 
