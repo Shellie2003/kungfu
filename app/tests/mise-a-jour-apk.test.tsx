@@ -115,6 +115,87 @@ describe('lire la version publiée', () => {
   });
 });
 
+/* ============================================================
+   ⚠ DANS L'APK, LA DEMANDE NE PASSE PAS PAR « fetch ».
+
+   Ce défaut n'est apparu que sur la machine de construction de
+   GitHub, la seule des trois qui joigne github.com pour de vrai :
+
+       Access to fetch at '…/waishi.json' from origin
+       'https://localhost' has been blocked by CORS policy.
+
+   Capacitor sert la page depuis « https://localhost », qui est une
+   origine ; GitHub ne met pas d'en-tête d'autorisation sur les
+   fichiers de Release ; la WebView jette donc la réponse. Aucun
+   réglage de notre côté n'y change quoi que ce soit.
+
+   ET CELA NE SE SERAIT PAS VU. « versionPubliee » rattrape l'erreur
+   et rend « null » — c'est-à-dire « rien de neuf ». Le club n'aurait
+   jamais vu passer une mise à jour, sans que personne ait de raison
+   de se plaindre.
+
+   D'où le HTTP natif, qui sort de la WebView. Cet essai tient le
+   point exact qui a manqué : sur le téléphone, on ne demande PAS
+   avec « fetch ».
+   ============================================================ */
+describe('dans l’APK, le CORS ne doit pas pouvoir mordre', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.resetModules();
+    vi.doUnmock('@capacitor/core');
+  });
+
+  async function surTelephone(reponse: { status: number; data: unknown }) {
+    const get = vi.fn(async (_options: { url: string }) => reponse);
+    vi.doMock('@capacitor/core', () => ({
+      Capacitor: { isNativePlatform: () => true, getPlatform: () => 'android' },
+      CapacitorHttp: { get }
+    }));
+    vi.resetModules();
+    const module = await import('../src/services/miseAJourApk');
+    return { module, get };
+  }
+
+  test('elle demande par le pont natif, et jamais par fetch', async () => {
+    const fetchDefendu = vi.fn(async () => {
+      throw new Error('fetch ne doit pas être employé sur le téléphone');
+    });
+    vi.stubGlobal('fetch', fetchDefendu);
+
+    const { module, get } = await surTelephone({
+      status: 200,
+      data: { numero: '1.4.0', notes: 'La carte s’imprime droit.' }
+    });
+
+    expect(await module.versionPubliee()).toEqual({
+      numero: '1.4.0',
+      notes: 'La carte s’imprime droit.'
+    });
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(get).toHaveBeenCalledWith(
+      expect.objectContaining({ url: module.OU_EST_LA_VERSION })
+    );
+    expect(fetchDefendu).not.toHaveBeenCalled();
+  });
+
+  test('le greffon peut rendre du TEXTE plutôt que du JSON', async () => {
+    /* Selon ce que le serveur annonce comme type, le pont natif rend
+       l'objet déjà lu ou la chaîne brute. Les deux doivent marcher :
+       n'en accepter qu'un rendrait la mise à jour muette le jour où
+       GitHub changerait d'en-tête. */
+    const { module } = await surTelephone({
+      status: 200,
+      data: '{"numero":"2.0.0"}'
+    });
+    expect(await module.versionPubliee()).toEqual({ numero: '2.0.0', notes: undefined });
+  });
+
+  test('un statut d’erreur ne devient pas une mise à jour', async () => {
+    const { module } = await surTelephone({ status: 404, data: 'Not Found' });
+    expect(await module.versionPubliee()).toBeNull();
+  });
+});
+
 describe('le forfait des membres', () => {
   beforeEach(() => localStorage.clear());
 

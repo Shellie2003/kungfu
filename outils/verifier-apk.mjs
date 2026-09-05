@@ -203,66 +203,37 @@ await brancher(page);
 
 const erreurs = [];
 
-/* ⚠ CE QUI EST DEHORS N'EST PAS UN DÉFAUT — ET ON LE RECONNAÎT À
-   L'ADRESSE, PAS AU MESSAGE.
+/* ⚠ NE PAS RÉINTRODUIRE D'EXCUSE POUR GITHUB ICI.
 
-   Première version : on reconnaissait la requête vers GitHub au texte
-   de l'erreur de console. Cela marchait ici, où Chromium écrit
-   « ERR_CERT_AUTHORITY_INVALID » et l'adresse complète — et cela a
-   échoué sur la machine de construction de GitHub, où le même échec
-   s'écrit « Failed to load resource: net::ERR_FAILED », sans adresse
-   ni code reconnaissable. Le banc a donc déclaré un défaut de
-   l'application là où il n'y avait qu'un réseau fermé.
+   Ce banc a échoué deux fois de suite sur l'écran d'accueil, et les
+   deux fois j'ai d'abord cru à une gêne du banc :
 
-   Le texte d'une erreur de console dépend du navigateur, de sa
-   version et de la machine. L'ADRESSE de la requête, elle, ne dépend
-   de rien : on la relève à la source.
+     nº 72   console : Failed to load resource: net::ERR_FAILED
+     nº 73   Access to fetch at '…/waishi.json' from origin
+             'http://localhost:4173' has been blocked by CORS policy
 
-   Et on ne pardonne que GitHub, nommément. « Tout ce qui est hors de
-   localhost » aurait aussi couvert Supabase — dont chaque appel est
-   pourtant bouché par outils/bouchon.mjs et DOIT aboutir. Un bouchon
-   qui cesserait de répondre passerait alors inaperçu. */
-const DEHORS = /^https?:\/\/([^/]*\.)?github(usercontent)?\.com\//;
-const echouees = new Set();
-page.on('requestfailed', (r) => {
-  if (DEHORS.test(r.url())) echouees.add(r.url());
-});
+   C'était un VRAI défaut de l'application, et le seul endroit au
+   monde qui pouvait le montrer. La vérification de mise à jour
+   demandait « waishi.json » avec « fetch », depuis la page ; dans
+   l'APK, Capacitor sert la page depuis « https://localhost », qui est
+   une ORIGINE, et GitHub ne met pas d'en-tête d'autorisation sur les
+   fichiers de Release. La WebView jetait donc la réponse — sur cette
+   machine-ci le réseau était simplement fermé, ce qui masquait la
+   vraie cause derrière un message de panne réseau.
 
+   La fonctionnalité n'aurait jamais marché, et cela ne se serait pas
+   vu : « versionPubliee » rattrape l'erreur et rend « null », c'est-
+   à-dire « rien de neuf ». Le club n'aurait jamais reçu une seule
+   mise à jour.
+
+   La demande passe maintenant par le HTTP natif de Capacitor, hors de
+   la WebView. Plus aucune requête vers github.com ne part de la page,
+   et ce banc doit rester STRICT : une erreur de console qui nommerait
+   à nouveau github.com voudrait dire que quelqu'un est revenu à
+   « fetch ». C'est exactement ce qu'il faut voir échouer. */
 page.on('console', (m) => {
   if (m.type() !== 'error') return;
   if (m.text().includes('realtime')) return;
-
-  /* Chromium attache à « Failed to load resource » l'adresse de la
-     ressource en question. Quand elle est dehors — GitHub pour la
-     mise à jour, et rien d'autre — c'est le réseau du banc, pas
-     l'application. */
-  const ou = m.location?.()?.url ?? '';
-  if (DEHORS.test(ou) || echouees.has(ou)) return;
-
-  /* Et si le navigateur n'a pas donné d'adresse du tout : on
-     n'excuse que si la SEULE chose qui a échoué depuis le début est
-     dehors. Une ressource du site qui manquerait resterait un
-     défaut. */
-  if (/Failed to load resource/.test(m.text()) && !ou && echouees.size > 0) return;
-
-  /* ⚠ LA MISE À JOUR DE L'APK DEMANDE GITHUB, ET CE BANC N'A PAS
-     INTERNET.
-
-     En mode téléphone — et seulement là — l'application va lire
-     « waishi.json » sur les Releases du dépôt pour savoir s'il existe
-     une version plus récente. Ni cette machine ni celle de
-     construction ne joignent github.com : la requête échoue, et le
-     navigateur l'inscrit en console.
-
-     Ce n'est pas un défaut de l'application : le service rattrape
-     l'échec et ne dit rien, ce qui est exactement le comportement
-     voulu hors ligne — annoncer une mise à jour parce que le réseau
-     est tombé serait un mensonge. C'est la même excuse que pour la
-     WebSocket du temps réel juste au-dessus, et pour la même raison :
-     un service extérieur qu'on ne peut pas joindre d'ici.
-
-     Ce qui se vérifie vraiment, ce sont les numéros et la parcimonie
-     du réseau — app/tests/mise-a-jour-apk.test.tsx. */
   erreurs.push(`console : ${m.text()}`);
 });
 page.on('pageerror', (e) => erreurs.push(`exception : ${e.message}`));

@@ -135,11 +135,64 @@ function noterLeRegard(maintenant = Date.now()): void {
   }
 }
 
+/* ------------------------------------------------------------
+   ⚠ POURQUOI CE N'EST PAS « fetch » DANS L'APK.
+
+   Ce défaut-ci ne s'est vu NULLE PART sauf sur la machine de
+   construction de GitHub, et il aurait rendu toute cette
+   fonctionnalité inutile en silence :
+
+       Access to fetch at '…/releases/latest/download/waishi.json'
+       from origin 'https://localhost' has been blocked by CORS
+       policy: No 'Access-Control-Allow-Origin' header is present.
+
+   L'APK n'est pas un dossier de fichiers ouvert : Capacitor sert la
+   page depuis « https://localhost », qui est une ORIGINE. Une requête
+   vers github.com part donc d'une origine vers une autre, et le
+   navigateur exige que le serveur distant l'autorise par un en-tête.
+   GitHub ne le met pas sur les fichiers de Release — la réponse
+   arrive bel et bien, et c'est la WebView qui la jette.
+
+   Ce n'est pas rattrapable côté application : aucun réglage, aucun
+   en-tête de notre côté ne change l'avis du navigateur.
+
+   D'où le passage par le HTTP NATIF de Capacitor : la requête est
+   faite en Java, hors de la WebView, où la notion d'origine n'existe
+   pas. On a lu le code Android — « CapacitorHttp » est enregistré
+   dans Bridge.java sans condition, et sa méthode « get » ne dépend
+   PAS du réglage « enabled » (celui-ci ne commande que le
+   remplacement global de window.fetch, qu'on ne veut pas : il
+   passerait aussi par-dessus tous les appels à Supabase).
+
+   Sur le web, « fetch » reste le bon outil : la version web est
+   servie par Vercel, ne propose aucune mise à jour d'APK, et n'appelle
+   donc jamais ceci.
+
+   ⚠ CE QUE L'ÉCHEC AURAIT DONNÉ. Rien. « versionPubliee » rattrape
+   l'erreur et rend « null », ce qui veut dire « pas de nouveauté ».
+   Le club n'aurait jamais vu passer une seule mise à jour, et
+   personne n'aurait eu de raison de se plaindre.
+   ------------------------------------------------------------ */
+async function demanderLeFichier(): Promise<unknown> {
+  if (SUR_TELEPHONE) {
+    const { CapacitorHttp } = await import('@capacitor/core');
+    const r = await CapacitorHttp.get({
+      url: OU_EST_LA_VERSION,
+      headers: { 'Cache-Control': 'no-cache' }
+    });
+    if (r.status < 200 || r.status >= 300) throw new Error(`statut ${r.status}`);
+    /* Le greffon rend déjà du JSON quand le serveur annonce du JSON,
+       et du texte sinon. On accepte les deux. */
+    return typeof r.data === 'string' ? JSON.parse(r.data) : r.data;
+  }
+  const r = await fetch(OU_EST_LA_VERSION, { cache: 'no-store' });
+  if (!r.ok) throw new Error(`statut ${r.status}`);
+  return r.json();
+}
+
 export async function versionPubliee(): Promise<VersionPubliee | null> {
   try {
-    const r = await fetch(OU_EST_LA_VERSION, { cache: 'no-store' });
-    if (!r.ok) return null;
-    const brut: unknown = await r.json();
+    const brut: unknown = await demanderLeFichier();
     const o = brut as { numero?: unknown; notes?: unknown };
     /* On vérifie la FORME avant de croire le contenu. Un 404 déguisé
        en page HTML, un fichier tronqué, une note de deux mille
