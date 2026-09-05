@@ -202,17 +202,57 @@ await poserSession(page);
 await brancher(page);
 
 const erreurs = [];
+
+/* ⚠ CE QUI EST DEHORS N'EST PAS UN DÉFAUT — ET ON LE RECONNAÎT À
+   L'ADRESSE, PAS AU MESSAGE.
+
+   Première version : on reconnaissait la requête vers GitHub au texte
+   de l'erreur de console. Cela marchait ici, où Chromium écrit
+   « ERR_CERT_AUTHORITY_INVALID » et l'adresse complète — et cela a
+   échoué sur la machine de construction de GitHub, où le même échec
+   s'écrit « Failed to load resource: net::ERR_FAILED », sans adresse
+   ni code reconnaissable. Le banc a donc déclaré un défaut de
+   l'application là où il n'y avait qu'un réseau fermé.
+
+   Le texte d'une erreur de console dépend du navigateur, de sa
+   version et de la machine. L'ADRESSE de la requête, elle, ne dépend
+   de rien : on la relève à la source.
+
+   Et on ne pardonne que GitHub, nommément. « Tout ce qui est hors de
+   localhost » aurait aussi couvert Supabase — dont chaque appel est
+   pourtant bouché par outils/bouchon.mjs et DOIT aboutir. Un bouchon
+   qui cesserait de répondre passerait alors inaperçu. */
+const DEHORS = /^https?:\/\/([^/]*\.)?github(usercontent)?\.com\//;
+const echouees = new Set();
+page.on('requestfailed', (r) => {
+  if (DEHORS.test(r.url())) echouees.add(r.url());
+});
+
 page.on('console', (m) => {
   if (m.type() !== 'error') return;
   if (m.text().includes('realtime')) return;
+
+  /* Chromium attache à « Failed to load resource » l'adresse de la
+     ressource en question. Quand elle est dehors — GitHub pour la
+     mise à jour, et rien d'autre — c'est le réseau du banc, pas
+     l'application. */
+  const ou = m.location?.()?.url ?? '';
+  if (DEHORS.test(ou) || echouees.has(ou)) return;
+
+  /* Et si le navigateur n'a pas donné d'adresse du tout : on
+     n'excuse que si la SEULE chose qui a échoué depuis le début est
+     dehors. Une ressource du site qui manquerait resterait un
+     défaut. */
+  if (/Failed to load resource/.test(m.text()) && !ou && echouees.size > 0) return;
+
   /* ⚠ LA MISE À JOUR DE L'APK DEMANDE GITHUB, ET CE BANC N'A PAS
      INTERNET.
 
      En mode téléphone — et seulement là — l'application va lire
      « waishi.json » sur les Releases du dépôt pour savoir s'il existe
-     une version plus récente. Cet environnement de construction ne
-     joint pas github.com : la requête échoue, et le navigateur
-     l'inscrit en console.
+     une version plus récente. Ni cette machine ni celle de
+     construction ne joignent github.com : la requête échoue, et le
+     navigateur l'inscrit en console.
 
      Ce n'est pas un défaut de l'application : le service rattrape
      l'échec et ne dit rien, ce qui est exactement le comportement
@@ -223,9 +263,6 @@ page.on('console', (m) => {
 
      Ce qui se vérifie vraiment, ce sont les numéros et la parcimonie
      du réseau — app/tests/mise-a-jour-apk.test.tsx. */
-  if (/ERR_CERT_AUTHORITY_INVALID|ERR_(NAME|INTERNET|CONNECTION)|github\.com/.test(m.text())) {
-    return;
-  }
   erreurs.push(`console : ${m.text()}`);
 });
 page.on('pageerror', (e) => erreurs.push(`exception : ${e.message}`));
