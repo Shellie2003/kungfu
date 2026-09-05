@@ -119,3 +119,82 @@ describe('un membre supprimé ne troue pas les conversations', () => {
     expect(service).toMatch(/auteur_id:\s*string\s*\|\s*null/);
   });
 });
+
+/* ============================================================
+   ⚠ LE CLUB NE DOIT PAS POUVOIR S'ENFERMER DEHORS.
+
+   « Pourquoi le bouton créer un compte n'est pas affiché ? J'ai
+   supprimé manuellement le profil 001. »
+
+   La porte s'ouvrait à deux conditions : aucune trace
+   « fondation_faite », ET aucun super administrateur. Le profil
+   supprimé, la seconde était remplie ; la trace, elle, restait. Zéro
+   profil, et la porte fermée à clé — plus personne ne pouvait entrer,
+   et rien à l'écran ne disait pourquoi.
+
+   Le verrou visait un vrai risque : effacer une ligne pour se
+   refabriquer un compte super administrateur. Mais ce chemin n'existe
+   pas depuis l'application — seul un super administrateur supprime,
+   et il lui est interdit de se supprimer lui-même. Atteindre zéro
+   administrateur exige déjà le tableau de bord.
+
+   La règle est donc : la porte est ouverte quand le club n'a AUCUN
+   administrateur. Ces essais tiennent les deux moitiés de ce
+   raisonnement — celle qui rouvre, et celle qui ne rouvre pas trop.
+   ============================================================ */
+describe('la porte d’inscription', () => {
+  const sql = () => sqlDansLOrdre().join('\n');
+
+  test('s’ouvre sur « aucun administrateur », et non sur une trace', () => {
+    /* La DERNIÈRE définition de la fonction est celle qui vaut. */
+    const toutes = [...sql().matchAll(
+      /create\s+or\s+replace\s+function\s+public\.fondation_ouverte\(\)[\s\S]*?\$\$([\s\S]*?)\$\$/gi
+    )];
+    expect(toutes.length, 'fondation_ouverte() est introuvable').toBeGreaterThan(0);
+    const derniere = toutes[toutes.length - 1]![1]!;
+
+    expect(
+      derniere,
+      'La porte doit s’ouvrir quand le club n’a aucun administrateur.'
+    ).toMatch(/not\s+exists[\s\S]*from\s+profils\s+where\s+role\s*=\s*'admin'/i);
+
+    expect(
+      derniere,
+      'La trace « fondation_faite » ne doit plus être une serrure : le club ' +
+        'qui perd son dernier administrateur resterait enfermé dehors, sans ' +
+        'aucun moyen de rentrer depuis l’application.'
+    ).not.toMatch(/fondation_faite/i);
+  });
+
+  test('⚠ ne se rouvre PAS tant qu’un administrateur reste', () => {
+    /* La nuance qui compte : un club sans SUPER administrateur mais
+       avec des administrateurs fonctionne encore. Rouvrir là
+       laisserait n'importe qui, sans aucun compte, se fabriquer le
+       rôle le plus puissant pendant que le club tourne. */
+    const toutes = [...sql().matchAll(
+      /create\s+or\s+replace\s+function\s+public\.fondation_ouverte\(\)[\s\S]*?\$\$([\s\S]*?)\$\$/gi
+    )];
+    expect(toutes[toutes.length - 1]![1]!).not.toMatch(/super_admin/i);
+  });
+
+  test('le verrou d’exclusion reste un verrou, mais reprenable', () => {
+    /* ⚠ LE PIÈGE. « fonder_reserver » se sert de la ligne comme
+       VERROU : elle l'INSÈRE, et la clé primaire départage deux
+       inscriptions simultanées. Rouvrir la porte sans y toucher
+       aurait affiché le bouton et fait échouer chaque tentative sur
+       un doublon — une porte qui a l'air ouverte et ne s'ouvre
+       jamais. */
+    const s = sql();
+    expect(
+      s,
+      'La reprise d’une réservation abandonnée doit se faire par un ' +
+        '« update … where », que PostgreSQL sérialise.'
+    ).toMatch(/update\s+reglages[\s\S]{0,200}?cle\s*=\s*'fondation_faite'[\s\S]{0,200}?interval/i);
+
+    expect(
+      s,
+      'Le doublon de clé doit être rattrapé et rendu comme un refus lisible, ' +
+        'sinon le club lit une erreur de base de données.'
+    ).toMatch(/exception\s+when\s+unique_violation/i);
+  });
+});
