@@ -25,8 +25,35 @@
 name: Publier une version
 
 on:
+  # Par une étiquette, depuis un terminal :
+  #     git tag -a v1.1.0 -m "…" && git push origin v1.1.0
   push:
     tags: ['v*']
+
+  # ------------------------------------------------------------
+  # OU PAR UN BOUTON, SANS TERMINAL.
+  #
+  # « Je n'utilise pas de terminal, je travaille dans le navigateur :
+  # pas moyen d'exécuter les commandes. »
+  #
+  # Poser une étiquette demandait git, donc une machine, donc un
+  # terminal — et rendait la publication impossible à qui gère le club
+  # depuis un téléphone ou un navigateur. Ce n'est pas tenable pour un
+  # dépôt qu'on remet à une association : celui qui reprendra ce
+  # projet n'aura pas forcément d'ordinateur configuré.
+  #
+  # Onglet Actions → « Publier une version » → « Run workflow ».
+  #
+  # L'étiquette n'est alors PAS posée d'avance : le numéro vient de
+  # app/package.json, et la Release la crée en se publiant. C'est le
+  # même numéro dans les deux cas — celui que les téléphones comparent.
+  # ------------------------------------------------------------
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: "Ce que cette version apporte, en une phrase (lue par les membres)"
+        required: false
+        default: ""
 
 # Sans cela, le pas « créer la Release » échoue avec un 403 dont la
 # cause n'est pas évidente : par défaut un workflow ne peut que LIRE
@@ -53,17 +80,48 @@ jobs:
       # Release est là, et les membres ne reçoivent rien. On échoue
       # donc ici, bruyamment.
       # ------------------------------------------------------------
-      - name: L'étiquette correspond-elle au numéro ?
+      - name: Quelle version publie-t-on ?
         id: version
+        env:
+          NOTES_SAISIES: ${{ inputs.notes }}
         run: |
-          ETIQUETTE="${GITHUB_REF_NAME#v}"
           NUMERO=$(node -p "require('./app/package.json').version")
-          echo "étiquette : $ETIQUETTE — package.json : $NUMERO"
-          if [ "$ETIQUETTE" != "$NUMERO" ]; then
-            echo "::error::L'étiquette $GITHUB_REF_NAME ne correspond pas à la version $NUMERO de app/package.json. Les téléphones comparent le NUMÉRO : la mise à jour ne serait proposée à personne."
-            exit 1
+          echo "app/package.json : $NUMERO"
+
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            # Lancée par une étiquette : elle doit concorder avec le
+            # numéro. Publier « v1.2.0 » avec un package.json resté à
+            # « 1.1.0 » donnerait une Release nommée 1.2.0 dont les
+            # téléphones ne verraient jamais la nouveauté — ils
+            # compareraient 1.1.0 à 1.1.0. Ce défaut ne se voit PAS :
+            # la publication réussit et les membres ne reçoivent rien.
+            ETIQUETTE="${GITHUB_REF_NAME#v}"
+            echo "étiquette : $ETIQUETTE"
+            if [ "$ETIQUETTE" != "$NUMERO" ]; then
+              echo "::error::L'étiquette $GITHUB_REF_NAME ne correspond pas à la version $NUMERO de app/package.json. Les téléphones comparent le NUMÉRO : la mise à jour ne serait proposée à personne."
+              exit 1
+            fi
+            NOTES=$(git tag -l --format='%(contents:subject)' "$GITHUB_REF_NAME")
+          else
+            # Lancée au bouton : l'étiquette n'existe pas encore, la
+            # Release la posera. On refuse en revanche de republier un
+            # numéro déjà sorti — les téléphones qui l'ont ne verraient
+            # rien de neuf, et l'on croirait avoir livré.
+            if git ls-remote --exit-code --tags origin "refs/tags/v$NUMERO" >/dev/null 2>&1; then
+              echo "::error::La version $NUMERO est déjà publiée. Changez le numéro dans app/package.json avant de publier : c'est lui que les téléphones comparent, et republier le même ne proposerait rien à personne."
+              exit 1
+            fi
+            NOTES="$NOTES_SAISIES"
           fi
+
           echo "numero=$NUMERO" >> "$GITHUB_OUTPUT"
+          # Sur plusieurs lignes : une note peut contenir n'importe
+          # quel caractère, y compris ceux qui casseraient « clé=valeur ».
+          {
+            echo "notes<<FIN_DES_NOTES"
+            echo "$NOTES"
+            echo "FIN_DES_NOTES"
+          } >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-node@v4
         with:
@@ -269,23 +327,39 @@ jobs:
       # voir les mises à jour sans rien dire.
       # ------------------------------------------------------------
       - name: Préparer la Release
+        env:
+          NOTES: ${{ steps.version.outputs.notes }}
         run: |
           mkdir -p publication
           cp app/android/app/build/outputs/apk/release/app-release.apk publication/waishi.apk
-          NOTES=$(git tag -l --format='%(contents:subject)' "$GITHUB_REF_NAME")
           node -e "
             const fs = require('node:fs');
             fs.writeFileSync('publication/waishi.json', JSON.stringify({
               numero: '${{ steps.version.outputs.numero }}',
-              notes: process.argv[1] || ''
+              notes: (process.argv[1] || '').trim()
             }, null, 2) + '\n');
           " "$NOTES"
           cat publication/waishi.json
           ls -lh publication/
 
+      # ------------------------------------------------------------
+      # ⚠ « tag_name » EST INDISPENSABLE DEPUIS QU'ON PUBLIE AU BOUTON.
+      #
+      # Sans lui, l'action prend l'étiquette de la référence courante —
+      # ce qui marchait tant que le workflow ne partait QUE d'une
+      # étiquette. Lancé à la main depuis une branche, il n'y en a
+      # aucune : la publication échouerait, ou pire, s'accrocherait au
+      # nom de la branche.
+      #
+      # L'étiquette est donc nommée explicitement, et l'action la CRÉE
+      # si elle n'existe pas. C'est ce qui remplace le « git tag » que
+      # l'on ne peut pas taper sans terminal.
+      # ------------------------------------------------------------
       - name: Publier
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.version.outputs.numero }}
+          name: Version ${{ steps.version.outputs.numero }}
           files: |
             publication/waishi.apk
             publication/waishi.json
