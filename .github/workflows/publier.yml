@@ -92,6 +92,29 @@ jobs:
         working-directory: app
         run: npx vitest run
 
+      # ------------------------------------------------------------
+      # ⚠ SANS SERVEUR, LA CONSTRUCTION RÉUSSIT QUAND MÊME.
+      #
+      # Vite ne se plaint pas d'une variable vide : il la remplace par
+      # rien et fabrique un APK complet, d'apparence normale, qui ne
+      # parle à AUCUN serveur. Personne ne pourrait s'y connecter, et
+      # le défaut ne se verrait qu'une fois l'application installée.
+      #
+      # apk.yml peut se permettre de retomber sur .env.essai — il
+      # fabrique un APK d'essai. Ici on publie : mieux vaut refuser de
+      # signer que distribuer une application vide.
+      # ------------------------------------------------------------
+      - name: Le serveur est-il connu ?
+        env:
+          URL_SECRET: ${{ secrets.SUPABASE_URL }}
+          CLE_SECRET: ${{ secrets.SUPABASE_CLE }}
+        run: |
+          if [ -z "$URL_SECRET" ] || [ -z "$CLE_SECRET" ]; then
+            echo "::error::Les secrets SUPABASE_URL et SUPABASE_CLE sont nécessaires pour publier : sans eux l'APK se construirait sans serveur et personne ne pourrait se connecter. Voir LIVRER.md, partie 3."
+            exit 1
+          fi
+          echo "serveur : $URL_SECRET"
+
       - name: Construire l'application
         working-directory: app
         env:
@@ -106,8 +129,24 @@ jobs:
           npx cap add android
           npx cap sync android
 
+      # ------------------------------------------------------------
+      # ⚠ L'OUTIL DES ICÔNES VIT À LA RACINE, PAS DANS app/.
+      #
+      # Il emploie Playwright, qui est déclaré dans le package.json
+      # de la RACINE — « Installer » ci-dessus ne pose que les
+      # dépendances de app/. Sans ces deux lignes, l'étape échoue sur
+      # « Cannot find package 'playwright' ».
+      #
+      # Ce défaut était ici, dans un workflow qui n'a jamais tourné,
+      # pendant que le même — un import qui ne se résout que sur une
+      # machine — coûtait trois exécutions à apk.yml. Il aurait
+      # frappé le jour de la première publication.
+      # ------------------------------------------------------------
       - name: Poser l'icône du club
-        run: node outils/poser-icones.mjs
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          node outils/poser-icones.mjs
 
       - name: Déclarer la caméra
         working-directory: app/android/app/src/main
@@ -122,6 +161,39 @@ jobs:
             echo "::error::Le manifeste n'a pas l'ancre attendue."
             exit 1
           fi
+
+      # ------------------------------------------------------------
+      # ⚠ ELLE MANQUAIT ICI, ET SEULEMENT ICI.
+      #
+      # apk.yml déclare cette permission ; ce workflow-ci ne la
+      # déclarait pas. L'APK d'essai savait donc enregistrer les
+      # documents reçus dans la messagerie, et celui que le CLUB
+      # aurait installé ne l'aurait pas su — sur les Android
+      # antérieurs à 10, où la permission est encore exigée.
+      #
+      # C'est le pire genre d'écart : les deux APK portent le même
+      # numéro de version, se ressemblent en tout, et l'un a une
+      # fonctionnalité que l'autre n'a pas. On aurait cherché le
+      # défaut dans le code, où il n'était pas.
+      #
+      # ⚠ TOUTE ÉTAPE AJOUTÉE À apk.yml ENTRE « Engendrer le projet
+      # Android » ET « Construire » DOIT ÊTRE AJOUTÉE ICI AUSSI.
+      # ------------------------------------------------------------
+      - name: Autoriser l’enregistrement des documents
+        working-directory: app/android/app/src/main
+        run: |
+          if grep -q 'WRITE_EXTERNAL_STORAGE' AndroidManifest.xml; then
+            echo "déjà déclarée"
+            exit 0
+          fi
+          if ! grep -q '</manifest>' AndroidManifest.xml; then
+            echo "::error::Le manifeste engendré n'a pas la forme attendue : les documents reçus ne pourraient pas être enregistrés sur les Android antérieurs à 10."
+            exit 1
+          fi
+          sed -i 's|</manifest>|    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />\n</manifest>|' AndroidManifest.xml
+          grep -q 'WRITE_EXTERNAL_STORAGE' AndroidManifest.xml \
+            || { echo "::error::L'écriture de la permission de stockage a échoué."; exit 1; }
+          echo "enregistrement des documents déclaré"
 
       # ------------------------------------------------------------
       # LE NUMÉRO DE VERSION, DANS L'APK.
