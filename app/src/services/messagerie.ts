@@ -146,7 +146,18 @@ export type Message = {
      adresse : elle est signée et expire au bout d'une heure. */
   piece: string | null;
   supprime_le: string | null;
-  auteur_id: string;
+  /* ⚠ NUL SIGNIFIE « MEMBRE SUPPRIMÉ ».
+
+     Le lien vers la fiche est « on delete set null » depuis la
+     migration 0027 : un membre qui part emporte sa fiche, pas la
+     mémoire du club. Ses messages restent donc dans le fil, sans
+     auteur — ce que l'écran sait déjà afficher, puisqu'un élève ne
+     voit pas la fiche de tout le monde.
+
+     Avant 0027 c'était « cascade » : la suppression d'un membre
+     effaçait ses messages AU MILIEU des conversations des autres, et
+     cela contredisait ce que la fonction « comptes » affirmait. */
+  auteur_id: string | null;
   auteur: { nom: string; prenom: string } | null;
 };
 
@@ -420,6 +431,9 @@ export function useEnvoyer(salonId: string | undefined) {
 export const MINUTES_CORRECTION = 15;
 
 export const corrigible = (m: Message, moiId: string | undefined) =>
+  /* Un auteur nul — membre supprimé — n'est celui de personne :
+     « null === undefined » est faux, et c'est ce qu'on veut. */
+  m.auteur_id !== null &&
   m.auteur_id === moiId &&
   !m.supprime_le &&
   Date.now() - new Date(m.cree_le).getTime() < MINUTES_CORRECTION * 60_000;

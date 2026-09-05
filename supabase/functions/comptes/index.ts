@@ -319,7 +319,16 @@ Deno.serve(async (requete) => {
        salons, les présences. Ce qui reste : les messages écrits, dont
        l'auteur devient nul — faire disparaître une conversation à
        laquelle d'autres ont participé n'est pas ce qu'on demande en
-       supprimant un membre. */
+       supprimant un membre.
+
+       ⚠ CE PARAGRAPHE A ÉTÉ FAUX PENDANT TOUT LE PROJET. Le lien
+       était « on delete CASCADE » : supprimer un membre effaçait
+       bel et bien ses messages, au milieu des conversations des
+       autres. L'intention écrite ici était la bonne ; c'est le
+       schéma qui ne la suivait pas, et personne ne les avait
+       confrontés. La migration 0027 corrige la BASE — et non ce
+       commentaire — parce que c'est le commentaire qui avait
+       raison. */
     if (fiche.compte_id) {
       const { error } = await admin.auth.admin.deleteUser(fiche.compte_id);
       if (error) return repondre({ message: error.message }, 400);
