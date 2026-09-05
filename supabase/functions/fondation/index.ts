@@ -80,14 +80,38 @@ const DOMAINE = 'waishi.local';
    endroit qui décide. */
 const MINIMUM_MOT_DE_PASSE = 8;
 
+const ENTETES = {
+  'content-type': 'application/json',
+  'access-control-allow-origin': '*',
+  'access-control-allow-headers': 'authorization, content-type, apikey, x-client-info',
+  'access-control-allow-methods': 'POST, OPTIONS'
+};
+
+/* ⚠ UN 204 N'A PAS LE DROIT D'AVOIR UN CORPS.
+
+   Ce défaut a empêché la création du tout premier compte du club, et
+   son message ne disait rien de sa cause :
+
+       Failed to send a request to the Edge Function
+
+   On lisait « la requête n'est pas partie » et l'on cherchait du côté
+   du réseau. En réalité elle partait, arrivait, et la fonction
+   plantait — les journaux du projet le disaient noir sur blanc :
+
+       TypeError: Response with null body status cannot have body
+
+   « repondre(null, 204) » fabriquait JSON.stringify(null), c'est-à-
+   dire le TEXTE « null », soit un corps de quatre octets. Or 204
+   signifie « pas de contenu » : Deno refuse, la fonction rend 500, et
+   le navigateur — qui n'a reçu qu'une erreur à sa demande de
+   préparation — n'envoie jamais le vrai appel. D'où le message : rien
+   n'était effectivement parti.
+
+   La préparation répond donc maintenant SANS corps. */
 const repondre = (corps: unknown, statut = 200) =>
-  new Response(JSON.stringify(corps), {
+  new Response(statut === 204 || statut === 304 ? null : JSON.stringify(corps), {
     status: statut,
-    headers: {
-      'content-type': 'application/json',
-      'access-control-allow-origin': '*',
-      'access-control-allow-headers': 'authorization, content-type, apikey'
-    }
+    headers: ENTETES
   });
 
 Deno.serve(async (requete) => {

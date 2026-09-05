@@ -25,15 +25,6 @@ import { Onglets } from './ui/Onglets';
 import { Connexion } from './ecrans/Connexion';
 import { useFondationOuverte } from './services/fondation';
 import { NUMERO, OU_EST_L_APK, useMiseAJourApk } from './services/miseAJourApk';
-import { SUR_TELEPHONE } from './services/telechargement';
-
-/* ⚠ CHARGÉE À LA DEMANDE, comme l'écran de fondation, et pour la
-   même raison mesurée : elle ne sert qu'aux deux secondes du
-   démarrage, et le premier chargement a un budget tenu à chaque
-   construction. */
-const Ouverture = lazy(() =>
-  import('./ui/Ouverture').then((m) => ({ default: m.Ouverture }))
-);
 
 /* ⚠ CHARGÉ À LA DEMANDE, et pour une raison mesurée.
 
@@ -503,31 +494,6 @@ function MiseAJourApk() {
   );
 }
 
-/* ---------------------------------------------- L'ouverture
-
-   Elle ne s'affiche QUE dans l'application empaquetée. Sur le web,
-   l'écran de démarrage d'un site est une mauvaise habitude : on
-   arrive par un lien, on veut le contenu, et une animation de deux
-   secondes entre les deux est une porte qu'on n'a pas demandé à
-   franchir. Dans l'APK, en revanche, elle remplace le vert vide que
-   le système affiche pendant le chargement.
-
-   Elle ne retarde rien : l'application se monte DERRIÈRE, et
-   l'ouverture s'efface par-dessus. */
-function AvecOuverture({ enfants }: { enfants: React.ReactNode }) {
-  const [passee, setPassee] = useState(!SUR_TELEPHONE);
-  return (
-    <>
-      {enfants}
-      {!passee && (
-        <Suspense fallback={null}>
-          <Ouverture fini={() => setPassee(true)} />
-        </Suspense>
-      )}
-    </>
-  );
-}
-
 export default function App() {
   return (
     <QueryClientProvider client={client}>
@@ -537,7 +503,7 @@ export default function App() {
       <HashRouter>
         <Nouveaute />
         <MiseAJourApk />
-        <AvecOuverture enfants={<Racine />} />
+        <Racine />
       </HashRouter>
     </QueryClientProvider>
   );

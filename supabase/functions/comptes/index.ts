@@ -45,14 +45,28 @@ function motDePasse(longueur = 12): string {
   return [...octets].map((o) => ALPHABET[o % ALPHABET.length]).join('');
 }
 
+const ENTETES = {
+  'content-type': 'application/json',
+  'access-control-allow-origin': '*',
+  'access-control-allow-headers': 'authorization, content-type, apikey, x-client-info',
+  'access-control-allow-methods': 'POST, OPTIONS'
+};
+
+/* ⚠ UN 204 N'A PAS LE DROIT D'AVOIR UN CORPS — voir la note détaillée
+   dans fondation/index.ts, où ce défaut a été trouvé.
+
+   « repondre(null, 204) » fabriquait le texte « null », soit un corps
+   de quatre octets, que le statut 204 interdit. Deno lève, la fonction
+   rend 500, et le navigateur cesse là : l'appel réel n'est jamais
+   envoyé. L'écran n'annonce alors qu'un « Failed to send a request to
+   the Edge Function », qui ne dit rien de la cause.
+
+   Le défaut était ici aussi, identique, et il aurait frappé la
+   première fois qu'un maître aurait inscrit un élève. */
 const repondre = (corps: unknown, statut = 200) =>
-  new Response(JSON.stringify(corps), {
+  new Response(statut === 204 || statut === 304 ? null : JSON.stringify(corps), {
     status: statut,
-    headers: {
-      'content-type': 'application/json',
-      'access-control-allow-origin': '*',
-      'access-control-allow-headers': 'authorization, content-type'
-    }
+    headers: ENTETES
   });
 
 Deno.serve(async (requete) => {
