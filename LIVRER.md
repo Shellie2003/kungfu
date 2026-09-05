@@ -111,26 +111,89 @@ même dossier, c'est une seule copie.
 
 ### Étape 1.4 — Donner la clé à GitHub, sans la publier
 
-GitHub ne stocke que du texte dans ses secrets. On encode donc le fichier :
+GitHub ne stocke que du **texte** dans ses secrets, et un `.jks` est un fichier
+**binaire**. On l'encode donc en base64 — ce n'est pas un chiffrement, seulement une
+façon d'écrire des octets avec des lettres.
 
+La commande diffère selon le système, et c'est là qu'on se trompe :
+
+**Linux**
 ```bash
 base64 -w 0 waishi-release.jks > waishi-release.b64
 ```
+> `-w 0` n'est pas décoratif : sans lui, `base64` coupe la sortie tous les 76
+> caractères. GitHub accepterait le secret, et le décodage échouerait à la
+> construction avec « invalid input ».
 
-Puis, dans **Settings → Secrets and variables → Actions → New repository secret**, quatre
-secrets :
+**macOS**
+```bash
+base64 -i waishi-release.jks -o waishi-release.b64
+```
+> La version macOS ne connaît pas `-w`. Elle n'insère pas de retours à la ligne par
+> défaut, il n'y a donc rien à désactiver.
 
-| Nom du secret | Valeur |
-|---|---|
-| `ANDROID_KEYSTORE_BASE64` | tout le contenu de `waishi-release.b64` |
-| `ANDROID_KEYSTORE_PASSWORD` | le mot de passe du coffre |
-| `ANDROID_KEY_ALIAS` | `waishi` |
-| `ANDROID_KEY_PASSWORD` | le mot de passe de la clé |
+**Windows — PowerShell**
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("waishi-release.jks")) `
+  | Set-Content -NoNewline waishi-release.b64
+```
+> `-NoNewline` évite d'ajouter un retour à la ligne final, que `base64 -d` refuse sur
+> certaines versions.
+
+**Windows — invite de commandes**
+```cmd
+certutil -encode waishi-release.jks waishi-release.b64
+```
+> ⚠️ `certutil` ajoute les lignes `-----BEGIN CERTIFICATE-----` et `-----END
+> CERTIFICATE-----`, ainsi que des retours à la ligne. **Il faut les retirer à la main**
+> avant de coller. Préférez PowerShell.
+
+### Vérifier avant de coller
+
+Un secret mal encodé ne se voit qu'à la première publication, et le message ne dit pas
+pourquoi. Deux contrôles de dix secondes :
+
+```bash
+# 1. Une seule ligne ? (Linux/macOS)
+wc -l < waishi-release.b64        # doit afficher 0 ou 1
+
+# 2. Le décodage redonne-t-il la clé ?
+base64 -d waishi-release.b64 > controle.jks
+keytool -list -keystore controle.jks -storepass VOTRE_MOT_DE_PASSE
+rm controle.jks
+```
+
+Si la seconde commande liste votre alias `waishi`, l'encodage est bon.
+
+### Les six secrets
+
+Dans **Settings → Secrets and variables → Actions → New repository secret** :
+
+| Nom du secret | Valeur | Employé par |
+|---|---|---|
+| `ANDROID_KEYSTORE_BASE64` | tout le contenu de `waishi-release.b64`, en une seule fois | `publier.yml` |
+| `ANDROID_KEYSTORE_PASSWORD` | le mot de passe du **coffre** | `publier.yml` |
+| `ANDROID_KEY_ALIAS` | `waishi` | `publier.yml` |
+| `ANDROID_KEY_PASSWORD` | le mot de passe de la **clé** (le même, si vous avez suivi le conseil) | `publier.yml` |
+| `SUPABASE_URL` | `https://<ref>.supabase.co` | `apk.yml`, `publier.yml`, `reveil.yml` |
+| `SUPABASE_CLE` | la clé **publiable** (`sb_publishable_…`) | `apk.yml`, `publier.yml`, `reveil.yml` |
+
+> **Il n'y en avait pas six mais huit, et deux faisaient doublon.** La tâche qui empêche
+> la base de s'endormir demandait `SUPABASE_PROJET` et `SUPABASE_CLE_PUBLIABLE`, c'est-à-
+> dire la même clé sous un second nom et un identifiant qui se lit déjà dans l'adresse.
+>
+> Ce n'était pas seulement du travail en trop : le jour où l'on change de projet Supabase
+> et qu'on oublie l'un des doublons, la tâche continue de réveiller **l'ancien** projet.
+> Le nouveau s'endort au bout de sept jours, et **rien ne le dit**. Les deux noms en trop
+> ont été supprimés ; l'identifiant du projet est extrait de l'adresse.
 
 Puis **effacez le fichier `.b64`** — il contient la clé en clair :
 
 ```bash
 rm waishi-release.b64
+```
+```powershell
+Remove-Item waishi-release.b64   # PowerShell
 ```
 
 > Un secret GitHub ne se relit pas : une fois posé, on ne peut que le remplacer. C'est

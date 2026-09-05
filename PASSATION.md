@@ -152,10 +152,16 @@ Dans les secrets du dépôt GitHub :
 
 | Secret | Valeur | Sert à |
 |---|---|---|
-| `SUPABASE_URL` | `https://<ref>.supabase.co` | Construire l'APK et la version web |
-| `SUPABASE_CLE` | la clé **publiable** | idem |
-| `SUPABASE_PROJET` | `<ref>` | Empêcher la mise en veille (§ 6) |
-| `SUPABASE_CLE_PUBLIABLE` | la clé **publiable** | idem |
+| `SUPABASE_URL` | `https://<ref>.supabase.co` | Construire l'APK et la version web, **et** empêcher la mise en veille (§ 4.6) |
+| `SUPABASE_CLE` | la clé **publiable** (`sb_publishable_…`) | idem |
+
+> Il y en avait quatre : `SUPABASE_PROJET` et `SUPABASE_CLE_PUBLIABLE` faisaient doublon
+> avec ces deux-là. Deux valeurs sous quatre noms, c'est une occasion d'en changer une et
+> d'oublier l'autre — auquel cas la tâche de réveil entretient l'ANCIEN projet pendant que
+> le nouveau s'endort, sans que rien ne le signale.
+
+Les quatre secrets de **signature** sont décrits dans `LIVRER.md`, partie 1 : ils ne
+servent qu'à publier une version aux membres.
 
 ### 3.6 — Créer le compte du club, depuis l'application
 

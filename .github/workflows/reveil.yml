@@ -58,18 +58,42 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Une requête, la plus petite possible
+        # ------------------------------------------------------------
+        # LES MÊMES DEUX SECRETS QUE PARTOUT AILLEURS.
+        #
+        # Cette tâche en demandait deux À ELLE — « SUPABASE_PROJET »
+        # et « SUPABASE_CLE_PUBLIABLE » — alors que les deux autres
+        # workflows employaient « SUPABASE_URL » et « SUPABASE_CLE ».
+        # Quatre secrets pour DEUX valeurs : la clé publiable posée
+        # deux fois sous deux noms, et l'identifiant du projet qui se
+        # lit dans l'adresse.
+        #
+        # Ce n'était pas seulement du travail en trop. Le jour où l'on
+        # change de projet Supabase et qu'on oublie l'un des doublons,
+        # cette tâche continue de réveiller L'ANCIEN projet ; le
+        # nouveau s'endort au bout de sept jours, et rien ne le dit —
+        # le pas ci-dessous sort avec succès quand un secret manque,
+        # pour ne pas afficher une croix rouge sur un dépôt cloné.
+        #
+        # L'adresse porte déjà l'identifiant :
+        # https://<projet>.supabase.co. On l'en extrait.
+        # ------------------------------------------------------------
         env:
-          PROJET: ${{ secrets.SUPABASE_PROJET }}
-          CLE: ${{ secrets.SUPABASE_CLE_PUBLIABLE }}
+          URL: ${{ secrets.SUPABASE_URL }}
+          CLE: ${{ secrets.SUPABASE_CLE }}
         run: |
-          if [ -z "$PROJET" ] || [ -z "$CLE" ]; then
-            echo "Les secrets SUPABASE_PROJET et SUPABASE_CLE_PUBLIABLE ne sont pas"
-            echo "posés sur ce dépôt : il n'y a rien à réveiller, et ce n'est pas"
-            echo "une erreur. Pour les poser : Settings → Secrets and variables →"
-            echo "Actions. Le projet est l'identifiant qui figure dans l'adresse"
-            echo "https://<projet>.supabase.co, et la clé est la clé PUBLIABLE"
-            echo "(anon), celle qui voyage déjà dans l'APK."
+          if [ -z "$URL" ] || [ -z "$CLE" ]; then
+            echo "Les secrets SUPABASE_URL et SUPABASE_CLE ne sont pas posés sur"
+            echo "ce dépôt : il n'y a rien à réveiller, et ce n'est pas une"
+            echo "erreur. Pour les poser : Settings → Secrets and variables →"
+            echo "Actions. L'adresse est https://<projet>.supabase.co, et la clé"
+            echo "est la clé PUBLIABLE, celle qui voyage déjà dans l'APK."
             exit 0
+          fi
+          PROJET=$(echo "$URL" | sed -E 's#^https?://([^.]+)\..*#\1#')
+          if [ "$PROJET" = "$URL" ] || [ -z "$PROJET" ]; then
+            echo "::error::SUPABASE_URL ne ressemble pas à https://<projet>.supabase.co"
+            exit 1
           fi
 
           # « HEAD » et « count=exact » : on demande le NOMBRE de
