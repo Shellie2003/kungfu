@@ -164,10 +164,45 @@ export function Visionneuse({
   const [etat, setEtat] = useState<string | null>(null);
   const [enCours, setEnCours] = useState(false);
 
-  const { gestes, onAGlisse } = useGlisser({
-    versLaGauche: () => suivante?.(),
-    versLaDroite: () => precedente?.()
+  const [sens, setSens] = useState<'gauche' | 'droite' | null>(null);
+
+  /* Un seul chemin pour les trois façons de tourner la page : le
+     doigt, les flèches et le clavier. Les avoir laissés appeler
+     « suivante » directement aurait fait qu'un chemin anime et pas
+     les autres — le genre d'écart qu'on ne voit qu'à l'usage. */
+  const aller = (ou: 'gauche' | 'droite') => {
+    setSens(ou);
+    if (ou === 'gauche') suivante?.();
+    else precedente?.();
+  };
+
+  const { gestes, onAGlisse, decalage, enGeste } = useGlisser({
+    versLaGauche: suivante ? () => aller('gauche') : undefined,
+    versLaDroite: precedente ? () => aller('droite') : undefined
   });
+
+  /* ------------------------------------------------------------
+     L'IMAGE QUI ARRIVE VIENT DU BON CÔTÉ.
+
+     Suivre le doigt ne suffisait pas : au relâchement, la nouvelle
+     image apparaissait quand même d'un coup, à sa place finale. On
+     la fait donc ENTRER depuis le côté d'où elle vient — à gauche si
+     l'on tourne la page vers la suivante, à droite pour revenir en
+     arrière.
+
+     Le sens est déduit du geste, mais aussi des flèches et du
+     clavier : la version web tourne sur des ordinateurs, où l'on
+     feuillette au clavier et où le même mouvement doit se voir.
+
+     On repère l'image par sa SOURCE et non par un compteur : c'est
+     elle qui change, et la visionneuse ne connaît pas son rang.
+     ------------------------------------------------------------ */
+  /* Le réglage « moins de mouvement » existe pour les personnes que
+     l'animation gêne réellement — vertiges, migraines. On ne
+     ralentit pas : on ne bouge pas. */
+  const doux =
+    typeof window !== 'undefined' &&
+    (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false);
 
   /* Échap ferme. Sur un téléphone il n'y a pas de clavier, mais la
      version web tourne sur des ordinateurs — et la croix seule
@@ -177,8 +212,8 @@ export function Visionneuse({
       if (e.key === 'Escape') fermer();
       /* Les flèches font ce que fait le doigt : la version web tourne
          sur des ordinateurs, où il n'y a rien à glisser. */
-      if (e.key === 'ArrowRight') suivante?.();
-      if (e.key === 'ArrowLeft') precedente?.();
+      if (e.key === 'ArrowRight') aller('gauche');
+      if (e.key === 'ArrowLeft') aller('droite');
     };
     document.addEventListener('keydown', auClavier);
     return () => document.removeEventListener('keydown', auClavier);
@@ -244,7 +279,7 @@ export function Visionneuse({
           <button
             className="tapicon feuilleter feuilleter--gauche"
             aria-label="Image précédente"
-            onClick={() => precedente()}
+            onClick={() => aller('droite')}
           >
             <Icone nom="back" taille={22} couleur="#FFF" epaisseur={2} />
           </button>
@@ -253,15 +288,31 @@ export function Visionneuse({
           <button
             className="tapicon feuilleter feuilleter--droite"
             aria-label="Image suivante"
-            onClick={() => suivante()}
+            onClick={() => aller('gauche')}
           >
             <Icone nom="chev" taille={22} couleur="#FFF" epaisseur={2} />
           </button>
         )}
         <img
+          /* La clé porte la SOURCE : React remonte donc l'élément à
+             chaque changement d'image, et l'animation d'entrée
+             repart. Sans elle, le même nœud serait réutilisé et
+             l'animation ne jouerait qu'une seule fois. */
+          key={src}
           src={src}
           alt={legende ?? ''}
-          className="visionneuse__image"
+          className={
+            'visionneuse__image' +
+            (doux || !sens ? '' : ` visionneuse__image--vient-de-${sens}`)
+          }
+          style={{
+            transform: decalage ? `translateX(${decalage}px)` : undefined,
+            /* Pendant le geste, AUCUNE transition : l'image doit
+               coller au doigt. Au relâchement, elle revient en place
+               en douceur — c'est ce retour-là qui dit « pas assez
+               loin » sans un mot. */
+            transition: enGeste ? 'none' : 'transform 220ms cubic-bezier(.22,.61,.36,1)'
+          }}
           draggable={false}
           /* Un glissement se termine par un clic que le navigateur
              envoie quand même ; le fond de la visionneuse ferme au

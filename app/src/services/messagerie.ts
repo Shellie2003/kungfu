@@ -12,8 +12,8 @@
    oublier de protéger le jour où l'on ajoutera un écran.
    ============================================================ */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
 import { supabase } from './supabase';
+import { useTempsReel } from './tempsReel';
 import { assure } from './ecrire';
 import { TYPES_IMAGE, reduire } from './images';
 import { envoyerFichier } from './envoi';
@@ -48,6 +48,22 @@ type LigneSalon = {
    au bout de deux ans, et les charger tous pour en cacher la moitié
    ferait payer l'archive à chaque ouverture de l'écran. */
 export function useSalons(archivees = false) {
+  /* ⚠ LA LISTE AUSSI, ET C'EST CE QUI MANQUAIT LE PLUS.
+
+     Seul le fil OUVERT écoutait. Depuis la liste des conversations,
+     un message reçu ne se voyait donc pas : ni l'aperçu, ni la
+     pastille des non-lus. Il fallait quitter l'écran et y revenir —
+     précisément le geste dont le club se plaint.
+
+     Sans filtre, volontairement : on veut savoir qu'il se passe
+     quelque chose dans N'IMPORTE quelle conversation qu'on a le
+     droit de lire. Les règles d'accès s'en chargent — un élève ne
+     reçoit rien d'un salon dont il n'est pas membre. */
+  useTempsReel('conversations', [
+    { table: 'messages', cles: [['salons']] },
+    { table: 'salons', cles: [['salons']] }
+  ]);
+
   return useQuery({
     queryKey: ['salons', archivees],
     queryFn: async (): Promise<Salon[]> => {
@@ -137,28 +153,18 @@ export type Message = {
 type LigneMessage = Omit<Message, 'auteur'> & { profils: { nom: string; prenom: string } | null };
 
 export function useMessages(salonId: string | undefined) {
-  const client = useQueryClient();
-
   /* Le temps réel n'est pas un confort : sans lui, deux personnes
      dans la même salle croient s'être écrit dans le vide. On écoute
-     les insertions du salon ouvert, et rien d'autre. */
-  useEffect(() => {
-    if (!salonId) return;
-    const canal = supabase
-      .channel(`salon:${salonId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'messages', filter: `salon_id=eq.${salonId}` },
-        () => {
-          client.invalidateQueries({ queryKey: ['messages', salonId] });
-          client.invalidateQueries({ queryKey: ['salons'] });
-        }
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(canal);
-    };
-  }, [salonId, client]);
+     les changements du salon ouvert, et rien d'autre.
+
+     ⚠ Ce code existait depuis le premier jour et n'a JAMAIS rien
+     reçu : la table « messages » n'était dans aucune publication,
+     donc PostgreSQL n'émettait rien. Voir 0026_temps_reel.sql. */
+  useTempsReel(
+    `salon:${salonId}`,
+    [{ table: 'messages', filtre: `salon_id=eq.${salonId}`, cles: [['messages', salonId], ['salons']] }],
+    Boolean(salonId)
+  );
 
   return useQuery({
     queryKey: ['messages', salonId],

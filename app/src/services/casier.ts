@@ -8,6 +8,7 @@
    ============================================================ */
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from './supabase';
+import { useTempsReel } from './tempsReel';
 
 export type Actualite = {
   id: string;
@@ -98,6 +99,12 @@ export type Notification = {
 };
 
 export function useNotifications() {
+  /* La pastille doit apparaître SANS qu'on rouvre l'écran : c'est
+     tout l'intérêt d'une notification. Elle ne le faisait pas — pour
+     la même raison que la messagerie, et personne ne l'avait
+     remarqué parce que rien n'échouait. Voir 0026_temps_reel.sql. */
+  useTempsReel('notifications', [{ table: 'notifications', cles: [['notifications']] }]);
+
   return useQuery({
     queryKey: ['notifications'],
     queryFn: async (): Promise<Notification[]> => {

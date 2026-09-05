@@ -46,6 +46,7 @@ const FRANCHISE = 1.5;
 export type Glissement = {
   /* À poser sur l'élément qui reçoit le geste. */
   onPointerDown: (e: ReactPointerEvent) => void;
+  onPointerMove: (e: ReactPointerEvent) => void;
   onPointerUp: (e: ReactPointerEvent) => void;
   onPointerCancel: () => void;
 };
@@ -58,16 +59,36 @@ export function useGlisser({
      tourne la page d'un livre. */
   versLaGauche?: () => void;
   versLaDroite?: () => void;
-}): { gestes: Glissement; onAGlisse: () => boolean } {
+}): {
+  gestes: Glissement;
+  onAGlisse: () => boolean;
+  /* ---- CE QUI REND LE GESTE VIVANT ----
+
+     « Je veux une animation de glissement entre les photos, car ce
+     qui est présent est trop sec. »
+
+     Il l'était, et voici pourquoi : rien ne bougeait PENDANT le
+     geste. On posait le doigt, on le traînait, l'image restait
+     immobile — puis elle était remplacée d'un coup au relâchement.
+     Le geste ne répondait pas ; il obéissait après coup.
+
+     « decalage » est le déplacement en cours, en pixels. L'appelant
+     le pose sur l'image, qui suit alors le doigt. C'est ce
+     suivi-là — et non la transition qui vient après — qui fait la
+     différence entre une galerie qui répond et une qui subit. */
+  decalage: number;
+  /* Vrai tant que le doigt est posé. L'appelant coupe la transition
+     CSS pendant ce temps : une transition pendant le suivi ferait
+     traîner l'image DERRIÈRE le doigt, ce qui se sent tout de suite
+     et donne une impression de lourdeur. */
+  enGeste: boolean;
+} {
   const depart = useRef<{ x: number; y: number; id: number } | null>(null);
   const doigts = useRef(0);
   const glisse = useRef(false);
 
-  /* Un état, et non une simple référence, pour que le composant se
-     redessine si l'appelant veut montrer quelque chose pendant le
-     geste. Il n'est pas lu ici — il rend le crochet utilisable pour
-     une animation sans le réécrire. */
-  const [, redessiner] = useState(0);
+  const [decalage, setDecalage] = useState(0);
+  const [enGeste, setEnGeste] = useState(false);
 
   const gestes: Glissement = {
     onPointerDown: (e) => {
@@ -75,15 +96,52 @@ export function useGlisser({
       /* Deux doigts : c'est un zoom, pas un glissement. */
       if (doigts.current > 1) {
         depart.current = null;
+        setEnGeste(false);
+        setDecalage(0);
         return;
       }
       depart.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    },
+
+    onPointerMove: (e) => {
+      const d = depart.current;
+      if (!d || d.id !== e.pointerId || doigts.current > 1) return;
+
+      const dx = e.clientX - d.x;
+      const dy = e.clientY - d.y;
+
+      /* ⚠ ON N'ENGAGE LE SUIVI QU'UNE FOIS LE GESTE RECONNU.
+
+         Suivre le doigt dès le premier pixel ferait frémir l'image à
+         chaque effleurement, et surtout : un doigt qui descend pour
+         lire la légende la ferait bouger de côté. On attend donc le
+         même seuil que pour le changement — le mouvement doit être
+         franchement horizontal — puis on suit. */
+      if (!enGeste) {
+        if (Math.abs(dx) < 8) return;
+        if (Math.abs(dx) < Math.abs(dy) * FRANCHISE) return;
+        setEnGeste(true);
+      }
+
+      /* Au-delà du seuil, l'image RÉSISTE au lieu de suivre au
+         pixel. C'est ce qui fait sentir la limite sous le doigt,
+         plutôt que de la découvrir au relâchement. Et sur la
+         première ou la dernière image — là où il n'y a rien à
+         montrer — la résistance est immédiate : le geste répond,
+         mais dit qu'il n'y a rien de ce côté. */
+      const versUnVide = (dx < 0 && !versLaGauche) || (dx > 0 && !versLaDroite);
+      const dur = versUnVide ? 0.18 : 1;
+      const trop = Math.max(0, Math.abs(dx) - DISTANCE);
+      const suivi = Math.sign(dx) * (Math.min(Math.abs(dx), DISTANCE) + trop * 0.4);
+      setDecalage(versUnVide ? dx * dur : suivi);
     },
 
     onPointerUp: (e) => {
       doigts.current = Math.max(0, doigts.current - 1);
       const d = depart.current;
       depart.current = null;
+      setEnGeste(false);
+      setDecalage(0);
       if (!d || d.id !== e.pointerId) return;
 
       const dx = e.clientX - d.x;
@@ -92,7 +150,6 @@ export function useGlisser({
       if (Math.abs(dx) < Math.abs(dy) * FRANCHISE) return;
 
       glisse.current = true;
-      redessiner((n) => n + 1);
       if (dx < 0) versLaGauche?.();
       else versLaDroite?.();
     },
@@ -100,6 +157,8 @@ export function useGlisser({
     onPointerCancel: () => {
       doigts.current = 0;
       depart.current = null;
+      setEnGeste(false);
+      setDecalage(0);
     }
   };
 
@@ -112,5 +171,5 @@ export function useGlisser({
     return oui;
   };
 
-  return { gestes, onAGlisse };
+  return { gestes, onAGlisse, decalage, enGeste };
 }

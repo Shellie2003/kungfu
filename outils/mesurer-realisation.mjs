@@ -81,6 +81,41 @@ const ECRAN = (route, texte) => ({ sorte: 'écran', route, texte });
    arrivé au premier passage de ce banc. */
 const CONTROLE = (route, selecteur) => ({ sorte: 'contrôle', route, selecteur });
 const CODE = (motif, ou) => ({ sorte: 'code', motif, ou });
+
+/* ------------------------------------------------------------
+   ⚠ DEUX MOITIÉS, ET IL FAUT LES DEUX.
+
+   « msg-ecrire » — « le message arrive sans rafraîchir » — était
+   compté FAIT parce que « .channel( » figurait dans les sources.
+   C'était vrai, et la fonctionnalité ne marchait pas : la table
+   « messages » n'était dans aucune publication, donc PostgreSQL
+   n'émettait rien. L'application s'abonnait à un canal muet.
+
+   Le club a dû le dire lui-même — « l'utilisateur a besoin de sortir
+   d'une conversation pour voir un nouveau message » — alors que cet
+   instrument affichait un ✓ en face.
+
+   Une preuve qui ne regarde qu'une moitié d'un mécanisme en deux
+   moitiés n'est pas une preuve : c'est un faux vert, et c'est pire
+   que pas de mesure du tout. « DEUX » exige les deux endroits.
+   ------------------------------------------------------------ */
+const DEUX = (a, ouA, b, ouB) => ({ sorte: 'deux', a, ouA, b, ouB });
+
+/* ⚠ ET IL FAUT RETIRER LES COMMENTAIRES AVANT DE CHERCHER.
+
+   Premier essai de cette preuve : elle passait au vert alors que
+   j'avais mis la publication en commentaire pour la mettre à
+   l'épreuve. Une expression régulière ne sait pas lire du SQL — elle
+   voyait le texte, commenté ou non.
+
+   C'est le même défaut que celui qu'on cherche à empêcher, à un
+   étage au-dessus : une preuve qui ne prouve rien. On dénude donc le
+   texte d'abord. */
+const sansCommentaires = (texte) =>
+  texte
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/(^|\n)\s*--[^\n]*/g, '$1')
+    .replace(/(^|\n)\s*\/\/[^\n]*/g, '$1');
 /* Fait, mais AUTREMENT que la maquette ne le dessinait. Compté à
    part : ni un mensonge par excès, ni une punition pour un choix
    assumé. */
@@ -146,7 +181,12 @@ const PREUVES = {
      changé quand le club a ouvert la messagerie entre tous, et une
      preuve adossée à une phrase que l'on réécrit se périme. */
   'msg-direct': ECRAN('/#/messages/nouvelle', 'Nouvelle conversation'),
-  'msg-ecrire': CODE(/postgres_changes|realtime|\.channel\(/, 'src'),
+  /* Les DEUX moitiés : l'écoute dans l'application, et la diffusion
+     dans une migration. L'une sans l'autre ne fait rien du tout. */
+  'msg-ecrire': DEUX(
+    /postgres_changes|useTempsReel/, 'src',
+    /add\s+table\s+public\.messages\b|array\s*\[[^\]]*'messages'/, 'migrations'
+  ),
   'msg-signaler': ECRAN('/#/signalements', 'Propos déplacés'),
   /* « À décider : élève vers élève, ou seulement vers un maître. »
      La maquette posait une QUESTION au club. LE CLUB A TRANCHÉ :
@@ -304,6 +344,17 @@ for (const f of liste) {
     await texteDe(p.route);
     ok = (await page.locator(p.selecteur).count()) > 0;
     detail = `${p.route} → ${p.selecteur}`;
+  } else if (p.sorte === 'deux') {
+    const a = p.a.test(sansCommentaires(SOURCES[p.ouA]));
+    const b = p.b.test(sansCommentaires(SOURCES[p.ouB]));
+    ok = a && b;
+    /* Le détail DIT laquelle des deux manque : « à moitié fait » est
+       l'état le plus trompeur, et celui qu'il faut nommer. */
+    detail = a && !b
+      ? `${p.ouA} écoute, mais ${p.ouB} ne diffuse pas → le canal reste muet`
+      : !a && b
+        ? `${p.ouB} diffuse, mais ${p.ouA} n'écoute pas`
+        : `${p.ouA} → ${p.a} ET ${p.ouB} → ${p.b}`;
   } else {
     ok = p.motif.test(SOURCES[p.ou]);
     detail = `${p.ou} → ${p.motif}`;

@@ -249,9 +249,29 @@ Deux choses à savoir :
 **Il faut inscrire la table à la publication** — sinon rien n'arrive, sans message
 d'erreur : `alter publication supabase_realtime add table messages;`
 
+> ⚠ **Cette phrase était écrite ici, et personne ne l'avait appliquée.** Le code d'écoute
+> existait depuis le premier jour ; la publication était vide. L'application s'abonnait donc
+> à un canal parfaitement valide, qui répondait `SUBSCRIBED` et se taisait pour toujours — il
+> fallait sortir d'une conversation et y revenir pour voir un message. Aucune erreur nulle
+> part : ni console, ni journal, ni essai.
+>
+> C'est réparé par `migrations/0026_temps_reel.sql` (trois tables : `messages`, `salons`,
+> `notifications`). Et parce qu'une phrase dans un document ne garde rien,
+> `app/tests/temps-reel.test.ts` échoue désormais si une table écoutée par le code n'est
+> déclarée dans aucune migration. **Ne comptez pas sur ce paragraphe ; comptez sur l'essai.**
+
 **Les règles d'accès s'appliquent aussi au temps réel.** Un élève abonné au canal du salon
 des maîtres ne reçoit rien. Vérifiez-le vous-même le jour où vous le brancherez, plutôt que
 de me croire.
+
+**L'abonnement se fait par `useTempsReel`**, dans `app/src/services/tempsReel.ts`, et non à
+la main écran par écran. Le fil ouvert écoutait ; la liste des conversations et la pastille
+des notifications, non — ce sont trois écrans qui ont le même besoin, et le répéter trois
+fois garantissait qu'un jour l'un des trois oublie de se désabonner.
+
+Il redemande la donnée au lieu d'appliquer le changement reçu : la ligne brute n'a ni
+l'auteur, ni la pièce jointe signée, ni le compte des non-lus. La recomposer donnerait deux
+vérités pour une même donnée.
 
 ---
 

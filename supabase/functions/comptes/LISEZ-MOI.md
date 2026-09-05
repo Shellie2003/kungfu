@@ -53,6 +53,18 @@ npx supabase link --project-ref VOTRE_REF
 npx supabase functions deploy comptes
 ```
 
+> ⚠ **La copie actuellement en ligne n'est pas exactement ce fichier.** Le 5 septembre, la
+> version 3 a été déployée depuis un environnement sans terminal Supabase : la LOGIQUE est
+> identique — mêmes actions, mêmes contrôles, mêmes messages — mais les longs commentaires
+> de ce fichier y sont abrégés.
+>
+> Ce n'est pas une divergence de comportement, et rien ne casse. C'en est une de **source de
+> vérité**, et elle se referme d'elle-même au prochain déploiement par la commande
+> ci-dessus : elle envoie ce fichier-ci, tel quel. Faites-le une fois, sans urgence, et
+> supprimez ce paragraphe.
+>
+> La même remarque vaut pour `fondation` (version 2).
+
 Les trois variables dont elle a besoin — `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
 `SUPABASE_SERVICE_ROLE_KEY` — sont fournies **automatiquement** par Supabase à toute
 fonction déployée. Il n'y a rien à configurer, et surtout rien à écrire dans ce dépôt.

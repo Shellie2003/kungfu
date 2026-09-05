@@ -49,10 +49,16 @@ beforeEach(() => {
    Un composant minuscule qui ne fait qu'annoncer ce qu'il a compris.
    On mesure ainsi la RÈGLE sans traverser un écran entier.
    ------------------------------------------------------------ */
-function Bac({ gauche, droite }: { gauche: () => void; droite: () => void }) {
-  const { gestes } = useGlisser({ versLaGauche: gauche, versLaDroite: droite });
+function Bac({ gauche, droite }: { gauche?: () => void; droite?: () => void }) {
+  const { gestes, decalage, enGeste } = useGlisser({ versLaGauche: gauche, versLaDroite: droite });
   return (
-    <div data-testid="bac" style={{ width: 300, height: 300 }} {...gestes}>
+    <div
+      data-testid="bac"
+      style={{ width: 300, height: 300 }}
+      data-decalage={String(Math.round(decalage))}
+      data-engeste={String(enGeste)}
+      {...gestes}
+    >
       image
     </div>
   );
@@ -178,5 +184,96 @@ describe('l’album', () => {
 
     await userEvent.click(await screen.findByLabelText('Photo suivante'));
     expect(await screen.findByText('2 sur 3')).toBeInTheDocument();
+  });
+});
+
+/* ============================================================
+   ⚠ CE QUI MANQUAIT : LE GESTE NE RÉPONDAIT PAS.
+
+   « Je veux une animation de glissement entre les photos, car ce
+   qui est présent est trop sec. »
+
+   Il l'était pour une raison précise, et les essais ci-dessus ne
+   pouvaient pas la voir : ils vérifiaient la DÉCISION — à partir de
+   quel mouvement on change d'image — et elle était juste. Ce qui
+   manquait, c'est tout ce qui se passe AVANT la décision : rien ne
+   bougeait tant que le doigt était posé. L'image restait immobile,
+   puis était remplacée d'un coup.
+
+   Un essai qui ne regarde que le résultat d'un geste ne peut pas
+   dire que le geste était mort. Ceux-ci regardent le PENDANT.
+   ============================================================ */
+describe('l’image suit le doigt', () => {
+  const poser = (el: HTMLElement, x: number) =>
+    fireEvent.pointerDown(el, { clientX: x, clientY: 0, pointerId: 1, isPrimary: true });
+  const bouger = (el: HTMLElement, x: number, y = 0) =>
+    fireEvent.pointerMove(el, { clientX: x, clientY: y, pointerId: 1, isPrimary: true });
+
+  test('elle se déplace pendant le geste, et pas seulement à la fin', () => {
+    render(<Bac gauche={vi.fn()} droite={vi.fn()} />);
+    const bac = screen.getByTestId('bac');
+
+    expect(bac.dataset.decalage).toBe('0');
+    poser(bac, 200);
+    bouger(bac, 160);
+
+    expect(bac.dataset.engeste).toBe('true');
+    expect(Number(bac.dataset.decalage)).toBeLessThan(0);
+  });
+
+  test('un effleurement ne fait rien bouger', () => {
+    /* Sous huit pixels, c'est la main qui tremble. Suivre dès le
+       premier pixel ferait frémir l'image à chaque appui. */
+    render(<Bac gauche={vi.fn()} droite={vi.fn()} />);
+    const bac = screen.getByTestId('bac');
+
+    poser(bac, 200);
+    bouger(bac, 195);
+    expect(bac.dataset.decalage).toBe('0');
+    expect(bac.dataset.engeste).toBe('false');
+  });
+
+  test('⚠ un doigt qui DESCEND ne déplace pas l’image de côté', () => {
+    /* Le même cas que pour la décision, mais pendant le geste : on
+       descend pour lire la légende. Sans cette garde, la photo
+       partirait de travers sous les yeux au milieu de la lecture —
+       et cela se verrait bien avant que la page ne tourne. */
+    render(<Bac gauche={vi.fn()} droite={vi.fn()} />);
+    const bac = screen.getByTestId('bac');
+
+    poser(bac, 200);
+    bouger(bac, 180, 200);
+    expect(bac.dataset.decalage).toBe('0');
+  });
+
+  test('l’image revient en place si l’on n’est pas allé assez loin', () => {
+    render(<Bac gauche={vi.fn()} droite={vi.fn()} />);
+    const bac = screen.getByTestId('bac');
+
+    poser(bac, 200);
+    bouger(bac, 170);
+    expect(Number(bac.dataset.decalage)).not.toBe(0);
+
+    fireEvent.pointerUp(bac, { clientX: 170, clientY: 0, pointerId: 1, isPrimary: true });
+    /* Retour à zéro : c'est ce mouvement de retour qui dit « pas
+       assez loin » sans un mot. */
+    expect(bac.dataset.decalage).toBe('0');
+    expect(bac.dataset.engeste).toBe('false');
+  });
+
+  test('sur la DERNIÈRE image, le geste résiste au lieu de suivre', () => {
+    /* Il n'y a rien à montrer de ce côté. Suivre le doigt
+       normalement promettrait une image qui n'arrivera jamais ;
+       ne rien faire du tout donnerait un écran mort. La résistance
+       répond, et dit qu'on est au bout. */
+    render(<Bac gauche={undefined} droite={vi.fn()} />);
+    const bac = screen.getByTestId('bac');
+
+    poser(bac, 200);
+    bouger(bac, 100);
+    const dur = Math.abs(Number(bac.dataset.decalage));
+
+    expect(dur).toBeGreaterThan(0);
+    expect(dur).toBeLessThan(100 * 0.5);
   });
 });

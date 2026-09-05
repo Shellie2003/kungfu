@@ -428,6 +428,66 @@ body {
   min-height: 0;
   width: 100%;
   object-fit: contain;
+  /* Le navigateur ne dessine la couche qu'une fois : sans cela, une
+     photo de plusieurs mégapixels se recompose à chaque image de
+     l'animation, et le glissement saccade là où il devrait couler —
+     sur les téléphones d'entrée de gamme du club, justement. */
+  will-change: transform;
+}
+
+/* ============================================================
+   FEUILLETER — L'IMAGE ARRIVE DU CÔTÉ D'OÙ ELLE VIENT.
+
+   « Dans le visionnage des images dans la galerie, je veux une
+   animation de glissement entre les photos, car ce qui est présent
+   est trop sec. »
+
+   Il l'était, et pour deux raisons distinctes qu'il fallait traiter
+   toutes les deux :
+
+     · RIEN NE BOUGEAIT PENDANT LE GESTE. On traînait le doigt,
+       l'image restait immobile, puis elle était remplacée d'un coup
+       au relâchement. Le geste ne répondait pas, il obéissait après
+       coup. C'est ui/glisser.ts qui le corrige — l'image suit
+       désormais le doigt, et résiste au-delà du seuil.
+
+     · LA NOUVELLE APPARAISSAIT À SA PLACE. Même avec le suivi, elle
+       surgissait sans mouvement. Elle entre maintenant depuis le
+       côté d'où elle vient : à gauche quand on tourne la page vers
+       la suivante, à droite quand on revient en arrière.
+
+   Le décalage d'entrée est de 14 % et non de 100 % : une image qui
+   traverse tout l'écran fait ATTENDRE, et l'on feuillette une
+   galerie vite. Ce qu'on veut, c'est le SENS du mouvement, pas le
+   trajet complet.
+   ============================================================ */
+@keyframes vision-entree-gauche {
+  from { transform: translateX(14%); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+@keyframes vision-entree-droite {
+  from { transform: translateX(-14%); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+.visionneuse__image--vient-de-gauche {
+  animation: vision-entree-gauche 240ms cubic-bezier(.22,.61,.36,1) both;
+}
+.visionneuse__image--vient-de-droite {
+  animation: vision-entree-droite 240ms cubic-bezier(.22,.61,.36,1) both;
+}
+
+/* On ne ralentit pas : on ne bouge pas. Le composant coupe déjà
+   l'animation dans ce cas ; cette règle tient le cas où la classe
+   serait posée autrement, et vaut aussi pour le suivi du doigt. */
+@media (prefers-reduced-motion: reduce) {
+  .visionneuse__image--vient-de-gauche,
+  .visionneuse__image--vient-de-droite {
+    animation: none;
+  }
+  .visionneuse__image {
+    transition: none !important;
+  }
 }
 
 .visionneuse__bas {
