@@ -150,7 +150,7 @@ export const REPONSES = {
     { cle: 'telephone', valeur: '[NUMÉRO À FOURNIR]' },
     { cle: 'adresse', valeur: '[ADRESSE EXACTE À FOURNIR]' },
     { cle: 'presentation_courte', valeur: 'Un club ouvert à tous les âges, où la discipline se transmet par la pratique régulière. Entraînements quatre fois par semaine à Analamahitsy.' },
-    { cle: 'presentation', valeur: 'Le club enseigne le Kung-fu Waishi à Analamahitsy depuis 2014. Il accueille enfants, adolescents et adultes, du débutant au gradé, autour d’une pratique régulière et d’un esprit d’entraide.' },
+    { cle: 'presentation', valeur: 'Le club enseigne le Kung-fu Waïshi à Analamahitsy depuis 2014. Il accueille enfants, adolescents et adultes, du débutant au gradé, autour d’une pratique régulière et d’un esprit d’entraide.' },
     { cle: 'fondation', valeur: '2014' },
     { cle: 'mvola_numero', valeur: '0388010853' },
     { cle: 'mvola_nom', valeur: 'Santatra Nirina Antonio' }

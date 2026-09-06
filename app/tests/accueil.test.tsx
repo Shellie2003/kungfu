@@ -10,7 +10,7 @@
    L'écran n'avait AUCUN test : c'est le premier qu'on ouvre, celui
    que la maquette montre en premier, et il reposait entièrement sur
    la comparaison d'images. Or une comparaison d'images ne dit pas
-   d'où vient un texte — elle voit « KUNG-FU WAISHI » et ne sait pas
+   d'où vient un texte — elle voit « KUNG-FU WAÏSHI » et ne sait pas
    s'il vient de la base ou du code.
    ============================================================ */
 import { beforeEach, describe, expect, test } from 'vitest';
@@ -64,7 +64,7 @@ describe('le logo et le nom du club', () => {
     rendre(<Accueil />, { route: '/accueil' });
 
     expect(await screen.findByText('WAISHI ANTANANARIVO')).toBeInTheDocument();
-    expect(screen.queryByText('KUNG-FU WAISHI')).not.toBeInTheDocument();
+    expect(screen.queryByText('KUNG-FU WAÏSHI')).not.toBeInTheDocument();
   });
 
   test('sans réglage, l’écran reste celui que le club a validé', async () => {
@@ -72,7 +72,7 @@ describe('le logo et le nom du club', () => {
     /* Le repli est le texte de la maquette, mot pour mot. C'est ce
        qui permet à la comparaison d'images de rester juste tant que
        le club n'a rien saisi. */
-    expect(await screen.findByText('KUNG-FU WAISHI')).toBeInTheDocument();
+    expect(await screen.findByText('KUNG-FU WAÏSHI')).toBeInTheDocument();
     expect(screen.getByText('Analamahitsy · Antananarivo')).toBeInTheDocument();
   });
 });

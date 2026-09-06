@@ -93,7 +93,7 @@ screen('connexion', '01 · Connexion', { full: `
       <div style="display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center">
         <div class="emblem emblem--lg">${svg('shieldCheck', 38, '#0F5132')}</div>
         <div>
-          <p class="display" style="font-size:21px;color:#FFF;line-height:26px">Kung-fu Waishi</p>
+          <p class="display" style="font-size:21px;color:#FFF;line-height:26px">Kung-fu Waïshi</p>
           <p style="font-size:14px;color:var(--sur-vert);margin-top:4px">Analamahitsy</p>
         </div>
       </div>
@@ -118,7 +118,7 @@ screen('accueil', '02 · Accueil', { tab: 'home', body: `
     <div style="display:flex;align-items:center;gap:12px">
       <div class="emblem">${svg('shieldCheck', 26, '#0F5132')}</div>
       <div style="flex-grow:1;min-width:0">
-        <p class="display" style="font-size:17px;color:#FFF;letter-spacing:.02em;line-height:20px">KUNG-FU WAISHI</p>
+        <p class="display" style="font-size:17px;color:#FFF;letter-spacing:.02em;line-height:20px">KUNG-FU WAÏSHI</p>
         <p style="font-size:13px;color:var(--sur-vert);margin-top:2px">Analamahitsy · Antananarivo</p>
       </div>
       <button class="tapicon" data-go="notifications" aria-label="Notifications" style="position:relative">
@@ -142,7 +142,7 @@ screen('accueil', '02 · Accueil', { tab: 'home', body: `
         <p class="ph__label">Photo du club à fournir</p>
       </div>
       <div style="padding:18px">
-        <p class="display" style="font-size:19px;line-height:24px">Kung-fu Waishi Analamahitsy</p>
+        <p class="display" style="font-size:19px;line-height:24px">Kung-fu Waïshi Analamahitsy</p>
         <p style="font-size:14px;line-height:22px;color:#59685F;margin-top:8px">Un club ouvert à tous les âges, où la discipline se transmet par la pratique régulière. Entraînements quatre fois par semaine à Analamahitsy.</p>
         <button class="linkrow" data-go="club">En savoir plus sur le club ${svg('chev', 16, '#12613C', 2)}</button>
       </div>
@@ -385,7 +385,7 @@ screen('club', '10 · Le Club', { tab: 'home', body: `
     <div style="background:#0F5132;border-radius:18px;padding:24px 20px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center">
       <div class="emblem emblem--lg">${svg('shield', 34, '#0F5132')}</div>
       <div>
-        <p class="display" style="font-size:20px;color:#FFF;line-height:25px">Kung-fu Waishi<br>Analamahitsy</p>
+        <p class="display" style="font-size:20px;color:#FFF;line-height:25px">Kung-fu Waïshi<br>Analamahitsy</p>
         <p style="font-size:13px;color:var(--sur-vert);margin-top:8px">Fondé en 2014 · Antananarivo</p>
       </div>
       <p style="font-size:10px;font-weight:600;letter-spacing:.1em;color:#7FA893;text-transform:uppercase">Logo du club à fournir</p>
@@ -393,7 +393,7 @@ screen('club', '10 · Le Club', { tab: 'home', body: `
 
     <div style="display:flex;flex-direction:column;gap:12px">
       ${overline('Présentation')}
-      ${card(`<p style="font-size:15px;line-height:25px;color:#3C4A42">Le club enseigne le Kung-fu Waishi à Analamahitsy depuis 2014. Il accueille enfants, adolescents et adultes, du débutant au gradé, autour d’une pratique régulière et d’un esprit d’entraide.</p>`)}
+      ${card(`<p style="font-size:15px;line-height:25px;color:#3C4A42">Le club enseigne le Kung-fu Waïshi à Analamahitsy depuis 2014. Il accueille enfants, adolescents et adultes, du débutant au gradé, autour d’une pratique régulière et d’un esprit d’entraide.</p>`)}
     </div>
 
     <div style="display:flex;flex-direction:column;gap:12px">
@@ -534,7 +534,7 @@ screen('charte', '13 · Charte graphique', { wide: true, full: `
   <div class="sheet">
     <div style="display:flex;flex-direction:column;gap:8px">
       ${overline('Charte graphique')}
-      <h1 class="display" style="font-size:32px;line-height:38px">Kung-fu Waishi Analamahitsy</h1>
+      <h1 class="display" style="font-size:32px;line-height:38px">Kung-fu Waïshi Analamahitsy</h1>
       <p style="font-size:15px;line-height:24px;color:#59685F;max-width:520px">Vert dominant, blanc secondaire. Chaque couleur de texte a été mesurée sur son fond : le minimum retenu est 4,5:1, y compris pour les libellés de 11 px.</p>
     </div>
 
@@ -625,7 +625,7 @@ screen('directionA', 'A · Lame', { full: `
       <div class="dirA__top">
         <span class="emblem" style="width:40px;height:40px;border-radius:10px">${svg('shieldCheck', 22, '#0F5132')}</span>
         <span style="flex-grow:1">
-          <b class="dirA__name">WAISHI</b>
+          <b class="dirA__name">WAÏSHI</b>
           <i class="dirA__place">Analamahitsy</i>
         </span>
         <button class="tapicon" data-go="notifications" style="position:relative">${svg('bell', 22, '#FFF')}<span class="dot">3</span></button>
@@ -677,7 +677,7 @@ screen('directionB', 'B · Souffle', { full: `
     <div class="dirB__content">
       <div class="dirB__top">
         <span style="flex-grow:1">
-          <b class="dirB__hello">Kung-fu Waishi</b>
+          <b class="dirB__hello">Kung-fu Waïshi</b>
           <i class="dirB__place">Analamahitsy · Antananarivo</i>
         </span>
         <button class="dirB__bell" data-go="notifications">${svg('bell', 21, '#0F5132')}<span class="dot" style="border-color:#EAF3EE">3</span></button>
@@ -718,7 +718,7 @@ screen('directionC', 'C · Tempo', { full: `
 
     <div class="dirC__top">
       <span style="flex-grow:1">
-        <b class="dirC__brand">WAISHI</b>
+        <b class="dirC__brand">WAÏSHI</b>
         <i class="dirC__sub">Analamahitsy</i>
       </span>
       <button class="tapicon" data-go="notifications" style="position:relative">${svg('bell', 22, '#0E2119')}<span class="dot" style="border-color:#FFF">3</span></button>
@@ -785,7 +785,7 @@ screen('carte', '14 · Carte de membre', { full: `
         <div class="carte__head">
           <span class="emblem" style="width:36px;height:36px;border-radius:10px">${svg('shieldCheck', 20, '#0F5132')}</span>
           <span style="flex-grow:1">
-            <b class="carte__org">KUNG-FU WAISHI</b>
+            <b class="carte__org">KUNG-FU WAÏSHI</b>
             <i class="carte__kind">Carte de membre</i>
           </span>
         </div>

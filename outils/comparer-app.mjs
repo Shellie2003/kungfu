@@ -311,7 +311,7 @@ const RELEVE = `(racine) => {
      la trouve au moment d'imprimer, et elle est découpée à un point
      carré pour ne rien montrer. « clip-path » masque la peinture,
      pas la géométrie : ses textes gardaient donc une position, et le
-     banc lisait « KUNG-FU WAISHI » deux fois, à deux endroits, en
+     banc lisait « KUNG-FU WAÏSHI » deux fois, à deux endroits, en
      deux tailles.
 
      Elle porte « aria-hidden », parce qu'un lecteur d'écran lirait

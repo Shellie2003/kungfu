@@ -232,7 +232,7 @@ function exporter() {
   }
   const lignes = [
     'COMMENTAIRES SUR LA MAQUETTE',
-    'Kung-fu Waishi Analamahitsy',
+    'Kung-fu Waïshi Analamahitsy',
     `Le ${new Date().toLocaleDateString('fr-FR')} · ${cles.length} commentaire${cles.length > 1 ? 's' : ''}`,
     ''
   ];
@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5z"/>
           <path d="M9 12.2l2 2 4-4.4"/></svg></i>
-        Kung-fu Waishi
+        Kung-fu Waïshi
       </div>
       <p class="index__sub">Analamahitsy · maquette ${Object.keys(SCREENS).length} écrans</p>
       <div class="index__outils">

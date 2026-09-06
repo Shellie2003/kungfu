@@ -90,7 +90,7 @@ export function AdminImpression() {
 
   const portraits = useUrls('portraits', liste.map((m) => m.photo));
   const codes = useCodes(liste.map((m) => m.numero));
-  const nomClub = reglages?.nom_club ?? 'Kung-fu Waishi';
+  const nomClub = reglages?.nom_club ?? 'Kung-fu Waïshi';
 
   /* Les pages, de dix en dix. Une planche de soixante-quatre cartes
      sur une seule page A4 ne s'imprimerait pas : le navigateur la

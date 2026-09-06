@@ -92,7 +92,7 @@ describe('à l’inscription', () => {
     expect(copie[0]).toContain('F04x065');
     expect(copie[0]).toContain('Kf7mQ2pXwR4t');
     /* Nommé, pour que celui qui le reçoit sache d'où cela vient. */
-    expect(copie[0]).toContain('Kung-fu Waishi');
+    expect(copie[0]).toContain('Kung-fu Waïshi');
   });
 
   test('le bouton dit que c’est copié, puis se retait', async () => {

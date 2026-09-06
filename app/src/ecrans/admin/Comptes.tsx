@@ -154,7 +154,7 @@ export function AdminComptes() {
                 nom={`Copier les identifiants de ${identifiants.numero}`}
                 libelle="Copier les identifiants"
                 texte={
-                  `Kung-fu Waishi Analamahitsy\n` +
+                  `Kung-fu Waïshi Analamahitsy\n` +
                   `Matricule : ${identifiants.numero}\n` +
                   `Mot de passe : ${identifiants.motDePasse}`
                 }

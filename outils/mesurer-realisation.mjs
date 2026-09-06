@@ -123,7 +123,7 @@ const PARTIEL = (route, texte, ecart) => ({ sorte: 'partiel', route, texte, ecar
 
 const PREUVES = {
   /* ---- Accueil ---- */
-  'acc-logo': ECRAN('/#/accueil', 'KUNG-FU WAISHI'),
+  'acc-logo': ECRAN('/#/accueil', 'KUNG-FU WAÏSHI'),
   'acc-visuel': CODE(/photo_club/, 'src'),
   'acc-presentation': ECRAN('/#/accueil', 'Le club'),
   /* Le titre était en MALGACHE — « VAOVAO FARANY » — seul de tout
