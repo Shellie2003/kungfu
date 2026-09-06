@@ -32,7 +32,12 @@ import { useNavigate } from 'react-router-dom';
 import { Emblem } from '../ui/Emblem';
 import { Icone } from '../ui/Icone';
 import { VERSION, versionCourte } from '../services/version';
-import { NUMERO, useChercherMiseAJour } from '../services/miseAJourApk';
+import {
+  NUMERO,
+  OU_EST_L_APK,
+  poidsLisible,
+  useChercherMiseAJour
+} from '../services/miseAJourApk';
 import {
   Avis, Bouton, Carte, ChoisirFichier, Entete, Feuille, Filet, Modifier, Surtitre, Tuile, Zone
 } from '../ui/base';
@@ -543,7 +548,16 @@ function ChercherMiseAJour() {
       case 'a jour':
         return 'Vous avez la dernière version.';
       case 'trouvee':
-        return `Version ${recherche.version.numero} disponible — voir le bandeau en haut.`;
+        /* ⚠ ON NE RENVOIE PLUS VERS LE BANDEAU. Cette phrase disait
+           « voir le bandeau en haut » — et le bandeau pouvait très
+           bien ne pas être là : il se pose au démarrage, et si le
+           délai d'un jour l'avait empêché de regarder, il n'existe
+           pas. On envoyait alors quelqu'un chercher une chose
+           absente, ce qui est pire que de ne rien dire.
+
+           Le lien est donc ICI, à l'endroit où l'on vient de
+           demander. */
+        return null;
       case 'injoignable':
         /* On ne dit PAS « vous êtes à jour » : ce serait un mensonge
            tranquille, et le pire des deux réponses possibles. */
@@ -576,6 +590,21 @@ function ChercherMiseAJour() {
           }}
         >
           {message}
+        </span>
+      ) : null}
+
+      {recherche.etat === 'trouvee' ? (
+        <span
+          role="status"
+          style={{ display: 'block', fontSize: 11, marginTop: 2 }}
+        >
+          Version {recherche.version.numero} disponible —{' '}
+          <a className="link" href={OU_EST_L_APK} rel="noreferrer">
+            télécharger
+            {poidsLisible(recherche.version.octets)
+              ? ` (${poidsLisible(recherche.version.octets)})`
+              : ''}
+          </a>
         </span>
       ) : null}
     </p>
