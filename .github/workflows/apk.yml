@@ -458,6 +458,15 @@ jobs:
             || { echo "::error::L'écriture de la permission de stockage a échoué."; exit 1; }
           echo "enregistrement des documents déclaré"
 
+      # Les notifications du téléphone. Le MÊME script que publier.yml
+      # appelle — c'est ce qui garantit que l'APK d'essai et celui du
+      # club portent la même chose. Sans le secret Firebase, il ne pose
+      # que la permission et réussit.
+      - name: Préparer les notifications du téléphone
+        env:
+          FIREBASE_GOOGLE_SERVICES: ${{ secrets.FIREBASE_GOOGLE_SERVICES }}
+        run: node outils/preparer-push.mjs
+
       # Le numéro de version de l'APK.
       #
       # Capacitor engendre « versionCode 1 » et « versionName 1.0 »,

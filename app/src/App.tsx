@@ -24,7 +24,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Onglets } from './ui/Onglets';
 import { Connexion } from './ecrans/Connexion';
 import { useFondationOuverte } from './services/fondation';
-import { NUMERO, OU_EST_L_APK, useMiseAJourApk } from './services/miseAJourApk';
+import {
+  NUMERO,
+  OU_EST_L_APK,
+  poidsLisible,
+  useMiseAJourApk
+} from './services/miseAJourApk';
+import { useNotificationsPush } from './services/notificationsPush';
 
 /* ⚠ CHARGÉ À LA DEMANDE, et pour une raison mesurée.
 
@@ -379,6 +385,12 @@ function Connectee() {
 function Racine() {
   const { session, chargement } = useSession();
   useEcouteSession();
+  /* Les notifications du téléphone. Posé ICI, dans « Racine », et non
+     à côté comme le bandeau de mise à jour : celui-ci doit se voir
+     sans compte, celles-là n'ont de sens qu'une fois qu'on sait à
+     QUI envoyer. Le crochet attend d'ailleurs le profil avant de
+     demander quoi que ce soit à Android. */
+  useNotificationsPush();
 
   /* Rien pendant qu'on lit le jeton : un écran de chargement qui
      dure deux dixièmes de seconde clignote plus qu'il n'informe. */
@@ -473,23 +485,66 @@ function Nouveaute() {
 
    Un « button » avec « window.open » ferait le même chemin, mais
    sans qu'on puisse le VÉRIFIER : un lien porte son adresse dans le
-   document, et le banc peut la lire. */
+   document, et le banc peut la lire.
+
+   ------------------------------------------------------------
+   ⚠ CE QUI SE PASSE APRÈS LE TÉLÉCHARGEMENT, ET QU'IL FAUT DIRE.
+
+   Android refuse d'installer un fichier venu du navigateur tant que
+   « Installer des applications inconnues » n'est pas autorisé POUR
+   CE NAVIGATEUR. Le membre voit alors un refus sec — « Pour votre
+   sécurité, votre téléphone n'est pas autorisé… » — sans rien qui
+   lui dise que c'est normal, ni que trois touches le débloquent.
+
+   Ce n'est pas un défaut de l'application, et c'est précisément
+   pour ça qu'il faut l'écrire : rien dans l'application ne peut le
+   corriger, et personne ne devinera qu'il faut chercher dans les
+   réglages du téléphone. Sans cette phrase, c'est le premier appel
+   au bureau du club à chaque version.
+
+   L'explication n'apparaît QUE dans l'APK, jamais sur le web : la
+   version web ne télécharge rien. Le bandeau entier ne s'y monte
+   pas, ce qui règle la question. */
 function MiseAJourApk() {
-  const neuve = useMiseAJourApk();
+  const { neuve, ecarter } = useMiseAJourApk();
   if (!neuve) return null;
 
+  const poids = poidsLisible(neuve.octets);
+
   return (
-    <div role="status" className="banner" style={{ margin: '8px 12px 0', gap: 10 }}>
+    <div
+      role="status"
+      className="banner"
+      style={{ margin: '8px 12px 0', gap: 10, alignItems: 'flex-start' }}
+    >
       <span style={{ flexGrow: 1 }}>
         <b>Version {neuve.numero} disponible</b>
         {neuve.notes ? ` — ${neuve.notes}` : null}
         <span style={{ display: 'block', fontSize: 12, opacity: 0.8, marginTop: 2 }}>
           Vous avez la {NUMERO}. Le téléchargement s’ouvre dans votre navigateur.
         </span>
+        <span style={{ display: 'block', fontSize: 12, opacity: 0.8, marginTop: 4 }}>
+          Si le téléphone refuse d’installer, autorisez votre navigateur dans
+          Paramètres → Applications → Accès spécial → Installer des applications
+          inconnues, puis rouvrez le fichier téléchargé.
+        </span>
       </span>
-      <a className="link" href={OU_EST_L_APK} rel="noreferrer">
-        Mettre à jour
-      </a>
+      <span style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
+        <a className="link" href={OU_EST_L_APK} rel="noreferrer">
+          {/* Le poids est DANS le lien, pas à côté : c'est au moment
+              d'appuyer qu'on veut savoir ce qu'on engage. Absent des
+              versions publiées avant lui, on n'affiche alors rien
+              plutôt qu'un chiffre inventé. */}
+          Mettre à jour{poids ? ` (${poids})` : ''}
+        </a>
+        <button
+          className="link"
+          onClick={ecarter}
+          style={{ fontSize: 12, opacity: 0.8 }}
+        >
+          Plus tard
+        </button>
+      </span>
     </div>
   );
 }

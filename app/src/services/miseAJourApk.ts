@@ -74,7 +74,37 @@ export type VersionPubliee = {
   /* Ce que la version apporte, en une phrase. Facultatif : mieux
      vaut pas de note qu'une note inventée. */
   notes?: string;
+  /* Le poids du fichier, en octets. Facultatif lui aussi, et pour la
+     même raison : les versions déjà publiées ne le portent pas, et
+     une taille inventée serait pire qu'une taille absente. */
+  octets?: number;
 };
+
+/* ------------------------------------------------------------
+   LE POIDS, EN CLAIR.
+
+   « 5847268 » ne veut rien dire à personne. « 5,6 Mo » se décide.
+
+   ⚠ ET CE CHIFFRE SE DÉCIDE VRAIMENT. À Antananarivo l'accès se
+   paie au mégaoctet, et 5,6 Mo valent plusieurs centaines d'ariary
+   sur un forfait de recharge. Un membre qui voit le prix choisit son
+   moment — le soir, sur le wifi du club. Un membre qui ne le voit
+   pas appuie, découvre sa consommation après, et n'appuiera plus.
+
+   La virgule et l'espace insécable sont ceux du français : c'est la
+   langue de tout le reste de l'application.
+   ------------------------------------------------------------ */
+export function poidsLisible(octets: number | undefined): string | null {
+  if (typeof octets !== 'number' || !Number.isFinite(octets) || octets <= 0) {
+    return null;
+  }
+  const mo = octets / (1024 * 1024);
+  /* Sous le mégaoctet on descend en kilooctets plutôt que d'afficher
+     « 0,3 Mo », qui se lit mal. L'APK n'y descendra pas, mais cette
+     fonction n'a pas à le savoir. */
+  if (mo < 1) return `${Math.round(octets / 1024)} ko`;
+  return `${mo.toFixed(1).replace('.', ',')} Mo`;
+}
 
 /* ------------------------------------------------------------
    COMPARER DEUX NUMÉROS.
@@ -136,6 +166,61 @@ function noterLeRegard(maintenant = Date.now()): void {
 }
 
 /* ------------------------------------------------------------
+   « PLUS TARD », ET CE QUE CE MOT ENGAGE.
+
+   Le bandeau se pose en haut de TOUS les écrans, et il y reste tant
+   qu'on n'a pas mis à jour. Quelqu'un qui n'a pas de réseau au
+   moment où il le voit — le cas ordinaire à Antananarivo — le
+   traîne pendant des jours sans pouvoir rien en faire.
+
+   ⚠ CE QU'ON N'A PAS FAIT, ET POURQUOI. L'écart le plus simple à
+   écrire serait définitif : « cette version, plus jamais ». Il
+   serait aussi mensonger — « plus tard » n'est pas « jamais » — et
+   surtout dangereux ICI : ce bandeau est le SEUL canal de
+   distribution du club. Pas de Play Store, pas de mise à jour
+   automatique. Un membre qui écarte une version d'un geste distrait
+   resterait sur une application vieillissante sans qu'aucun signal
+   ne le rattrape, et personne ne s'en apercevrait — ni lui, ni le
+   club.
+
+   L'écart dure donc SEPT JOURS, puis le bandeau revient. Assez long
+   pour qu'on ait la paix le temps de trouver du wifi ; assez court
+   pour qu'une version ne se perde pas.
+
+   Et il porte le NUMÉRO écarté : une version suivante n'est pas
+   celle qu'on a écartée, et se montre tout de suite.
+   ------------------------------------------------------------ */
+const CLE_ECART = 'waishi.miseAJourEcartee';
+const SEPT_JOURS = 7 * UN_JOUR;
+
+export function ecartee(numero: string, maintenant = Date.now()): boolean {
+  try {
+    const brut = localStorage.getItem(CLE_ECART);
+    if (!brut) return false;
+    const { numero: ecarte, quand } = JSON.parse(brut) as {
+      numero?: unknown;
+      quand?: unknown;
+    };
+    if (ecarte !== numero) return false;
+    if (typeof quand !== 'number' || !Number.isFinite(quand)) return false;
+    return maintenant - quand < SEPT_JOURS;
+  } catch {
+    /* Stockage indisponible, ou souvenir illisible : on montre. Le
+       défaut penche vers le bandeau de trop, jamais vers le silence. */
+    return false;
+  }
+}
+
+export function ecarter(numero: string, maintenant = Date.now()): void {
+  try {
+    localStorage.setItem(CLE_ECART, JSON.stringify({ numero, quand: maintenant }));
+  } catch {
+    /* Rien à faire : le bandeau reviendra à la prochaine ouverture.
+       Moins agréable, mais pas cassé. */
+  }
+}
+
+/* ------------------------------------------------------------
    ⚠ POURQUOI CE N'EST PAS « fetch » DANS L'APK.
 
    Ce défaut-ci ne s'est vu NULLE PART sauf sur la machine de
@@ -193,14 +278,25 @@ async function demanderLeFichier(): Promise<unknown> {
 export async function versionPubliee(): Promise<VersionPubliee | null> {
   try {
     const brut: unknown = await demanderLeFichier();
-    const o = brut as { numero?: unknown; notes?: unknown };
+    const o = brut as { numero?: unknown; notes?: unknown; octets?: unknown };
     /* On vérifie la FORME avant de croire le contenu. Un 404 déguisé
        en page HTML, un fichier tronqué, une note de deux mille
        caractères : rien de tout cela ne doit arriver jusqu'à
        l'écran. */
     if (typeof o?.numero !== 'string' || !/^\d+(\.\d+){0,3}$/.test(o.numero)) return null;
     const notes = typeof o.notes === 'string' ? o.notes.slice(0, 300) : undefined;
-    return { numero: o.numero, notes };
+    /* Le poids doit être un nombre PLAUSIBLE. Un fichier de deux cents
+       octets serait une page d'erreur ; un fichier de deux cents
+       mégaoctets, un champ falsifié. Dans les deux cas on préfère ne
+       rien annoncer plutôt qu'annoncer une bêtise. */
+    const octets =
+      typeof o.octets === 'number' &&
+      Number.isFinite(o.octets) &&
+      o.octets > 100_000 &&
+      o.octets < 300 * 1024 * 1024
+        ? o.octets
+        : undefined;
+    return { numero: o.numero, notes, octets };
   } catch {
     /* Hors ligne, ou GitHub injoignable. Ne rien dire : annoncer une
        mise à jour parce que le réseau est tombé serait un mensonge,
@@ -218,8 +314,16 @@ export async function versionPubliee(): Promise<VersionPubliee | null> {
    Il ne fait rien hors du téléphone : la version web se met à jour
    toute seule en rechargeant la page, et proposer d'y télécharger un
    APK n'aurait aucun sens.
+
+   Il rend aussi de quoi ÉCARTER le bandeau. L'écart est posé dans le
+   stockage AVANT d'effacer l'affichage : si le stockage refuse, le
+   bandeau disparaît quand même pour cette fois — on ne coince pas
+   quelqu'un devant un bouton qui ne fait rien.
    ------------------------------------------------------------ */
-export function useMiseAJourApk(): VersionPubliee | null {
+export function useMiseAJourApk(): {
+  neuve: VersionPubliee | null;
+  ecarter: () => void;
+} {
   const [neuve, setNeuve] = useState<VersionPubliee | null>(null);
 
   useEffect(() => {
@@ -229,12 +333,20 @@ export function useMiseAJourApk(): VersionPubliee | null {
       const publiee = await versionPubliee();
       if (!vivant || !publiee) return;
       noterLeRegard();
-      if (plusRecent(publiee.numero, NUMERO)) setNeuve(publiee);
+      if (plusRecent(publiee.numero, NUMERO) && !ecartee(publiee.numero)) {
+        setNeuve(publiee);
+      }
     })();
     return () => {
       vivant = false;
     };
   }, []);
 
-  return neuve;
+  return {
+    neuve,
+    ecarter: () => {
+      if (neuve) ecarter(neuve.numero);
+      setNeuve(null);
+    }
+  };
 }

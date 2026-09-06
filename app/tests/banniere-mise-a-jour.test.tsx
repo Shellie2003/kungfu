@@ -49,7 +49,11 @@ import { brancherServeur, reinitialiser } from './serveur';
    veut que l'essai reste juste quand le vrai numéro montera. */
 const PLUS_RECENTE = {
   status: 200,
-  data: { numero: '9.9.9', notes: 'Les messages arrivent en direct.' }
+  data: {
+    numero: '9.9.9',
+    notes: 'Les messages arrivent en direct.',
+    octets: 5_847_268
+  }
 };
 
 async function rendreApplication(reponse: { status: number; data: unknown }) {
@@ -162,5 +166,93 @@ describe('la bannière de mise à jour, dans l’application livrée', () => {
     const { get: get2 } = await rendreApplication(PLUS_RECENTE);
     await new Promise((r) => setTimeout(r, 50));
     expect(get2).not.toHaveBeenCalled();
+  });
+});
+
+/* ============================================================
+   CE QUE LE BANDEAU DOIT DIRE, ET CE QU'IL DOIT LAISSER FAIRE.
+
+   Trois manques relevés après la livraison de la 1.2.0 :
+
+     · le poids du téléchargement n'était pas annoncé ;
+     · rien ne disait quoi faire quand Android refuse d'installer ;
+     · le bandeau ne pouvait pas être écarté.
+
+   Les trois ont en commun de ne faire échouer AUCUN essai tant qu'on
+   ne les écrit pas : l'application marche, et coûte seulement plus
+   cher au membre qu'elle ne le devrait.
+   ============================================================ */
+describe('ce que le bandeau annonce', () => {
+  test('⚠ il dit le poids du téléchargement', async () => {
+    /* À Antananarivo l'accès se paie au mégaoctet. 5,6 Mo se
+       décident — le soir, sur le wifi du club. */
+    await rendreApplication(PLUS_RECENTE);
+    const lien = await screen.findByRole('link', { name: /Mettre à jour/ });
+    expect(lien.textContent).toContain('5,6 Mo');
+  });
+
+  test('sans poids publié, le lien reste propre', async () => {
+    /* Les versions sorties AVANT ce champ n'en portent pas. Le lien
+       doit alors s'écrire sans parenthèse vide, et sans « undefined ». */
+    await rendreApplication({
+      status: 200,
+      data: { numero: '9.9.9', notes: 'Une note.' }
+    });
+    const lien = await screen.findByRole('link', { name: /Mettre à jour/ });
+    expect(lien.textContent?.trim()).toBe('Mettre à jour');
+    expect(lien.textContent).not.toContain('undefined');
+    expect(lien.textContent).not.toContain('(');
+  });
+
+  test('⚠ il explique le refus d’Android avant qu’il n’arrive', async () => {
+    /* Android bloque l'installation d'un fichier venu du navigateur
+       tant que « Installer des applications inconnues » n'est pas
+       autorisé. Le membre voit un refus sec, que rien dans
+       l'application ne peut corriger — d'où l'obligation de
+       l'écrire. Sans cette phrase, c'est le premier appel au bureau
+       du club à chaque version. */
+    await rendreApplication(PLUS_RECENTE);
+    await screen.findByText(/Version 9\.9\.9 disponible/);
+    expect(
+      screen.getByText(/applications inconnues/i)
+    ).toBeInTheDocument();
+  });
+});
+
+describe('« Plus tard »', () => {
+  test('le bandeau s’efface au clic', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event');
+    await rendreApplication(PLUS_RECENTE);
+    await screen.findByText(/Version 9\.9\.9 disponible/);
+
+    await userEvent.click(screen.getByRole('button', { name: /Plus tard/ }));
+    expect(screen.queryByText(/Version 9\.9\.9 disponible/)).not.toBeInTheDocument();
+  });
+
+  test('⚠ et il ne revient pas à la réouverture', async () => {
+    /* Un « Plus tard » qui ne tient pas jusqu'à la prochaine
+       ouverture n'est pas un « Plus tard ».
+
+       ⚠ ET CET ESSAI A FAILLI NE RIEN PROUVER. Écrit naïvement, il
+       rouvrait l'application et constatait l'absence du bandeau —
+       mais le délai D'UN JOUR était encore en cours, donc rien
+       n'était même redemandé : l'essai serait passé au vert avec ou
+       sans « Plus tard ». Le souvenir du dernier regard est donc
+       effacé ici, et LUI SEUL : la demande repart pour de bon, la
+       version plus récente revient du réseau, et c'est bien l'écart
+       qui doit la retenir. */
+    const { default: userEvent } = await import('@testing-library/user-event');
+    await rendreApplication(PLUS_RECENTE);
+    await screen.findByText(/Version 9\.9\.9 disponible/);
+    await userEvent.click(screen.getByRole('button', { name: /Plus tard/ }));
+
+    localStorage.removeItem('waishi.derniereVerificationApk');
+
+    const { get } = await rendreApplication(PLUS_RECENTE);
+    await new Promise((r) => setTimeout(r, 50));
+    /* On a bel et bien redemandé — sans quoi l'essai ne prouverait
+       rien — et le bandeau ne s'est pas montré. */
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(/Version 9\.9\.9 disponible/)).not.toBeInTheDocument();
   });
 });

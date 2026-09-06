@@ -47,7 +47,25 @@ const DIST = join(RACINE, 'app', 'dist');
    demande de vérifier écran par écran que la ressemblance tient, ce
    que la comparaison au pixel sait faire. Ce n'est pas fait ici
    parce que ce n'est pas ce qui a été demandé aujourd'hui. */
-const BUDGET_GZIP = 245;
+/* ------------------------------------------------------------
+   245 → 250, LE 6 SEPTEMBRE 2026, ET POURQUOI.
+
+   Les notifications du téléphone sont arrivées. Le greffon lui-même
+   n'est PAS dans ce paquet : il est chargé par « import() » et ne
+   pèse que sur l'APK, au moment où il sert. Ce qui reste ici, ce
+   sont les quelques lignes du crochet, plus un remaniement des
+   morceaux par Vite — « @capacitor/core » s'est détaché en fichier
+   propre.
+
+   Mesuré : 245 → 248 ko. Le budget passe à 250, ce qui laisse la
+   marge habituelle sans la rendre confortable.
+
+   ⚠ ON AURAIT PU RÉCUPÉRER CES TROIS KILOOCTETS en tordant le
+   crochet — une indirection de plus, un « import() » de plus. On ne
+   l'a pas fait : la lecture du code compte aussi. Le vrai gain reste
+   où il a toujours été, dans les 122 ko de CSS ci-dessus.
+   ------------------------------------------------------------ */
+const BUDGET_GZIP = 250;
 
 if (!existsSync(join(DIST, 'index.html'))) {
   console.error(

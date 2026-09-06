@@ -19,9 +19,12 @@
    ============================================================ */
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import {
+  ecarter,
+  ecartee,
   OU_EST_LA_VERSION,
   OU_EST_L_APK,
   plusRecent,
+  poidsLisible,
   tropTot,
   versionPubliee
 } from '../src/services/miseAJourApk';
@@ -224,6 +227,127 @@ describe('le forfait des membres', () => {
     });
     try {
       expect(tropTot()).toBe(false);
+    } finally {
+      if (vrai) Object.defineProperty(window, 'localStorage', vrai);
+    }
+  });
+});
+
+/* ============================================================
+   LE POIDS DU TÉLÉCHARGEMENT.
+
+   « 5847268 » ne veut rien dire ; « 5,6 Mo » se décide. À
+   Antananarivo l'accès se paie au mégaoctet : un membre qui voit le
+   prix choisit son moment — le soir, sur le wifi du club. Un membre
+   qui ne le voit pas appuie, découvre sa consommation après, et
+   n'appuiera plus.
+   ============================================================ */
+describe('le poids annoncé', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  test('se lit en français, avec une virgule', () => {
+    expect(poidsLisible(5_847_268)).toBe('5,6 Mo');
+    expect(poidsLisible(12 * 1024 * 1024)).toBe('12,0 Mo');
+  });
+
+  test('descend en kilooctets sous le mégaoctet', () => {
+    /* « 0,3 Mo » se lit mal. L'APK n'y descendra pas, mais la
+       fonction n'a pas à le savoir. */
+    expect(poidsLisible(300 * 1024)).toBe('300 ko');
+  });
+
+  test('⚠ absent, il ne s’invente pas', () => {
+    /* Les versions publiées AVANT ce champ n'en portent pas. Le
+       bandeau doit alors ne rien dire — un chiffre par défaut serait
+       faux pour toutes. */
+    expect(poidsLisible(undefined)).toBeNull();
+    expect(poidsLisible(0)).toBeNull();
+    expect(poidsLisible(Number.NaN)).toBeNull();
+    expect(poidsLisible(-1)).toBeNull();
+  });
+
+  test('un poids invraisemblable est ignoré, pas affiché', async () => {
+    /* Deux cents octets serait une page d'erreur ; deux cents
+       mégaoctets, un champ falsifié. Dans les deux cas on préfère ne
+       rien annoncer. */
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ numero: '1.3.0', octets: 200 })
+    })));
+    expect((await versionPubliee())?.octets).toBeUndefined();
+
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ numero: '1.3.0', octets: 900 * 1024 * 1024 })
+    })));
+    expect((await versionPubliee())?.octets).toBeUndefined();
+  });
+
+  test('un poids plausible traverse', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ numero: '1.3.0', octets: 5_847_268 })
+    })));
+    expect((await versionPubliee())?.octets).toBe(5_847_268);
+  });
+});
+
+/* ============================================================
+   « PLUS TARD » — ET CE QUE CE MOT ENGAGE.
+
+   Ce bandeau est le SEUL canal de distribution du club : pas de Play
+   Store, pas de mise à jour automatique. Un écart DÉFINITIF laisserait
+   un membre sur une application vieillissante sans qu'aucun signal ne
+   le rattrape — ni lui, ni le club ne s'en apercevraient.
+
+   L'écart dure donc sept jours, et porte le numéro écarté.
+   ============================================================ */
+describe('écarter le bandeau', () => {
+  beforeEach(() => localStorage.clear());
+
+  test('la version écartée ne revient pas le lendemain', () => {
+    const t = Date.now();
+    ecarter('1.3.0', t);
+    expect(ecartee('1.3.0', t + 60 * 1000)).toBe(true);
+    expect(ecartee('1.3.0', t + 3 * 24 * 60 * 60 * 1000)).toBe(true);
+  });
+
+  test('⚠ mais elle revient au bout de sept jours', () => {
+    /* Le point qui distingue « plus tard » de « jamais ». Sans lui,
+       un geste distrait couperait quelqu'un des mises à jour pour
+       toujours, en silence. */
+    const t = Date.now();
+    ecarter('1.3.0', t);
+    expect(ecartee('1.3.0', t + 8 * 24 * 60 * 60 * 1000)).toBe(false);
+  });
+
+  test('⚠ une version SUIVANTE se montre tout de suite', () => {
+    /* L'écart porte un numéro. Écarter la 1.3.0 ne doit pas cacher
+       la 1.4.0 — ce serait exactement le défaut qu'on cherche à
+       éviter, avec une porte de plus. */
+    const t = Date.now();
+    ecarter('1.3.0', t);
+    expect(ecartee('1.4.0', t + 60 * 1000)).toBe(false);
+  });
+
+  test('un souvenir illisible ne cache rien', () => {
+    /* Le défaut penche vers le bandeau de trop, jamais vers le
+       silence. */
+    localStorage.setItem('waishi.miseAJourEcartee', 'ceci n’est pas du JSON');
+    expect(ecartee('1.3.0')).toBe(false);
+    localStorage.setItem('waishi.miseAJourEcartee', '{"numero":"1.3.0"}');
+    expect(ecartee('1.3.0')).toBe(false);
+  });
+
+  test('si le stockage est inaccessible, on montre, et « écarter » ne casse pas', () => {
+    const vrai = Object.getOwnPropertyDescriptor(window, 'localStorage');
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get() { throw new Error('bloqué'); }
+    });
+    try {
+      expect(ecartee('1.3.0')).toBe(false);
+      expect(() => ecarter('1.3.0')).not.toThrow();
     } finally {
       if (vrai) Object.defineProperty(window, 'localStorage', vrai);
     }

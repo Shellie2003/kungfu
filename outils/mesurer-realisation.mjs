@@ -164,9 +164,36 @@ const PREUVES = {
   'cas-filtre': ECRAN('/#/casier', 'Compétition'),
   'cas-detail': ECRAN('/#/casier/a1', 'Sortie au lac Mantasoa'),
   'not-centre': ECRAN('/#/notifications', 'Aujourd’hui'),
-  /* Hors de l'application : rien à voir à l'écran, et rien dans le
-     code non plus tant que Firebase n'est pas branché. Aucune preuve
-     n'est donc possible — c'est le sens de l'absence ci-dessous. */
+
+  /* ⚠ CELLE-CI NE SE VOIT PAS À L'ÉCRAN, ET C'EST TOUT LE PROBLÈME.
+
+     Une notification qui sort du téléphone arrive quand
+     l'application est FERMÉE. Aucune page à ouvrir, aucun texte à
+     lire : le banc ne peut rien constater, et il est resté longtemps
+     « sans preuve définie » pour cette raison.
+
+     Mais le mécanisme, lui, est en DEUX MOITIÉS, et c'est
+     précisément le cas pour lequel « DEUX » a été écrit :
+
+       · le téléphone doit s'ENREGISTRER et poser son jeton ;
+       · le serveur doit ENVOYER à ce jeton.
+
+     Chaque moitié seule ne fait rien, et — le point qui compte — ne
+     fait rien EN SILENCE. Un jeton posé que personne n'emploie ne
+     produit aucune erreur ; un envoi vers une table vide répond
+     « zéro envoyée » et réussit. C'est exactement la forme du défaut
+     que ce projet a rencontré quatre fois.
+
+     Ce qui reste hors de portée est dit sans détour : que le
+     téléphone SONNE demande un appareil, un projet Firebase et un
+     réseau. Cette preuve établit que les deux moitiés existent et se
+     répondent — pas que le club a entendu la sonnerie. */
+  'not-push': DEUX(
+    /PushNotifications[\s\S]{0,400}register\(\)/,
+    'src',
+    /messages:send/,
+    'fonctions'
+  ),
 
   /* ---- Album photo ---- */
   'alb-cat': ECRAN('/#/album', 'Compétitions'),

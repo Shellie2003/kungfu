@@ -105,5 +105,23 @@ export async function seConnecter(
 }
 
 export async function seDeconnecter() {
+  /* ⚠ LE JETON DU TÉLÉPHONE PART AVANT LA SESSION, et l'ordre n'est
+     pas indifférent : le retirer demande d'être encore connecté, la
+     règle d'accès exigeant que le jeton soit le sien. Après le
+     « signOut », la suppression serait refusée en silence — et le
+     téléphone continuerait de sonner pour les annonces destinées à
+     quelqu'un qui s'est déconnecté dessus. C'est le cas du téléphone
+     partagé au club, qui est précisément celui où cela se voit.
+
+     Chargé par « import() » : ce fichier est au cœur du paquet web,
+     et le service push n'y a rien à faire. */
+  try {
+    const { jetonRetenu, retirerLeJeton } = await import('./notificationsPush');
+    const jeton = jetonRetenu();
+    if (jeton) await retirerLeJeton(jeton);
+  } catch {
+    /* Le ménage des six mois rattrapera. Ne jamais empêcher
+       quelqu'un de se déconnecter pour cela. */
+  }
   await supabase.auth.signOut();
 }
