@@ -471,7 +471,7 @@ export function AdminFiche() {
                     nom={`Copier les identifiants de ${acces.numero}`}
                     libelle="Copier les identifiants"
                     texte={
-                      `Kung-fu Waishi Analamahitsy\n` +
+                      `Kung-fu Waïshi Analamahitsy\n` +
                       `Matricule : ${acces.numero}\n` +
                       `Mot de passe : ${acces.motDePasse}`
                     }

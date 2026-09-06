@@ -73,7 +73,7 @@ describe('ce que l’image contient', () => {
   }
 
   const CARTE = {
-    nomClub: 'Kung-fu Waishi',
+    nomClub: 'Kung-fu Waïshi',
     nom: 'RAKOTONDRABE',
     prenom: 'Nirina',
     grade: 'Ceinture verte',
@@ -93,7 +93,7 @@ describe('ce que l’image contient', () => {
     expect(ecrits).toContain('Nirina');
     expect(ecrits).toContain('Ceinture verte');
     expect(ecrits).toContain('F04x042');
-    expect(ecrits).toContain('KUNG-FU WAISHI');
+    expect(ecrits).toContain('KUNG-FU WAÏSHI');
     expect(ecrits).toContain('Analamahitsy');
   });
 
@@ -153,7 +153,7 @@ describe('l’écran', () => {
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
     expect(() =>
       dessinerCarte({
-        nomClub: 'Kung-fu Waishi', nom: 'RAKOTONDRABE', prenom: 'Nirina',
+        nomClub: 'Kung-fu Waïshi', nom: 'RAKOTONDRABE', prenom: 'Nirina',
         grade: null, couleurGrade: '#4E9C57', numero: 'F04x042',
         depuis: null, lieuClub: 'Analamahitsy', qr: null, portrait: null
       })

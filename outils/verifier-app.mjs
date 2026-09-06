@@ -66,7 +66,7 @@ const site = await servir(RACINE);
 
 /* ---------------------------------------------- Les écrans à ouvrir */
 const ECRANS = [
-  ['accueil', '/#/accueil', 'KUNG-FU WAISHI'],
+  ['accueil', '/#/accueil', 'KUNG-FU WAÏSHI'],
   ['etudiants', '/#/etudiants', 'RAKOTONDRABE'],
   ['profil', '/#/etudiants/p1', 'Informations personnelles'],
   ['casier', '/#/casier', 'Sortie au lac Mantasoa'],

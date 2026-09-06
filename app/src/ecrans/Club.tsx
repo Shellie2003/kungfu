@@ -163,7 +163,7 @@ export function Club() {
           <Emblem grand taille={34} icone="shield" />
           <div>
             <p className="display" style={{ fontSize: 20, color: '#FFF', lineHeight: '25px' }}>
-              Kung-fu Waishi
+              Kung-fu Waïshi
               <br />
               Analamahitsy
             </p>
@@ -254,7 +254,7 @@ export function Club() {
           <Carte>
             <p style={{ fontSize: 15, lineHeight: '25px', color: '#3C4A42' }}>
               {reglages?.presentation ??
-                'Le club enseigne le Kung-fu Waishi à Analamahitsy. Il accueille enfants, adolescents et adultes, du débutant au gradé, autour d’une pratique régulière et d’un esprit d’entraide.'}
+                'Le club enseigne le Kung-fu Waïshi à Analamahitsy. Il accueille enfants, adolescents et adultes, du débutant au gradé, autour d’une pratique régulière et d’un esprit d’entraide.'}
             </p>
           </Carte>
         </div>

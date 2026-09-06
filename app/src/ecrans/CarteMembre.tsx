@@ -59,7 +59,7 @@ export function CarteMembre() {
       ]);
 
       const toile = dessinerCarte({
-        nomClub: reglages?.nom_club ?? 'Kung-fu Waishi',
+        nomClub: reglages?.nom_club ?? 'Kung-fu Waïshi',
         nom: fiche.nom,
         prenom: fiche.prenom,
         grade: fiche.grade?.nom ?? null,
@@ -179,7 +179,7 @@ export function CarteMembre() {
                   obligerait à une nouvelle version le jour où il
                   tranche. */}
               <b className="carte__org">
-                {(reglages?.nom_club ?? 'Kung-fu Waishi').toUpperCase()}
+                {(reglages?.nom_club ?? 'Kung-fu Waïshi').toUpperCase()}
               </b>
               <i className="carte__kind">Carte de membre</i>
             </span>
@@ -269,7 +269,7 @@ export function CarteMembre() {
         <div className="aImprimer" aria-hidden="true">
           <CarteImprimable
             membre={fiche}
-            nomClub={reglages?.nom_club ?? 'Kung-fu Waishi'}
+            nomClub={reglages?.nom_club ?? 'Kung-fu Waïshi'}
             portrait={portraitUrl}
             qr={qr ?? undefined}
           />

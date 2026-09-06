@@ -83,7 +83,7 @@ export function Accueil() {
 
   const vues: Vue[] = [
     ...(photoClub
-      ? [{ cle: 'club', src: photoClub, legende: reglages?.nom_club ?? 'Kung-fu Waishi' }]
+      ? [{ cle: 'club', src: photoClub, legende: reglages?.nom_club ?? 'Kung-fu Waïshi' }]
       : []),
     ...derniersCliches
       .filter((p) => urlsAlbum[p.chemin])
@@ -156,7 +156,7 @@ export function Accueil() {
               className="display"
               style={{ fontSize: 17, color: '#FFF', letterSpacing: '.02em', lineHeight: '20px' }}
             >
-              {(reglages?.nom_club ?? 'Kung-fu Waishi').toUpperCase()}
+              {(reglages?.nom_club ?? 'Kung-fu Waïshi').toUpperCase()}
             </p>
             <p style={{ fontSize: 13, color: 'var(--sur-vert)', marginTop: 2 }}>
               {reglages?.lieu_club ?? 'Analamahitsy · Antananarivo'}
@@ -338,7 +338,7 @@ export function Accueil() {
           )}
           <div style={{ padding: 18 }}>
             <p className="display" style={{ fontSize: 19, lineHeight: '24px' }}>
-              {reglages?.nom_club ?? 'Kung-fu Waishi Analamahitsy'}
+              {reglages?.nom_club ?? 'Kung-fu Waïshi Analamahitsy'}
             </p>
             <p style={{ fontSize: 14, lineHeight: '22px', color: '#59685F', marginTop: 8 }}>
               {/* Deux présentations, pas une : la maquette en montre

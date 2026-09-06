@@ -75,7 +75,7 @@ export function Connexion({
           <Emblem grand taille={38} />
           <div>
             <p className="display" style={{ fontSize: 21, color: '#FFF', lineHeight: '26px' }}>
-              Kung-fu Waishi
+              Kung-fu Waïshi
             </p>
             <p style={{ fontSize: 14, color: 'var(--sur-vert)', marginTop: 4 }}>Analamahitsy</p>
           </div>
