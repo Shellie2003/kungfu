@@ -30,7 +30,6 @@ import {
   poidsLisible,
   useMiseAJourApk
 } from './services/miseAJourApk';
-import { useNotificationsPush } from './services/notificationsPush';
 
 /* ⚠ CHARGÉ À LA DEMANDE, et pour une raison mesurée.
 
@@ -385,12 +384,6 @@ function Connectee() {
 function Racine() {
   const { session, chargement } = useSession();
   useEcouteSession();
-  /* Les notifications du téléphone. Posé ICI, dans « Racine », et non
-     à côté comme le bandeau de mise à jour : celui-ci doit se voir
-     sans compte, celles-là n'ont de sens qu'une fois qu'on sait à
-     QUI envoyer. Le crochet attend d'ailleurs le profil avant de
-     demander quoi que ce soit à Android. */
-  useNotificationsPush();
 
   /* Rien pendant qu'on lit le jeton : un écran de chargement qui
      dure deux dixièmes de seconde clignote plus qu'il n'informe. */
@@ -504,9 +497,24 @@ function Nouveaute() {
 
    L'explication n'apparaît QUE dans l'APK, jamais sur le web : la
    version web ne télécharge rien. Le bandeau entier ne s'y monte
-   pas, ce qui règle la question. */
+   pas, ce qui règle la question.
+
+   ------------------------------------------------------------
+   ⚠ ET IL NE S'ÉCARTE PAS.
+
+   « Je veux afficher la bande tant que l'utilisateur ne fait pas la
+   mise à jour. » Il y a eu un « Plus tard », sept jours durant ; il
+   a été retiré.
+
+   La raison tient en une phrase : ce bandeau est le SEUL canal de
+   distribution du club. Pas de Play Store, pas de mise à jour
+   automatique. Un bouton qui l'écarte laisse quelqu'un sur une
+   application vieillissante, et personne ne s'en aperçoit.
+
+   La seule façon de le faire taire est de mettre à jour — c'est
+   voulu, et c'est ce que le club a demandé. */
 function MiseAJourApk() {
-  const { neuve, ecarter } = useMiseAJourApk();
+  const neuve = useMiseAJourApk();
   if (!neuve) return null;
 
   const poids = poidsLisible(neuve.octets);
@@ -529,22 +537,13 @@ function MiseAJourApk() {
           inconnues, puis rouvrez le fichier téléchargé.
         </span>
       </span>
-      <span style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
-        <a className="link" href={OU_EST_L_APK} rel="noreferrer">
-          {/* Le poids est DANS le lien, pas à côté : c'est au moment
-              d'appuyer qu'on veut savoir ce qu'on engage. Absent des
-              versions publiées avant lui, on n'affiche alors rien
-              plutôt qu'un chiffre inventé. */}
-          Mettre à jour{poids ? ` (${poids})` : ''}
-        </a>
-        <button
-          className="link"
-          onClick={ecarter}
-          style={{ fontSize: 12, opacity: 0.8 }}
-        >
-          Plus tard
-        </button>
-      </span>
+      <a className="link" href={OU_EST_L_APK} rel="noreferrer">
+        {/* Le poids est DANS le lien, pas à côté : c'est au moment
+            d'appuyer qu'on veut savoir ce qu'on engage. Absent des
+            versions publiées avant lui, on n'affiche alors rien
+            plutôt qu'un chiffre inventé. */}
+        Mettre à jour{poids ? ` (${poids})` : ''}
+      </a>
     </div>
   );
 }

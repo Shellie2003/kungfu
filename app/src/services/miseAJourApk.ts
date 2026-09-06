@@ -166,59 +166,28 @@ function noterLeRegard(maintenant = Date.now()): void {
 }
 
 /* ------------------------------------------------------------
-   « PLUS TARD », ET CE QUE CE MOT ENGAGE.
+   ⚠ POURQUOI IL N'Y A PAS DE « PLUS TARD ».
 
-   Le bandeau se pose en haut de TOUS les écrans, et il y reste tant
-   qu'on n'a pas mis à jour. Quelqu'un qui n'a pas de réseau au
-   moment où il le voit — le cas ordinaire à Antananarivo — le
-   traîne pendant des jours sans pouvoir rien en faire.
+   Il y en a eu un, sept jours durant, et le club l'a fait retirer :
+   « je veux afficher la bande tant que l'utilisateur ne fait pas la
+   mise à jour ».
 
-   ⚠ CE QU'ON N'A PAS FAIT, ET POURQUOI. L'écart le plus simple à
-   écrire serait définitif : « cette version, plus jamais ». Il
-   serait aussi mensonger — « plus tard » n'est pas « jamais » — et
-   surtout dangereux ICI : ce bandeau est le SEUL canal de
-   distribution du club. Pas de Play Store, pas de mise à jour
-   automatique. Un membre qui écarte une version d'un geste distrait
-   resterait sur une application vieillissante sans qu'aucun signal
-   ne le rattrape, et personne ne s'en apercevrait — ni lui, ni le
-   club.
+   La raison lui donne raison. Ce bandeau est le SEUL canal de
+   distribution du club : pas de Play Store, pas de mise à jour
+   automatique. Un bouton qui l'écarte est un bouton qui laisse
+   quelqu'un sur une application vieillissante — et personne ne s'en
+   aperçoit, ni lui, ni le club.
 
-   L'écart dure donc SEPT JOURS, puis le bandeau revient. Assez long
-   pour qu'on ait la paix le temps de trouver du wifi ; assez court
-   pour qu'une version ne se perde pas.
+   Le bandeau reste donc jusqu'à ce que la mise à jour soit faite.
+   Il disparaît tout seul le jour où le numéro installé rattrape le
+   numéro publié : c'est la seule façon de le faire taire, et c'est
+   voulu.
 
-   Et il porte le NUMÉRO écarté : une version suivante n'est pas
-   celle qu'on a écartée, et se montre tout de suite.
+   Ce que cela coûte est réel et assumé : quelqu'un sans réseau le
+   traîne en haut de tous les écrans. Le bouton « Rechercher une
+   mise à jour » de l'écran du club est là pour l'autre moitié du
+   problème — savoir où l'on en est sans attendre.
    ------------------------------------------------------------ */
-const CLE_ECART = 'waishi.miseAJourEcartee';
-const SEPT_JOURS = 7 * UN_JOUR;
-
-export function ecartee(numero: string, maintenant = Date.now()): boolean {
-  try {
-    const brut = localStorage.getItem(CLE_ECART);
-    if (!brut) return false;
-    const { numero: ecarte, quand } = JSON.parse(brut) as {
-      numero?: unknown;
-      quand?: unknown;
-    };
-    if (ecarte !== numero) return false;
-    if (typeof quand !== 'number' || !Number.isFinite(quand)) return false;
-    return maintenant - quand < SEPT_JOURS;
-  } catch {
-    /* Stockage indisponible, ou souvenir illisible : on montre. Le
-       défaut penche vers le bandeau de trop, jamais vers le silence. */
-    return false;
-  }
-}
-
-export function ecarter(numero: string, maintenant = Date.now()): void {
-  try {
-    localStorage.setItem(CLE_ECART, JSON.stringify({ numero, quand: maintenant }));
-  } catch {
-    /* Rien à faire : le bandeau reviendra à la prochaine ouverture.
-       Moins agréable, mais pas cassé. */
-  }
-}
 
 /* ------------------------------------------------------------
    ⚠ POURQUOI CE N'EST PAS « fetch » DANS L'APK.
@@ -306,47 +275,130 @@ export async function versionPubliee(): Promise<VersionPubliee | null> {
 }
 
 /* ------------------------------------------------------------
-   Le crochet employé par l'écran.
+   REGARDER UNE FOIS, ET RENDRE CE QU'ON A VU.
+
+   Le cœur commun aux trois façons de regarder : à l'ouverture, au
+   retour dans l'application, et sur demande. « forcer » saute le
+   délai d'un jour — c'est ce qui distingue « je demande » de
+   « l'application vérifie toute seule ».
+   ------------------------------------------------------------ */
+async function regarder(forcer: boolean): Promise<{
+  vue: VersionPubliee | null;
+  aRegarde: boolean;
+}> {
+  if (!SUR_TELEPHONE) return { vue: null, aRegarde: false };
+  if (!forcer && tropTot()) return { vue: null, aRegarde: false };
+
+  const publiee = await versionPubliee();
+  if (!publiee) return { vue: null, aRegarde: false };
+  noterLeRegard();
+  return {
+    vue: plusRecent(publiee.numero, NUMERO) ? publiee : null,
+    aRegarde: true
+  };
+}
+
+/* ------------------------------------------------------------
+   Le crochet du bandeau.
 
    Rend la version publiée quand elle est PLUS RÉCENTE que la
-   nôtre, « null » sinon.
+   nôtre, « null » sinon. Il ne fait rien hors du téléphone : la
+   version web se met à jour en rechargeant la page.
 
-   Il ne fait rien hors du téléphone : la version web se met à jour
-   toute seule en rechargeant la page, et proposer d'y télécharger un
-   APK n'aurait aucun sens.
+   ------------------------------------------------------------
+   ⚠ IL REGARDE AUSSI AU RETOUR DANS L'APPLICATION.
 
-   Il rend aussi de quoi ÉCARTER le bandeau. L'écart est posé dans le
-   stockage AVANT d'effacer l'affichage : si le stockage refuse, le
-   bandeau disparaît quand même pour cette fois — on ne coince pas
-   quelqu'un devant un bouton qui ne fait rien.
+   Il ne regardait qu'au MONTAGE. Or Android garde une application
+   vivante des jours : quelqu'un qui ne la ferme jamais — et
+   l'application empêche justement la mise en veille pendant les
+   cours — ne repassait jamais par ce montage. Le bandeau ne
+   s'affichait donc plus jamais pour lui, sans que rien n'échoue.
+
+   « resume » est l'événement que Capacitor donne quand
+   l'application revient au premier plan. Le délai d'un jour tient
+   toujours : revenir dix fois dans la journée ne fait pas dix
+   demandes.
    ------------------------------------------------------------ */
-export function useMiseAJourApk(): {
-  neuve: VersionPubliee | null;
-  ecarter: () => void;
-} {
+export function useMiseAJourApk(): VersionPubliee | null {
   const [neuve, setNeuve] = useState<VersionPubliee | null>(null);
 
   useEffect(() => {
-    if (!SUR_TELEPHONE || tropTot()) return;
+    if (!SUR_TELEPHONE) return;
     let vivant = true;
-    void (async () => {
-      const publiee = await versionPubliee();
-      if (!vivant || !publiee) return;
-      noterLeRegard();
-      if (plusRecent(publiee.numero, NUMERO) && !ecartee(publiee.numero)) {
-        setNeuve(publiee);
-      }
-    })();
+
+    const voir = async () => {
+      const { vue } = await regarder(false);
+      if (vivant && vue) setNeuve(vue);
+    };
+
+    void voir();
+
+    /* Le module n'existe que dans l'application empaquetée ; dans un
+       navigateur l'import échoue, et il n'y a rien à faire. */
+    let retirer: (() => void) | undefined;
+    void import('@capacitor/app')
+      .then(({ App }) => App.addListener('resume', () => void voir()))
+      .then((h) => {
+        retirer = () => void h.remove();
+      })
+      .catch(() => undefined);
+
     return () => {
       vivant = false;
+      retirer?.();
     };
   }, []);
 
-  return {
-    neuve,
-    ecarter: () => {
-      if (neuve) ecarter(neuve.numero);
-      setNeuve(null);
-    }
+  return neuve;
+}
+
+/* ------------------------------------------------------------
+   ⚠ CHERCHER SOI-MÊME, ET S'ENTENDRE RÉPONDRE.
+
+   Ce crochet-ci répond à un manque que le club a éprouvé le jour
+   même de la première mise à jour : on ne pouvait rien demander.
+   L'application regardait une fois par jour, et si elle avait déjà
+   regardé, il fallait attendre le lendemain — ou effacer les
+   données de l'application, ce qui déconnecte.
+
+   Il y avait pire, et plus discret : quand tout va bien,
+   l'application ne dit RIEN. Une fonctionnalité qui n'a aucun moyen
+   d'annoncer « je marche » est une fonctionnalité qu'on ne peut
+   jamais vérifier — c'est la forme exacte du défaut que ce projet a
+   rencontré quatre fois. « Vous avez la dernière version » est donc
+   une réponse aussi importante que l'autre.
+
+   Le délai d'un jour est SAUTÉ ici, et seulement ici : une demande
+   explicite n'est pas une vérification automatique, et quelqu'un qui
+   appuie mérite une réponse fraîche.
+   ------------------------------------------------------------ */
+export type Recherche =
+  | { etat: 'repos' }
+  | { etat: 'en cours' }
+  | { etat: 'a jour' }
+  | { etat: 'trouvee'; version: VersionPubliee }
+  | { etat: 'injoignable' };
+
+export function useChercherMiseAJour(): {
+  recherche: Recherche;
+  chercher: () => void;
+} {
+  const [recherche, setRecherche] = useState<Recherche>({ etat: 'repos' });
+
+  const chercher = () => {
+    setRecherche({ etat: 'en cours' });
+    void (async () => {
+      const { vue, aRegarde } = await regarder(true);
+      if (vue) setRecherche({ etat: 'trouvee', version: vue });
+      /* ⚠ « aRegarde » DISTINGUE DEUX SILENCES qui se ressemblent :
+         « j'ai demandé, et il n'y a rien de neuf » et « je n'ai pas
+         pu demander ». Les confondre ferait dire « vous avez la
+         dernière version » à quelqu'un hors ligne — un mensonge
+         tranquille, et le pire des deux. */
+      else if (aRegarde) setRecherche({ etat: 'a jour' });
+      else setRecherche({ etat: 'injoignable' });
+    })();
   };
+
+  return { recherche, chercher };
 }

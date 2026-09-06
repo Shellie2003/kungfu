@@ -32,7 +32,7 @@ import { useNavigate } from 'react-router-dom';
 import { Emblem } from '../ui/Emblem';
 import { Icone } from '../ui/Icone';
 import { VERSION, versionCourte } from '../services/version';
-import { NUMERO } from '../services/miseAJourApk';
+import { NUMERO, useChercherMiseAJour } from '../services/miseAJourApk';
 import {
   Avis, Bouton, Carte, ChoisirFichier, Entete, Feuille, Filet, Modifier, Surtitre, Tuile, Zone
 } from '../ui/base';
@@ -43,6 +43,7 @@ import {
 import { televerser, useEnregistrerReglages } from '../services/admin';
 import { useUrl } from '../services/stockage';
 import { estAdmin, estMaitre, useSession } from '../services/session';
+import { SUR_TELEPHONE } from '../services/telechargement';
 
 /* Les libellés des réglages écrits d'ici. Ils partent avec la valeur
    — « upsert » écrit la ligne entière — et c'est ce que
@@ -502,7 +503,81 @@ export function Club() {
         <p style={{ fontSize: 11, color: '#A8B6AE', textAlign: 'center', marginTop: 4 }}>
           Version {NUMERO} · {versionCourte(VERSION)}
         </p>
+
+        <ChercherMiseAJour />
       </div>
     </>
+  );
+}
+
+/* ------------------------------------------------------------
+   ⚠ CHERCHER UNE MISE À JOUR, ET S'ENTENDRE RÉPONDRE.
+
+   Deux manques, éprouvés le jour même de la première mise à jour.
+
+   D'ABORD ON NE POUVAIT RIEN DEMANDER. L'application regardait une
+   fois par jour ; si elle avait déjà regardé, il fallait attendre le
+   lendemain — ou effacer les données de l'application, ce qui
+   déconnecte. Quelqu'un à qui l'on dit « il y a une nouvelle
+   version » n'avait aucun moyen d'aller voir.
+
+   ENSUITE, QUAND TOUT ALLAIT BIEN, ELLE NE DISAIT RIEN. « À jour »
+   et « en panne » se ressemblaient trait pour trait : dans les deux
+   cas, aucun bandeau. Une fonctionnalité sans moyen d'annoncer
+   « je marche » ne peut jamais être vérifiée — c'est la forme exacte
+   du défaut que ce projet a rencontré quatre fois.
+
+   Le bouton ne s'affiche PAS sur le web : la version web se met à
+   jour en rechargeant la page, et lui proposer de chercher un APK
+   n'aurait aucun sens.
+   ------------------------------------------------------------ */
+function ChercherMiseAJour() {
+  const { recherche, chercher } = useChercherMiseAJour();
+
+  if (!SUR_TELEPHONE) return null;
+
+  const dire = () => {
+    switch (recherche.etat) {
+      case 'en cours':
+        return 'Recherche…';
+      case 'a jour':
+        return 'Vous avez la dernière version.';
+      case 'trouvee':
+        return `Version ${recherche.version.numero} disponible — voir le bandeau en haut.`;
+      case 'injoignable':
+        /* On ne dit PAS « vous êtes à jour » : ce serait un mensonge
+           tranquille, et le pire des deux réponses possibles. */
+        return 'Impossible de vérifier. Réessayez une fois le réseau revenu.';
+      default:
+        return null;
+    }
+  };
+
+  const message = dire();
+
+  return (
+    <p style={{ textAlign: 'center', marginTop: 2 }}>
+      <button
+        className="link"
+        onClick={chercher}
+        disabled={recherche.etat === 'en cours'}
+        style={{ fontSize: 11, color: '#A8B6AE' }}
+      >
+        Rechercher une mise à jour
+      </button>
+      {message ? (
+        <span
+          role="status"
+          style={{
+            display: 'block',
+            fontSize: 11,
+            color: '#A8B6AE',
+            marginTop: 2
+          }}
+        >
+          {message}
+        </span>
+      ) : null}
+    </p>
   );
 }

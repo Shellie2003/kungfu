@@ -165,35 +165,23 @@ const PREUVES = {
   'cas-detail': ECRAN('/#/casier/a1', 'Sortie au lac Mantasoa'),
   'not-centre': ECRAN('/#/notifications', 'Aujourd’hui'),
 
-  /* ⚠ CELLE-CI NE SE VOIT PAS À L'ÉCRAN, ET C'EST TOUT LE PROBLÈME.
+  /* ⚠ « not-push » N'EST PAS DANS L'APPLICATION, ET C'EST ASSUMÉ.
 
-     Une notification qui sort du téléphone arrive quand
-     l'application est FERMÉE. Aucune page à ouvrir, aucun texte à
-     lire : le banc ne peut rien constater, et il est resté longtemps
-     « sans preuve définie » pour cette raison.
+     Elle l'a été un moment : la table des jetons, l'enregistrement
+     Firebase, l'envoi serveur. Le club a demandé de la retirer, et
+     elle l'a été côté application — le 6 septembre 2026.
 
-     Mais le mécanisme, lui, est en DEUX MOITIÉS, et c'est
-     précisément le cas pour lequel « DEUX » a été écrit :
+     Ce qui reste, et qui n'est PAS du code mort :
 
-       · le téléphone doit s'ENREGISTRER et poser son jeton ;
-       · le serveur doit ENVOYER à ce jeton.
+       · la migration 0029 et la fonction « pousser » sont DÉPLOYÉES
+         sur la base du club. On ne les efface pas : effacer dans une
+         base qui porte les vraies fiches du club ne se fait pas pour
+         faire propre. Elles dorment, sans rien coûter.
 
-     Chaque moitié seule ne fait rien, et — le point qui compte — ne
-     fait rien EN SILENCE. Un jeton posé que personne n'emploie ne
-     produit aucune erreur ; un envoi vers une table vide répond
-     « zéro envoyée » et réussit. C'est exactement la forme du défaut
-     que ce projet a rencontré quatre fois.
-
-     Ce qui reste hors de portée est dit sans détour : que le
-     téléphone SONNE demande un appareil, un projet Firebase et un
-     réseau. Cette preuve établit que les deux moitiés existent et se
-     répondent — pas que le club a entendu la sonnerie. */
-  'not-push': DEUX(
-    /PushNotifications[\s\S]{0,400}register\(\)/,
-    'src',
-    /messages:send/,
-    'fonctions'
-  ),
+     Aucune preuve n'est donc définie ici : rien dans l'application
+     ne fait sonner un téléphone aujourd'hui, et prétendre le
+     contraire serait exactement le faux vert que cet instrument
+     existe pour empêcher. */
 
   /* ---- Album photo ---- */
   'alb-cat': ECRAN('/#/album', 'Compétitions'),

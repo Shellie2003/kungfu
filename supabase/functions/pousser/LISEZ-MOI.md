@@ -1,8 +1,22 @@
 # `pousser` — faire sonner les téléphones du club
 
-Cette fonction envoie les notifications aux téléphones. Elle est
-**déjà déployée**, et elle fonctionne — mais elle ne sonne nulle part
-tant que le club n'a pas de projet Firebase.
+> ## ⚠ DORMANTE — plus rien ne l'appelle
+>
+> Cette fonction est **déployée et active**, mais l'application ne
+> l'appelle plus : les notifications sur le téléphone ont été
+> retirées à la demande du club, le 6 septembre 2026.
+>
+> Elle n'est pas effacée, pour deux raisons. Elle ne coûte rien tant
+> que personne ne l'appelle ; et elle est, avec la migration 0029,
+> ce qui permettra de reprendre la fonctionnalité sans tout refaire
+> le jour où le club aura son projet Firebase.
+>
+> **Pour la remettre en service**, il faut aussi rétablir le code
+> côté application — voir le commit « Version 1.3.0 » puis celui qui
+> l'a retiré. Le mode d'emploi Firebase ci-dessous reste valable.
+
+Cette fonction envoie les notifications aux téléphones. Elle ne sonne
+nulle part tant que le club n'a pas de projet Firebase.
 
 Ce n'est pas une panne. Sans Firebase, elle répond :
 

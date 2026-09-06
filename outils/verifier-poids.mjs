@@ -48,24 +48,28 @@ const DIST = join(RACINE, 'app', 'dist');
    que la comparaison au pixel sait faire. Ce n'est pas fait ici
    parce que ce n'est pas ce qui a été demandé aujourd'hui. */
 /* ------------------------------------------------------------
-   245 → 250, LE 6 SEPTEMBRE 2026, ET POURQUOI.
+   245 → 248, LE 6 SEPTEMBRE 2026, ET POURQUOI.
 
-   Les notifications du téléphone sont arrivées. Le greffon lui-même
-   n'est PAS dans ce paquet : il est chargé par « import() » et ne
-   pèse que sur l'APK, au moment où il sert. Ce qui reste ici, ce
-   sont les quelques lignes du crochet, plus un remaniement des
-   morceaux par Vite — « @capacitor/core » s'est détaché en fichier
-   propre.
+   Le bandeau de mise à jour a gagné trois choses : le poids du
+   téléchargement, l'explication du refus d'Android, et de quoi
+   chercher une mise à jour à la demande. La troisième est ce qui
+   pèse — un second crochet, et l'écoute du retour dans
+   l'application.
 
-   Mesuré : 245 → 248 ko. Le budget passe à 250, ce qui laisse la
-   marge habituelle sans la rendre confortable.
+   Mesuré : 245 → 246 ko. Le budget passe à 248 : deux kilooctets de
+   marge, pas plus. Il était à 245 pour 245 mesurés, c'est-à-dire
+   sans aucune marge, et la moindre ligne le faisait tomber — ce qui
+   transforme un garde-fou utile en gêne quotidienne.
 
-   ⚠ ON AURAIT PU RÉCUPÉRER CES TROIS KILOOCTETS en tordant le
-   crochet — une indirection de plus, un « import() » de plus. On ne
-   l'a pas fait : la lecture du code compte aussi. Le vrai gain reste
-   où il a toujours été, dans les 122 ko de CSS ci-dessus.
+   ⚠ IL EST PASSÉ PAR 250 UNE JOURNÉE, le temps des notifications
+   Firebase, retirées depuis. Le chiffre redescend avec elles : un
+   budget qu'on relève et qu'on oublie de rabaisser ne mesure plus
+   rien.
+
+   Le vrai gain reste où il a toujours été : les 122 ko de CSS
+   ci-dessus.
    ------------------------------------------------------------ */
-const BUDGET_GZIP = 250;
+const BUDGET_GZIP = 248;
 
 if (!existsSync(join(DIST, 'index.html'))) {
   console.error(

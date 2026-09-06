@@ -448,27 +448,6 @@ export function useNotifierTous() {
       if (!lignes.length) throw new Error('Aucun membre actif à prévenir.');
       const { error: eIns } = await supabase.from('notifications').insert(lignes);
       if (eIns) throw eIns;
-
-      /* ⚠ FAIRE SONNER LES TÉLÉPHONES, APRÈS — ET SANS POUVOIR FAIRE
-         ÉCHOUER CE QUI PRÉCÈDE.
-
-         L'ordre décide de ce qu'on perd en cas de panne. Les
-         notifications sont DÉJÀ écrites : chacun les trouvera dans
-         son casier. Si Firebase est en panne, si le club n'a pas
-         encore créé son projet, si le réseau lâche entre les deux —
-         l'annonce est passée, moins bien, mais passée.
-
-         D'où le « catch » vide, qui n'est pas une négligence : celui
-         qui publie n'a RIEN à corriger, et lui afficher « échec »
-         alors que son annonce est partie l'amènerait à la republier.
-         Une annonce en double vaut moins qu'une annonce simple. */
-      try {
-        await supabase.functions.invoke('pousser', {
-          body: { titre, texte: texte || null, vers }
-        });
-      } catch {
-        /* Voir ci-dessus. */
-      }
     },
     ['notifications']
   );

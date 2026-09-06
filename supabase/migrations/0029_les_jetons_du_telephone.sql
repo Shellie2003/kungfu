@@ -1,4 +1,19 @@
 -- ============================================================
+-- ⚠ DORMANTE — APPLIQUÉE, MAIS PLUS EMPLOYÉE PAR L'APPLICATION.
+--
+-- Cette migration a été appliquée le 6 septembre 2026, puis la
+-- fonctionnalité qu'elle servait — les notifications sur le
+-- téléphone — a été retirée de l'application à la demande du club.
+--
+-- La table reste en base, VIDE, et n'est plus écrite ni lue par
+-- personne. On ne l'efface pas : la base porte désormais les vraies
+-- fiches du club, et on n'y supprime rien pour faire propre.
+--
+-- Elle est aussi ce qui permettra de reprendre la fonctionnalité
+-- sans rien refaire, le jour où le club aura son projet Firebase.
+-- ============================================================
+
+-- ============================================================
 -- 0029 — LES JETONS DU TÉLÉPHONE.
 --
 -- « not-push — Notification sur le téléphone » : la dernière ligne

@@ -172,13 +172,12 @@ describe('la bannière de mise à jour, dans l’application livrée', () => {
 /* ============================================================
    CE QUE LE BANDEAU DOIT DIRE, ET CE QU'IL DOIT LAISSER FAIRE.
 
-   Trois manques relevés après la livraison de la 1.2.0 :
+   Deux manques relevés après la livraison de la 1.2.0 :
 
      · le poids du téléchargement n'était pas annoncé ;
-     · rien ne disait quoi faire quand Android refuse d'installer ;
-     · le bandeau ne pouvait pas être écarté.
+     · rien ne disait quoi faire quand Android refuse d'installer.
 
-   Les trois ont en commun de ne faire échouer AUCUN essai tant qu'on
+   Les deux ont en commun de ne faire échouer AUCUN essai tant qu'on
    ne les écrit pas : l'application marche, et coûte seulement plus
    cher au membre qu'elle ne le devrait.
    ============================================================ */
@@ -219,40 +218,71 @@ describe('ce que le bandeau annonce', () => {
   });
 });
 
-describe('« Plus tard »', () => {
-  test('le bandeau s’efface au clic', async () => {
-    const { default: userEvent } = await import('@testing-library/user-event');
+/* ============================================================
+   ⚠ LE BANDEAU NE S'ÉCARTE PAS.
+
+   « Je veux afficher la bande tant que l'utilisateur ne fait pas la
+   mise à jour. »
+
+   Il y a eu un « Plus tard » de sept jours ; il a été retiré. La
+   raison lui donne raison : ce bandeau est le SEUL canal de
+   distribution du club — pas de Play Store, pas de mise à jour
+   automatique. Un bouton qui l'écarte laisse quelqu'un sur une
+   application vieillissante, et personne ne s'en aperçoit.
+
+   Cet essai est là pour qu'on ne le remette pas par mégarde en
+   croyant rendre service.
+   ============================================================ */
+describe('le bandeau reste tant qu’on n’a pas mis à jour', () => {
+  test('⚠ aucun bouton ne permet de l’écarter', async () => {
     await rendreApplication(PLUS_RECENTE);
     await screen.findByText(/Version 9\.9\.9 disponible/);
 
-    await userEvent.click(screen.getByRole('button', { name: /Plus tard/ }));
-    expect(screen.queryByText(/Version 9\.9\.9 disponible/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /plus tard|masquer|fermer|ignorer/i }),
+      'Un bouton écarte le bandeau. Le club a demandé qu’il reste ' +
+        'jusqu’à la mise à jour : c’est son seul canal de distribution.'
+    ).not.toBeInTheDocument();
   });
 
-  test('⚠ et il ne revient pas à la réouverture', async () => {
-    /* Un « Plus tard » qui ne tient pas jusqu'à la prochaine
-       ouverture n'est pas un « Plus tard ».
-
-       ⚠ ET CET ESSAI A FAILLI NE RIEN PROUVER. Écrit naïvement, il
-       rouvrait l'application et constatait l'absence du bandeau —
-       mais le délai D'UN JOUR était encore en cours, donc rien
-       n'était même redemandé : l'essai serait passé au vert avec ou
-       sans « Plus tard ». Le souvenir du dernier regard est donc
-       effacé ici, et LUI SEUL : la demande repart pour de bon, la
-       version plus récente revient du réseau, et c'est bien l'écart
-       qui doit la retenir. */
-    const { default: userEvent } = await import('@testing-library/user-event');
+  test('il revient à chaque ouverture, tant que la version est plus récente', async () => {
     await rendreApplication(PLUS_RECENTE);
     await screen.findByText(/Version 9\.9\.9 disponible/);
-    await userEvent.click(screen.getByRole('button', { name: /Plus tard/ }));
 
+    /* On rouvre en effaçant le souvenir du jour, pour que la demande
+       reparte vraiment — sans quoi cet essai ne prouverait rien. */
     localStorage.removeItem('waishi.derniereVerificationApk');
-
     const { get } = await rendreApplication(PLUS_RECENTE);
-    await new Promise((r) => setTimeout(r, 50));
-    /* On a bel et bien redemandé — sans quoi l'essai ne prouverait
-       rien — et le bandeau ne s'est pas montré. */
+    expect(await screen.findByText(/Version 9\.9\.9 disponible/)).toBeInTheDocument();
     expect(get).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText(/Version 9\.9\.9 disponible/)).not.toBeInTheDocument();
+  });
+});
+
+/* ============================================================
+   ⚠ REGARDER AU RETOUR DANS L'APPLICATION.
+
+   Le crochet ne regardait qu'au MONTAGE. Or Android garde une
+   application vivante des jours — et celle-ci empêche justement la
+   mise en veille pendant les cours. Quelqu'un qui ne la ferme jamais
+   ne repassait plus par ce montage : le bandeau ne s'affichait plus
+   jamais pour lui, sans que rien n'échoue.
+   ============================================================ */
+describe('le retour dans l’application', () => {
+  test('⚠ l’application s’abonne à « resume »', async () => {
+    const addListener = vi.fn(async () => ({ remove: async () => undefined }));
+    vi.doMock('@capacitor/app', () => ({ App: { addListener } }));
+
+    await rendreApplication(PLUS_RECENTE);
+    await screen.findByText(/Version 9\.9\.9 disponible/);
+    await new Promise((r) => setTimeout(r, 50));
+
+    const evenements = addListener.mock.calls.map((c) => (c as unknown[])[0]);
+    expect(
+      evenements,
+      'Personne n’écoute « resume » : un membre qui ne ferme jamais ' +
+        'l’application ne verra plus jamais de mise à jour proposée.'
+    ).toContain('resume');
+
+    vi.doUnmock('@capacitor/app');
   });
 });

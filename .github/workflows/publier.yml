@@ -272,24 +272,6 @@ jobs:
           echo "enregistrement des documents déclaré"
 
       # ------------------------------------------------------------
-      # LES NOTIFICATIONS DU TÉLÉPHONE.
-      #
-      # Un SCRIPT plutôt que deux étapes recopiées : c'est la réponse
-      # à l'avertissement ci-dessus, qui demandait de tenir apk.yml et
-      # ce fichier à la main, en parallèle. Un commentaire ne fait pas
-      # respecter une règle ; un appel d'une ligne qu'on remarque en
-      # relisant, oui.
-      #
-      # Sans le secret Firebase, ce script réussit et ne pose que la
-      # permission : l'APK est alors exactement celui d'avant. Le
-      # secret absent n'est pas une panne.
-      # ------------------------------------------------------------
-      - name: Préparer les notifications du téléphone
-        env:
-          FIREBASE_GOOGLE_SERVICES: ${{ secrets.FIREBASE_GOOGLE_SERVICES }}
-        run: node outils/preparer-push.mjs
-
-      # ------------------------------------------------------------
       # LE NUMÉRO DE VERSION, DANS L'APK.
       #
       # Deux nombres, et ils ne servent pas à la même chose :

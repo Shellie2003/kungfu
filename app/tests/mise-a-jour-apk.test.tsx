@@ -19,8 +19,6 @@
    ============================================================ */
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import {
-  ecarter,
-  ecartee,
   OU_EST_LA_VERSION,
   OU_EST_L_APK,
   plusRecent,
@@ -292,64 +290,97 @@ describe('le poids annoncé', () => {
   });
 });
 
+
 /* ============================================================
-   « PLUS TARD » — ET CE QUE CE MOT ENGAGE.
+   CHERCHER SOI-MÊME UNE MISE À JOUR.
 
-   Ce bandeau est le SEUL canal de distribution du club : pas de Play
-   Store, pas de mise à jour automatique. Un écart DÉFINITIF laisserait
-   un membre sur une application vieillissante sans qu'aucun signal ne
-   le rattrape — ni lui, ni le club ne s'en apercevraient.
+   Deux manques éprouvés le jour même de la première mise à jour.
 
-   L'écart dure donc sept jours, et porte le numéro écarté.
+   ON NE POUVAIT RIEN DEMANDER : l'application regardait une fois par
+   jour, et si elle avait déjà regardé il fallait attendre le
+   lendemain — ou effacer les données de l'application, ce qui
+   déconnecte.
+
+   ET QUAND TOUT ALLAIT BIEN, ELLE NE DISAIT RIEN. « À jour » et
+   « en panne » se ressemblaient trait pour trait : aucun bandeau
+   dans les deux cas. C'est la forme exacte du défaut que ce projet a
+   rencontré quatre fois.
    ============================================================ */
-describe('écarter le bandeau', () => {
-  beforeEach(() => localStorage.clear());
-
-  test('la version écartée ne revient pas le lendemain', () => {
-    const t = Date.now();
-    ecarter('1.3.0', t);
-    expect(ecartee('1.3.0', t + 60 * 1000)).toBe(true);
-    expect(ecartee('1.3.0', t + 3 * 24 * 60 * 60 * 1000)).toBe(true);
+describe('chercher une mise à jour sur demande', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.resetModules();
+    vi.doUnmock('@capacitor/core');
   });
 
-  test('⚠ mais elle revient au bout de sept jours', () => {
-    /* Le point qui distingue « plus tard » de « jamais ». Sans lui,
-       un geste distrait couperait quelqu'un des mises à jour pour
-       toujours, en silence. */
-    const t = Date.now();
-    ecarter('1.3.0', t);
-    expect(ecartee('1.3.0', t + 8 * 24 * 60 * 60 * 1000)).toBe(false);
-  });
+  async function surTelephone(reponse: { status: number; data: unknown }) {
+    const get = vi.fn(async () => reponse);
+    vi.doMock('@capacitor/core', () => ({
+      Capacitor: { isNativePlatform: () => true, getPlatform: () => 'android' },
+      CapacitorHttp: { get }
+    }));
+    vi.resetModules();
+    const { renderHook, act, waitFor } = await import('@testing-library/react');
+    const m = await import('../src/services/miseAJourApk');
+    const { result } = renderHook(() => m.useChercherMiseAJour());
+    return { result, get, act, waitFor };
+  }
 
-  test('⚠ une version SUIVANTE se montre tout de suite', () => {
-    /* L'écart porte un numéro. Écarter la 1.3.0 ne doit pas cacher
-       la 1.4.0 — ce serait exactement le défaut qu'on cherche à
-       éviter, avec une porte de plus. */
-    const t = Date.now();
-    ecarter('1.3.0', t);
-    expect(ecartee('1.4.0', t + 60 * 1000)).toBe(false);
-  });
+  test('⚠ elle demande MÊME SI l’on a déjà regardé aujourd’hui', async () => {
+    /* LE POINT. Sans cela, quelqu'un à qui l'on dit « il y a une
+       nouvelle version » ne peut rien faire avant le lendemain. */
+    localStorage.setItem('waishi.derniereVerificationApk', String(Date.now()));
 
-  test('un souvenir illisible ne cache rien', () => {
-    /* Le défaut penche vers le bandeau de trop, jamais vers le
-       silence. */
-    localStorage.setItem('waishi.miseAJourEcartee', 'ceci n’est pas du JSON');
-    expect(ecartee('1.3.0')).toBe(false);
-    localStorage.setItem('waishi.miseAJourEcartee', '{"numero":"1.3.0"}');
-    expect(ecartee('1.3.0')).toBe(false);
-  });
-
-  test('si le stockage est inaccessible, on montre, et « écarter » ne casse pas', () => {
-    const vrai = Object.getOwnPropertyDescriptor(window, 'localStorage');
-    Object.defineProperty(window, 'localStorage', {
-      configurable: true,
-      get() { throw new Error('bloqué'); }
+    const { result, get, act, waitFor } = await surTelephone({
+      status: 200,
+      data: { numero: '9.9.9' }
     });
-    try {
-      expect(ecartee('1.3.0')).toBe(false);
-      expect(() => ecarter('1.3.0')).not.toThrow();
-    } finally {
-      if (vrai) Object.defineProperty(window, 'localStorage', vrai);
-    }
+
+    await act(async () => result.current.chercher());
+    await waitFor(() => expect(result.current.recherche.etat).toBe('trouvee'));
+    expect(
+      get,
+      'La demande n’est pas partie : le délai d’un jour n’est pas sauté.'
+    ).toHaveBeenCalledTimes(1);
+  });
+
+  test('⚠ elle DIT que tout va bien quand tout va bien', async () => {
+    /* Le silence ne se distingue pas d'une panne. Une fonctionnalité
+       sans moyen d'annoncer « je marche » ne peut jamais être
+       vérifiée. */
+    /* Le numéro INSTALLÉ, lu du service : écrire « 1.3.0 » en dur
+       rendrait cet essai faux à la version suivante. */
+    const { NUMERO } = await import('../src/services/miseAJourApk');
+    const { result, act, waitFor } = await surTelephone({
+      status: 200,
+      data: { numero: NUMERO }
+    });
+
+    await act(async () => result.current.chercher());
+    await waitFor(() => expect(result.current.recherche.etat).toBe('a jour'));
+  });
+
+  test('⚠ hors ligne, elle ne dit PAS « vous êtes à jour »', async () => {
+    /* Les deux silences se ressemblent, et les confondre serait un
+       mensonge tranquille — le pire des deux. */
+    const { result, act, waitFor } = await surTelephone({
+      status: 500,
+      data: 'panne'
+    });
+
+    await act(async () => result.current.chercher());
+    await waitFor(() => expect(result.current.recherche.etat).toBe('injoignable'));
+  });
+
+  test('elle annonce la version trouvée, avec son numéro', async () => {
+    const { result, act, waitFor } = await surTelephone({
+      status: 200,
+      data: { numero: '9.9.9', notes: 'La galerie glisse.' }
+    });
+
+    await act(async () => result.current.chercher());
+    await waitFor(() => expect(result.current.recherche.etat).toBe('trouvee'));
+    const r = result.current.recherche;
+    expect(r.etat === 'trouvee' && r.version.numero).toBe('9.9.9');
   });
 });
