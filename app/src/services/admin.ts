@@ -195,17 +195,40 @@ export function useModifierFiche(id: string | undefined) {
 
        Les deux changements — le compte et la fiche — se font donc
        ensemble, sur le SERVEUR, qui seul peut toucher au compte.
-       C'est l'action « renommer » de la fonction déployée, appelée
-       ci-dessous avant le reste : si elle échoue, on s'arrête, et
-       rien n'a bougé.
+       C'est l'action « renommer » de la fonction déployée.
+
+       ------------------------------------------------------------
+       ⚠ ET ELLE EST APPELÉE EN DERNIER, APRÈS TOUT LE RESTE.
+
+       Elle était appelée en PREMIER, et cela a enfermé le super
+       administrateur du club dehors le 6 septembre 2026.
+
+       Il a corrigé son matricule et sa date de naissance dans le
+       même enregistrement. Le renommage a réussi — son adresse de
+       connexion est devenue « f04x003@waishi.local » — puis
+       l'écriture des informations privées a échoué (voir plus bas :
+       elle demandait une colonne qui n'existe pas). L'écran a
+       affiché « erreur du serveur », ce qui se lit naturellement
+       comme « rien n'a été enregistré ».
+
+       Le matricule, LUI, était déjà changé. L'application s'est
+       déconnectée — changer l'adresse d'un compte révoque ses
+       sessions — et il a retapé son ANCIEN matricule, celui que
+       l'écran d'erreur lui laissait croire encore valable. Dix
+       tentatives, « numéro de membre ou mot de passe incorrect », et
+       aucune trace anormale dans la base.
+
+       En dernier, l'ordre est sauf dans tous les cas : si quoi que ce
+       soit échoue avant, le matricule n'a pas bougé et le membre peut
+       toujours entrer. Si le renommage lui-même échoue, la fonction
+       serveur remet l'ancienne adresse.
+
+       LA RÈGLE : ce qui peut mettre quelqu'un dehors se fait EN
+       DERNIER, jamais en premier.
 
        Le rôle, lui, ne figure toujours pas ici : il se change depuis
        l'écran des comptes, et seul un super administrateur le peut.
        Le grade a son propre écran. */
-    if (s.numero !== undefined) {
-      const r = await appelerFonction('renommer', { profilId: id, numero: s.numero });
-      if (!r.ok) throw new Error(r.message);
-    }
 
     const { data: ecrit1, error } = await supabase
       .from('profils')
@@ -220,6 +243,22 @@ export function useModifierFiche(id: string | undefined) {
     if (error) throw error;
     assure(ecrit1, 'enregistré cette fiche');
 
+    /* ⚠ « profil_id », ET SURTOUT PAS « id ».
+
+       Cette table N'A PAS de colonne « id » : sa clé est le profil.
+       « .select('id') » faisait donc refuser la requête ENTIÈRE par
+       le serveur — « column profils_prives.id does not exist » — et
+       l'écran annonçait « erreur du serveur » à qui corrigeait une
+       date de naissance, un téléphone ou une adresse. Aucune de ces
+       quatre informations ne pouvait plus être modifiée.
+
+       Le défaut vient d'un conseil juste appliqué de travers :
+       « verifier-ecritures » réclame un « .select() » pour qu'une
+       écriture sache si elle a écrit, et propose « .select('id') ».
+       Ce conseil suppose une colonne « id ». Quatre tables du schéma
+       n'en ont pas. L'outil a été corrigé pour vérifier que la
+       colonne demandée existe — sans quoi il continuerait d'approuver
+       une écriture qui échoue à tous les coups. */
     const { data: ecrit2, error: ePrive } = await supabase.from('profils_prives').upsert(
       {
         profil_id: id,
@@ -230,9 +269,17 @@ export function useModifierFiche(id: string | undefined) {
       },
       { onConflict: 'profil_id' }
     )
-      .select('id');
+      .select('profil_id');
     if (ePrive) throw ePrive;
     assure(ecrit2, 'enregistré les informations privées');
+
+    /* Le renommage EN DERNIER — voir l'avertissement en tête de cette
+       fonction. Ce qui peut mettre quelqu'un dehors passe après tout
+       le reste. */
+    if (s.numero !== undefined) {
+      const r = await appelerFonction('renommer', { profilId: id, numero: s.numero });
+      if (!r.ok) throw new Error(r.message);
+    }
   }, ['membres','fiche']);
 }
 
@@ -778,7 +825,10 @@ export function useRetirerDuSalon() {
       .delete()
       .eq('salon_id', salonId)
       .eq('profil_id', profilId)
-      .select('id');
+      /* « profil_id » : cette table n'a pas de colonne « id » non plus.
+         Le même défaut que « profils_prives », et il rendait
+         impossible de retirer quelqu'un d'un salon. */
+      .select('profil_id');
     if (error) throw error;
     assure(ecrit18, 'enregistré cette inscription');
   }, ['membres-salon','salons']);

@@ -55,6 +55,64 @@ const SOURCE = join(RACINE, 'app', 'src');
 const ECRITURE = /\.(update|delete|upsert)\(/;
 const MARQUEUR = /zéro-ligne-normal:/;
 
+/* ------------------------------------------------------------
+   LES COLONNES DE CHAQUE TABLE, LUES DANS LES MIGRATIONS.
+
+   La base est la seule autorité, mais on ne la joint pas : ce
+   contrôle doit tourner sur la machine de construction, sans
+   secrets et sans réseau. Les migrations disent la même chose, et
+   elles sont dans le dépôt.
+
+   On lit les « create table », et aussi les « alter table … add
+   column » — sans quoi une colonne ajoutée après coup serait tenue
+   pour inexistante, et l'on refuserait une écriture correcte.
+   ------------------------------------------------------------ */
+const MIGRATIONS = join(RACINE, 'supabase', 'migrations');
+
+function schemaDesMigrations() {
+  const tables = new Map();
+  let sql = '';
+  for (const nom of readdirSync(MIGRATIONS).sort()) {
+    if (nom.endsWith('.sql')) sql += `\n${readFileSync(join(MIGRATIONS, nom), 'utf8')}`;
+  }
+  /* Les commentaires SQL d'abord : ce dépôt en écrit beaucoup, et
+     ils citent des noms de tables et de colonnes. Les garder ferait
+     inventer des colonnes qui n'existent pas — l'inverse du défaut
+     qu'on corrige, mais tout aussi faux. */
+  sql = sql.replace(/^\s*--.*$/gm, '');
+
+  const creation = /create table (?:if not exists )?(?:public\.)?([a-z_]+)\s*\(([\s\S]*?)\n\);/g;
+  for (const [, table, corps] of sql.matchAll(creation)) {
+    const colonnes = tables.get(table) ?? new Set();
+    for (const ligne of corps.split('\n')) {
+      const m = /^\s{2,}([a-z_]+)\s+[a-z]/.exec(ligne);
+      /* « primary key (a, b) », « unique (…) », « constraint … » ne
+         sont pas des colonnes. */
+      if (m && !['primary', 'unique', 'constraint', 'foreign', 'check'].includes(m[1])) {
+        colonnes.add(m[1]);
+      }
+    }
+    tables.set(table, colonnes);
+  }
+
+  const ajout = /alter table (?:if exists )?(?:public\.)?([a-z_]+)\s+add column (?:if not exists )?([a-z_]+)/g;
+  for (const [, table, colonne] of sql.matchAll(ajout)) {
+    if (!tables.has(table)) tables.set(table, new Set());
+    tables.get(table).add(colonne);
+  }
+
+  return tables;
+}
+
+const SCHEMA = schemaDesMigrations();
+
+/* « null » veut dire « je ne sais pas » — une vue, une table créée
+   hors migration. On n'accuse jamais sur une ignorance. */
+function colonnesDe(table) {
+  const c = SCHEMA.get(table);
+  return c && c.size ? c : null;
+}
+
 function fichiers(dossier) {
   const out = [];
   for (const nom of readdirSync(dossier)) {
@@ -95,6 +153,52 @@ for (const fichier of fichiers(SOURCE)) {
       if (lignes[j].includes(';')) break;
     }
     const texte = bloc.join('\n');
+
+    /* ------------------------------------------------------------
+       ⚠ UN « .select() » NE SUFFIT PAS : LA COLONNE DOIT EXISTER.
+
+       Ce contrôle se contentait de voir un « .select(…) » quelque
+       part, et son conseil disait « ajoutez .select('id') ». Le
+       conseil est juste — sauf que QUATRE tables du schéma n'ont pas
+       de colonne « id » : profils_prives, membres_salon, reglages,
+       jetons_push. Leur clé est autre chose.
+
+       Demander une colonne qui n'existe pas fait refuser la requête
+       ENTIÈRE par le serveur : « column profils_prives.id does not
+       exist ». L'écriture n'a pas lieu, et l'écran annonce « erreur
+       du serveur ».
+
+       CE N'EST PAS UNE HYPOTHÈSE. Le 6 septembre 2026, le club n'a
+       plus pu modifier aucune date de naissance, aucun téléphone,
+       aucune adresse — ni retirer personne d'un salon. Et le super
+       administrateur s'est retrouvé enfermé dehors : il corrigeait
+       sa date de naissance et son matricule dans le même
+       enregistrement, le renommage a réussi, l'écriture privée a
+       échoué, l'écran a dit « erreur du serveur » — et il a retapé
+       son ancien matricule pendant dix tentatives.
+
+       Cet instrument avait donc approuvé, deux fois, une écriture
+       qui ne pouvait pas réussir. Il vérifie maintenant que la
+       colonne demandée existe vraiment, en lisant les migrations.
+       ------------------------------------------------------------ */
+    const demande = /\.select\('([a-z_]+)/.exec(texte);
+    if (demande) {
+      const colonne = demande[1];
+      const connues = colonnesDe(table);
+      /* Une table qu'on ne sait pas lire — une vue, une table créée
+         hors migration — ne se juge pas : on accepte. Refuser ce
+         qu'on ne comprend pas ferait échouer des écritures saines. */
+      if (connues && !connues.has(colonne)) {
+        ennuis.push({
+          fichier: relative(RACINE, fichier),
+          ligne: i + 1,
+          quoi: ECRITURE.exec(ligne)[1],
+          table,
+          colonne
+        });
+      }
+      continue;
+    }
     if (texte.includes('.select(')) continue;
 
     /* Le marqueur se cherche dans les QUATORZE lignes qui précèdent.
@@ -118,13 +222,25 @@ if (ennuis.length) {
     `\n${ennuis.length} écriture(s) ne sauront pas si elles ont écrit :\n`
   );
   for (const e of ennuis) {
-    console.error(`  ✗ ${e.fichier}:${e.ligne}  ${e.quoi} sur « ${e.table} »`);
+    if (e.colonne) {
+      const dispo = [...(colonnesDe(e.table) ?? [])].slice(0, 6).join(', ');
+      console.error(
+        `  ✗ ${e.fichier}:${e.ligne}  ${e.quoi} sur « ${e.table} » demande ` +
+          `« ${e.colonne} », qui n’existe pas.\n` +
+          `      Colonnes de cette table : ${dispo}`
+      );
+    } else {
+      console.error(`  ✗ ${e.fichier}:${e.ligne}  ${e.quoi} sur « ${e.table} »`);
+    }
   }
   console.error(
     '\n  Une règle d’accès ne REJETTE pas une mise à jour : elle rend la ligne\n' +
       '  invisible. L’écriture ne touche alors rien et répond « tout va bien ».\n' +
       '  L’écran annonce « Enregistré », et rien ne l’a été.\n\n' +
-      '  Ajoutez « .select(\'id\') » et traitez le cas zéro ligne comme un refus.\n\n' +
+      '  Ajoutez un « .select(\'…\') » portant une colonne QUI EXISTE, et traitez\n' +
+      '  le cas zéro ligne comme un refus. Quatre tables n’ont pas de « id » —\n' +
+      '  profils_prives, membres_salon, reglages, jetons_push : leur clé est\n' +
+      '  ailleurs, et demander « id » fait refuser la requête entière.\n\n' +
       '  Si zéro ligne est NORMAL ici — « tout marquer lu » quand tout est déjà\n' +
       '  lu — dites-le dans le commentaire au-dessus :\n\n' +
       '      /* zéro-ligne-normal: rien n’était à marquer */\n'
