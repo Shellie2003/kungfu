@@ -30,6 +30,8 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AdminFiche } from '../src/ecrans/admin/Fiche';
 import { AdminComptes } from '../src/ecrans/admin/Comptes';
+import { AdminSuper } from '../src/ecrans/admin/Super';
+import { Admin } from '../src/ecrans/Admin';
 import { brancherServeur, derniere, poser, recues, reinitialiser } from './serveur';
 import { PROFIL_ADMIN, PROFIL_SUPER, rendre } from './rendu';
 
@@ -319,5 +321,147 @@ describe('suspendre et supprimer : au super administrateur seul', () => {
     );
 
     expect(await screen.findByText(/réservé au super administrateur/)).toBeInTheDocument();
+  });
+});
+
+/* ============================================================
+   LE PANNEAU DE SUPER ADMINISTRATION.
+
+   « Je veux une interface sous forme de panneau de super admin avec
+   toutes les fonctionnalités que le super admin seul peut avoir. »
+
+   ------------------------------------------------------------
+   CE QUI EST NOUVEAU, ET CE QUI NE L'EST PAS
+
+   Trois des quatre pouvoirs existaient déjà, dispersés dans deux
+   écrans d'administration ordinaires. Le panneau les rassemble et
+   les NOMME, sans rien recopier : il conduit vers eux.
+
+   Le quatrième — NOMMER un second super administrateur — manquait
+   vraiment. La base l'autorisait depuis la migration 0016 ; aucun
+   écran ne le proposait, et le club n'avait donc aucun moyen d'en
+   désigner un autre depuis l'application. Cela s'est révélé coûteux
+   le jour où le seul super administrateur s'est retrouvé dehors.
+
+   ------------------------------------------------------------
+   ⚠ CE QUE CES ESSAIS NE TIENNENT PAS
+
+   La sécurité, comme pour le reste de ce fichier. Elle est dans le
+   déclencheur de la migration 0016, qui refuse toute modification de
+   « super_admin » à qui n'est pas déjà super, et qui refuse de
+   retirer le DERNIER. Un écran ne protège rien.
+
+   Ce que l'écran doit faire, c'est ne pas proposer ce qui sera
+   refusé — et ne pas cacher ce qui est permis.
+   ============================================================ */
+describe('le panneau de super administration', () => {
+  const DEUX_ADMINS = {
+    profils: [
+      { id: 'p9', numero: 'F04x000', nom: 'IDEALY', prenom: 'Santatra',
+        role: 'admin', actif: true, compte_id: 'u9', super_admin: true },
+      { id: 'pa', numero: 'F04x006', nom: 'RAZAFINDRANAIVO', prenom: 'Mampianina',
+        role: 'admin', actif: true, compte_id: 'ua', super_admin: false },
+      { id: 'pb', numero: 'F04x042', nom: 'RAKOTONDRABE', prenom: 'Nirina',
+        role: 'eleve', actif: true, compte_id: null, super_admin: false }
+    ]
+  };
+
+  test('⚠ il nomme un second super administrateur', async () => {
+    /* LE POUVOIR QUI MANQUAIT. Sans lui, un club à un seul super
+       administrateur n'a aucun moyen d'en désigner un autre depuis
+       l'application — et le jour où celui-là perd son mot de passe,
+       plus personne ne peut nommer de rôle, suspendre ni supprimer. */
+    poser(DEUX_ADMINS);
+    rendre(<AdminSuper />, { route: '/admin/super', profil: PROFIL_SUPER });
+
+    await userEvent.click(
+      await screen.findByRole('button', {
+        name: /Nommer RAZAFINDRANAIVO Mampianina super administrateur/
+      })
+    );
+
+    const envoi = (await waitFor(() => {
+      /* ⚠ PATCH, et non POST : « nommer » est une MISE À JOUR de la
+         colonne « super_admin », pas une inscription. Cherché en POST,
+         l'essai ne trouvait rien et accusait l'écran. */
+      const r = derniere('profils', 'PATCH');
+      expect(r).toBeDefined();
+      return r!;
+    })).corps as { super_admin: boolean };
+    expect(envoi.super_admin).toBe(true);
+  });
+
+  test('⚠ le DERNIER super administrateur ne se retire pas', async () => {
+    /* Le retirer enfermerait le club dehors : plus personne pour
+       nommer un rôle, et cela ne se rattrape que depuis le tableau
+       de bord du serveur. La base le refuse ; l'écran ne le propose
+       pas — montrer un bouton qui mène à un refus laisse la personne
+       se demander si le fautif est elle. */
+    poser(DEUX_ADMINS);
+    rendre(<AdminSuper />, { route: '/admin/super', profil: PROFIL_SUPER });
+
+    const retirer = await screen.findByRole('button', {
+      name: /Retirer la qualité de super administrateur à IDEALY Santatra/
+    });
+    expect(
+      retirer,
+      'Le dernier super administrateur peut être retiré depuis l’écran : ' +
+        'le club se retrouverait sans personne pour nommer un rôle.'
+    ).toBeDisabled();
+  });
+
+  test('il avertit quand le club n’a qu’un seul super administrateur', async () => {
+    poser(DEUX_ADMINS);
+    rendre(<AdminSuper />, { route: '/admin/super', profil: PROFIL_SUPER });
+
+    expect(
+      await screen.findByText(/qu’un seul super administrateur/)
+    ).toBeInTheDocument();
+  });
+
+  test('⚠ les élèves ne figurent pas dans la liste', async () => {
+    /* « super_admin » est un drapeau PAR-DESSUS le rôle, pas un
+       quatrième rôle : nommer un élève super administrateur n'aurait
+       aucun sens, et la base le refuserait. */
+    poser(DEUX_ADMINS);
+    rendre(<AdminSuper />, { route: '/admin/super', profil: PROFIL_SUPER });
+
+    await screen.findByText(/RAZAFINDRANAIVO/);
+    expect(screen.queryByText(/RAKOTONDRABE/)).not.toBeInTheDocument();
+  });
+
+  test('il dit que la réinitialisation reste ouverte à toute l’administration', async () => {
+    /* Le club l'a voulu ainsi, et c'est un choix qui se défend mal
+       sans explication : l'écran la porte, pour qu'on ne la prenne
+       pas pour un oubli. */
+    poser(DEUX_ADMINS);
+    rendre(<AdminSuper />, { route: '/admin/super', profil: PROFIL_SUPER });
+
+    expect(
+      await screen.findByText(/Réinitialiser le mot de passe/)
+    ).toBeInTheDocument();
+  });
+});
+
+describe('l’écran d’administration, et le chemin vers le panneau', () => {
+  test('⚠ un administrateur ORDINAIRE ne voit pas le bloc', async () => {
+    /* Il n'y a rien à y faire pour lui : chaque geste du panneau
+       serait refusé par la base. */
+    rendre(<Admin />, { route: '/admin', profil: PROFIL_ADMIN });
+    await screen.findByText('Membres');
+    expect(screen.queryByText('Réservé au super administrateur')).not.toBeInTheDocument();
+    expect(screen.queryByText('Super administration')).not.toBeInTheDocument();
+  });
+
+  test('le super administrateur le voit', async () => {
+    rendre(<Admin />, { route: '/admin', profil: PROFIL_SUPER });
+    /* Le titre de SECTION et celui de la LIGNE sont volontairement
+       différents : identiques, ils rendaient deux éléments pour le
+       même texte, et l'essai échouait sur l'ambiguïté plutôt que sur
+       le comportement. */
+    expect(
+      await screen.findByText('Réservé au super administrateur')
+    ).toBeInTheDocument();
+    expect(screen.getByText('Super administration')).toBeInTheDocument();
   });
 });

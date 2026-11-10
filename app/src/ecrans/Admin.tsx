@@ -21,7 +21,7 @@ import { Surtitre } from '../ui/base';
 import { useMembres } from '../services/membres';
 import { useActualites } from '../services/casier';
 import { useAlbums, useReglages } from '../services/club';
-import { useSession } from '../services/session';
+import { estSuper, useSession } from '../services/session';
 
 type Rangee = [titre: string, detail: string, icone: string, vers: string];
 
@@ -32,6 +32,26 @@ const MEMBRES: Rangee[] = [
   ['Les grades du club', 'Créer, renommer, recolorer, ordonner', 'martial', '/admin/grades/liste'],
   ['Comptes et accès', 'Créer, suspendre, réinitialiser', 'lock', '/admin/comptes'],
   ['Imprimer les cartes', 'Dix par page A4, avec traits de coupe', 'shieldCheck', '/admin/impression']
+];
+
+/* ⚠ UN BLOC À PART, ET NON UNE LIGNE DE PLUS DANS « Membres ».
+
+   Les trois pouvoirs du super administrateur — changer un rôle,
+   suspendre, supprimer — vivaient mêlés à ce que font les cinq
+   administrateurs du club, sans que rien ne dise à l'écran « ceci
+   est à vous seul ». Les glisser une fois de plus au milieu des
+   autres aurait reconduit exactement ce défaut.
+
+   Ce bloc ne s'affiche qu'au super administrateur. Il ne protège
+   rien — la base s'en charge — il évite seulement de proposer un
+   écran dont chaque geste serait refusé. */
+const SUPER: Rangee[] = [
+  [
+    'Super administration',
+    'Nommer un super administrateur, et ce que vous seul pouvez faire',
+    'shield',
+    '/admin/super'
+  ]
 ];
 
 const PUBLICATION: Rangee[] = [
@@ -193,6 +213,7 @@ export function Admin() {
         }}
       >
         <Bloc titre="Membres" lignes={MEMBRES} />
+        {estSuper(moi) && <Bloc titre="Réservé au super administrateur" lignes={SUPER} />}
         <Bloc titre="Publication" lignes={PUBLICATION} />
         <Bloc titre="Vie du club" lignes={VIE_DU_CLUB} />
         <Bloc titre="Réglages" lignes={REGLAGES} />

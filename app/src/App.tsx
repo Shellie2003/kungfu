@@ -100,6 +100,9 @@ const AdminPublier = lazy(() =>
 const AdminComptes = lazy(() =>
   import('./ecrans/admin/Comptes').then((m) => ({ default: m.AdminComptes }))
 );
+const AdminSuper = lazy(() =>
+  import('./ecrans/admin/Super').then((m) => ({ default: m.AdminSuper }))
+);
 const AdminClub = lazy(() =>
   import('./ecrans/admin/Club').then((m) => ({ default: m.AdminClub }))
 );
@@ -132,7 +135,7 @@ const AdminImpression = lazy(() =>
 );
 
 import { seConnecter } from './services/supabase';
-import { estAdmin, estMaitre, useEcouteSession, useSession } from './services/session';
+import { estAdmin, estMaitre, estSuper, useEcouteSession, useSession } from './services/session';
 import { VERSION, useMiseAJour, versionCourte } from './services/version';
 import { accorderLaBarre } from './services/barreDetat';
 
@@ -339,6 +342,15 @@ function Connectee() {
             que le rôle n'autorise pas. La route est masquée pour ne
             pas encombrer, pas pour protéger. */}
         {estAdmin(profil) && <Route path="/admin" element={<Admin />} />}
+        {/* ⚠ « estSuper », et non « estAdmin ». C'est le seul écran du
+            projet dont la route dépend du DRAPEAU et non du rôle.
+
+            La route ne PROTÈGE rien, comme toutes les autres : elle
+            évite d'ouvrir un écran dont chaque geste serait refusé.
+            Ce qui protège est en base — le déclencheur de la
+            migration 0016 refuse toute modification de « super_admin »
+            à qui n'est pas déjà super, quel que soit l'outil employé. */}
+        {estSuper(profil) && <Route path="/admin/super" element={<AdminSuper />} />}
         {estAdmin(profil) && <Route path="/admin/fiche" element={<AdminFiche />} />}
         {estAdmin(profil) && <Route path="/admin/fiche/:id" element={<AdminFiche />} />}
         {estAdmin(profil) && <Route path="/admin/fiches" element={<AdminChoisirFiche />} />}

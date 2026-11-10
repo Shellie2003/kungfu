@@ -1030,7 +1030,11 @@ export function useComptes() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profils')
-        .select('id, numero, nom, prenom, role, actif, compte_id')
+        /* « super_admin » s'ajoute ici : le panneau de super administration
+           a besoin de savoir QUI l'est déjà, et l'écran des comptes
+           ignore simplement ce champ. Ajouter une colonne à une lecture
+           ne change rien pour ce qui la lisait avant. */
+        .select('id, numero, nom, prenom, role, actif, compte_id, super_admin')
         .order('nom');
       if (error) throw error;
       return data as {
@@ -1041,9 +1045,63 @@ export function useComptes() {
         role: 'eleve' | 'maitre' | 'admin';
         actif: boolean;
         compte_id: string | null;
+        super_admin: boolean;
       }[];
     }
   });
+}
+
+/* ============================================================
+   LES SUPER ADMINISTRATEURS.
+
+   « Le client veut un panneau de super administrateur avec toutes
+   les fonctionnalités que lui seul peut avoir. »
+
+   ------------------------------------------------------------
+   ⚠ POURQUOI CECI NE PASSE PAS PAR LA FONCTION SERVEUR
+
+   Créer un compte ou réinitialiser un mot de passe demande la clé de
+   service : c'est pour cela que « comptes » existe. NOMMER un super
+   administrateur, non — c'est une colonne de « profils », et la base
+   sait déjà exactement qui a le droit d'y toucher :
+
+     · la règle « l'administration gère les fiches » laisse écrire
+       tout administrateur ;
+     · le déclencheur de la migration 0016 refuse ensuite toute
+       modification de « super_admin » à qui n'est PAS déjà super.
+
+   Passer par le serveur aurait donc ajouté du code sans ajouter de
+   garantie — et il aurait fallu redéployer la fonction qui porte la
+   création des comptes du club, en service. Sur une application
+   livrée, le geste le plus sûr est celui qu'on ne fait pas.
+
+   ------------------------------------------------------------
+   ⚠ CE QUI EMPÊCHE D'ENFERMER LE CLUB DEHORS
+
+   Retirer le DERNIER super administrateur laisserait un club où plus
+   personne ne peut nommer de rôle, ni suspendre, ni supprimer — et
+   cela ne se rattrape que par le tableau de bord Supabase.
+
+   La base le refuse déjà (0016), et c'est elle qui décide. L'écran
+   ne propose simplement pas le geste : montrer un bouton qui mène à
+   un refus laisse la personne se demander si le fautif est elle.
+   ============================================================ */
+export function useNommerSuper() {
+  return useEcrire(
+    async ({ profilId, super_admin }: { profilId: string; super_admin: boolean }) => {
+      const { data: ecrit20, error } = await supabase
+        .from('profils')
+        .update({ super_admin })
+        .eq('id', profilId)
+        /* « profils » a bien une colonne « id » — vérifié dans les
+           migrations, et le banc des écritures le revérifie à chaque
+           construction depuis la panne du 6 septembre. */
+        .select('id');
+      if (error) throw error;
+      assure(ecrit20, 'enregistré cette nomination');
+    },
+    ['comptes', 'membres', 'fiche']
+  );
 }
 
 /* ---------------------------------------------- Participations
