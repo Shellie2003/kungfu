@@ -377,8 +377,17 @@ export function servir(racine, port = 4173, racineObligatoire = true) {
    conversations archivées, le salon confidentiel des maîtres. Les
    comparer depuis un compte d'élève, c'est comparer ce que la
    maquette montre, et rien d'autre. */
-export async function brancher(page, inconnues = [], { role } = {}) {
-  const MOI_VU = role ? { ...MOI, role } : MOI;
+/* « superAdmin » s'ajoute au rôle sans s'y substituer : dans ce club
+   le super administrateur EST un administrateur, plus trois pouvoirs
+   — changer un rôle, suspendre, supprimer. Sans cette option, aucune
+   capture ne pouvait montrer ces trois boutons, et l'on ne pouvait
+   donc pas relire à l'écran ce que le super administrateur voit. */
+export async function brancher(page, inconnues = [], { role, superAdmin } = {}) {
+  const MOI_VU = {
+    ...MOI,
+    ...(role ? { role } : {}),
+    ...(superAdmin ? { role: role ?? 'admin', super_admin: true } : {})
+  };
   await page.route(`https://${PROJET}.supabase.co/**`, async (route) => {
     const url = new URL(route.request().url());
     if (url.pathname.startsWith('/auth/v1')) {
